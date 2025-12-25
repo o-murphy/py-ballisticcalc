@@ -1,3 +1,4 @@
+from cpython.object cimport PyObject
 from libcpp.string cimport string
 from libcpp.exception cimport exception_ptr
 
@@ -12,6 +13,8 @@ from py_ballisticcalc_exts.bind cimport (
     rad_from_c,
 )
 
+cdef extern from "Python.h":
+    void Py_INCREF(PyObject *o)
 
 # Import C++ standard library components
 cdef extern from "<stdexcept>" namespace "std" nogil:
@@ -28,82 +31,94 @@ cdef extern from "<stdexcept>" namespace "std" nogil:
     exception_ptr current_exception() noexcept
 
 
-# C++11 Recursive template dispatcher for exception handling
-# Uses template recursion instead of C++17 fold expressions
-#
-# Architecture:
-# 1. call_exception_handler<ExceptionT>():
-#    - Template function that attempts to catch specific exception type
-#    - Receives exception by const reference (no heap allocation)
-#    - Returns true if handled
-#
-# 2. many_exception_handler(...):
-#    - Recursive variadic template
-#    - Base case: try single handler, rethrow if not handled
-#    - Recursive case: try first handler, recurse with rest if not handled
-#    - Short-circuits on first successful handler match
-#
-# Template Expansion Example (C++11):
-# ------------------------------------
-# Given:
-#     many_exception_handler(handler1, handler2, handler3)
-#
-# Expands to:
-#     if (call_exception_handler(eptr, handler1))
-#         return;
-#     else
-#         many_exception_handler(handler2, handler3)
-#         // which then expands to:
-#         if (call_exception_handler(eptr, handler2))
-#             return;
-#         else
-#             many_exception_handler(handler3)
-#             // which then expands to:
-#             if (call_exception_handler(eptr, handler3))
-#                 return;
-#             else
-#                 rethrow_exception(eptr);
 cdef extern from *:
     """
-    namespace {
-        // Template function to handle a specific exception type
-        // Returns true if exception was caught and handler was called
-        template <typename ExceptionT>
-        bool call_exception_handler(std::exception_ptr e_ptr, void (*handler)(ExceptionT&)) {
+    #pragma once
+    #include <Python.h>
+    #include <exception>
+    #include <string>
+
+    namespace exception_bridge {
+
+        /**
+        * Holds the mapping between a C++ exception type and a Python exception class.
+        */
+        template <typename T>
+        struct ExceptionRule {
+            typedef PyObject* (*extractor_t)(const T&);
+
+            PyObject* py_class;
+            extractor_t extract;
+
+            /**
+            * Attempts to handle the exception. Returns true if the exception matches type T.
+            */
+            bool try_handle(const std::exception& e) const {
+                // Using dynamic_cast for safe runtime type checking.
+                // Requires the C++ exception to have at least one virtual method (usually destructor).
+                if (auto specific_ex = dynamic_cast<const T*>(&e)) {
+                    PyObject* args = extract(*specific_ex);
+                    if (args) {
+                        // PyErr_SetObject sets the exception and uses the tuple as constructor arguments.
+                        PyErr_SetObject(py_class, args);
+                        Py_DECREF(args);
+                        return true;
+                    }
+                }
+                return false;
+            }
+        };
+
+        /**
+        * Default extractor: creates a 1-element tuple containing the exception message.
+        */
+        template <typename T>
+        PyObject* default_extractor(const T& e) {
+            PyObject* msg = PyUnicode_FromString(e.what());
+            PyObject* args = PyTuple_Pack(1, msg);
+            Py_XDECREF(msg);
+            return args;
+        }
+
+        /**
+        * Factory for custom rules with specific field extraction logic.
+        */
+        template <typename T>
+        ExceptionRule<T> bind(PyObject* cls, PyObject* (*ext)(const T&)) {
+            return {cls, ext};
+        }
+
+        /**
+        * Factory for simple rules that only pass the exception message to Python.
+        */
+        template <typename T>
+        ExceptionRule<T> bind(PyObject* cls) {
+            return {cls, &default_extractor<T>};
+        }
+
+        /**
+        * Variadic dispatcher that iterates through all provided rules.
+        */
+        template <typename... Rules>
+        void dispatch(const Rules&... rules) {
+            auto e_ptr = std::current_exception();
+            if (!e_ptr) return;
+
             try {
                 std::rethrow_exception(e_ptr);
-            } catch(ExceptionT &ex) {
-                handler(ex);  // Call Cython handler with exception reference
-                return static_cast<bool>(PyErr_Occurred());  // Verify Python exception set
+            } catch (const std::exception& e) {
+                bool handled = false;
+                // C++11 Parameter pack expansion trick to iterate over rules
+                int dummy[] = { 0, (handled ? 0 : (handled = rules.try_handle(e), 0))... };
+                (void)dummy;
+
+                if (!handled) throw; // Rethrow if no rule matches
             } catch (...) {
-                return false;  // Not the expected type, continue to next handler
-            }
-        }
-
-        // Base case: single handler (terminal case in recursion)
-        template <typename HandlerT>
-        void many_exception_handler(HandlerT&& handler) {
-            auto e_ptr = std::current_exception();
-            bool handled = call_exception_handler(e_ptr, std::forward<HandlerT>(handler));
-            if (!handled)
-                std::rethrow_exception(e_ptr);  // No handler matched, rethrow
-        }
-
-        // Recursive case: try first handler, then recurse with remaining handlers
-        // This is the C++11 equivalent of C++17 fold expressions
-        template <typename HandlerT, typename... RestHandlerTs>
-        void many_exception_handler(HandlerT&& handler, RestHandlerTs&&... rest) {
-            auto e_ptr = std::current_exception();
-            bool handled = call_exception_handler(e_ptr, std::forward<HandlerT>(handler));
-            if (!handled) {
-                // Try remaining handlers recursively
-                many_exception_handler(std::forward<RestHandlerTs>(rest)...);
+                throw; // Fallback for non-std::exception types
             }
         }
     }
     """
-    # Cython declaration: variadic function accepting any number of handlers
-    void many_exception_handler(...) except +*
 
 
 cdef extern from "bclibc/exceptions.hpp" namespace "bclibc" nogil:
@@ -143,43 +158,76 @@ cdef extern from "bclibc/exceptions.hpp" namespace "bclibc" nogil:
         ) except+
 
 
-cdef inline void handle_OutOfRangeError(const BCLIBC_OutOfRangeError &e):
-    from py_ballisticcalc.exceptions import OutOfRangeError
-    raise OutOfRangeError(
+cdef extern from * namespace "exception_bridge":
+    cppclass ExceptionRule[T]:
+        pass
+
+    # Note: Using PyObject* explicitly to avoid Cython auto-conversion issues in templates
+    ExceptionRule[T] bind[T](PyObject* cls)
+    ExceptionRule[T] bind[T](PyObject* cls, PyObject* (*f)(const T&))
+
+    # except +* allows Cython to handle any rethrown exceptions
+    # that weren't caught by our dispatcher
+    void dispatch(...) except +*
+    void Py_INCREF(PyObject *o)
+
+
+# --- ZeroFindingError Extractor ---
+cdef inline PyObject* extract_zero_finding_error(const BCLIBC_ZeroFindingError& e) noexcept:
+    cdef tuple args = (
+        e.zero_finding_error,
+        e.iterations_count,
+        rad_from_c(e.last_barrel_elevation_rad),
+        e.what().decode('utf-8')
+    )
+    cdef PyObject* ptr = <PyObject*>args
+    Py_INCREF(ptr)  # Ми кажемо Python: "цей об'єкт потрібен комусь ще"
+    return ptr
+
+
+# --- OutOfRangeError Extractor ---
+cdef inline PyObject* extract_out_of_range_error(const BCLIBC_OutOfRangeError& e) noexcept:
+    cdef tuple args = (
         feet_from_c(e.requested_distance_ft),
         feet_from_c(e.max_range_ft),
         rad_from_c(e.look_angle_rad),
         e.what().decode("utf-8")
     )
+    cdef PyObject* ptr = <PyObject*>args
+    Py_INCREF(ptr)  # Ми кажемо Python: "цей об'єкт потрібен комусь ще"
+    return ptr
 
 
-cdef inline void handle_ZeroFindingError(const BCLIBC_ZeroFindingError &e):
-    from py_ballisticcalc.exceptions import ZeroFindingError
-    raise ZeroFindingError(
-        e.zero_finding_error,
-        e.iterations_count,
-        rad_from_c(e.last_barrel_elevation_rad),
-        e.what().decode("utf-8")
-    )
-
-
-cdef inline void handle_InterceptError(const BCLIBC_InterceptionError &e):
-    from py_ballisticcalc.exceptions import InterceptionError
+# --- InterceptionError Extractor ---
+cdef inline PyObject* extract_interception_error(const BCLIBC_InterceptionError& e) noexcept:
+    # 1. Prepare data wrappers
     cdef CythonizedBaseTrajData raw_data = CythonizedBaseTrajData()
-    cdef object py_full_data = TrajectoryData_from_cpp(e.full_data)
     raw_data._this = e.raw_data
-    raise InterceptionError(e.what().decode("utf-8"), (raw_data, py_full_data))
 
+    # 2. Convert full trajectory data using your helper
+    cdef object py_full_data = TrajectoryData_from_cpp(e.full_data)
 
-cdef inline void handle_SolverRuntimeError(const BCLIBC_SolverRuntimeError &e):
-    from py_ballisticcalc.exceptions import SolverRuntimeError
-    raise SolverRuntimeError(e.what().decode("utf-8"))
+    # 3. Pack as per expected signature: InterceptionError(message, (raw_data, full_data))
+    cdef tuple args = (
+        e.what().decode("utf-8"),
+        (raw_data, py_full_data)
+    )
+    cdef PyObject* ptr = <PyObject*>args
+    Py_INCREF(ptr)  # Ми кажемо Python: "цей об'єкт потрібен комусь ще"
+    return ptr
 
 
 cdef inline void raise_solver_exception():
-    many_exception_handler(
-        handle_ZeroFindingError,
-        handle_OutOfRangeError,
-        handle_InterceptError,
-        handle_SolverRuntimeError,
+    from py_ballisticcalc.exceptions import (
+        ZeroFindingError,
+        OutOfRangeError,
+        InterceptionError,
+        SolverRuntimeError
+    )
+
+    dispatch(
+        bind[BCLIBC_ZeroFindingError](<PyObject*>ZeroFindingError, extract_zero_finding_error),
+        bind[BCLIBC_OutOfRangeError](<PyObject*>OutOfRangeError, extract_out_of_range_error),
+        bind[BCLIBC_InterceptionError](<PyObject*>InterceptionError, extract_interception_error),
+        bind[BCLIBC_SolverRuntimeError](<PyObject*>SolverRuntimeError)
     )
