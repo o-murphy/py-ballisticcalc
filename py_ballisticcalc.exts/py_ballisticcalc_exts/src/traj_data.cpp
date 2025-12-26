@@ -68,7 +68,7 @@ namespace bclibc
      *    - Otherwise: perform PCHIP interpolation
      *
      * OPTIMIZATION: Caches key values and uses direct field access instead of
-     * repeated get_key_val() calls. Avoids creating intermediate vector objects.
+     * repeated operator[]() calls. Avoids creating intermediate vector objects.
      *
      * @param key_kind The field to use as independent variable (TIME, MACH, POS_X, etc.).
      * @param key_value Target value for interpolation.
@@ -90,9 +90,9 @@ namespace bclibc
         BCLIBC_BaseTrajData &out)
     {
         // Cache key values - avoid repeated virtual function calls
-        const double x0 = p0.get_key_val(key_kind);
-        const double x1 = p1.get_key_val(key_kind);
-        const double x2 = p2.get_key_val(key_kind);
+        const double x0 = p0[key_kind];
+        const double x1 = p1[key_kind];
+        const double x2 = p2[key_kind];
 
         // Validate non-degenerate segments
         if (x0 == x1 || x0 == x2 || x1 == x2)
@@ -136,7 +136,7 @@ namespace bclibc
      *
      * @note Returns 0.0 for invalid keys rather than throwing to avoid exceptions in hot paths.
      */
-    double BCLIBC_BaseTrajData::get_key_val(BCLIBC_BaseTrajData_InterpKey key_kind) const
+    double BCLIBC_BaseTrajData::operator[](BCLIBC_BaseTrajData_InterpKey key_kind) const
     {
         // Bounds check
         if ((int)key_kind < 0 || (int)key_kind > BCLIBC_TRAJECTORY_DATA_INTERP_KEY_ACTIVE_COUNT)
@@ -349,7 +349,7 @@ namespace bclibc
      * @return Const reference to trajectory data at index.
      * @throws std::out_of_range if index is out of bounds after normalization.
      */
-    const BCLIBC_BaseTrajData &BCLIBC_BaseTrajSeq::get_item(ssize_t idx) const
+    const BCLIBC_BaseTrajData &BCLIBC_BaseTrajSeq::operator[](ssize_t idx) const
     {
         const ssize_t len = static_cast<ssize_t>(this->buffer.size());
 
@@ -571,9 +571,9 @@ namespace bclibc
         const BCLIBC_BaseTrajData &p2 = this->buffer[idx + 1];
 
         // Cache key values
-        const double ox0 = p0.get_key_val(key_kind);
-        const double ox1 = p1.get_key_val(key_kind);
-        const double ox2 = p2.get_key_val(key_kind);
+        const double ox0 = p0[key_kind];
+        const double ox1 = p1[key_kind];
+        const double ox2 = p2[key_kind];
 
         // Validate non-degenerate
         if (ox0 == ox1 || ox0 == ox2 || ox1 == ox2)
@@ -620,10 +620,10 @@ namespace bclibc
 
         constexpr double epsilon = 1e-9;
 
-        if (this->is_close(this->buffer[idx].get_key_val(key_kind), key_value, epsilon))
+        if (this->is_close(this->buffer[idx][key_kind], key_value, epsilon))
         {
             BCLIBC_DEBUG("Exact match found at index %zd", idx);
-            out = this->get_item(idx);
+            out = (*this)[idx];
             return;
         }
 
@@ -664,8 +664,8 @@ namespace bclibc
         }
 
         // Determine monotonicity
-        const double v0 = this->buffer[0].get_key_val(key_kind);
-        const double vN = this->buffer[n - 1].get_key_val(key_kind);
+        const double v0 = this->buffer[0][key_kind];
+        const double vN = this->buffer[n - 1][key_kind];
         const bool increasing = (vN >= v0);
 
         ssize_t lo = 0;
@@ -675,7 +675,7 @@ namespace bclibc
         while (lo < hi)
         {
             const ssize_t mid = lo + ((hi - lo) >> 1); // Bit shift optimization
-            const double vm = this->buffer[mid].get_key_val(key_kind);
+            const double vm = this->buffer[mid][key_kind];
 
             if ((increasing && vm < key_value) || (!increasing && vm > key_value))
             {
@@ -835,8 +835,8 @@ namespace bclibc
         const BCLIBC_BaseTrajData *buf = this->buffer.data();
 
         // Determine monotonicity
-        const double v0 = buf[0].get_key_val(key_kind);
-        const double vN = buf[n - 1].get_key_val(key_kind);
+        const double v0 = buf[0][key_kind];
+        const double vN = buf[n - 1][key_kind];
         const bool increasing = (vN >= v0);
 
         // Handle extrapolation
@@ -862,7 +862,7 @@ namespace bclibc
         while (lo < hi)
         {
             const ssize_t mid = lo + ((hi - lo) >> 1);
-            const double vm = buf[mid].get_key_val(key_kind);
+            const double vm = buf[mid][key_kind];
 
             if ((increasing && vm < key_value) || (!increasing && vm > key_value))
             {
@@ -1021,7 +1021,7 @@ namespace bclibc
      * 5. Set output flag
      *
      * OPTIMIZATION: Uses switch statement for field access instead of reflection.
-     * Caches key values to avoid repeated get_key_val() calls.
+     * Caches key values to avoid repeated operator[]() calls.
      *
      * METHOD COMPARISON:
      * - PCHIP: Monotone-preserving cubic, smooth, better for most trajectories
@@ -1060,9 +1060,9 @@ namespace bclibc
 
         // Cache independent variable values
         const double x_val = value;
-        const double x0 = p0.get_key_val(key);
-        const double x1 = p1.get_key_val(key);
-        const double x2 = p2.get_key_val(key);
+        const double x0 = p0[key];
+        const double x1 = p1[key];
+        const double x2 = p2[key];
 
         // Initialize output with p0 as base (fills derived fields)
         BCLIBC_TrajectoryData interpolated_data = p0;
@@ -1082,9 +1082,9 @@ namespace bclibc
             else
             {
                 // Cache dependent variable values
-                const double y0 = p0.get_key_val(field_key);
-                const double y1 = p1.get_key_val(field_key);
-                const double y2 = p2.get_key_val(field_key);
+                const double y0 = p0[field_key];
+                const double y1 = p1[field_key];
+                const double y2 = p2[field_key];
 
                 if (method == BCLIBC_InterpMethod::PCHIP)
                 {
@@ -1133,7 +1133,7 @@ namespace bclibc
      * @param key Field identifier (TIME, DISTANCE, VELOCITY, etc.).
      * @return Value of specified field, or 0.0 if key invalid.
      */
-    double BCLIBC_TrajectoryData::get_key_val(BCLIBC_TrajectoryData_InterpKey key) const
+    double BCLIBC_TrajectoryData::operator[](BCLIBC_TrajectoryData_InterpKey key) const
     {
         switch (key)
         {

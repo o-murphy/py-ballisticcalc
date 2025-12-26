@@ -55,7 +55,7 @@ cdef extern from "include/bclibc/traj_data.hpp" namespace "bclibc" nogil:
         BCLIBC_V3dT position() const
         BCLIBC_V3dT velocity() const
 
-        double get_key_val(BCLIBC_BaseTrajData_InterpKey key_kind) const
+        double operator[](BCLIBC_BaseTrajData_InterpKey key_kind) const
         double slant_val_buf(double ca, double sa) const
 
         @staticmethod
@@ -101,9 +101,9 @@ cdef extern from "include/bclibc/traj_data.hpp" namespace "bclibc" nogil:
             double value,
             BCLIBC_BaseTrajData &out
         ) except +
-        const BCLIBC_BaseTrajData &get_item(
+        BCLIBC_BaseTrajData &operator[](
             Py_ssize_t idx
-        ) except +
+        ) except +IndexError
         void get_at(
             BCLIBC_BaseTrajData_InterpKey key_kind,
             double key_value,

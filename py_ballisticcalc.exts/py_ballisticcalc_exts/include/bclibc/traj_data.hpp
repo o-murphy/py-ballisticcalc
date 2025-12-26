@@ -162,7 +162,7 @@ namespace bclibc
          *
          * @note Returns 0.0 for invalid keys rather than throwing to avoid exceptions in hot paths.
          */
-        double get_key_val(BCLIBC_BaseTrajData_InterpKey key_kind) const;
+        double operator[](BCLIBC_BaseTrajData_InterpKey key_kind) const;
 
         /**
          * @brief Computes slant height relative to a look angle.
@@ -197,7 +197,7 @@ namespace bclibc
          *    - Otherwise: perform PCHIP interpolation
          *
          * OPTIMIZATION: Caches key values and uses direct field access instead of
-         * repeated get_key_val() calls. Avoids creating intermediate vector objects.
+         * repeated operator[]() calls. Avoids creating intermediate vector objects.
          *
          * @param key_kind The field to use as independent variable (TIME, MACH, POS_X, etc.).
          * @param key_value Target value for interpolation.
@@ -418,7 +418,7 @@ namespace bclibc
          * @return Const reference to trajectory data at index.
          * @throws std::out_of_range if index is out of bounds after normalization.
          */
-        const BCLIBC_BaseTrajData &get_item(ssize_t idx) const;
+        const BCLIBC_BaseTrajData &operator[](ssize_t idx) const;
 
         /**
          * @brief Retrieves trajectory data at specified key value with optional time filtering.
@@ -771,7 +771,7 @@ namespace bclibc
          * 5. Set output flag
          *
          * OPTIMIZATION: Uses switch statement for field access instead of reflection.
-         * Caches key values to avoid repeated get_key_val() calls.
+         * Caches key values to avoid repeated operator[]() calls.
          *
          * METHOD COMPARISON:
          * - PCHIP: Monotone-preserving cubic, smooth, better for most trajectories
@@ -812,7 +812,7 @@ namespace bclibc
          * @param key Field identifier (TIME, DISTANCE, VELOCITY, etc.).
          * @return Value of specified field, or 0.0 if key invalid.
          */
-        double get_key_val(BCLIBC_TrajectoryData_InterpKey key) const;
+        double operator[](BCLIBC_TrajectoryData_InterpKey key) const;
 
         /**
          * @brief Sets field value by key.

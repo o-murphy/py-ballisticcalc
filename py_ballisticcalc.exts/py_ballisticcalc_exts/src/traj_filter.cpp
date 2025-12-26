@@ -584,8 +584,8 @@ namespace bclibc
         // Check if we have enough points and crossed target
         if (this->count >= 3 && !this->target_passed)
         {
-            double val_prev = this->points[1].get_key_val(this->key_kind);
-            double val_curr = this->points[2].get_key_val(this->key_kind);
+            double val_prev = this->points[1][this->key_kind];
+            double val_curr = this->points[2][this->key_kind];
 
             // Check if target is between previous and current point
             bool crossed = (val_prev <= this->target_value && this->target_value <= val_curr) ||

@@ -11,12 +11,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [:simple-github: GitHub release][2.2.7]
 
 ### Changed
-- Includes Refactoring
-- Redundant Null Pointer Check Removal
-- Better WindSock initialization in Cython/C++
-- BCLIBC_WindSock_from_pylist name changed to BCLIBC_WindSock_from_pytuple
-- C++ to Python Exception bridge improved, avoids multiple rethrows, uses dynamic_cast
-- C++ to Python Exception bridge many_exception_handler renamed to exception_dispatch
+- C++ headers includes refactoring
+- Redundant Null Pointer Check Removal in `BCLIBC_Coriolis`
+- Better `BCLIBC_WindSock` initialization in Cython/C++
+- `BCLIBC_WindSock_from_pylist` renamed to `BCLIBC_WindSock_from_pytuple`
+- C++ to Python Exception bridge improved, avoids multiple rethrows, uses `dynamic_cast`
+- C++ to Python Exception bridge `many_exception_handler` renamed to `exception_dispatch`
+- `BCLIBC_BaseTrajData::get_key_val` replaced with `BCLIBC_BaseTrajData::operator[]` 
+- `BCLIBC_BaseTrajSeq::get_key_val` replaced with `BCLIBC_BaseTrajSeq::operator[]` 
+- `BCLIBC_TrajectoryData::get_key_val` replaced with `BCLIBC_TrajectoryData::operator[]` 
 
 ### Fix
 - Docstrings fix according to [Issue #299](https://github.com/o-murphy/py-ballisticcalc/pull/299)
