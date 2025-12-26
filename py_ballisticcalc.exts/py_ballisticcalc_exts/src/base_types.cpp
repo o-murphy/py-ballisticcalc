@@ -3,6 +3,7 @@
 #include <cmath>
 #include <stdexcept>
 #include "bclibc/base_types.hpp"
+#include "bclibc/log.hpp"
 
 namespace bclibc
 {
@@ -547,6 +548,13 @@ namespace bclibc
         update_cache();
     }
 
+    BCLIBC_WindSock::BCLIBC_WindSock(std::vector<BCLIBC_Wind> winds_vec)
+        : winds(std::move(winds_vec)),
+          current(0)
+    {
+        this->update_cache();
+    }
+
     void BCLIBC_WindSock::push(const BCLIBC_Wind &wind)
     {
         this->winds.push_back(wind);
@@ -724,7 +732,7 @@ namespace bclibc
     BCLIBC_V3dT BCLIBC_Coriolis::adjust_range(
         double time, const BCLIBC_V3dT &range_vector) const
     {
-        if (!this || !this->flat_fire_only)
+        if (!this->flat_fire_only)
         {
             return range_vector;
         }

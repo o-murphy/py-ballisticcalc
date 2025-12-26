@@ -148,6 +148,7 @@ cdef extern from "include/bclibc/base_types.hpp" namespace "bclibc" nogil:
         BCLIBC_V3dT last_vector_cache
 
         BCLIBC_WindSock() except +
+        BCLIBC_WindSock(vector[BCLIBC_Wind] winds_vec) except+
         void push(const BCLIBC_Wind &wind) except +
         void update_cache() except +
         BCLIBC_V3dT current_vector() const

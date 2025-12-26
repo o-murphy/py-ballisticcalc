@@ -239,7 +239,7 @@ class ShotProps:
 
         # Calculate spin drift at flight time
         time = 1.2  # seconds
-        drift = shot_props.spin_drift(time)  # inches
+        drift = shot_props.spin_drift(time)  # feet
 
         # Get atmospheric conditions at altitude
         altitude = shot_props.alt0_ft + 100  # 100 feet above initial altitude
@@ -379,7 +379,7 @@ class ShotProps:
             time: Time of flight
 
         Returns:
-            float: Windage due to spin drift, in inches
+            float: Windage due to spin drift, in feet
         """
         if (self.stability_coefficient != 0) and (self.twist_inch != 0):
             sign = 1 if self.twist_inch > 0 else -1

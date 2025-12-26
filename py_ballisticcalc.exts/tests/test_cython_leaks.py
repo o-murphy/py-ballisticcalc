@@ -123,7 +123,7 @@ def test_invalid_wind_entry_cleanup(loaded_engine_instance):
     calc = Calculator(config=_base_config(), engine=loaded_engine_instance)
     shot = create_7_62_mm_shot()
 
-    # Inject an invalid wind to trigger cleanup in BCLIBC_WindSock_from_pylist
+    # Inject an invalid wind to trigger cleanup in BCLIBC_WindSock_from_pytuple
     winds = list(shot.winds)
     winds.append(BadWind())  # type: ignore[arg-type]
     shot.winds = winds  # type: ignore[assignment]

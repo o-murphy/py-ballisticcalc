@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.2.7] - 2025-12-26
+[:simple-github: GitHub release][2.2.7]
+
+### Changed
+- C++ headers includes refactoring
+- Redundant Null Pointer Check Removal in `BCLIBC_Coriolis`
+- Better `BCLIBC_WindSock` initialization in Cython/C++
+- `BCLIBC_WindSock_from_pylist` renamed to `BCLIBC_WindSock_from_pytuple`
+- C++ to Python Exception bridge improved, avoids multiple rethrows, uses `dynamic_cast`
+- C++ to Python Exception bridge `many_exception_handler` renamed to `exception_dispatch`
+- `BCLIBC_BaseTrajData::get_key_val` replaced with `BCLIBC_BaseTrajData::operator[]` 
+- `BCLIBC_BaseTrajSeq::get_key_val` replaced with `BCLIBC_BaseTrajSeq::operator[]` 
+- `BCLIBC_TrajectoryData::get_key_val` replaced with `BCLIBC_TrajectoryData::operator[]` 
+
+### Fix
+- Docstrings fix according to [Issue #299](https://github.com/o-murphy/py-ballisticcalc/pull/299)
+
 ## [2.2.6.post1] - 2025-12-14
 [:simple-github: GitHub release][2.2.6.post1]
 
@@ -483,7 +500,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Issue #141
 - Trajectories that bend backwards
 
-[Unreleased]: https://github.com/o-murphy/py-ballisticcalc/compare/v2.2.6.post1...HEAD
+[Unreleased]: https://github.com/o-murphy/py-ballisticcalc/compare/v2.2.7...HEAD
+[2.2.7]: https://github.com/o-murphy/py-ballisticcalc/releases/tag/v2.2.7
 [2.2.6.post1]: https://github.com/o-murphy/py-ballisticcalc/releases/tag/v2.2.6.post1
 [2.2.6]: https://github.com/o-murphy/py-ballisticcalc/releases/tag/v2.2.6
 [2.2.5]: https://github.com/o-murphy/py-ballisticcalc/releases/tag/v2.2.5

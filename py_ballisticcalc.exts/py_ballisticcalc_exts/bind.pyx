@@ -1,5 +1,6 @@
 # cython: freethreading_compatible=True
 from libcpp.cmath cimport sin, cos
+from libcpp.vector cimport vector
 from cython cimport final
 from cpython.object cimport PyObject
 from py_ballisticcalc_exts.base_types cimport (
@@ -51,15 +52,7 @@ cdef BCLIBC_Curve BCLIBC_Curve_from_pylist(list[object] data_points):
     return result
 
 
-# We still need a way to get data from Python objects into BCLIBC_Wind structs.
-# This internal helper function is used by WindSockT_create.
-# It assumes 'w' is a Python object that conforms to the interface needed.
 @final
-cdef BCLIBC_Wind BCLIBC_Wind_from_pyobject(object w):
-    cdef BCLIBC_Wind wind = BCLIBC_Wind_fromPyObject(<PyObject *>w)
-    return wind
-
-
 cdef BCLIBC_Coriolis BCLIBC_Coriolis_from_pyobject(object coriolis_obj):
     if coriolis_obj:
         return BCLIBC_Coriolis(
@@ -77,7 +70,10 @@ cdef BCLIBC_Coriolis BCLIBC_Coriolis_from_pyobject(object coriolis_obj):
     return BCLIBC_Coriolis()
 
 
-cdef BCLIBC_WindSock BCLIBC_WindSock_from_pylist(object winds_py_list):
+# We still need a way to get data from Python objects into BCLIBC_Wind structs.
+# This internal helper function is used by WindSockT_create.
+# It assumes 'w' is a Python object that conforms to the interface needed.
+cdef BCLIBC_WindSock BCLIBC_WindSock_from_pytuple(tuple[object] winds_py_tuple):
     """
     Creates and initializes a BCLIBC_WindSock structure
     by iterating over the Python list and calling push() for each element.
@@ -85,31 +81,22 @@ cdef BCLIBC_WindSock BCLIBC_WindSock_from_pylist(object winds_py_list):
     This function uses the BCLIBC_WindSock constructor and the push() method to add
     elements to the internal std::vector, consistent with the C++ design.
     """
-    cdef size_t length = <size_t> len(winds_py_list)
+    cdef size_t n = len(winds_py_tuple)
+    if n <= 0:
+        return BCLIBC_WindSock()
 
-    # 1. Creating the C++ BCLIBC_WindSock object (constructor is called, handled by except+)
-    cdef BCLIBC_WindSock ws = BCLIBC_WindSock()
+    cdef vector[BCLIBC_Wind] winds_vec
+    winds_vec.reserve(n)
 
-    # 2. Copying data from Python objects
-    cdef size_t i
-    cdef BCLIBC_Wind c_wind_segment  # Temporary variable for storing the converted object
+    for w in winds_py_tuple:
+        winds_vec.emplace_back(
+            <double>w.velocity._fps,
+            <double>w.direction_from._rad,
+            <double>w.until_distance._feet,
+            <double>w.MAX_DISTANCE_FEET
+        )
 
-    try:
-        for i in range(length):
-            # BCLIBC_Wind_from_pyobject converts the Python object to a C structure
-            # This call can raise Python exceptions
-            c_wind_segment = BCLIBC_Wind_from_pyobject(winds_py_list[i])
-
-            # Add the segment to the internal C++ vector via the push method (handled by outer except+)
-            ws.push(c_wind_segment)
-
-    except Exception:
-        # Error handling for Python-level errors (like attribute/type conversion failure)
-        raise RuntimeError("Invalid wind entry in winds list during conversion")
-
-    # 3. Update the cache for the first (zero) wind element after filling the vector
-    ws.update_cache()
-    return ws
+    return BCLIBC_WindSock(winds_vec)
 
 
 cdef BCLIBC_ShotProps BCLIBC_ShotProps_from_pyobject(object shot_info, double calc_step = 1.0):
@@ -147,7 +134,7 @@ cdef BCLIBC_ShotProps BCLIBC_ShotProps_from_pyobject(object shot_info, double ca
         BCLIBC_MachList_from_pylist(table_data),
         BCLIBC_Atmosphere_from_pyobject(shot_info.atmo),
         BCLIBC_Coriolis_from_pyobject(coriolis_obj),
-        BCLIBC_WindSock_from_pylist(shot_info.winds),
+        BCLIBC_WindSock_from_pytuple(shot_info.winds),
         <BCLIBC_TrajFlag>BCLIBC_TrajFlag.BCLIBC_TRAJ_FLAG_NONE,
     )
 

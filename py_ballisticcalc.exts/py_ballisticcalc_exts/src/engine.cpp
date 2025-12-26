@@ -2,6 +2,7 @@
 #include "bclibc/engine.hpp"
 #include "bclibc/scope_guard.hpp"
 #include "bclibc/exceptions.hpp"
+#include "bclibc/log.hpp"
 
 /*
 Possible call chains:

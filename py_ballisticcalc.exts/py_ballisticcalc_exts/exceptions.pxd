@@ -28,82 +28,144 @@ cdef extern from "<stdexcept>" namespace "std" nogil:
     exception_ptr current_exception() noexcept
 
 
-# C++11 Recursive template dispatcher for exception handling
-# Uses template recursion instead of C++17 fold expressions
+# ============================================================================
+# C++11 Exception Dispatch Mechanism
+# ============================================================================
 #
-# Architecture:
-# 1. call_exception_handler<ExceptionT>():
-#    - Template function that attempts to catch specific exception type
-#    - Receives exception by const reference (no heap allocation)
-#    - Returns true if handled
+# Efficiently converts C++ exceptions to Python exceptions using a single
+# rethrow and dynamic type checking.
 #
-# 2. many_exception_handler(...):
-#    - Recursive variadic template
-#    - Base case: try single handler, rethrow if not handled
-#    - Recursive case: try first handler, recurse with rest if not handled
-#    - Short-circuits on first successful handler match
+# Architecture Overview:
+# ----------------------
 #
-# Template Expansion Example (C++11):
-# ------------------------------------
-# Given:
-#     many_exception_handler(handler1, handler2, handler3)
+# 1. exception_dispatch<Handlers...>(...):
+#    Entry point that captures and rethrows the current exception exactly once.
+#    Delegates type checking to the handler chain.
 #
-# Expands to:
-#     if (call_exception_handler(eptr, handler1))
-#         return;
-#     else
-#         many_exception_handler(handler2, handler3)
-#         // which then expands to:
-#         if (call_exception_handler(eptr, handler2))
-#             return;
-#         else
-#             many_exception_handler(handler3)
-#             // which then expands to:
-#             if (call_exception_handler(eptr, handler3))
-#                 return;
-#             else
-#                 rethrow_exception(eptr);
+# 2. try_handle_chain<HandlerT, Rest...>(...):
+#    Recursive template that walks through handlers until one matches.
+#    Uses dynamic_cast for safe runtime type identification.
+#    Short-circuits on first successful match.
+#
+# 3. try_single_handler<ExceptionT>(...):
+#    Attempts to match a specific exception type via dynamic_cast.
+#    Calls the Cython handler if types match.
+#    Verifies Python exception was set via PyErr_Occurred().
+#
+# Performance Characteristics:
+# ---------------------------
+# - Single std::rethrow_exception call (O(1))
+# - Linear scan through handlers (O(n) where n = handler count)
+# - Early exit on first match
+# - No heap allocations in dispatch path
+#
+# Error Handling:
+# --------------
+# - Matched exceptions → converted to Python exceptions via handlers
+# - Unmatched std::exception → rethrown for Cython's "except +" handling
+# - Non-std exceptions → rethrown immediately
+#
+# Thread Safety:
+# -------------
+# Handlers must acquire GIL before touching Python objects.
+# The dispatch mechanism itself is thread-safe.
+
 cdef extern from *:
     """
+    #include <exception>
+    #include <utility>
+
     namespace {
-        // Template function to handle a specific exception type
-        // Returns true if exception was caught and handler was called
+        /**
+         * Attempts to handle a specific exception type.
+         *
+         * Uses dynamic_cast to safely identify the exception type at runtime.
+         * If the cast succeeds, invokes the corresponding Cython handler and
+         * verifies that a Python exception was properly set.
+         *
+         * @tparam ExceptionT The C++ exception type to match
+         * @param e The caught std::exception reference
+         * @param handler Function pointer to Cython handler
+         * @return true if exception type matched and handler was invoked
+         *
+         * @note The handler is responsible for setting Python exception state
+         * @note Returns false if dynamic_cast fails (type mismatch)
+         */
         template <typename ExceptionT>
-        bool call_exception_handler(std::exception_ptr e_ptr, void (*handler)(ExceptionT&)) {
+        bool try_single_handler(const std::exception& e, void (*handler)(const ExceptionT&)) {
+            if (auto specific = dynamic_cast<const ExceptionT*>(&e)) {
+                handler(*specific);
+                return PyErr_Occurred() != nullptr;
+            }
+            return false;
+        }
+
+        /**
+         * Base case: No handlers matched, rethrow original exception.
+         *
+         * This allows Cython's default "except +" mechanism to handle
+         * the exception, typically converting it to a RuntimeError.
+         */
+        inline void try_handle_chain(const std::exception& e) {
+            throw;
+        }
+
+        /**
+         * Recursive case: Try current handler, then remaining handlers.
+         *
+         * Implements a linear search through the handler chain with early exit.
+         * If current handler matches, stops immediately. Otherwise, recurses
+         * with remaining handlers.
+         *
+         * @tparam HandlerT Type of current handler function pointer
+         * @tparam Rest Types of remaining handler function pointers
+         * @param e The exception to dispatch
+         * @param handler Current handler to try
+         * @param rest Remaining handlers (unpacked recursively)
+         */
+        template <typename HandlerT, typename... Rest>
+        void try_handle_chain(const std::exception& e, HandlerT&& handler, Rest&&... rest) {
+            if (try_single_handler(e, std::forward<HandlerT>(handler))) {
+                return;  // Handler matched, stop recursion
+            }
+            try_handle_chain(e, std::forward<Rest>(rest)...);
+        }
+
+        /**
+         * Main exception dispatch entry point.
+         *
+         * Captures the current C++ exception (if any) and rethrows it exactly once.
+         * Delegates type-specific handling to the recursive handler chain.
+         *
+         * This design ensures minimal overhead:
+         * - Single rethrow operation (not O(n) rethrows)
+         * - Dynamic type checking only when exception is caught
+         * - No additional try/catch blocks per handler
+         *
+         * @tparam Handlers Variadic template accepting any number of handler functions
+         * @param handlers Function pointers to exception handlers
+         *
+         * @note Handlers should be ordered from most specific to most general
+         * @note Non-std::exception types are rethrown immediately
+         * @note If no handler matches, exception is rethrown for Cython handling
+         */
+        template <typename... Handlers>
+        void exception_dispatch(Handlers&&... handlers) {
+            auto e_ptr = std::current_exception();
+            if (!e_ptr) return;
+
             try {
                 std::rethrow_exception(e_ptr);
-            } catch(ExceptionT &ex) {
-                handler(ex);  // Call Cython handler with exception reference
-                return static_cast<bool>(PyErr_Occurred());  // Verify Python exception set
+            } catch (const std::exception& e) {
+                try_handle_chain(e, std::forward<Handlers>(handlers)...);
             } catch (...) {
-                return false;  // Not the expected type, continue to next handler
-            }
-        }
-
-        // Base case: single handler (terminal case in recursion)
-        template <typename HandlerT>
-        void many_exception_handler(HandlerT&& handler) {
-            auto e_ptr = std::current_exception();
-            bool handled = call_exception_handler(e_ptr, std::forward<HandlerT>(handler));
-            if (!handled)
-                std::rethrow_exception(e_ptr);  // No handler matched, rethrow
-        }
-
-        // Recursive case: try first handler, then recurse with remaining handlers
-        // This is the C++11 equivalent of C++17 fold expressions
-        template <typename HandlerT, typename... RestHandlerTs>
-        void many_exception_handler(HandlerT&& handler, RestHandlerTs&&... rest) {
-            auto e_ptr = std::current_exception();
-            bool handled = call_exception_handler(e_ptr, std::forward<HandlerT>(handler));
-            if (!handled) {
-                // Try remaining handlers recursively
-                many_exception_handler(std::forward<RestHandlerTs>(rest)...);
+                throw;  // Rethrow non-std::exception types
             }
         }
     }
     """
     # Cython declaration: variadic function accepting any number of handlers
-    void many_exception_handler(...) except +*
+    void exception_dispatch(...) except +*
 
 
 cdef extern from "bclibc/exceptions.hpp" namespace "bclibc" nogil:
@@ -144,6 +206,12 @@ cdef extern from "bclibc/exceptions.hpp" namespace "bclibc" nogil:
 
 
 cdef inline void handle_OutOfRangeError(const BCLIBC_OutOfRangeError &e):
+    """
+    Converts BCLIBC_OutOfRangeError to Python OutOfRangeError.
+
+    Extracts distance and angle information from the C++ exception and
+    constructs an equivalent Python exception with converted units.
+    """
     from py_ballisticcalc.exceptions import OutOfRangeError
     raise OutOfRangeError(
         feet_from_c(e.requested_distance_ft),
@@ -154,6 +222,13 @@ cdef inline void handle_OutOfRangeError(const BCLIBC_OutOfRangeError &e):
 
 
 cdef inline void handle_ZeroFindingError(const BCLIBC_ZeroFindingError &e):
+    """
+    Converts BCLIBC_ZeroFindingError to Python ZeroFindingError.
+
+    Extracts convergence metrics from the C++ exception (error magnitude,
+    iteration count, last barrel elevation) and constructs equivalent
+    Python exception.
+    """
     from py_ballisticcalc.exceptions import ZeroFindingError
     raise ZeroFindingError(
         e.zero_finding_error,
@@ -164,6 +239,12 @@ cdef inline void handle_ZeroFindingError(const BCLIBC_ZeroFindingError &e):
 
 
 cdef inline void handle_InterceptError(const BCLIBC_InterceptionError &e):
+    """
+    Converts BCLIBC_InterceptionError to Python InterceptionError.
+
+    Wraps trajectory data (both raw and processed) from the C++ exception
+    into Python objects for inspection and debugging.
+    """
     from py_ballisticcalc.exceptions import InterceptionError
     cdef CythonizedBaseTrajData raw_data = CythonizedBaseTrajData()
     cdef object py_full_data = TrajectoryData_from_cpp(e.full_data)
@@ -172,14 +253,43 @@ cdef inline void handle_InterceptError(const BCLIBC_InterceptionError &e):
 
 
 cdef inline void handle_SolverRuntimeError(const BCLIBC_SolverRuntimeError &e):
+    """
+    Converts BCLIBC_SolverRuntimeError to Python SolverRuntimeError.
+
+    Base handler for generic solver errors. Acts as a catch-all for
+    solver exceptions that don't have more specific handlers.
+    """
     from py_ballisticcalc.exceptions import SolverRuntimeError
     raise SolverRuntimeError(e.what().decode("utf-8"))
 
 
 cdef inline void raise_solver_exception():
-    many_exception_handler(
-        handle_ZeroFindingError,
+    """
+    Raises appropriate Python exception from current C++ solver exception.
+
+    Dispatches the active C++ exception to the appropriate Python exception
+    handler based on runtime type identification. Handlers are ordered from
+    most specific to most general:
+
+    1. OutOfRangeError - Trajectory calculation exceeded valid distance range
+    2. ZeroFindingError - Barrel elevation convergence failed during zeroing
+    3. InterceptionError - Target interception calculation failed
+    4. SolverRuntimeError - Generic solver error (catch-all)
+
+    Usage:
+        try:
+            cpp_solver.calculate()
+        except:
+            raise_solver_exception()
+
+    Note:
+        This function should only be called from an except block where a
+        C++ exception is active. Calling it without an active exception
+        is a no-op.
+    """
+    exception_dispatch(
         handle_OutOfRangeError,
+        handle_ZeroFindingError,
         handle_InterceptError,
         handle_SolverRuntimeError,
     )

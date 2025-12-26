@@ -57,11 +57,8 @@ cdef class CythonizedBaseTrajSeq:
         """Return CythonizedBaseTrajData for the given index.  Supports negative indices."""
         cdef Py_ssize_t _i = <Py_ssize_t>idx
         cdef CythonizedBaseTrajData out = CythonizedBaseTrajData()
-        try:
-            out._this = self._this.get_item(_i)
-            return out
-        except Exception as e:
-            raise IndexError(f"IndexError: {e.what()}")
+        out._this = self._this[_i]
+        return out
 
     def interpolate_at(self, Py_ssize_t idx, str key_attribute, double key_value):
         """Interpolate using points (idx-1, idx, idx+1) keyed by key_attribute at key_value."""
