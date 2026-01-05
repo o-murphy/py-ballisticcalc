@@ -64,7 +64,6 @@ from typing import (
     runtime_checkable,
     SupportsFloat,
     SupportsInt,
-    Generic,
     Mapping,
     Any,
     Iterable,
@@ -207,7 +206,7 @@ class Comparable(Protocol):
     def __ge__(self, other: Self) -> bool: ...
 
 
-_GenericDimensionType = TypeVar("_GenericDimensionType", bound="GenericDimension")
+GenericDimensionT = TypeVar("GenericDimensionT", bound="GenericDimension")
 
 
 class Unit(IntEnum):
@@ -311,15 +310,15 @@ class Unit(IntEnum):
     def __repr__(self) -> str:
         return UnitPropsDict[self].name
 
-    def __call__(self: Self, value: Union[Number, _GenericDimensionType]) -> _GenericDimensionType:
+    def __call__(self: Self, value: Union[Number, GenericDimensionT]) -> GenericDimensionT:
         """Create a new unit instance using dot syntax.
 
         Args:
-            value (Union[Number, _GenericDimensionType]): Numeric value of the unit
+            value (Union[Number, GenericDimensionT]): Numeric value of the unit
                                                           or an existing GenericDimension instance.
 
         Returns:
-            _GenericDimensionType: An instance of the corresponding unit dimension.
+            GenericDimensionT: An instance of the corresponding unit dimension.
 
         Raises:
             UnitTypeError: If the unit type is not supported.
@@ -399,7 +398,7 @@ class Unit(IntEnum):
 
     def iterator(
         self, items: Sequence[Number], /, *, sort: bool = False, reverse: bool = False
-    ) -> Generator["GenericDimension[Any]", None, None]:
+    ) -> Generator[GenericDimension, None, None]:
         """Create a sorted sequence of `GenericDimension` objects from raw numeric values.
 
         Args:
@@ -408,7 +407,7 @@ class Unit(IntEnum):
             reverse: If set to `True`, the elements are sorted in descending order. Defaults to `False`.
 
         Yields:
-            _GenericDimensionType: A `GenericDimension` object of the specific type implied by `u`, in sorted order.
+            GenericDimensionT: A `GenericDimension` object of the specific type implied by `u`, in sorted order.
 
         Examples:
             >>> list(Unit.Foot.iterator([5, 1, 2], sort=True))  # Inferred as Iterable[Distance]
@@ -487,7 +486,7 @@ class Unit(IntEnum):
     @staticmethod
     def parse(
         input_: Union[str, Number], preferred: Optional[Union[Unit, str]] = None
-    ) -> Optional[Union[GenericDimension[Any], Any, Unit]]:
+    ) -> Optional[Union[GenericDimension, Any, Unit]]:
         """Parse a value with optional unit specification into a unit measurement.
 
         Args:
@@ -719,7 +718,7 @@ class Measurable(SupportsFloat, SupportsInt, Hashable, Comparable, Protocol):
     def raw_value(self) -> Number: ...
 
 
-class GenericDimension(Generic[_GenericDimensionType]):
+class GenericDimension:
     """Abstract base class for typed unit dimensions.
 
     This class provides the foundation for all unit measurements in the ballistic
