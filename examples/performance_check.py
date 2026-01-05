@@ -131,7 +131,7 @@ def run_check(calc_: Calculator, number: int):
     print(f"Total time: {total_time:.6f} seconds")
     print(f"Execution rate: {rate:.2f} calls per second")
 
-    if calc_._engine_class.__name__.lower().startswith("cythonized"):
+    if calc_._engine_factory.__name__.lower().startswith("cythonized"):
         key_attribute = 'position.x'
         target_value = shot_distance._feet
 

@@ -23,7 +23,6 @@ Note:
 """
 
 # Standard library imports
-from abc import abstractmethod
 from typing import Any, Optional, TypeVar, Union
 
 # Third-party imports
@@ -61,7 +60,7 @@ class EngineProtocol(Protocol):
         ```python
         from py_ballisticcalc.engines.base_engine import BaseEngineConfigDict
 
-        class MyEngine(EngineProtocol[BaseEngineConfigDict]):
+        class MyEngine(EngineProtocol):
             def __init__(self, config: BaseEngineConfigDict):
                 self.config = config
 
@@ -89,7 +88,6 @@ class EngineProtocol(Protocol):
         decorator enables isinstance() checks at runtime.
     """
 
-    @abstractmethod
     def integrate(
         self,
         shot_info: Shot,
@@ -157,7 +155,6 @@ class EngineProtocol(Protocol):
         """
         ...
 
-    @abstractmethod
     def zero_angle(self, shot_info: Shot, distance: Distance) -> Angular:
         """Calculate launch angle required to hit target at specified distance.
 
@@ -212,6 +209,6 @@ ConfigT = TypeVar("ConfigT", contravariant=True)
 
 @runtime_checkable
 class EngineFactoryProtocol(Protocol[ConfigT]):
-    def __call__(self, config: ConfigT) -> EngineProtocol:
+    def __call__(self, config: Optional[ConfigT]) -> EngineProtocol:
         """Make any Engine constructor or factory to match this signature"""
         ...

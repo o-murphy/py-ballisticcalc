@@ -38,6 +38,7 @@ See Also:
 """
 
 import math
+from typing import Optional
 import warnings
 
 from typing_extensions import Union, List, override
@@ -70,7 +71,7 @@ class RK4IntegrationEngine(BaseIntegrationEngine):
 
     DEFAULT_TIME_STEP = 0.0025
 
-    def __init__(self, config: BaseEngineConfigDict) -> None:
+    def __init__(self, config: Optional[BaseEngineConfigDict]) -> None:
         """Initialize the RK4 integration engine.
 
         Args:

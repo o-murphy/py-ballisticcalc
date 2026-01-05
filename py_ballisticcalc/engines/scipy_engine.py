@@ -547,7 +547,7 @@ class SciPyIntegrationEngine(BaseIntegrationEngine):
     HitZero: str = "Hit Zero"  # Specific non-exceptional termination reason
 
     @override
-    def __init__(self, config: SciPyEngineConfigDict) -> None:
+    def __init__(self, config: Optional[SciPyEngineConfigDict]) -> None:
         """Initialize the SciPy integration engine with configuration.
 
         Sets up the engine with the provided configuration dictionary, initializing

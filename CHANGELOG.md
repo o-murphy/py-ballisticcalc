@@ -8,14 +8,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
-- `interface::Calculator` now can be used as a context manager
+- `Calculator` now can be used as a context manager
 
 ### Changed
-- `interface::Calculator`: improved initialisation and type annotations
+- `Calculator` - improved initialisation and type annotations
 - engines `__init__` signature adjusted for consistency
 
 ### Fix
 - Type annotations fix in `unit.py`
+- `EngineProtocol` - type annotations fix
+- `Calculator` - type annotations fix
 
 ## [2.2.7] - 2025-12-26
 [:simple-github: GitHub release][2.2.7]

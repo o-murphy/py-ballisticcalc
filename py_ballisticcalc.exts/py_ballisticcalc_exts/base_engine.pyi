@@ -3,7 +3,7 @@ Type stubs for the compiled extension module `py_ballisticcalc_exts.base_engine`
 to improve IDE completion for the Cythonized API.
 """
 
-from typing import Any, Tuple
+from typing import Any, Optional, Tuple
 
 from py_ballisticcalc.generics.engine import EngineProtocol
 from py_ballisticcalc.engines.base_engine import BaseEngineConfigDict
@@ -25,7 +25,7 @@ class CythonizedBaseIntegrationEngine(EngineProtocol[BaseEngineConfigDict]):
     APEX_IS_MAX_RANGE_RADIANS: float
     ALLOWED_ZERO_ERROR_FEET: float
 
-    def __init__(self, config: BaseEngineConfigDict) -> None:
+    def __init__(self, config: Optional[BaseEngineConfigDict]) -> None:
         """
         Initializes the engine with the given configuration.
 
@@ -39,7 +39,7 @@ class CythonizedBaseIntegrationEngine(EngineProtocol[BaseEngineConfigDict]):
         """
         ...
 
-    def __cinit__(self, config: BaseEngineConfigDict) -> None:
+    def __cinit__(self, config: Optional[BaseEngineConfigDict]) -> None:
         """
         C/C++-level initializer for the engine.
         Override this method to setup integrate_func and other fields.

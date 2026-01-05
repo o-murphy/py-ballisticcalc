@@ -535,7 +535,7 @@ class BaseIntegrationEngine(ABC, EngineProtocol):
     ALLOWED_ZERO_ERROR_FEET: float = 1e-2  # Allowed range error (along sight line), in feet, for zero angle
     SEPARATE_ROW_TIME_DELTA: float = 1e-5  # Difference in seconds required for a TrajFlag to generate separate rows
 
-    def __init__(self, config: BaseEngineConfigDict):
+    def __init__(self, config: Optional[BaseEngineConfigDict]) -> None:
         """Initialize the class.
 
         Args:

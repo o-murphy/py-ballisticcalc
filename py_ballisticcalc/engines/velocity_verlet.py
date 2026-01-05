@@ -26,6 +26,7 @@ Algorithm Properties:
 """
 
 import math
+from typing import Optional
 import warnings
 
 from typing_extensions import Union, List, override
@@ -67,7 +68,7 @@ class VelocityVerletIntegrationEngine(BaseIntegrationEngine):
 
     DEFAULT_TIME_STEP = 0.001  # seconds
 
-    def __init__(self, config: BaseEngineConfigDict) -> None:
+    def __init__(self, config: Optional[BaseEngineConfigDict]) -> None:
         """Initialize the Velocity Verlet integration engine.
 
         Args:

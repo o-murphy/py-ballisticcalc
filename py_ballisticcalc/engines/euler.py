@@ -31,6 +31,7 @@ See Also:
 """
 
 import math
+from typing import Optional
 import warnings
 
 from typing_extensions import Union, List, override
@@ -64,7 +65,7 @@ class EulerIntegrationEngine(BaseIntegrationEngine):
 
     DEFAULT_TIME_STEP = 0.5
 
-    def __init__(self, config: BaseEngineConfigDict) -> None:
+    def __init__(self, config: Optional[BaseEngineConfigDict]) -> None:
         """Initialize the Euler integration engine.
 
         Args:
