@@ -754,8 +754,8 @@ class GenericDimension:
             value: Numeric value of the measurement in the specified units.
             units: Unit enum specifying the unit type for the value.
         """
-        self._value: Number = self.__class__.to_raw(value, units)
-        self._defined_units: Unit = units
+        self._value = self.__class__.to_raw(value, units)
+        self._defined_units = units
 
     def __str__(self) -> str:
         """Human-readable string representation of the unit measurement.
