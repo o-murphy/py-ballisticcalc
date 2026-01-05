@@ -12,7 +12,8 @@ Key Classes:
 
 from dataclasses import dataclass
 from importlib.metadata import entry_points, EntryPoint
-from typing import Generic, Any, overload
+from types import TracebackType
+from typing import Generic, Any, Self, overload
 import warnings
 
 from typing_extensions import Union, Optional, TypeVar, Generator
@@ -137,6 +138,36 @@ class Calculator(Generic[ConfigT]):
         self.config = config
         self.engine = engine
         self._engine_class = _EngineLoader.load(self.engine)
+
+    def __enter__(self) -> Self:
+        """Enter the runtime context for this Calculator.
+
+        Returns:
+            Self: The Calculator instance.
+
+        Example:
+            >>> with Calculator(config, RK4IntegrationEngine) as calc:
+            ...     result = calc.fire(shot, Distance.Meter(1000))
+        """
+        return self
+
+    def __exit__(
+        self,
+        exc_type: Optional[type[BaseException]],
+        exc_val: Optional[BaseException],
+        exc_tb: Optional[TracebackType],
+    ) -> None:
+        """Exit the runtime context.
+
+        This is a no-op as Calculator is stateless and thread-safe
+        by design — each method call creates an isolated engine instance.
+
+        Args:
+            exc_type: Exception type if an exception was raised, None otherwise.
+            exc_val: Exception instance if an exception was raised, None otherwise.
+            exc_tb: Traceback if an exception was raised, None otherwise.
+        """
+        pass
 
     @property
     def _engine_instance(self) -> EngineProtocol:
