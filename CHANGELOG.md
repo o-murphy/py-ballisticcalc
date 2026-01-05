@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fix
+- Type annotations fix in `unit.py`
+
 ## [2.2.7] - 2025-12-26
 [:simple-github: GitHub release][2.2.7]
 
