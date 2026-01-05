@@ -14,7 +14,7 @@ class CythonizedEulerIntegrationEngine(CythonizedBaseIntegrationEngine[BaseEngin
     # Class constant specific to Euler engine
     DEFAULT_STEP: float  # Match Python's EulerIntegrationEngine.DEFAULT_STEP
 
-    def __cinit__(self, _config: BaseEngineConfigDict) -> None:
+    def __cinit__(self, config: BaseEngineConfigDict) -> None:
         """
         C/C++-level initializer for the Euler engine.
         Sets up the Euler integration function pointer.

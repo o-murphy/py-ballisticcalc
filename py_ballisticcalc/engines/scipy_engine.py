@@ -547,7 +547,7 @@ class SciPyIntegrationEngine(BaseIntegrationEngine):
     HitZero: str = "Hit Zero"  # Specific non-exceptional termination reason
 
     @override
-    def __init__(self, _config: SciPyEngineConfigDict) -> None:
+    def __init__(self, config: SciPyEngineConfigDict) -> None:
         """Initialize the SciPy integration engine with configuration.
 
         Sets up the engine with the provided configuration dictionary, initializing
@@ -605,7 +605,7 @@ class SciPyIntegrationEngine(BaseIntegrationEngine):
         if not _HAS_SCIPY:
             raise ImportError("SciPy is required for SciPyIntegrationEngine.")
 
-        self._config: SciPyEngineConfig = create_scipy_engine_config(_config)  # type: ignore
+        self._config: SciPyEngineConfig = create_scipy_engine_config(config)  # type: ignore
         self.gravity_vector: Vector = Vector(0.0, self._config.cGravityConstant, 0.0)
         self.integration_step_count = 0  # Number of evaluations of diff_eq during ._integrate()
         self.trajectory_count = 0  # Number of trajectories calculated

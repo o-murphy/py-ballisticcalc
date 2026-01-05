@@ -41,7 +41,7 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass, asdict
 from enum import Enum, auto
 from bisect import bisect_left
-from typing_extensions import List, NamedTuple, Optional, Tuple, TypedDict, TypeVar, Union
+from typing_extensions import List, NamedTuple, Optional, Tuple, TypedDict, Union
 
 from py_ballisticcalc.conditions import Wind
 from py_ballisticcalc.constants import cGravityImperial
@@ -527,9 +527,6 @@ def with_max_drop_zero(method):
     return wrapper
 
 
-_BaseEngineConfigDictT = TypeVar("_BaseEngineConfigDictT", bound="BaseEngineConfigDict", covariant=True)
-
-
 # pylint: disable=too-many-instance-attributes
 class BaseIntegrationEngine(ABC, EngineProtocol):
     """All calculations are done in imperial units (feet and fps)."""
@@ -538,13 +535,13 @@ class BaseIntegrationEngine(ABC, EngineProtocol):
     ALLOWED_ZERO_ERROR_FEET: float = 1e-2  # Allowed range error (along sight line), in feet, for zero angle
     SEPARATE_ROW_TIME_DELTA: float = 1e-5  # Difference in seconds required for a TrajFlag to generate separate rows
 
-    def __init__(self, _config: _BaseEngineConfigDictT):
+    def __init__(self, config: BaseEngineConfigDict):
         """Initialize the class.
 
         Args:
             _config: The configuration object.
         """
-        self._config: BaseEngineConfig = create_base_engine_config(_config)
+        self._config: BaseEngineConfig = create_base_engine_config(config)
         self.gravity_vector: Vector = Vector(0.0, self._config.cGravityConstant, 0.0)
 
     def get_calc_step(self) -> float:

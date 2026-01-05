@@ -25,12 +25,12 @@ class CythonizedBaseIntegrationEngine(EngineProtocol[BaseEngineConfigDict]):
     APEX_IS_MAX_RANGE_RADIANS: float
     ALLOWED_ZERO_ERROR_FEET: float
 
-    def __init__(self, _config: BaseEngineConfigDict) -> None:
+    def __init__(self, config: BaseEngineConfigDict) -> None:
         """
         Initializes the engine with the given configuration.
 
         Args:
-            _config (BaseEngineConfig): The engine configuration.
+            config (BaseEngineConfig): The engine configuration.
 
         IMPORTANT:
             Avoid calling Python functions inside `__init__`!
@@ -39,7 +39,7 @@ class CythonizedBaseIntegrationEngine(EngineProtocol[BaseEngineConfigDict]):
         """
         ...
 
-    def __cinit__(self, _config: BaseEngineConfigDict) -> None:
+    def __cinit__(self, config: BaseEngineConfigDict) -> None:
         """
         C/C++-level initializer for the engine.
         Override this method to setup integrate_func and other fields.

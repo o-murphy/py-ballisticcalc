@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 - `interface::Calculator`: improved initialisation and type annotations
+- engines `__init__` signature adjusted for consistency
 
 ### Fix
 - Type annotations fix in `unit.py`
