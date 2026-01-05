@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- `interface::Calculator`: improved initialisation and type annotations
+
 ### Fix
 - Type annotations fix in `unit.py`
 

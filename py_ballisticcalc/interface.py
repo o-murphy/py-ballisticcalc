@@ -10,9 +10,9 @@ Key Classes:
     - _EngineLoader: Internal utility for discovering and loading engine plugins
 """
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from importlib.metadata import entry_points, EntryPoint
-from typing import Generic, Any
+from typing import Generic, Any, overload
 import warnings
 
 from typing_extensions import Union, Optional, TypeVar, Generator
@@ -24,7 +24,7 @@ from py_ballisticcalc.shot import Shot
 from py_ballisticcalc.trajectory_data import HitResult, TrajFlag
 from py_ballisticcalc.unit import Angular, Distance, PreferredUnits
 
-ConfigT = TypeVar("ConfigT", covariant=True)
+ConfigT = TypeVar("ConfigT")
 
 EngineFactoryProtocolType = EngineFactoryProtocol[Any]
 EngineFactoryProtocolEntry = Union[str, EngineFactoryProtocolType, None]
@@ -96,7 +96,6 @@ class _EngineLoader:
         raise TypeError("Invalid entry_point type, expected 'str' or 'EngineFactoryProtocol'")
 
 
-@dataclass
 class Calculator(Generic[ConfigT]):
     """The main interface for the ballistics calculator.
 
@@ -104,11 +103,30 @@ class Calculator(Generic[ConfigT]):
     by creating a new, isolated engine instance for every method call.
     """
 
-    config: Optional[ConfigT] = field(default=None)
-    engine: EngineFactoryProtocolEntry = field(default=DEFAULT_ENTRY)
-    _engine_class: EngineFactoryProtocol[Optional[ConfigT]] = field(init=False, repr=False, compare=False)
+    config: Optional[ConfigT]
+    engine: EngineFactoryProtocolEntry
+    _engine_class: EngineFactoryProtocol[Optional[ConfigT]]
 
-    def __post_init__(self) -> None:
+    # Type-safe overloads
+    @overload
+    def __init__(
+        self,
+        config: ConfigT,
+        engine: EngineFactoryProtocol[ConfigT],
+    ) -> None: ...
+
+    @overload
+    def __init__(
+        self,
+        config: Optional[Any] = None,
+        engine: Union[str, None] = None,
+    ) -> None: ...
+
+    def __init__(
+        self,
+        config: Optional[ConfigT] = None,
+        engine: EngineFactoryProtocolEntry = None,
+    ) -> None:
         """
         Loads the engine class.
 
@@ -116,6 +134,8 @@ class Calculator(Generic[ConfigT]):
         thread safety (especially in free-threaded Python), each method call
         must operate on a new, isolated engine instance.
         """
+        self.config = config
+        self.engine = engine
         self._engine_class = _EngineLoader.load(self.engine)
 
     @property
@@ -206,7 +226,7 @@ class Calculator(Generic[ConfigT]):
         self.config = state["config"]
         self.engine = state["engine"]
         # Manually run __post_init__ to load the _engine_class
-        self.__post_init__()
+        self._engine_class = _EngineLoader.load(self.engine)
 
     def barrel_elevation_for_target(self, shot: Shot, target_distance: Union[float, Distance]) -> Angular:
         """Calculate barrel elevation to hit target at zero_distance.
