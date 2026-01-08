@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.2.8] - 2026-01-26
+[:simple-github: GitHub release][2.2.8]
+
 ### Added
 - `Calculator` now can be used as a context manager
 
@@ -512,7 +515,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Issue #141
 - Trajectories that bend backwards
 
-[Unreleased]: https://github.com/o-murphy/py-ballisticcalc/compare/v2.2.7...HEAD
+[Unreleased]: https://github.com/o-murphy/py-ballisticcalc/compare/v2.2.8...HEAD
+[2.2.8]: https://github.com/o-murphy/py-ballisticcalc/releases/tag/v2.2.8
 [2.2.7]: https://github.com/o-murphy/py-ballisticcalc/releases/tag/v2.2.7
 [2.2.6.post1]: https://github.com/o-murphy/py-ballisticcalc/releases/tag/v2.2.6.post1
 [2.2.6]: https://github.com/o-murphy/py-ballisticcalc/releases/tag/v2.2.6
