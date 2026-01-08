@@ -17,10 +17,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `Calculator` - improved initialisation and type annotations
 - engines `__init__` signature adjusted for consistency
 
-### Fix
+### Fixed
 - Type annotations fix in `unit.py`
 - `EngineProtocol` - type annotations fix
 - `Calculator` - type annotations fix
+- Type annotations modernized to Python 3.10+ style (PEP 604, PEP 585)
+  - `Optional[X]` → `X | None`
+  - `Union[X, Y]` → `X | Y`
+  - `List[X]` → `list[X]`, `Dict[K, V]` → `dict[K, V]`, `Tuple[X, Y]` → `tuple[X, Y]`
+  - Removed unused typing imports
+  - Updated .pyi stub files for Cython extensions
+  - Added type guards in `uconv.py`
 
 ## [2.2.7] - 2025-12-26
 [:simple-github: GitHub release][2.2.7]

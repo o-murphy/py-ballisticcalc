@@ -18,7 +18,7 @@ References:
 """
 
 # Third-party imports
-from typing_extensions import Final
+from typing import Final
 
 cGravityImperial: Final[float] = 32.17405  # feet per second squared
 """Standard gravity (g) in ft/s²"""

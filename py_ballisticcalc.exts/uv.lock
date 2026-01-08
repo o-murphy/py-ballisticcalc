@@ -150,7 +150,6 @@ wheels = [
 
 [[package]]
 name = "py-ballisticcalc-exts"
-version = "2.2.5b2"
 source = { editable = "." }
 
 [package.optional-dependencies]

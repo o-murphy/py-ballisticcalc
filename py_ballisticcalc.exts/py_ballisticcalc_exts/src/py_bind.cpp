@@ -66,7 +66,7 @@ namespace bclibc
             if (item == nullptr)
             {
                 // Should not happen if size is correct, but handles unexpected issues.
-                PyErr_SetString(PyExc_IndexError, "MachList: List index out of range during iteration.");
+                PyErr_SetString(PyExc_IndexError, "MachList: list index out of range during iteration.");
                 // Vector destructor is automatically called, freeing any allocated memory.
                 return BCLIBC_MachList();
             }
@@ -139,7 +139,7 @@ namespace bclibc
             // but we keep the check for robustness.
             if (item == nullptr)
             {
-                PyErr_SetString(PyExc_IndexError, "Curve generation: List item access failed.");
+                PyErr_SetString(PyExc_IndexError, "Curve generation: list item access failed.");
                 return BCLIBC_Curve();
             }
 

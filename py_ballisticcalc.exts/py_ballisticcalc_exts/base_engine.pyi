@@ -3,7 +3,7 @@ Type stubs for the compiled extension module `py_ballisticcalc_exts.base_engine`
 to improve IDE completion for the Cythonized API.
 """
 
-from typing import Any, Optional, Tuple
+from typing import Any
 
 from py_ballisticcalc.generics.engine import EngineProtocol
 from py_ballisticcalc.engines.base_engine import BaseEngineConfigDict
@@ -25,7 +25,7 @@ class CythonizedBaseIntegrationEngine(EngineProtocol[BaseEngineConfigDict]):
     APEX_IS_MAX_RANGE_RADIANS: float
     ALLOWED_ZERO_ERROR_FEET: float
 
-    def __init__(self, config: Optional[BaseEngineConfigDict]) -> None:
+    def __init__(self, config: BaseEngineConfigDict | None) -> None:
         """
         Initializes the engine with the given configuration.
 
@@ -39,7 +39,7 @@ class CythonizedBaseIntegrationEngine(EngineProtocol[BaseEngineConfigDict]):
         """
         ...
 
-    def __cinit__(self, config: Optional[BaseEngineConfigDict]) -> None:
+    def __cinit__(self, config: BaseEngineConfigDict | None) -> None:
         """
         C/C++-level initializer for the engine.
         Override this method to setup integrate_func and other fields.
@@ -69,19 +69,19 @@ class CythonizedBaseIntegrationEngine(EngineProtocol[BaseEngineConfigDict]):
         ...
 
     def find_max_range(
-        self, shot_info: Shot, angle_bracket_deg: Tuple[float, float] = (0, 90)
-    ) -> Tuple[Distance, Angular]:
+        self, shot_info: Shot, angle_bracket_deg: tuple[float, float] = (0, 90)
+    ) -> tuple[Distance, Angular]:
         """
         Finds the maximum range along shot_info.look_angle,
         and the launch angle to reach it.
 
         Args:
             shot_info (Shot): The shot information.
-            angle_bracket_deg (Tuple[float, float], optional):
+            angle_bracket_deg (tuple[float, float], optional):
                 The angle bracket in degrees to search for max range. Defaults to (0, 90).
 
         Returns:
-            Tuple[Distance, Angular]: The maximum slant range and the launch angle to reach it.
+            tuple[Distance, Angular]: The maximum slant range and the launch angle to reach it.
         """
         ...
 
@@ -144,11 +144,11 @@ class CythonizedBaseIntegrationEngine(EngineProtocol[BaseEngineConfigDict]):
             shot_info (Shot): The shot information.
             max_range (Distance):
                 Maximum range of the trajectory (if float then treated as feet).
-            dist_step (Optional[Distance]):
+            dist_step (Distance | None):
                 Distance step for recording RANGE TrajectoryData rows.
             time_step (float, optional):
                 Time step for recording trajectory data. Defaults to 0.0.
-            filter_flags (Union[TrajFlag, int], optional):
+            filter_flags (TrajFlag | int, optional):
                 Flags to filter trajectory data. Defaults to TrajFlag.RANGE.
             dense_output (bool, optional):
                 If True, HitResult will save BaseTrajData for interpolating TrajectoryData.

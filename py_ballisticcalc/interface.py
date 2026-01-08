@@ -10,10 +10,11 @@ Key Classes:
     - _EngineLoader: Internal utility for discovering and loading engine plugins
 """
 
+from collections.abc import Set
 from dataclasses import dataclass
 from importlib.metadata import entry_points, EntryPoint
 from types import TracebackType
-from typing import Union, Optional, TypeVar, Generator, Any, overload
+from typing import TypeVar, Generator, Any, overload
 import warnings
 
 from typing_extensions import Self
@@ -28,7 +29,7 @@ from py_ballisticcalc.unit import Angular, Distance, PreferredUnits
 ConfigT = TypeVar("ConfigT")
 
 EngineFactoryProtocolType = EngineFactoryProtocol[Any]
-EngineFactoryProtocolEntry = Union[str, EngineFactoryProtocolType, None]
+EngineFactoryProtocolEntry = str | EngineFactoryProtocolType | None
 
 DEFAULT_ENTRY_SUFFIX = "_engine"
 DEFAULT_ENTRY_GROUP = "py_ballisticcalc"
@@ -41,7 +42,7 @@ class _EngineLoader:
     _entry_point_suffix = DEFAULT_ENTRY_SUFFIX
 
     @classmethod
-    def _get_entries_by_group(cls) -> set[EntryPoint]:
+    def _get_entries_by_group(cls) -> Set[EntryPoint]:
         all_entry_points = entry_points()
         if hasattr(all_entry_points, "select"):  # for importlib >= 5
             ballistic_entry_points = all_entry_points.select(group=cls._entry_point_group)
@@ -60,7 +61,7 @@ class _EngineLoader:
                 yield ep
 
     @classmethod
-    def _load_from_entry(cls, ep: EntryPoint) -> Optional[EngineFactoryProtocolType]:
+    def _load_from_entry(cls, ep: EntryPoint) -> EngineFactoryProtocolType | None:
         try:
             factory: EngineFactoryProtocolType = ep.load()
             if not isinstance(factory, EngineFactoryProtocol):
@@ -82,7 +83,7 @@ class _EngineLoader:
         if isinstance(entry_point, EngineFactoryProtocol):
             return entry_point  # type: ignore
         if isinstance(entry_point, str):
-            factory: Optional[EngineFactoryProtocolType] = None
+            factory: EngineFactoryProtocolType | None = None
             for ep in cls.iter_engines():
                 if ep.name == entry_point:
                     if factory := cls._load_from_entry(ep):
@@ -104,7 +105,7 @@ class Calculator:
     by creating a new, isolated engine instance for every method call.
     """
 
-    config: Optional[Any]
+    config: Any | None
     engine: EngineFactoryProtocolEntry
     _engine_factory: EngineFactoryProtocol[Any]
 
@@ -122,7 +123,7 @@ class Calculator:
         self,
         *,
         config: Any = None,
-        engine: Optional[str] = None,
+        engine: str | None = None,
     ) -> None: ...
 
     def __init__(
@@ -156,9 +157,9 @@ class Calculator:
 
     def __exit__(
         self,
-        exc_type: Optional[type[BaseException]],
-        exc_val: Optional[BaseException],
-        exc_tb: Optional[TracebackType],
+        exc_type: type[BaseException] | None,
+        exc_val: BaseException | None,
+        exc_tb: TracebackType | None,
     ) -> None:
         """Exit the runtime context.
 
@@ -262,7 +263,7 @@ class Calculator:
         # Manually run __post_init__ to load the _engine_class
         self._engine_factory = _EngineLoader.load(self.engine)
 
-    def barrel_elevation_for_target(self, shot: Shot, target_distance: Union[float, Distance]) -> Angular:
+    def barrel_elevation_for_target(self, shot: Shot, target_distance: float | Distance) -> Angular:
         """Calculate barrel elevation to hit target at zero_distance.
 
         Args:
@@ -280,7 +281,7 @@ class Calculator:
         total_elevation = self._engine_instance.zero_angle(shot, target_distance)
         return Angular.Radian((total_elevation >> Angular.Radian) - (shot.look_angle >> Angular.Radian))
 
-    def set_weapon_zero(self, shot: Shot, zero_distance: Union[float, Distance]) -> Angular:
+    def set_weapon_zero(self, shot: Shot, zero_distance: float | Distance) -> Angular:
         """Set shot.weapon.zero_elevation so that it hits a target at zero_distance.
 
         Args:
@@ -293,13 +294,13 @@ class Calculator:
     def fire(
         self,
         shot: Shot,
-        trajectory_range: Union[float, Distance],
-        trajectory_step: Optional[Union[float, Distance]] = None,
+        trajectory_range: float | Distance,
+        trajectory_step: float | Distance | None = None,
         *,
         extra_data: bool = False,
         dense_output: bool = False,
         time_step: float = 0.0,
-        flags: Union[TrajFlag, int] = TrajFlag.NONE,
+        flags: TrajFlag | int = TrajFlag.NONE,
         raise_range_error: bool = True,
     ) -> HitResult:
         """Calculate the trajectory for the given shot parameters.

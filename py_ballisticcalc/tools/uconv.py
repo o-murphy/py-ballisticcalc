@@ -25,18 +25,33 @@ parser.add_argument("-u", action="store_true", help="Print repr")
 parser.add_argument("-V", "--version", action="version", version=__version__)
 
 
-def main():
+def main() -> None:
     try:
         ns = parser.parse_args()
         inp = Unit.parse(ns.from_unit)
-        res = inp << Unit._parse_unit(ns.to_unit)
+        to_unit = Unit._parse_unit(ns.to_unit)
+
+        if inp is None:
+            parser.error(f"Could not parse from_unit: {ns.from_unit}")
+            return
+        if to_unit is None:
+            parser.error(f"Could not parse to_unit: {ns.to_unit}")
+            return
+
+        res = inp << to_unit
+
+        # Type guard: ensure res has the required attributes
+        if not hasattr(res, "unit_value") or not hasattr(res, "units"):
+            parser.error("Invalid conversion result")
+            return
+
         outs = []
         if ns.s:
             outs.append(res)
         if ns.n:
-            raw = res.unit_value
+            raw = res.unit_value  # type: ignore[union-attr]
             if ns.r:
-                outs.append(round(raw, res.units.accuracy))
+                outs.append(round(raw, res.units.accuracy))  # type: ignore[union-attr]
             else:
                 outs.append(raw)
         if ns.u:
@@ -49,7 +64,7 @@ def main():
     except TypeError as exc:
         parser.error(f"Invalid input: {str(exc)}")
     except Exception as exc:
-        parser.error(exc)
+        parser.error(str(exc))
 
 
 if __name__ == "__main__":

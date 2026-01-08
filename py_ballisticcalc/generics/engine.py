@@ -23,10 +23,10 @@ Note:
 """
 
 # Standard library imports
-from typing import Any, Optional, TypeVar, Union
+from typing import Any, TypeVar
 
 # Third-party imports
-from typing_extensions import Protocol, runtime_checkable
+from typing import Protocol, runtime_checkable
 
 # Local imports
 from py_ballisticcalc.shot import Shot
@@ -92,9 +92,9 @@ class EngineProtocol(Protocol):
         self,
         shot_info: Shot,
         max_range: Distance,
-        dist_step: Optional[Distance] = None,
+        dist_step: Distance | None = None,
         time_step: float = 0.0,
-        filter_flags: Union[TrajFlag, int] = TrajFlag.NONE,
+        filter_flags: TrajFlag | int = TrajFlag.NONE,
         dense_output: bool = False,
         **kwargs: Any,
     ) -> HitResult:
@@ -209,6 +209,6 @@ ConfigT = TypeVar("ConfigT", contravariant=True)
 
 @runtime_checkable
 class EngineFactoryProtocol(Protocol[ConfigT]):
-    def __call__(self, config: Optional[ConfigT]) -> EngineProtocol:
+    def __call__(self, config: ConfigT | None) -> EngineProtocol:
         """Make any Engine constructor or factory to match this signature"""
         ...

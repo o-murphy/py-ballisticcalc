@@ -1,7 +1,7 @@
 import bisect
 import math
 from deprecated import deprecated
-from typing import Callable, Any, Final, List, Tuple, Optional
+from typing import Callable, Any, Final
 
 from py_ballisticcalc.exceptions import RangeError
 from py_ballisticcalc.interface import Calculator
@@ -15,7 +15,7 @@ EARTH_GRAVITY_CONSTANT_IN_SI: Final[float] = 9.81  # Acceleration due to gravity
 @deprecated("Just call `Calculator.fire` directly with `raise_range_error=False`")
 def must_fire(
     interface: Calculator, shot: Shot, trajectory_range: Distance, extra_data: bool = False, **kwargs
-) -> Tuple[HitResult, Optional[RangeError]]:
+) -> tuple[HitResult, RangeError | None]:
     """Wrapper function to resolve RangeError and get HitResult."""
     t = interface.fire(shot, trajectory_range, **kwargs, extra_data=extra_data, raise_range_error=False)
     return t, t.error
@@ -101,7 +101,7 @@ def vacuum_velocity_to_zero(
 class BisectWrapper:
     """Wrapper for usage with bisect_for_condition."""
 
-    def __init__(self, array: List, callable: Callable) -> None:
+    def __init__(self, array: list, callable: Callable) -> None:
         self.array = array
         self.callable = callable
 
@@ -115,7 +115,7 @@ class BisectWrapper:
         return len(self.array)
 
 
-def bisect_for_monotonic_condition(arr: List, wrapper: BisectWrapper) -> int:
+def bisect_for_monotonic_condition(arr: list, wrapper: BisectWrapper) -> int:
     """Perform search in the ordered array for the first point, satisfying monotonic condition.
 
     A monotonic condition is a condition, which is consistently increasing or decreasing.
@@ -127,7 +127,7 @@ def bisect_for_monotonic_condition(arr: List, wrapper: BisectWrapper) -> int:
         If the condition for which you are searching is not monotonic, use `find_first_index_matching_condition`.
 
     Args:
-        arr: List of items to search through.
+        arr: list of items to search through.
         wrapper: BisectWrapper instance that provides condition checking functionality.
 
     Returns:
@@ -142,7 +142,7 @@ def bisect_for_monotonic_condition(arr: List, wrapper: BisectWrapper) -> int:
 
 
 def find_first_index_satisfying_monotonic_condition(
-    arr: List[TrajectoryData], monotonic_condition: Callable[[Any], bool]
+    arr: list[TrajectoryData], monotonic_condition: Callable[[Any], bool]
 ) -> int:
     # Find the index where the condition first becomes true
     # Uses bisect to find the first index satisfying the condition.
@@ -150,7 +150,7 @@ def find_first_index_satisfying_monotonic_condition(
 
 
 def find_nearest_index_satisfying_monotonic_condition(
-    arr: List[TrajectoryData], target_value: float, value_getter: Callable[[TrajectoryData], float]
+    arr: list[TrajectoryData], target_value: float, value_getter: Callable[[TrajectoryData], float]
 ) -> int:
     """Find the index of the object with the nearest value to the target value.
 

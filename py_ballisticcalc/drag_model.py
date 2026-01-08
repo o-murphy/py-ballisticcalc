@@ -22,10 +22,7 @@ allow for custom drag functions based on Mach number vs drag coefficient data.
 # Standard library imports
 import math
 from dataclasses import dataclass, field
-from typing import List, Optional, Tuple, Union
-
-# Third-party imports
-from typing_extensions import TypeAlias
+from typing import TypeAlias
 
 # Local imports
 from py_ballisticcalc.constants import cDegreesCtoK, cSpeedOfSoundMetric, cStandardTemperatureC
@@ -47,7 +44,7 @@ class DragDataPoint:
 
 
 # Type alias for drag table data formats
-DragTableDataType: TypeAlias = Union[List[DragTablePointDictType], List[DragDataPoint]]
+DragTableDataType: TypeAlias = list[DragTablePointDictType] | list[DragDataPoint]
 
 
 class DragModel:
@@ -61,7 +58,7 @@ class DragModel:
 
     Attributes:
         BC: Ballistic coefficient (scales drag model for a particular projectile)
-        drag_table: List of DragDataPoint objects defining Mach vs CD
+        drag_table: list of DragDataPoint objects defining Mach vs CD
         weight: Projectile weight (only needed for spin drift calculations)
         diameter: Projectile diameter (only needed for spin drift calculations)
         length: Projectile length (only needed for spin drift calculations)
@@ -77,9 +74,9 @@ class DragModel:
         self,
         bc: float,
         drag_table: DragTableDataType,
-        weight: Union[float, Weight] = 0,
-        diameter: Union[float, Distance] = 0,
-        length: Union[float, Distance] = 0,
+        weight: float | Weight = 0,
+        diameter: float | Distance = 0,
+        length: float | Distance = 0,
     ) -> None:
         """Initialize a drag model with ballistic coefficient and drag table.
 
@@ -160,7 +157,7 @@ class DragModel:
         return sectional_density(w, d)
 
 
-def make_data_points(drag_table: DragTableDataType) -> List[DragDataPoint]:
+def make_data_points(drag_table: DragTableDataType) -> list[DragDataPoint]:
     """Convert drag table from list of dictionaries to list of DragDataPoints.
 
     Handles both DragDataPoint objects and dictionaries with 'Mach' and 'CD' keys.
@@ -237,9 +234,9 @@ class BCPoint:
 
     BC: float = field(compare=False)
     Mach: float = field(compare=True)
-    V: Optional[Velocity] = field(compare=False)
+    V: Velocity | None = field(compare=False)
 
-    def __init__(self, BC: float, Mach: Optional[float] = None, V: Optional[Union[float, Velocity]] = None) -> None:
+    def __init__(self, BC: float, Mach: float | None = None, V: float | Velocity | None = None) -> None:
         """Initialize a BCPoint.
 
         Args:
@@ -275,11 +272,11 @@ class BCPoint:
 
 
 def DragModelMultiBC(
-    bc_points: List[BCPoint],
+    bc_points: list[BCPoint],
     drag_table: DragTableDataType,
-    weight: Union[float, Weight] = 0,
-    diameter: Union[float, Distance] = 0,
-    length: Union[float, Distance] = 0,
+    weight: float | Weight = 0,
+    diameter: float | Distance = 0,
+    length: float | Distance = 0,
 ) -> DragModel:
     """Create a drag model with multiple ballistic coefficients.
 
@@ -287,7 +284,7 @@ def DragModelMultiBC(
     interpolating between them to create a more accurate drag function.
 
     Args:
-        bc_points: List of BCPoint objects with BC measurements at specific velocities
+        bc_points: list of BCPoint objects with BC measurements at specific velocities
         drag_table: Standard drag table (G1, G7, etc.) or custom drag data
         weight: Projectile weight in grains (default: 0)
         diameter: Projectile diameter in inches (default: 0)
@@ -328,17 +325,17 @@ def DragModelMultiBC(
 
 
 def linear_interpolation(
-    x: Union[List[float], Tuple[float]], xp: Union[List[float], Tuple[float]], yp: Union[List[float], Tuple[float]]
-) -> Union[List[float], Tuple[float]]:
+    x: list[float] | tuple[float], xp: list[float] | tuple[float], yp: list[float] | tuple[float]
+) -> list[float] | tuple[float]:
     """Perform piecewise linear interpolation.
 
     Interpolates y-values for given x-values using linear interpolation between known data points.
     Handles extrapolation by returning boundary values for x-values outside the range of xp.
 
     Args:
-        x: List of points for which we want interpolated values
-        xp: List of existing x-coordinates (must be sorted in ascending order)
-        yp: List of corresponding y-values for existing points
+        x: list of points for which we want interpolated values
+        xp: list of existing x-coordinates (must be sorted in ascending order)
+        yp: list of corresponding y-values for existing points
 
     Returns:
         List of interpolated y-values corresponding to input x-values

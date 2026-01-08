@@ -3,7 +3,6 @@
 
 import os
 import platform
-from typing import Dict
 from setuptools import setup, Extension
 from pathlib import Path
 
@@ -164,7 +163,7 @@ else:
 
 
 # Dynamically create extensions for names in extension_names
-def collect_extensions(deps: Dict[str, Path], path: Path, *, is_cpp: bool = False):
+def collect_extensions(deps: dict[str, Path], path: Path, *, is_cpp: bool = False):
     extensions_local = []
     for name, deps in deps.items():
         # Use subproject-local .pyx paths (these exist during build)

@@ -7,7 +7,8 @@ preserve monotonicity and prevent overshoot using the Fritsch–Carlson slope li
 """
 
 from dataclasses import dataclass
-from typing_extensions import List, Literal, Sequence
+from typing import Literal
+from collections.abc import Sequence
 
 __all__ = [
     "InterpolationMethod",
@@ -209,11 +210,11 @@ class PchipPrepared:
         d: Cubic coefficients per segment (length n-1)
     """
 
-    x: List[float]
-    a: List[float]
-    b: List[float]
-    c: List[float]
-    d: List[float]
+    x: list[float]
+    a: list[float]
+    b: list[float]
+    c: list[float]
+    d: list[float]
 
 
 def _ensure_strictly_increasing(xs: Sequence[float]) -> None:

@@ -22,8 +22,6 @@ See Also:
     - py_ballisticcalc.unit.PreferredUnits: Default unit configuration
 """
 
-from typing import List
-
 from py_ballisticcalc import (
     Ammo,
     Atmo,
@@ -62,7 +60,7 @@ current_atmo: Atmo = Atmo(
 )
 
 # Define wind conditions
-current_winds: List[Wind] = [
+current_winds: list[Wind] = [
     Wind(
         velocity=2,  # wind speed in PreferredUnits.velocity
         direction_from=90,  # wind direction in degrees (90 = left to right crosswind)

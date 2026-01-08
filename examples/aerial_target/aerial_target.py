@@ -2,7 +2,7 @@
 import math
 from dataclasses import dataclass, field
 
-from typing_extensions import Union, NamedTuple, Tuple
+from typing import Union, NamedTuple
 
 from py_ballisticcalc import *
 
@@ -88,7 +88,7 @@ class AerialTarget:
         fields = ', '.join(f"{k}={v!r}" for k, v in preferred.items())
         return f"AerialTarget({fields})"
 
-    def at_time(self, time_of_flight: float) -> Tuple['AerialTarget', AerialTargetPosition]:
+    def at_time(self, time_of_flight: float) -> tuple['AerialTarget', AerialTargetPosition]:
         [
             velocity_fps,
             slant_distance_ft,

@@ -46,7 +46,6 @@ Note:
 """
 
 import logging
-from typing import Optional
 
 __all__ = (
     "logger",
@@ -107,7 +106,7 @@ logger.addHandler(console_handler)
 logger.setLevel(logging.INFO)
 
 # File handler (optional, added dynamically)
-file_handler: Optional[logging.FileHandler] = None
+file_handler: logging.FileHandler | None = None
 
 
 def enable_file_logging(filename: str = "debug.log") -> None:

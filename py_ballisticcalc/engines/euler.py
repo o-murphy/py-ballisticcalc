@@ -31,10 +31,9 @@ See Also:
 """
 
 import math
-from typing import Optional
 import warnings
 
-from typing_extensions import Union, List, override
+from typing_extensions import override
 
 from py_ballisticcalc.engines.base_engine import (
     BaseEngineConfigDict,
@@ -65,7 +64,7 @@ class EulerIntegrationEngine(BaseIntegrationEngine):
 
     DEFAULT_TIME_STEP = 0.5
 
-    def __init__(self, config: Optional[BaseEngineConfigDict]) -> None:
+    def __init__(self, config: BaseEngineConfigDict | None) -> None:
         """Initialize the Euler integration engine.
 
         Args:
@@ -135,7 +134,7 @@ class EulerIntegrationEngine(BaseIntegrationEngine):
         range_limit_ft: float,
         range_step_ft: float,
         time_step: float = 0.0,
-        filter_flags: Union[TrajFlag, int] = TrajFlag.NONE,
+        filter_flags: TrajFlag | int = TrajFlag.NONE,
         dense_output: bool = False,
         **kwargs,
     ) -> HitResult:
@@ -162,7 +161,7 @@ class EulerIntegrationEngine(BaseIntegrationEngine):
         _cMinimumAltitude = self._config.cMinimumAltitude
         coriolis_fn = props.coriolis.coriolis_acceleration_local if props.coriolis and props.coriolis.full_3d else None
 
-        step_data: List[BaseTrajData] = []  # Data for interpolation (if dense_output is enabled)
+        step_data: list[BaseTrajData] = []  # Data for interpolation (if dense_output is enabled)
         time: float = 0.0
         drag: float = 0.0
         mach: float = 0.0
