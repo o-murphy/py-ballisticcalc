@@ -539,7 +539,7 @@ class BaseIntegrationEngine(ABC, EngineProtocol):
         """Initialize the class.
 
         Args:
-            _config: The configuration object.
+            config: The configuration object.
         """
         self._config: BaseEngineConfig = create_base_engine_config(config)
         self.gravity_vector: Vector = Vector(0.0, self._config.cGravityConstant, 0.0)
