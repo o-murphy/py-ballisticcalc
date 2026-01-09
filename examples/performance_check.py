@@ -182,6 +182,7 @@ engines = {
     "verlet": "verlet_engine", 
     "cythonized_euler": "cythonized_euler_engine", 
     "cythonized_rk4": "cythonized_rk4_engine",
+    "cythonized_rk45": "py_ballisticcalc_exts.rk45_engine:CythonizedRK45IntegrationEngine",
     "scipy": "scipy_engine",
     "all": "all", 
 }
@@ -202,15 +203,7 @@ def main():
     parser.add_argument(
         "-e",
         help="engine", 
-        choices=[
-            "euler", 
-            "rk4", 
-            "verlet", 
-            "cythonized_euler", 
-            "cythonized_rk4",
-            "scipy",
-            "all", 
-        ], 
+        choices=engines.keys(), 
         default="rk4"
     )
     parser.add_argument("-m", help="SciPy method", choices=["RK23", "RK45", "DOP853", "Radau", "BDF", "LSODA"], default="RK45")
