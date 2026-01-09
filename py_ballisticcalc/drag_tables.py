@@ -29,18 +29,15 @@ Note:
     - Mach numbers typically range from 0.0 to 4.0+ for ballistic applications.
 """
 
-# Standard library imports
-from typing import List
-
 # Third-party imports
-from typing_extensions import TypedDict
+from typing import TypedDict
 
 
 # Type definitions
 DragTablePointDictType = TypedDict("DragTablePointDictType", {"Mach": float, "CD": float})
 
 # Standard drag tables with complete type annotations
-TableG1: List[DragTablePointDictType] = [
+TableG1: list[DragTablePointDictType] = [
     {"Mach": 0.00, "CD": 0.2629},
     {"Mach": 0.05, "CD": 0.2558},
     {"Mach": 0.10, "CD": 0.2487},
@@ -122,7 +119,7 @@ TableG1: List[DragTablePointDictType] = [
     {"Mach": 5.00, "CD": 0.4988},
 ]
 
-TableG7: List[DragTablePointDictType] = [
+TableG7: list[DragTablePointDictType] = [
     {"Mach": 0.00, "CD": 0.1198},
     {"Mach": 0.05, "CD": 0.1197},
     {"Mach": 0.10, "CD": 0.1196},
@@ -209,7 +206,7 @@ TableG7: List[DragTablePointDictType] = [
     {"Mach": 5.00, "CD": 0.1618},
 ]
 
-TableG2: List[DragTablePointDictType] = [
+TableG2: list[DragTablePointDictType] = [
     {"Mach": 0.00, "CD": 0.2303},
     {"Mach": 0.05, "CD": 0.2298},
     {"Mach": 0.10, "CD": 0.2287},
@@ -297,7 +294,7 @@ TableG2: List[DragTablePointDictType] = [
     {"Mach": 5.00, "CD": 0.1648},
 ]
 
-TableG5: List[DragTablePointDictType] = [
+TableG5: list[DragTablePointDictType] = [
     {"Mach": 0.00, "CD": 0.1710},
     {"Mach": 0.05, "CD": 0.1719},
     {"Mach": 0.10, "CD": 0.1727},
@@ -376,7 +373,7 @@ TableG5: List[DragTablePointDictType] = [
     {"Mach": 5.00, "CD": 0.2280},
 ]
 
-TableG6: List[DragTablePointDictType] = [
+TableG6: list[DragTablePointDictType] = [
     {"Mach": 0.00, "CD": 0.2617},
     {"Mach": 0.05, "CD": 0.2553},
     {"Mach": 0.10, "CD": 0.2491},
@@ -458,7 +455,7 @@ TableG6: List[DragTablePointDictType] = [
     {"Mach": 5.00, "CD": 0.1574},
 ]
 
-TableG8: List[DragTablePointDictType] = [
+TableG8: list[DragTablePointDictType] = [
     {"Mach": 0.00, "CD": 0.2105},
     {"Mach": 0.05, "CD": 0.2105},
     {"Mach": 0.10, "CD": 0.2104},
@@ -539,7 +536,7 @@ TableG8: List[DragTablePointDictType] = [
     {"Mach": 5.00, "CD": 0.1713},
 ]
 
-TableGI: List[DragTablePointDictType] = [
+TableGI: list[DragTablePointDictType] = [
     {"Mach": 0.00, "CD": 0.2282},
     {"Mach": 0.05, "CD": 0.2282},
     {"Mach": 0.10, "CD": 0.2282},
@@ -623,7 +620,7 @@ TableGI: List[DragTablePointDictType] = [
     {"Mach": 5.00, "CD": 0.4082},
 ]
 
-TableGS: List[DragTablePointDictType] = [
+TableGS: list[DragTablePointDictType] = [
     {"Mach": 0.00, "CD": 0.4662},
     {"Mach": 0.05, "CD": 0.4689},
     {"Mach": 0.10, "CD": 0.4717},
@@ -707,7 +704,7 @@ TableGS: List[DragTablePointDictType] = [
     {"Mach": 4.00, "CD": 0.9280},
 ]
 
-TableRA4: List[DragTablePointDictType] = [
+TableRA4: list[DragTablePointDictType] = [
     {"Mach": 0.0, "CD": 0.2283},
     {"Mach": 0.05, "CD": 0.2283},
     {"Mach": 0.1, "CD": 0.2282},
@@ -798,7 +795,7 @@ TableRA4: List[DragTablePointDictType] = [
 ]
 
 
-def get_drag_tables_names() -> List[str]:
+def get_drag_tables_names() -> list[str]:
     """List all available drag table names.
 
     Returns:
@@ -809,7 +806,7 @@ def get_drag_tables_names() -> List[str]:
         >>> 'TableG1' in tables
         True
     """
-    names: List[str] = []
+    names: list[str] = []
     for attr_name, value in globals().items():
         if not attr_name.startswith("Table"):
             continue

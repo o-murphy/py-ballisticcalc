@@ -55,38 +55,34 @@ from math import pi
 import re
 from typing import (
     NamedTuple,
-    Union,
     TypeVar,
-    Optional,
-    Tuple,
     Final,
     Protocol,
     runtime_checkable,
     SupportsFloat,
     SupportsInt,
-    Generic,
     Mapping,
     Any,
     Iterable,
-    Sequence,
     Callable,
     Generator,
+    TypeAlias,
 )
-from collections.abc import Hashable
+from collections.abc import Sequence, Hashable
 
 from types import NotImplementedType  # type: ignore[attr-defined]
 
-from typing_extensions import Self, TypeAlias, override
+from typing_extensions import Self, override
 
 # Local imports
 from py_ballisticcalc.exceptions import UnitTypeError, UnitConversionError, UnitAliasError
 from py_ballisticcalc.logger import logger
 
-Number: TypeAlias = Union[float, int]
+Number: TypeAlias = float | int
 MAX_ITERATIONS: int = 1_000_000  # Prevent runaway Unit.counter()
 
 
-def counter(start: Number = 0, step: Number = 1, end: Optional[Number] = None) -> Iterable[Number]:
+def counter(start: Number = 0, step: Number = 1, end: Number | None = None) -> Iterable[Number]:
     """Generate a sequence of numbers with optional bounds.
 
     Creates an arithmetic sequence starting at 'start' with a constant increment/decrement of 'step'.
@@ -152,7 +148,7 @@ def iterator(
     /,
     *,
     sort: bool = False,
-    key: Optional[Callable[[Number], Any]] = None,
+    key: Callable[[Number], Any] | None = None,
     reverse: bool = False,
 ) -> Generator[Number, None, None]:
     """Create a generator from a sequence of numbers with optional sorting.
@@ -207,7 +203,7 @@ class Comparable(Protocol):
     def __ge__(self, other: Self) -> bool: ...
 
 
-_GenericDimensionType = TypeVar("_GenericDimensionType", bound="GenericDimension")
+GenericDimensionT = TypeVar("GenericDimensionT", bound="GenericDimension")
 
 
 class Unit(IntEnum):
@@ -311,15 +307,15 @@ class Unit(IntEnum):
     def __repr__(self) -> str:
         return UnitPropsDict[self].name
 
-    def __call__(self: Self, value: Union[Number, _GenericDimensionType]) -> _GenericDimensionType:
+    def __call__(self: Self, value: Number | GenericDimensionT) -> GenericDimensionT:
         """Create a new unit instance using dot syntax.
 
         Args:
-            value (Union[Number, _GenericDimensionType]): Numeric value of the unit
+            value (Number | GenericDimensionT): Numeric value of the unit
                                                           or an existing GenericDimension instance.
 
         Returns:
-            _GenericDimensionType: An instance of the corresponding unit dimension.
+            GenericDimensionT: An instance of the corresponding unit dimension.
 
         Raises:
             UnitTypeError: If the unit type is not supported.
@@ -349,7 +345,7 @@ class Unit(IntEnum):
         return obj  # type: ignore
 
     def counter(
-        self, start: Number, step: Number, end: Optional[Number] = None, include_end: bool = True
+        self, start: Number, step: Number, end: Number | None = None, include_end: bool = True
     ) -> Generator[GenericDimension, None, None]:
         """Generate a finite or infinite sequence of `GenericDimension` objects.
 
@@ -382,11 +378,11 @@ class Unit(IntEnum):
         """
         _start: GenericDimension = self(start)
         _step: GenericDimension = self(step)
-        _end: Optional[GenericDimension] = self(end) if end is not None else None
+        _end: GenericDimension | None = self(end) if end is not None else None
 
         _start_raw: Number = _start.raw_value
         _step_raw: Number = _step.raw_value
-        _end_raw: Optional[Number] = _end.raw_value if _end is not None else None
+        _end_raw: Number | None = _end.raw_value if _end is not None else None
 
         if _end_raw is not None and include_end:
             _end_raw += _step_raw
@@ -399,7 +395,7 @@ class Unit(IntEnum):
 
     def iterator(
         self, items: Sequence[Number], /, *, sort: bool = False, reverse: bool = False
-    ) -> Generator["GenericDimension[Any]", None, None]:
+    ) -> Generator[GenericDimension, None, None]:
         """Create a sorted sequence of `GenericDimension` objects from raw numeric values.
 
         Args:
@@ -408,7 +404,7 @@ class Unit(IntEnum):
             reverse: If set to `True`, the elements are sorted in descending order. Defaults to `False`.
 
         Yields:
-            _GenericDimensionType: A `GenericDimension` object of the specific type implied by `u`, in sorted order.
+            GenericDimensionT: A `GenericDimension` object of the specific type implied by `u`, in sorted order.
 
         Examples:
             >>> list(Unit.Foot.iterator([5, 1, 2], sort=True))  # Inferred as Iterable[Distance]
@@ -419,7 +415,7 @@ class Unit(IntEnum):
             yield self(v)
 
     @staticmethod
-    def _find_unit_by_alias(string_to_find: str, aliases: UnitAliasesType) -> Optional[Unit]:
+    def _find_unit_by_alias(string_to_find: str, aliases: UnitAliasesType) -> Unit | None:
         """Find a unit type by searching through a dictionary that maps strings to Units.
 
         Args:
@@ -438,7 +434,7 @@ class Unit(IntEnum):
         return None  # If not found, return None or handle it as needed
 
     @staticmethod
-    def _parse_unit(input_: str) -> Union[Unit, None, Any]:
+    def _parse_unit(input_: str) -> Unit | None | Any:
         """Parse a unit type from a string representation.
 
         Attempts to parse a string into a Unit enum using multiple methods:
@@ -485,9 +481,7 @@ class Unit(IntEnum):
             return None
 
     @staticmethod
-    def parse(
-        input_: Union[str, Number], preferred: Optional[Union[Unit, str]] = None
-    ) -> Optional[Union[GenericDimension[Any], Any, Unit]]:
+    def parse(input_: str | Number, preferred: Unit | str | None = None) -> GenericDimension | Any | Unit | None:
         """Parse a value with optional unit specification into a unit measurement.
 
         Args:
@@ -626,7 +620,7 @@ UnitPropsDict: Mapping[Unit, UnitProps] = {
 }
 # --8<-- [end:UnitPropsDict]
 
-UnitAliasesType: TypeAlias = Mapping[Tuple[str, ...], Unit]
+UnitAliasesType: TypeAlias = Mapping[tuple[str, ...], Unit]
 
 # mkdocs.pymdown.snippet marker: --8<-- [start:UnitAliases]
 UnitAliases: UnitAliasesType = {
@@ -719,7 +713,7 @@ class Measurable(SupportsFloat, SupportsInt, Hashable, Comparable, Protocol):
     def raw_value(self) -> Number: ...
 
 
-class GenericDimension(Generic[_GenericDimensionType]):
+class GenericDimension:
     """Abstract base class for typed unit dimensions.
 
     This class provides the foundation for all unit measurements in the ballistic
@@ -755,8 +749,8 @@ class GenericDimension(Generic[_GenericDimensionType]):
             value: Numeric value of the measurement in the specified units.
             units: Unit enum specifying the unit type for the value.
         """
-        self._value: Number = self.__class__.to_raw(value, units)
-        self._defined_units: Unit = units
+        self._value = self.__class__.to_raw(value, units)
+        self._defined_units = units
 
     def __str__(self) -> str:
         """Human-readable string representation of the unit measurement.
@@ -992,7 +986,7 @@ class GenericDimension(Generic[_GenericDimensionType]):
             return self.__class__.new_from_raw(self._value * other, self.units)
         return NotImplemented
 
-    def __truediv__(self, other: Union[Number, Self]) -> Self | float | NotImplementedType:
+    def __truediv__(self, other: Number | Self) -> Self | float | NotImplementedType:
         """Divide this measurement: `this / other`.
 
         Returns:
@@ -1012,7 +1006,7 @@ class GenericDimension(Generic[_GenericDimensionType]):
             return float(self._value) / float(other.raw_value)
         return NotImplemented
 
-    def __itruediv__(self, other: Union[Number, Self]) -> Self | float | NotImplementedType:
+    def __itruediv__(self, other: Number | Self) -> Self | float | NotImplementedType:
         """In-place division by a number: `this /= other`.
 
         Returns:
@@ -1033,7 +1027,7 @@ class GenericDimension(Generic[_GenericDimensionType]):
             return float(self._value) / float(other.raw_value)
         return NotImplemented
 
-    def __add__(self, other: Union[Number, Self]) -> Self | NotImplementedType:
+    def __add__(self, other: Number | Self) -> Self | NotImplementedType:
         """Add a number (interpreted in current units) or same dimension value: `this + other`.
 
         Returns:
@@ -1055,7 +1049,7 @@ class GenericDimension(Generic[_GenericDimensionType]):
             return self.__class__.new_from_raw(raw, self.units)
         return NotImplemented
 
-    def __sub__(self, other: Union[Number, Self]) -> Self | NotImplementedType:
+    def __sub__(self, other: Number | Self) -> Self | NotImplementedType:
         """Subtract a number (interpreted in current units) or same dimension value: `this - other`."""
         if isinstance(other, (int, float)):
             raw = self._value - float(other) * self._units_to_raw_delta()
@@ -1072,7 +1066,7 @@ class GenericDimension(Generic[_GenericDimensionType]):
             return self.__class__.new_from_raw(raw, self.units)
         return NotImplemented
 
-    def __iadd__(self, other: Union[Number, Self]) -> Self | NotImplementedType:
+    def __iadd__(self, other: Number | Self) -> Self | NotImplementedType:
         """In-place addition with number or same-dimension value: `this += other`."""
         if isinstance(other, (int, float)):
             self._value = self._value + float(other) * self._units_to_raw_delta()
@@ -1082,7 +1076,7 @@ class GenericDimension(Generic[_GenericDimensionType]):
             return self
         return NotImplemented
 
-    def __isub__(self, other: Union[Number, Self]) -> Self | NotImplementedType:
+    def __isub__(self, other: Number | Self) -> Self | NotImplementedType:
         """In-place subtraction with number or same-dimension value: `this -= other`."""
         if isinstance(other, (int, float)):
             self._value = self._value - float(other) * self._units_to_raw_delta()
@@ -1536,7 +1530,7 @@ class PreferredUnits(metaclass=PreferredUnitsMeta):  # pylint: disable=too-many-
                 setattr(cls, f.name, f.default_factory())  # type: ignore
 
     @classmethod
-    def set(cls, **kwargs: Union[Unit, str, bool]):
+    def set(cls, **kwargs: Unit | str | bool):
         """Set preferred units from keyword arguments.
 
         Allows bulk configuration of preferred units using either Unit enum values or string aliases.

@@ -28,7 +28,7 @@ Algorithm Properties:
 import math
 import warnings
 
-from typing_extensions import Union, List, override
+from typing_extensions import override
 
 from py_ballisticcalc.engines.base_engine import (
     BaseEngineConfigDict,
@@ -67,7 +67,7 @@ class VelocityVerletIntegrationEngine(BaseIntegrationEngine):
 
     DEFAULT_TIME_STEP = 0.001  # seconds
 
-    def __init__(self, config: BaseEngineConfigDict) -> None:
+    def __init__(self, config: BaseEngineConfigDict | None) -> None:
         """Initialize the Velocity Verlet integration engine.
 
         Args:
@@ -111,7 +111,7 @@ class VelocityVerletIntegrationEngine(BaseIntegrationEngine):
         range_limit_ft: float,
         range_step_ft: float,
         time_step: float = 0.0,
-        filter_flags: Union[TrajFlag, int] = TrajFlag.NONE,
+        filter_flags: TrajFlag | int = TrajFlag.NONE,
         dense_output: bool = False,
         **kwargs,
     ) -> HitResult:
@@ -135,8 +135,8 @@ class VelocityVerletIntegrationEngine(BaseIntegrationEngine):
         _cMaximumDrop = -abs(self._config.cMaximumDrop)  # Ensure it's negative
         _cMinimumAltitude = self._config.cMinimumAltitude
 
-        ranges: List[TrajectoryData] = []  # Record of TrajectoryData points to return
-        step_data: List[BaseTrajData] = []  # Data for interpolation (if dense_output is enabled)
+        ranges: list[TrajectoryData] = []  # Record of TrajectoryData points to return
+        step_data: list[BaseTrajData] = []  # Data for interpolation (if dense_output is enabled)
         time: float = 0.0
         drag: float = 0.0
         mach: float = 0.0

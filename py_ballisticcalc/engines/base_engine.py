@@ -35,13 +35,13 @@ See Also:
 
 from __future__ import annotations
 import math
-from typing import Sequence
 import warnings
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, asdict
 from enum import Enum, auto
 from bisect import bisect_left
-from typing_extensions import List, NamedTuple, Optional, Tuple, TypedDict, TypeVar, Union
+from typing import NamedTuple, TypedDict
+from collections.abc import Sequence
 
 from py_ballisticcalc.conditions import Wind
 from py_ballisticcalc.constants import cGravityImperial
@@ -165,16 +165,16 @@ class BaseEngineConfigDict(TypedDict, total=False):
         - create_base_engine_config: Factory function for BaseEngineConfig creation
     """
 
-    cZeroFindingAccuracy: Optional[float]
-    cMaxIterations: Optional[int]
-    cMinimumAltitude: Optional[float]
-    cMaximumDrop: Optional[float]
-    cMinimumVelocity: Optional[float]
-    cGravityConstant: Optional[float]
-    cStepMultiplier: Optional[float]
+    cZeroFindingAccuracy: float | None
+    cMaxIterations: int | None
+    cMinimumAltitude: float | None
+    cMaximumDrop: float | None
+    cMinimumVelocity: float | None
+    cGravityConstant: float | None
+    cStepMultiplier: float | None
 
 
-def create_base_engine_config(interface_config: Optional[BaseEngineConfigDict] = None) -> BaseEngineConfig:
+def create_base_engine_config(interface_config: BaseEngineConfigDict | None = None) -> BaseEngineConfig:
     """Create BaseEngineConfig from optional dictionary configuration.
 
     This factory function creates a BaseEngineConfig instance by merging
@@ -217,22 +217,22 @@ class TrajectoryDataFilter:
     """
 
     EPSILON = 1e-6  # Range difference (in feet) significant enough to justify interpolation for data
-    records: List[TrajectoryData] = []
+    records: list[TrajectoryData] = []
     props: ShotProps
-    filter: Union[TrajFlag, int]
+    filter: TrajFlag | int
     time_of_last_record: float
     time_step: float
     range_step: float
     range_limit: float
-    prev_data: Optional[BaseTrajData]
-    prev_prev_data: Optional[BaseTrajData]
+    prev_data: BaseTrajData | None
+    prev_prev_data: BaseTrajData | None
     next_record_distance: float
     look_angle_tangent: float
 
     def __init__(
         self,
         props: ShotProps,
-        filter_flags: Union[TrajFlag, int],
+        filter_flags: TrajFlag | int,
         range_limit: float = 0.0,
         range_step: float = 0.0,
         time_step: float = 0.0,
@@ -264,7 +264,7 @@ class TrajectoryDataFilter:
                 # If shot starts below zero and barrel points below line of sight we won't look for any crossings.
                 self.filter &= ~(TrajFlag.ZERO | TrajFlag.MRT)
 
-    def finalize(self, termination_reason: Optional[str] = None):
+    def finalize(self, termination_reason: str | None = None):
         if termination_reason:
             if self.prev_data is not None and (not self.records or self.prev_data.time > self.records[-1].time):
                 self.records.append(
@@ -280,9 +280,9 @@ class TrajectoryDataFilter:
 
     def record(self, new_data: BaseTrajData):
         """For each integration step, creates TrajectoryData records based on filter/step criteria."""
-        rows: List[Tuple[BaseTrajData, Union[TrajFlag, int]]] = []
+        rows: list[tuple[BaseTrajData, TrajFlag | int]] = []
 
-        def add_row(data: BaseTrajData, flag: Union[TrajFlag, int]):
+        def add_row(data: BaseTrajData, flag: TrajFlag | int):
             """Add data, keeping `rows` sorted by time."""
             idx = bisect_left(rows, data.time, key=lambda r: r[0].time)
             if idx < len(rows):
@@ -422,7 +422,7 @@ class _WindSock:
     current_index: int
     next_range: float
 
-    def __init__(self, winds: Optional[Sequence[Wind]]):
+    def __init__(self, winds: Sequence[Wind]):
         """Initialize the _WindSock class.
 
         Args:
@@ -431,7 +431,7 @@ class _WindSock:
         self.winds: Sequence[Wind] = winds or tuple()
         self.current_index: int = 0
         self.next_range: float = Wind.MAX_DISTANCE_FEET
-        self._last_vector_cache: Union[Vector, None] = None
+        self._last_vector_cache: Vector | None = None
         self._length = len(self.winds)
 
         # Initialize cache correctly
@@ -487,10 +487,10 @@ class _ZeroCalcStatus(Enum):
 class ZeroFindingProps(NamedTuple):
     status: _ZeroCalcStatus
     look_angle_rad: float
-    slant_range_ft: Optional[float] = None
-    target_x_ft: Optional[float] = None
-    target_y_ft: Optional[float] = None
-    start_height_ft: Optional[float] = None
+    slant_range_ft: float | None = None
+    target_x_ft: float | None = None
+    target_y_ft: float | None = None
+    start_height_ft: float | None = None
 
 
 def with_no_minimum_velocity(method):
@@ -527,9 +527,6 @@ def with_max_drop_zero(method):
     return wrapper
 
 
-_BaseEngineConfigDictT = TypeVar("_BaseEngineConfigDictT", bound="BaseEngineConfigDict", covariant=True)
-
-
 # pylint: disable=too-many-instance-attributes
 class BaseIntegrationEngine(ABC, EngineProtocol):
     """All calculations are done in imperial units (feet and fps)."""
@@ -538,13 +535,13 @@ class BaseIntegrationEngine(ABC, EngineProtocol):
     ALLOWED_ZERO_ERROR_FEET: float = 1e-2  # Allowed range error (along sight line), in feet, for zero angle
     SEPARATE_ROW_TIME_DELTA: float = 1e-5  # Difference in seconds required for a TrajFlag to generate separate rows
 
-    def __init__(self, _config: _BaseEngineConfigDictT):
+    def __init__(self, config: BaseEngineConfigDict | None) -> None:
         """Initialize the class.
 
         Args:
-            _config: The configuration object.
+            config: The configuration object.
         """
-        self._config: BaseEngineConfig = create_base_engine_config(_config)
+        self._config: BaseEngineConfig = create_base_engine_config(config)
         self.gravity_vector: Vector = Vector(0.0, self._config.cGravityConstant, 0.0)
 
     def get_calc_step(self) -> float:
@@ -562,8 +559,8 @@ class BaseIntegrationEngine(ABC, EngineProtocol):
         return props
 
     def find_max_range(
-        self, shot_info: Shot, angle_bracket_deg: Tuple[float, float] = (0, 90)
-    ) -> Tuple[Distance, Angular]:
+        self, shot_info: Shot, angle_bracket_deg: tuple[float, float] = (0, 90)
+    ) -> tuple[Distance, Angular]:
         """Find the maximum range along shot_info.look_angle, and the launch angle to reach it.
 
         Args:
@@ -587,8 +584,8 @@ class BaseIntegrationEngine(ABC, EngineProtocol):
     @with_max_drop_zero
     @with_no_minimum_velocity
     def _find_max_range(
-        self, props: ShotProps, angle_bracket_deg: Tuple[float, float] = (0, 90)
-    ) -> Tuple[Distance, Angular]:
+        self, props: ShotProps, angle_bracket_deg: tuple[float, float] = (0, 90)
+    ) -> tuple[Distance, Angular]:
         """Find the maximum slant range via golden-section search.
 
         Args:
@@ -1003,9 +1000,9 @@ class BaseIntegrationEngine(ABC, EngineProtocol):
         self,
         shot_info: Shot,
         max_range: Distance,
-        dist_step: Optional[Distance] = None,
+        dist_step: Distance | None = None,
         time_step: float = 0.0,
-        filter_flags: Union[TrajFlag, int] = TrajFlag.NONE,
+        filter_flags: TrajFlag | int = TrajFlag.NONE,
         dense_output: bool = False,
         **kwargs,
     ) -> HitResult:
@@ -1038,7 +1035,7 @@ class BaseIntegrationEngine(ABC, EngineProtocol):
         range_limit_ft: float,
         range_step_ft: float,
         time_step: float = 0.0,
-        filter_flags: Union[TrajFlag, int] = TrajFlag.NONE,
+        filter_flags: TrajFlag | int = TrajFlag.NONE,
         dense_output: bool = False,
         **kwargs,
     ) -> HitResult:

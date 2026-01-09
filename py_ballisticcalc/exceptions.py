@@ -76,7 +76,7 @@ Solver-Related Exceptions:
 
 from __future__ import annotations
 
-from typing import List, Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from py_ballisticcalc.trajectory_data import TrajectoryData, BaseTrajData
@@ -155,14 +155,14 @@ class RangeError(SolverRuntimeError):
     """
 
     reason: str
-    incomplete_trajectory: List[TrajectoryData]
-    last_distance: Optional[Distance]
+    incomplete_trajectory: list[TrajectoryData]
+    last_distance: Distance | None
 
     MinimumVelocityReached: str = "Minimum velocity reached"
     MaximumDropReached: str = "Maximum drop reached"
     MinimumAltitudeReached: str = "Minimum altitude reached"
 
-    def __init__(self, reason: str, ranges: List[TrajectoryData]):
+    def __init__(self, reason: str, ranges: list[TrajectoryData]):
         """
         Parameters:
         - reason: The error reason
@@ -192,8 +192,8 @@ class OutOfRangeError(SolverRuntimeError):
     def __init__(
         self,
         requested_distance: Distance,
-        max_range: Optional[Distance] = None,
-        look_angle: Optional[Angular] = None,
+        max_range: Distance | None = None,
+        look_angle: Angular | None = None,
         note: str = "",
     ):
         self.requested_distance = requested_distance

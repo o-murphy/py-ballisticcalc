@@ -38,7 +38,7 @@ Typical Usage:
 from __future__ import annotations
 
 import math
-from typing import Union, NamedTuple
+from typing import NamedTuple
 
 __all__ = ("Vector", "ZERO_VECTOR")
 
@@ -315,7 +315,7 @@ class Vector(NamedTuple):
             return Vector(self.x, self.y, self.z)
         return self.mul_by_const(1.0 / m)
 
-    def __mul__(self, other: Union[int, float, Vector]) -> Union[float, Vector]:  # type: ignore[override]
+    def __mul__(self, other: int | float | Vector) -> float | Vector:  # type: ignore[override]
         """Multiplication operator supporting both scalar and vector multiplication.
 
         Provides overloaded multiplication supporting both scalar multiplication
@@ -473,7 +473,7 @@ class Vector(NamedTuple):
         """
         return self.subtract(other)
 
-    def __rmul__(self, other: Union[int, float, Vector]) -> Union[float, Vector]:  # type: ignore[override]
+    def __rmul__(self, other: int | float | Vector) -> float | Vector:  # type: ignore[override]
         """Right multiplication operator for vector operations.
 
         Enables multiplication when this vector is on the right side of the * operator.
@@ -498,7 +498,7 @@ class Vector(NamedTuple):
         """
         return self.__mul__(other)
 
-    def __imul__(self, other: Union[int, float, Vector]) -> Union[float, Vector]:  # type: ignore[override]
+    def __imul__(self, other: int | float | Vector) -> float | Vector:  # type: ignore[override]
         """In-place multiplication operator for vector operations.
 
         Provides *= operator support. Since Vector is immutable (NamedTuple),

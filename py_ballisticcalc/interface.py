@@ -10,12 +10,14 @@ Key Classes:
     - _EngineLoader: Internal utility for discovering and loading engine plugins
 """
 
-from dataclasses import dataclass, field
+from collections.abc import Set
+from dataclasses import dataclass
 from importlib.metadata import entry_points, EntryPoint
-from typing import Generic, Any
+from types import TracebackType
+from typing import TypeVar, Generator, Any, overload
 import warnings
 
-from typing_extensions import Union, Optional, TypeVar, Generator
+from typing_extensions import Self
 
 from py_ballisticcalc import RK4IntegrationEngine
 from py_ballisticcalc.generics.engine import EngineProtocol, EngineFactoryProtocol
@@ -24,10 +26,10 @@ from py_ballisticcalc.shot import Shot
 from py_ballisticcalc.trajectory_data import HitResult, TrajFlag
 from py_ballisticcalc.unit import Angular, Distance, PreferredUnits
 
-ConfigT = TypeVar("ConfigT", covariant=True)
+ConfigT = TypeVar("ConfigT")
 
 EngineFactoryProtocolType = EngineFactoryProtocol[Any]
-EngineFactoryProtocolEntry = Union[str, EngineFactoryProtocolType, None]
+EngineFactoryProtocolEntry = str | EngineFactoryProtocolType | None
 
 DEFAULT_ENTRY_SUFFIX = "_engine"
 DEFAULT_ENTRY_GROUP = "py_ballisticcalc"
@@ -40,7 +42,7 @@ class _EngineLoader:
     _entry_point_suffix = DEFAULT_ENTRY_SUFFIX
 
     @classmethod
-    def _get_entries_by_group(cls) -> set[EntryPoint]:
+    def _get_entries_by_group(cls) -> Set[EntryPoint]:
         all_entry_points = entry_points()
         if hasattr(all_entry_points, "select"):  # for importlib >= 5
             ballistic_entry_points = all_entry_points.select(group=cls._entry_point_group)
@@ -59,7 +61,7 @@ class _EngineLoader:
                 yield ep
 
     @classmethod
-    def _load_from_entry(cls, ep: EntryPoint) -> Optional[EngineFactoryProtocolType]:
+    def _load_from_entry(cls, ep: EntryPoint) -> EngineFactoryProtocolType | None:
         try:
             factory: EngineFactoryProtocolType = ep.load()
             if not isinstance(factory, EngineFactoryProtocol):
@@ -81,7 +83,7 @@ class _EngineLoader:
         if isinstance(entry_point, EngineFactoryProtocol):
             return entry_point  # type: ignore
         if isinstance(entry_point, str):
-            factory: Optional[EngineFactoryProtocolType] = None
+            factory: EngineFactoryProtocolType | None = None
             for ep in cls.iter_engines():
                 if ep.name == entry_point:
                     if factory := cls._load_from_entry(ep):
@@ -96,19 +98,40 @@ class _EngineLoader:
         raise TypeError("Invalid entry_point type, expected 'str' or 'EngineFactoryProtocol'")
 
 
-@dataclass
-class Calculator(Generic[ConfigT]):
+class Calculator:
     """The main interface for the ballistics calculator.
 
     This class provides thread-safe access to the underlying integration engines
     by creating a new, isolated engine instance for every method call.
     """
 
-    config: Optional[ConfigT] = field(default=None)
-    engine: EngineFactoryProtocolEntry = field(default=DEFAULT_ENTRY)
-    _engine_class: EngineFactoryProtocol[Optional[ConfigT]] = field(init=False, repr=False, compare=False)
+    config: Any | None
+    engine: EngineFactoryProtocolEntry
+    _engine_factory: EngineFactoryProtocol[Any]
 
-    def __post_init__(self) -> None:
+    # Type-safe overloads
+    @overload
+    def __init__(
+        self,
+        *,
+        config: ConfigT,
+        engine: EngineFactoryProtocol[ConfigT],
+    ) -> None: ...
+
+    @overload
+    def __init__(
+        self,
+        *,
+        config: Any = None,
+        engine: str | None = None,
+    ) -> None: ...
+
+    def __init__(
+        self,
+        *,
+        config: Any = None,
+        engine: EngineFactoryProtocolEntry = None,
+    ) -> None:
         """
         Loads the engine class.
 
@@ -116,7 +139,39 @@ class Calculator(Generic[ConfigT]):
         thread safety (especially in free-threaded Python), each method call
         must operate on a new, isolated engine instance.
         """
-        self._engine_class = _EngineLoader.load(self.engine)
+        self.config = config
+        self.engine = engine
+        self._engine_factory = _EngineLoader.load(self.engine)
+
+    def __enter__(self) -> Self:
+        """Enter the runtime context for this Calculator.
+
+        Returns:
+            Self: The Calculator instance.
+
+        Example:
+            >>> with Calculator(config, RK4IntegrationEngine) as calc:
+            ...     result = calc.fire(shot, Distance.Meter(1000))
+        """
+        return self
+
+    def __exit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc_val: BaseException | None,
+        exc_tb: TracebackType | None,
+    ) -> None:
+        """Exit the runtime context.
+
+        This is a no-op as Calculator is stateless and thread-safe
+        by design — each method call creates an isolated engine instance.
+
+        Args:
+            exc_type: Exception type if an exception was raised, None otherwise.
+            exc_val: Exception instance if an exception was raised, None otherwise.
+            exc_tb: Traceback if an exception was raised, None otherwise.
+        """
+        pass
 
     @property
     def _engine_instance(self) -> EngineProtocol:
@@ -149,7 +204,7 @@ class Calculator(Generic[ConfigT]):
             EngineProtocol[Any]: A new, single-use engine instance configured
                                  with the `Calculator`'s current settings.
         """
-        return self._engine_class(self.config)
+        return self._engine_factory(self.config)
 
     def __getattr__(self, item: str) -> Any:
         """Delegate attribute access to the underlying engine instance.
@@ -206,9 +261,9 @@ class Calculator(Generic[ConfigT]):
         self.config = state["config"]
         self.engine = state["engine"]
         # Manually run __post_init__ to load the _engine_class
-        self.__post_init__()
+        self._engine_factory = _EngineLoader.load(self.engine)
 
-    def barrel_elevation_for_target(self, shot: Shot, target_distance: Union[float, Distance]) -> Angular:
+    def barrel_elevation_for_target(self, shot: Shot, target_distance: float | Distance) -> Angular:
         """Calculate barrel elevation to hit target at zero_distance.
 
         Args:
@@ -226,7 +281,7 @@ class Calculator(Generic[ConfigT]):
         total_elevation = self._engine_instance.zero_angle(shot, target_distance)
         return Angular.Radian((total_elevation >> Angular.Radian) - (shot.look_angle >> Angular.Radian))
 
-    def set_weapon_zero(self, shot: Shot, zero_distance: Union[float, Distance]) -> Angular:
+    def set_weapon_zero(self, shot: Shot, zero_distance: float | Distance) -> Angular:
         """Set shot.weapon.zero_elevation so that it hits a target at zero_distance.
 
         Args:
@@ -239,13 +294,13 @@ class Calculator(Generic[ConfigT]):
     def fire(
         self,
         shot: Shot,
-        trajectory_range: Union[float, Distance],
-        trajectory_step: Optional[Union[float, Distance]] = None,
+        trajectory_range: float | Distance,
+        trajectory_step: float | Distance | None = None,
         *,
         extra_data: bool = False,
         dense_output: bool = False,
         time_step: float = 0.0,
-        flags: Union[TrajFlag, int] = TrajFlag.NONE,
+        flags: TrajFlag | int = TrajFlag.NONE,
         raise_range_error: bool = True,
     ) -> HitResult:
         """Calculate the trajectory for the given shot parameters.

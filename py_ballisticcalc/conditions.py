@@ -34,8 +34,6 @@ import math
 import warnings
 from dataclasses import dataclass
 
-from typing_extensions import Optional, Tuple, Union
-
 from py_ballisticcalc.constants import (
     cStandardDensity,
     cLapseRateKperFoot,
@@ -97,11 +95,11 @@ class Atmo:  # pylint: disable=too-many-instance-attributes
     # ---------------------------------------------------------------------
     def __init__(
         self,
-        altitude: Optional[Union[float, Distance]] = None,
-        pressure: Optional[Union[float, Pressure]] = None,
-        temperature: Optional[Union[float, Temperature]] = None,
+        altitude: float | Distance | None = None,
+        pressure: float | Pressure | None = None,
+        temperature: float | Temperature | None = None,
         humidity: float = 0.0,
-        powder_t: Optional[Union[float, Temperature]] = None,
+        powder_t: float | Temperature | None = None,
     ):
         """Initialize an `Atmo` instance.
 
@@ -252,7 +250,7 @@ class Atmo:  # pylint: disable=too-many-instance-attributes
             1 + cLapseRateKperFoot * (altitude - self._a0) / (self._t0 + cDegreesCtoK), cPressureExponent
         )
 
-    def get_density_and_mach_for_altitude(self, altitude: float) -> Tuple[float, float]:
+    def get_density_and_mach_for_altitude(self, altitude: float) -> tuple[float, float]:
         """Compute density ratio and Mach (fps) for the specified altitude.
 
         Uses lapse-rate interpolation unless altitude is within 30 ft of the base altitude,
@@ -262,7 +260,7 @@ class Atmo:  # pylint: disable=too-many-instance-attributes
             altitude: Altitude above mean sea level (ft).
 
         Returns:
-            Tuple (density_ratio, mach_fps).
+            tuple (density_ratio, mach_fps).
         """
         if math.fabs(self._a0 - altitude) < 30:  # fast path near base altitude
             return self._density_ratio, self._mach
@@ -303,8 +301,8 @@ class Atmo:  # pylint: disable=too-many-instance-attributes
 
     @staticmethod
     def icao(
-        altitude: Union[float, Distance] = 0,
-        temperature: Optional[Temperature] = None,
+        altitude: float | Distance = 0,
+        temperature: Temperature | None = None,
         humidity: float = cStandardHumidity,
     ) -> Atmo:
         """Create a standard ICAO atmosphere at altitude.
@@ -425,9 +423,7 @@ class Atmo:  # pylint: disable=too-many-instance-attributes
 class Vacuum(Atmo):
     """Vacuum atmosphere (zero density => zero drag)."""
 
-    def __init__(
-        self, altitude: Optional[Union[float, Distance]] = None, temperature: Optional[Union[float, Temperature]] = None
-    ):
+    def __init__(self, altitude: float | Distance | None = None, temperature: float | Temperature | None = None):
         super().__init__(altitude, 0, temperature, 0)
         self._pressure = PreferredUnits.pressure(0)
         self._density_ratio = 0
@@ -456,11 +452,11 @@ class Wind:
 
     def __init__(
         self,
-        velocity: Optional[Union[float, Velocity]] = None,
-        direction_from: Optional[Union[float, Angular]] = None,
-        until_distance: Optional[Union[float, Distance]] = None,
+        velocity: float | Velocity | None = None,
+        direction_from: float | Angular | None = None,
+        until_distance: float | Distance | None = None,
         *,
-        max_distance_feet: Optional[float] = cMaxWindDistanceFeet,
+        max_distance_feet: float | None = cMaxWindDistanceFeet,
     ):
         """
         Create a new wind instance with given parameters.
@@ -534,19 +530,17 @@ class Coriolis:
 
     sin_lat: float
     cos_lat: float
-    sin_az: Optional[float]
-    cos_az: Optional[float]
-    range_east: Optional[float]
-    range_north: Optional[float]
-    cross_east: Optional[float]
-    cross_north: Optional[float]
+    sin_az: float | None
+    cos_az: float | None
+    range_east: float | None
+    range_north: float | None
+    cross_east: float | None
+    cross_north: float | None
     flat_fire_only: bool
     muzzle_velocity_fps: float
 
     @classmethod
-    def create(
-        cls, latitude: Optional[float], azimuth: Optional[float], muzzle_velocity_fps: float
-    ) -> Optional[Coriolis]:
+    def create(cls, latitude: float | None, azimuth: float | None, muzzle_velocity_fps: float) -> Coriolis | None:
         """Build a `Coriolis` helper for a shot when latitude is available.
 
         Args:
@@ -631,7 +625,7 @@ class Coriolis:
         accel_cross = accel_east * self.cross_east + accel_north * self.cross_north
         return Vector(accel_range, accel_up, accel_cross)
 
-    def flat_fire_offsets(self, time: float, distance_ft: float, drop_ft: float) -> Tuple[float, float]:
+    def flat_fire_offsets(self, time: float, distance_ft: float, drop_ft: float) -> tuple[float, float]:
         """Estimate flat-fire vertical and horizontal corrections.
 
         Args:

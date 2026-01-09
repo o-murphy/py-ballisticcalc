@@ -58,8 +58,10 @@ from __future__ import annotations
 import math
 import warnings
 from dataclasses import dataclass, asdict
-from typing import Any, Callable, Literal, Sequence, TYPE_CHECKING
 from bisect import bisect_left, bisect_right
+from typing import Any, Callable, Literal, TYPE_CHECKING
+from typing_extensions import override
+from collections.abc import Sequence
 
 # Third-party imports
 try:
@@ -76,8 +78,6 @@ try:
     _HAS_SCIPY = True
 except ImportError:
     _HAS_SCIPY = False
-
-from typing_extensions import List, Optional, Tuple, Union, override
 
 # Local imports
 from py_ballisticcalc.conditions import Wind
@@ -289,7 +289,7 @@ class ScipyWindSock:
 
     __slots__ = ("winds", "_distances", "_vectors", "_single_wind")
 
-    def __init__(self, winds: Optional[Union[Wind, Sequence[Wind]]]) -> None:
+    def __init__(self, winds: Wind | Sequence[Wind | None]) -> None:
         """Initialize WindSock with optimized data structures for fast lookups.
 
         Args:
@@ -300,10 +300,10 @@ class ScipyWindSock:
             Wind objects are sorted by range during initialization, so the
             order provided doesn't matter. This ensures binary search correctness.
         """
-        self.winds: Optional[list[Wind]] = None
+        self.winds: list[Wind] | None = None
         self._distances: list[float] = []
         self._vectors: list[Vector] = []
-        self._single_wind: Optional[Vector] = None
+        self._single_wind: Vector | None = None
 
         # Normalize input to list
         if winds is None:
@@ -329,7 +329,7 @@ class ScipyWindSock:
                 self._distances = [w.until_distance.raw_value for w in self.winds]
                 self._vectors = [w.vector for w in self.winds]
 
-    def wind_at_distance(self, distance_ft: float) -> Optional[Vector]:
+    def wind_at_distance(self, distance_ft: float) -> Vector | None:
         """Get wind vector at specified downrange distance (in feet).
 
         This method is called thousands of times during trajectory integration,
@@ -513,7 +513,7 @@ class SciPyEngineConfigDict(BaseEngineConfigDict, total=False):
 DEFAULT_SCIPY_ENGINE_CONFIG: SciPyEngineConfig = SciPyEngineConfig()
 
 
-def create_scipy_engine_config(interface_config: Optional[BaseEngineConfigDict] = None) -> SciPyEngineConfig:
+def create_scipy_engine_config(interface_config: BaseEngineConfigDict | None = None) -> SciPyEngineConfig:
     config = asdict(DEFAULT_SCIPY_ENGINE_CONFIG)
     if interface_config is not None and isinstance(interface_config, dict):
         config.update(interface_config)
@@ -547,7 +547,7 @@ class SciPyIntegrationEngine(BaseIntegrationEngine):
     HitZero: str = "Hit Zero"  # Specific non-exceptional termination reason
 
     @override
-    def __init__(self, _config: SciPyEngineConfigDict) -> None:
+    def __init__(self, config: SciPyEngineConfigDict | None) -> None:
         """Initialize the SciPy integration engine with configuration.
 
         Sets up the engine with the provided configuration dictionary, initializing
@@ -591,7 +591,7 @@ class SciPyIntegrationEngine(BaseIntegrationEngine):
             - gravity_vector: Gravitational acceleration vector
             - integration_step_count: Counter for integration steps (debugging)
             - trajectory_count: Counter for calculated trajectories (debugging)
-            - eval_points: List of evaluation points (debugging/analysis)
+            - eval_points: list of evaluation points (debugging/analysis)
 
         Note:
             The configuration is processed through create_scipy_engine_config()
@@ -605,17 +605,17 @@ class SciPyIntegrationEngine(BaseIntegrationEngine):
         if not _HAS_SCIPY:
             raise ImportError("SciPy is required for SciPyIntegrationEngine.")
 
-        self._config: SciPyEngineConfig = create_scipy_engine_config(_config)  # type: ignore
+        self._config: SciPyEngineConfig = create_scipy_engine_config(config)  # type: ignore
         self.gravity_vector: Vector = Vector(0.0, self._config.cGravityConstant, 0.0)
         self.integration_step_count = 0  # Number of evaluations of diff_eq during ._integrate()
         self.trajectory_count = 0  # Number of trajectories calculated
-        self.eval_points: List[float] = []  # Points at which diff_eq is called
+        self.eval_points: list[float] = []  # Points at which diff_eq is called
 
     @override
     @with_no_minimum_velocity
     def _find_max_range(
-        self, props: ShotProps, angle_bracket_deg: Tuple[float, float] = (0.0, 90.0)
-    ) -> Tuple[Distance, Angular]:
+        self, props: ShotProps, angle_bracket_deg: tuple[float, float] = (0.0, 90.0)
+    ) -> tuple[Distance, Angular]:
         """Find the maximum range along the look_angle and the launch angle to reach it.
 
         Args:
@@ -776,7 +776,7 @@ class SciPyIntegrationEngine(BaseIntegrationEngine):
         range_limit_ft: float,
         range_step_ft: float,
         time_step: float = 0.0,
-        filter_flags: Union[TrajFlag, int] = TrajFlag.NONE,
+        filter_flags: TrajFlag | int = TrajFlag.NONE,
         dense_output: bool = False,
         stop_at_zero: bool = False,
         **kwargs,
@@ -805,7 +805,7 @@ class SciPyIntegrationEngine(BaseIntegrationEngine):
         _cMaximumDrop = -abs(self._config.cMaximumDrop)  # Ensure it's negative
         _cMinimumAltitude = self._config.cMinimumAltitude
 
-        ranges: List[TrajectoryData] = []  # Record of TrajectoryData points to return
+        ranges: list[TrajectoryData] = []  # Record of TrajectoryData points to return
 
         wind_sock = ScipyWindSock(props.winds)
         coriolis_fn = props.coriolis.coriolis_acceleration_local if props.coriolis and props.coriolis.full_3d else None
@@ -882,7 +882,7 @@ class SciPyIntegrationEngine(BaseIntegrationEngine):
             return v - _cMinimumVelocity
 
         # TODO: If _cMinimumVelocity<=0 then: either don't add this event, or always return 0.
-        traj_events: List[SciPyEvent] = [event_max_range, event_max_drop, event_min_velocity]
+        traj_events: list[SciPyEvent] = [event_max_range, event_max_drop, event_min_velocity]
 
         slant_sine = math.sin(props.look_angle_rad)
         slant_cosine = math.cos(props.look_angle_rad)
@@ -941,7 +941,7 @@ class SciPyIntegrationEngine(BaseIntegrationEngine):
         # region Find requested TrajectoryData points
         if sol.sol is not None and sol.status != -1:
 
-            def make_row(t: float, state: np.ndarray, flag: Union[TrajFlag, int]) -> TrajectoryData:
+            def make_row(t: float, state: np.ndarray, flag: TrajFlag | int) -> TrajectoryData:
                 """Helper function to create a TrajectoryData row."""
                 position = Vector(*state[0:3])
                 velocity = Vector(*state[3:6])
@@ -968,8 +968,8 @@ class SciPyIntegrationEngine(BaseIntegrationEngine):
 
                 # region Root-finding approach to interpolate for desired x values:
                 warnings.simplefilter("once")  # Only issue one warning
-                states_at_x: List[np.ndarray] = []
-                t_at_x: List[float] = []
+                states_at_x: list[np.ndarray] = []
+                t_at_x: list[float] = []
                 for x_target in desired_xs:
                     idx = np.searchsorted(x_vals, x_target)  # Find bracketing indices for x_target
                     if idx < 0 or idx >= len(x_vals):

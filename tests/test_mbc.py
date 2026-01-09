@@ -1,7 +1,6 @@
 """Unit tests of multiple-BC drag models and interpolation of drag curves"""
 import math
 import random
-from typing import List, Tuple
 
 import pytest
 
@@ -152,7 +151,7 @@ class TestShotPropsDrag:
         return dp["CD"] if isinstance(dp, dict) else dp.CD
 
     @staticmethod
-    def _segment_pairs(table) -> List[Tuple[object, object]]:
+    def _segment_pairs(table) -> list[tuple[object, object]]:
         return list(zip(table[:-1], table[1:]))
 
     @pytest.mark.parametrize(

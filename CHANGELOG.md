@@ -7,6 +7,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.2.8] - 2026-01-26
+[:simple-github: GitHub release][2.2.8]
+
+### Added
+- `Calculator` now can be used as a context manager
+
+### Changed
+- `Calculator` - improved initialisation and type annotations
+- engines `__init__` signature adjusted for consistency
+
+### Fixed
+- Type annotations fix in `unit.py`
+- `EngineProtocol` - type annotations fix
+- `Calculator` - type annotations fix
+- Type annotations modernized to Python 3.10+ style (PEP 604, PEP 585)
+  - `Optional[X]` → `X | None`
+  - `Union[X, Y]` → `X | Y`
+  - `List[X]` → `list[X]`, `Dict[K, V]` → `dict[K, V]`, `Tuple[X, Y]` → `tuple[X, Y]`
+  - Removed unused typing imports
+  - Updated .pyi stub files for Cython extensions
+  - Added type guards in `uconv.py`
+
 ## [2.2.7] - 2025-12-26
 [:simple-github: GitHub release][2.2.7]
 
@@ -500,7 +522,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Issue #141
 - Trajectories that bend backwards
 
-[Unreleased]: https://github.com/o-murphy/py-ballisticcalc/compare/v2.2.7...HEAD
+[Unreleased]: https://github.com/o-murphy/py-ballisticcalc/compare/v2.2.8...HEAD
+[2.2.8]: https://github.com/o-murphy/py-ballisticcalc/releases/tag/v2.2.8
 [2.2.7]: https://github.com/o-murphy/py-ballisticcalc/releases/tag/v2.2.7
 [2.2.6.post1]: https://github.com/o-murphy/py-ballisticcalc/releases/tag/v2.2.6.post1
 [2.2.6]: https://github.com/o-murphy/py-ballisticcalc/releases/tag/v2.2.6

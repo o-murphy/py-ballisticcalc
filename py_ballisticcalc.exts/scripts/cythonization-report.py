@@ -10,7 +10,6 @@ import re
 from datetime import datetime
 import argparse  # Import the argparse module
 from pathlib import Path
-from typing import Tuple, Dict
 
 from bs4 import BeautifulSoup
 
@@ -174,7 +173,7 @@ def format_result(total_lines, total_score_sum, python_overhead_lines):
     }
 
 
-def compose_results(results: Dict[Path, Tuple[float, float, float]]) -> (float, float, float):
+def compose_results(results: dict[Path, tuple[float, float, float]]) -> tuple[float, float, float]:
     sum_col1 = 0.0
     sum_col2 = 0.0
     sum_col3 = 0.0
@@ -187,7 +186,7 @@ def compose_results(results: Dict[Path, Tuple[float, float, float]]) -> (float, 
     return (sum_col1, sum_col2, sum_col3)
 
 
-def print_result(name: str, result: Tuple[float, float, float]):
+def print_result(name: str, result: tuple[float, float, float]):
     result = format_result(*result)
     print(name)
     print(f"Total Score Sum: {result['total_score_sum']}, Possible Score: {result['total_lines'] * 100}")
@@ -198,7 +197,7 @@ def print_result(name: str, result: Tuple[float, float, float]):
     print()
 
 
-def generate_html_report(results: Dict[Path, Tuple[float, float, float]]) -> str:
+def generate_html_report(results: dict[Path, tuple[float, float, float]]) -> str:
     """
     Generates a pretty HTML report summarizing Cythonization percentages for multiple files.
 
@@ -349,7 +348,7 @@ def generate_html_report(results: Dict[Path, Tuple[float, float, float]]) -> str
     return html_content
 
 
-def generate_markdown_report(results: Dict[Path, Tuple[float, float, float]]) -> str:
+def generate_markdown_report(results: dict[Path, tuple[float, float, float]]) -> str:
     """
     Generates a Markdown report summarizing Cythonization percentages for multiple files.
 

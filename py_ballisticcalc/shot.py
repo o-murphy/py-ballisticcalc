@@ -17,7 +17,8 @@ from __future__ import annotations
 import math
 from dataclasses import dataclass, field
 
-from typing_extensions import List, Optional, Sequence, Tuple, Union
+from collections.abc import Sequence
+
 from py_ballisticcalc.conditions import Atmo, Coriolis, Wind
 from py_ballisticcalc.drag_model import DragDataPoint
 from py_ballisticcalc.interpolation import PchipPrepared, pchip_prepare, pchip_eval
@@ -37,7 +38,7 @@ class Shot:
         ammo: Ammo used for shot.
         atmo: Atmosphere in effect during shot.
         weapon: Weapon used for shot.
-        winds: List of Wind in effect during shot, sorted by `.until_distance`.
+        winds: list of Wind in effect during shot, sorted by `.until_distance`.
         look_angle (slant_angle): Angle of sight line relative to horizontal.
             If `look_angle != 0` then any target in sight crosshairs will be at a different altitude:
                 With target_distance = sight distance to a target (i.e., as through a rangefinder):
@@ -58,26 +59,26 @@ class Shot:
     ammo: Ammo
     atmo: Atmo
     weapon: Weapon
-    _winds: List[Wind]  # Stored sorted by .until_distance
+    _winds: list[Wind]  # Stored sorted by .until_distance
     look_angle: Angular
     relative_angle: Angular
     cant_angle: Angular
-    _azimuth: Optional[float] = field(default=None)
-    _latitude: Optional[float] = field(default=None)
+    _azimuth: float | None = field(default=None)
+    _latitude: float | None = field(default=None)
 
     # pylint: disable=too-many-positional-arguments
     def __init__(
         self,
         *,
         ammo: Ammo,
-        atmo: Optional[Atmo] = None,
-        weapon: Optional[Weapon] = None,
-        winds: Optional[Sequence[Wind]] = None,
-        look_angle: Optional[Union[float, Angular]] = None,
-        relative_angle: Optional[Union[float, Angular]] = None,
-        cant_angle: Optional[Union[float, Angular]] = None,
-        azimuth: Optional[float] = None,
-        latitude: Optional[float] = None,
+        atmo: Atmo | None = None,
+        weapon: Weapon | None = None,
+        winds: Sequence[Wind] | None = None,
+        look_angle: float | Angular | None = None,
+        relative_angle: float | Angular | None = None,
+        cant_angle: float | Angular | None = None,
+        azimuth: float | None = None,
+        latitude: float | None = None,
     ):
         """Initialize `Shot` for trajectory calculations.
 
@@ -85,7 +86,7 @@ class Shot:
             ammo: Ammo instance used for shot.
             atmo: Atmosphere in effect during shot.
             weapon: Weapon instance used for shot.
-            winds: List of Wind in effect during shot.
+            winds: list of Wind in effect during shot.
             look_angle: Angle of sight line relative to horizontal.
                 If `look_angle != 0` then any target in sight crosshairs will be at a different altitude:
                     With target_distance = sight distance to a target (i.e., as through a rangefinder):
@@ -126,7 +127,7 @@ class Shot:
         self._latitude = latitude
 
     @property
-    def azimuth(self) -> Optional[float]:
+    def azimuth(self) -> float | None:
         """Azimuth of the shooting direction in degrees [0, 360).
 
         Should be *geographic* bearing where 0 = North, 90 = East, 180 = South, 270 = West.
@@ -135,18 +136,18 @@ class Shot:
         return self._azimuth
 
     @azimuth.setter
-    def azimuth(self, value: Optional[float]) -> None:
+    def azimuth(self, value: float | None) -> None:
         if value is not None and (value < 0.0 or value >= 360.0):
             raise ValueError("Azimuth must be in range [0, 360).")
         self._azimuth = value
 
     @property
-    def latitude(self) -> Optional[float]:
+    def latitude(self) -> float | None:
         """Latitude of the shooting location in degrees [-90, 90]."""
         return self._latitude
 
     @latitude.setter
-    def latitude(self, value: Optional[float]) -> None:
+    def latitude(self, value: float | None) -> None:
         if value is not None and (value < -90.0 or value > 90.0):
             raise ValueError("Latitude must be in range [-90, 90].")
         self._latitude = value
@@ -157,7 +158,7 @@ class Shot:
         return tuple(self._winds)
 
     @winds.setter
-    def winds(self, winds: Optional[Sequence[Wind]]):
+    def winds(self, winds: Sequence[Wind] | None):
         """Property setter.  Ensures .winds is sorted by until_distance.
 
         Args:
@@ -283,20 +284,20 @@ class ShotProps:
     cant_sine: float  # Sine of the cant angle
     alt0_ft: float  # Initial altitude in feet
     muzzle_velocity_fps: float  # Muzzle velocity in feet per second
-    coriolis: Optional[Coriolis] = field(default=None, repr=False)
+    coriolis: Coriolis | None = field(default=None, repr=False)
     stability_coefficient: float = field(init=False)  # Miller stability coefficient
     calc_step: float = field(init=False)  # Calculation step size
-    filter_flags: Union[TrajFlag, int] = field(init=False)  # Flags for special ballistic trajectory points
+    filter_flags: TrajFlag | int = field(init=False)  # Flags for special ballistic trajectory points
 
     def __post_init__(self):
         self.stability_coefficient = self._calc_stability_coefficient()
 
     @property
-    def azimuth(self) -> Optional[float]:
+    def azimuth(self) -> float | None:
         return self.shot.azimuth
 
     @property
-    def latitude(self) -> Optional[float]:
+    def latitude(self) -> float | None:
         return self.shot.latitude
 
     @property
@@ -336,7 +337,7 @@ class ShotProps:
             return range_vector
         return self.coriolis.adjust_range(time, range_vector)
 
-    def get_density_and_mach_for_altitude(self, drop: float) -> Tuple[float, float]:
+    def get_density_and_mach_for_altitude(self, drop: float) -> tuple[float, float]:
         """Get the air density and Mach number for a given altitude.
 
         Args:
@@ -411,11 +412,11 @@ class ShotProps:
         return 0
 
     @staticmethod
-    def _precalc_drag_curve(data_points: List[DragDataPoint]) -> PchipPrepared:
+    def _precalc_drag_curve(data_points: list[DragDataPoint]) -> PchipPrepared:
         """Pre-calculate the drag curve for the shot.
 
         Args:
-            data_points: List of DragDataPoint objects with Mach and CD values.
+            data_points: list of DragDataPoint objects with Mach and CD values.
 
         Returns:
             PCHIP spline coefficients for interpolating $C_d$ vs Mach.

@@ -35,15 +35,13 @@ Examples:
 """
 
 import math
-import typing
+from typing import NamedTuple, Literal, get_args, TYPE_CHECKING
 from dataclasses import dataclass
-
-from typing_extensions import NamedTuple, Union, Optional, Literal, get_args
 
 from py_ballisticcalc.drag_model import DragModel
 from py_ballisticcalc.unit import Velocity, Temperature, Distance, Angular, PreferredUnits
 
-if typing.TYPE_CHECKING:
+if TYPE_CHECKING:
     from py_ballisticcalc.trajectory_data import TrajectoryData
 
 SightFocalPlane = Literal["FFP", "SFP", "LWIR"]
@@ -126,9 +124,9 @@ class Sight:
     def __init__(
         self,
         focal_plane: SightFocalPlane = "FFP",
-        scale_factor: Optional[Union[float, Distance]] = None,
-        h_click_size: Optional[Union[float, Angular]] = None,
-        v_click_size: Optional[Union[float, Angular]] = None,
+        scale_factor: float | Distance | None = None,
+        h_click_size: float | Angular | None = None,
+        v_click_size: float | Angular | None = None,
     ):
         """Initialize a Sight instance with given parameters.
 
@@ -176,9 +174,7 @@ class Sight:
         if self.h_click_size.raw_value <= 0 or self.v_click_size.raw_value <= 0:
             raise TypeError("'h_click_size' and 'v_click_size' must be positive")
 
-    def _adjust_sfp_reticle_steps(
-        self, target_distance: Union[float, Distance], magnification: float
-    ) -> SightReticleStep:
+    def _adjust_sfp_reticle_steps(self, target_distance: float | Distance, magnification: float) -> SightReticleStep:
         """Calculate SFP reticle steps for target distance and magnification.
 
         For Second Focal Plane (SFP) sights, the reticle size remains constant
@@ -335,14 +331,14 @@ class Weapon:
     sight_height: Distance
     twist: Distance
     zero_elevation: Angular
-    sight: Optional[Sight]
+    sight: Sight | None
 
     def __init__(
         self,
-        sight_height: Optional[Union[float, Distance]] = None,
-        twist: Optional[Union[float, Distance]] = None,
-        zero_elevation: Optional[Union[float, Angular]] = None,
-        sight: Optional[Sight] = None,
+        sight_height: float | Distance | None = None,
+        twist: float | Distance | None = None,
+        zero_elevation: float | Angular | None = None,
+        sight: Sight | None = None,
     ):
         """Initialize a Weapon instance with given parameters.
 
@@ -431,8 +427,8 @@ class Ammo:
     def __init__(
         self,
         dm: DragModel,
-        mv: Union[float, Velocity],
-        powder_temp: Optional[Union[float, Temperature]] = None,
+        mv: float | Velocity,
+        powder_temp: float | Temperature | None = None,
         temp_modifier: float = 0,
         use_powder_sensitivity: bool = False,
     ):
@@ -474,9 +470,7 @@ class Ammo:
         self.temp_modifier = temp_modifier or 0
         self.use_powder_sensitivity = use_powder_sensitivity
 
-    def calc_powder_sens(
-        self, other_velocity: Union[float, Velocity], other_temperature: Union[float, Temperature]
-    ) -> float:
+    def calc_powder_sens(self, other_velocity: float | Velocity, other_temperature: float | Temperature) -> float:
         """Calculate velocity temperature sensitivity and update temp_modifier.
 
         This method calculates the powder temperature sensitivity coefficient
@@ -530,7 +524,7 @@ class Ammo:
         self.temp_modifier = v_delta / t_delta * (15 / v_lower)  # * 100
         return self.temp_modifier
 
-    def get_velocity_for_temp(self, current_temp: Union[float, Temperature]) -> Velocity:
+    def get_velocity_for_temp(self, current_temp: float | Temperature) -> Velocity:
         """Calculate muzzle velocity adjusted for powder temperature.
 
         This method calculates the muzzle velocity at a given temperature based

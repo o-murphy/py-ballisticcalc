@@ -3,7 +3,7 @@ Type stubs for the compiled extension module `py_ballisticcalc_exts.traj_data`
 to improve IDE completion for low-level trajectory buffer and interpolation helpers.
 """
 
-from typing import Optional, Union, Tuple, overload
+from typing import overload
 from typing_extensions import Iterator
 
 from py_ballisticcalc.unit import Vector
@@ -53,7 +53,7 @@ class CythonizedBaseTrajSeq:
         ...
 
     def get_at(
-        self, key_attribute: BaseTrajDataAttribute, key_value: float, start_from_time: Optional[float] = None
+        self, key_attribute: BaseTrajDataAttribute, key_value: float, start_from_time: float | None = None
     ) -> CythonizedBaseTrajData:
         """Get CythonizedBaseTrajData where key_attribute == key_value (via monotone PCHIP interpolation).
 
@@ -77,23 +77,22 @@ class CythonizedBaseTrajData:
     def __len__(self) -> int:
         return ...
 
-    def __iter__(self) -> Iterator[Union[float, Vector]]:
+    def __iter__(self) -> Iterator[float | Vector]:
         """Yields time, position, velocity, mach."""
         ...
 
     @overload
-    def __getitem__(self, index: int) -> Union[float, Vector]: ...
+    def __getitem__(self, index: int) -> float | Vector: ...
     @overload
-    def __getitem__(self, index: slice) -> Tuple[Union[float, Vector], ...]: ...
-    def __getitem__(self, index: Union[int, slice]) -> Union[float, Vector, Tuple[Union[float, Vector], ...]]:
+    def __getitem__(self, index: slice) -> tuple[float | Vector, ...]: ...
+    def __getitem__(self, index: int | slice) -> float | Vector | tuple[float | Vector, ...]:
         """
         Implements access to fields by index (0-3 or -4--1) or slice.
         """
         ...
 
     def __eq__(self, other: object) -> bool:
-        """Реалізує самопорівняння (self == other)."""
-        # Порівняння з іншим CythonizedBaseTrajData або з ітерабельною послідовністю довжини 4
+        """Implements self comparing (self == other)."""
         ...
 
     @property

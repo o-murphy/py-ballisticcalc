@@ -28,7 +28,8 @@ import subprocess
 import sys
 from dataclasses import dataclass, asdict
 from pathlib import Path
-from typing import List, Optional, Sequence
+from typing import Optional
+from collections.abc import Sequence
 
 # Local imports (package must be importable)
 from py_ballisticcalc import (
@@ -72,7 +73,7 @@ class BenchmarkResult:
     version: str
     timestamp: str
 
-    def to_row(self) -> List[str]:
+    def to_row(self) -> list[str]:
         return [
             self.timestamp,
             self.version,
@@ -100,7 +101,7 @@ _ATMO = Atmo.icao()
 _RANGE = Distance.Meter(2000)
 _RANGE_STEP = Distance.Meter(100)
 
-CASES: List[BenchmarkCase] = [
+CASES: list[BenchmarkCase] = [
     BenchmarkCase(
         name="Trajectory",
         description="Full trajectory integration to 2000m with 100m step flags=ALL",
@@ -152,7 +153,7 @@ def _bench_single(case: BenchmarkCase, engine: str, repeats: int, warmup: int, s
     else:
         was_enabled = gc.isenabled()
 
-    timings: List[float] = []
+    timings: list[float] = []
     try:
         import time
         for _ in range(repeats):
@@ -191,7 +192,7 @@ def _bench_single(case: BenchmarkCase, engine: str, repeats: int, warmup: int, s
 
 # ---------------------------- Output Formatting -------------------------------
 
-def _format_markdown(results: List[BenchmarkResult]) -> str:
+def _format_markdown(results: list[BenchmarkResult]) -> str:
     header = "| Case | Engine | Mean (ms) | StdDev | Min | Max |"
     sep = "| --- | --- | --- | --- | --- | --- |"
     rows = [
@@ -201,7 +202,7 @@ def _format_markdown(results: List[BenchmarkResult]) -> str:
     return "\n".join([header, sep, *rows])
 
 
-def _format_csv(results: List[BenchmarkResult]) -> str:
+def _format_csv(results: list[BenchmarkResult]) -> str:
     # For stdout emission only; persistent CSV handled separately
     lines = [",".join(CSV_HEADER)]
     for r in results:
@@ -211,7 +212,7 @@ def _format_csv(results: List[BenchmarkResult]) -> str:
 
 # ---------------------------- Persistence -------------------------------------
 
-def _persist(results: List[BenchmarkResult]) -> None:
+def _persist(results: list[BenchmarkResult]) -> None:
     if results:
         # Use file-system safe timestamp: 20250930T213736Z
         file_ts = results[0].timestamp.replace('-', '').replace(':', '').replace('T', 'T').replace('Z', 'Z')
@@ -247,7 +248,7 @@ def get_parser() -> argparse.ArgumentParser:
     return p
 
 
-def iter_engine_names() -> List[str]:
+def iter_engine_names() -> list[str]:
     return [ep.name for ep in Calculator.iter_engines()]
 
 
@@ -255,13 +256,13 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     parser = get_parser()
     ns: argparse.Namespace = parser.parse_args(argv)
 
-    engines: List[str]
+    engines: list[str]
     if ns.all:
         engines = iter_engine_names()
     else:
         engines = ns.engine
 
-    results: List[BenchmarkResult] = []
+    results: list[BenchmarkResult] = []
     for engine in engines:
         for case in CASES:
             try:

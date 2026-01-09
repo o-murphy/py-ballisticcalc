@@ -51,10 +51,10 @@ See Also:
 
 from __future__ import annotations
 import math
-from typing import TYPE_CHECKING, Dict, Any
+from typing import TYPE_CHECKING, Any
 from dataclasses import dataclass, field
 from deprecated import deprecated
-from typing_extensions import Final, Literal, NamedTuple, Optional, Tuple, Union
+from typing import Final, Literal, NamedTuple
 
 from py_ballisticcalc.exceptions import RangeError
 from py_ballisticcalc.unit import Angular, Distance, Energy, Velocity, Weight, GenericDimension, Unit, PreferredUnits
@@ -145,7 +145,7 @@ class TrajFlag(int):
         return {v: k for k, v in vars(cls).items() if k.isupper() and isinstance(v, int)}
 
     @staticmethod
-    def name(value: Union[int, TrajFlag]) -> str:
+    def name(value: int | TrajFlag) -> str:
         """Get the human-readable name for a trajectory flag value.
 
         Converts a numeric flag value to its corresponding string name for
@@ -373,7 +373,7 @@ class TrajectoryData(NamedTuple):
     drag: float  # Standard Drag Factor at this point
     energy: Energy  # Energy of bullet at this point
     ogw: Weight  # Optimal game weight, given .energy
-    flag: Union[TrajFlag, int]  # Row type
+    flag: TrajFlag | int  # Row type
 
     @property
     def x(self) -> Distance:
@@ -413,7 +413,7 @@ class TrajectoryData(NamedTuple):
         """Synonym for windage_angle."""
         return self.windage_angle
 
-    def formatted(self) -> Tuple[str, ...]:
+    def formatted(self) -> tuple[str, ...]:
         """Return attributes as tuple of strings, formatted per PreferredUnits.
 
         Returns:
@@ -443,7 +443,7 @@ class TrajectoryData(NamedTuple):
             TrajFlag.name(self.flag),
         )
 
-    def in_def_units(self) -> Tuple[float, ...]:
+    def in_def_units(self) -> tuple[float, ...]:
         """Return attributes as tuple of floats converting to PreferredUnits.
 
         Returns:
@@ -549,9 +549,7 @@ class TrajectoryData(NamedTuple):
         return d
 
     @staticmethod
-    def from_base_data(
-        props: ShotProps, data: BaseTrajData, flag: Union[TrajFlag, int] = TrajFlag.NONE
-    ) -> TrajectoryData:
+    def from_base_data(props: ShotProps, data: BaseTrajData, flag: TrajFlag | int = TrajFlag.NONE) -> TrajectoryData:
         """Create a TrajectoryData object from BaseTrajData."""
         return TrajectoryData.from_props(props, data.time, data.position, data.velocity, data.mach, flag)
 
@@ -562,7 +560,7 @@ class TrajectoryData(NamedTuple):
         range_vector: Vector,
         velocity_vector: Vector,
         mach: float,
-        flag: Union[TrajFlag, int] = TrajFlag.NONE,
+        flag: TrajFlag | int = TrajFlag.NONE,
     ) -> TrajectoryData:
         """Create a TrajectoryData object."""
         adjusted_range = props.adjust_range_for_coriolis(time, range_vector)
@@ -602,11 +600,11 @@ class TrajectoryData(NamedTuple):
     @staticmethod
     def interpolate(
         key_attribute: TrajectoryDataAttribute,
-        value: Union[float, GenericDimension],
+        value: float | GenericDimension,
         p0: TrajectoryData,
         p1: TrajectoryData,
         p2: TrajectoryData,
-        flag: Union[TrajFlag, int] = TrajFlag.NONE,
+        flag: TrajFlag | int = TrajFlag.NONE,
         method: InterpolationMethod = "pchip",
     ) -> TrajectoryData:
         """
@@ -648,7 +646,7 @@ class TrajectoryData(NamedTuple):
         x0, x1, x2 = get_key_val(p0), get_key_val(p1), get_key_val(p2)
 
         # Use reflection to build the new TrajectoryData object
-        interpolated_fields: Dict[str, Any] = {}
+        interpolated_fields: dict[str, Any] = {}
         for field_name in TrajectoryData._fields:
             if field_name == "flag":
                 continue
@@ -726,7 +724,7 @@ class DangerSpace(NamedTuple):
         )
 
     # pylint: disable=import-outside-toplevel
-    def overlay(self, ax: Axes, label: Optional[str] = None) -> None:
+    def overlay(self, ax: Axes, label: str | None = None) -> None:
         """Highlights danger-space region on plot.
 
         Args:
@@ -765,9 +763,9 @@ class HitResult:
 
     props: ShotProps
     trajectory: list[TrajectoryData] = field(repr=False)
-    base_data: Optional[list[BaseTrajData]] = field(repr=False)
+    base_data: list[BaseTrajData] | None = field(repr=False)
     extra: bool = False
-    error: Optional[RangeError] = None
+    error: RangeError | None = None
 
     def __len__(self) -> int:
         return len(self.trajectory)
@@ -784,7 +782,7 @@ class HitResult:
                 f"{object.__repr__(self)} has no extra data. Use Calculator.fire(..., extra_data=True)"
             )
 
-    def _check_flag(self, flag: Union[TrajFlag, int]):
+    def _check_flag(self, flag: TrajFlag | int):
         if not self.props.filter_flags & flag:
             flag_name = TrajFlag.name(flag)
             raise AttributeError(
@@ -792,7 +790,7 @@ class HitResult:
                 f"Use Calculator.fire(..., flags=TrajFlag.{flag_name}) to include it."
             )
 
-    def flag(self, flag: Union[TrajFlag, int]) -> Optional[TrajectoryData]:
+    def flag(self, flag: TrajFlag | int) -> TrajectoryData | None:
         """Get first TrajectoryData row with the specified flag.
 
         Args:
@@ -813,7 +811,7 @@ class HitResult:
     def get_at(
         self,
         key_attribute: TrajectoryDataAttribute,
-        value: Union[float, GenericDimension],
+        value: float | GenericDimension,
         *,
         epsilon: float = 1e-9,
         start_from_time: float = 0.0,
@@ -991,8 +989,8 @@ class HitResult:
 
     def danger_space(
         self,
-        at_range: Union[float, Distance],
-        target_height: Union[float, Distance],
+        at_range: float | Distance,
+        target_height: float | Distance,
     ) -> DangerSpace:
         """Calculate the danger space for a target.
 
@@ -1052,11 +1050,11 @@ class HitResult:
                 "Use `pip install py_ballisticcalc[charts]` to get trajectory as pandas.DataFrame"
             ) from err
 
-    def plot(self, look_angle: Optional[Angular] = None) -> Axes:
+    def plot(self, look_angle: Angular | None = None) -> Axes:
         """Return a graph of the trajectory.
 
         Args:
-            look_angle (Optional[Angular], optional): Look angle for the plot. Defaults to None.
+            look_angle (Angular | None, optional): Look angle for the plot. Defaults to None.
 
         Returns:
             The plot Axes object.

@@ -69,7 +69,7 @@ import math
 import warnings
 
 # Third-party imports
-from typing_extensions import Any, Optional
+from typing import Any
 
 # Local imports
 from py_ballisticcalc import HitResult
@@ -132,7 +132,7 @@ def show_hit_result_plot() -> None:
     pyplot.show()
 
 
-def add_danger_space_overlay(danger_space: DangerSpace, ax: Axes, label: Optional[str] = None) -> None:
+def add_danger_space_overlay(danger_space: DangerSpace, ax: Axes, label: str | None = None) -> None:
     """Add danger space visualization overlay to existing trajectory plot.
 
     This function highlights the danger space region on a trajectory plot,
@@ -287,7 +287,7 @@ def add_time_of_flight_axis(ax: Axes, hit_result: HitResult, time_precision: int
     return ax
 
 
-def trajectory_as_plot(hit_result: HitResult, look_angle: Optional[Angular] = None) -> Axes:
+def trajectory_as_plot(hit_result: HitResult, look_angle: Angular | None = None) -> Axes:
     """Plot only trajectory, barrel, and sight lines.
 
     Args:
@@ -374,7 +374,7 @@ def trajectory_as_plot(hit_result: HitResult, look_angle: Optional[Angular] = No
     return ax
 
 
-def hit_result_as_plot(hit_result, look_angle: Optional[Angular] = None, show_time_axis: bool = True) -> Axes:
+def hit_result_as_plot(hit_result, look_angle: Angular | None = None, show_time_axis: bool = True) -> Axes:
     """Plot trajectory, velocity on secondary axis, barrel and sight lines, and optional time axis.
 
     Args:

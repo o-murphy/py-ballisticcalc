@@ -14,7 +14,7 @@ class CythonizedRK4IntegrationEngine(CythonizedBaseIntegrationEngine[BaseEngineC
     # Class constant specific to RK4 engine
     DEFAULT_TIME_STEP: float
 
-    def __cinit__(self, _config: BaseEngineConfigDict) -> None:
+    def __cinit__(self, config: BaseEngineConfigDict | None) -> None:
         """
         C/C++-level initializer for the RK4 engine.
         Sets up the RK4 integration function pointer.

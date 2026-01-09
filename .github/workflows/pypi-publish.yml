@@ -86,7 +86,7 @@ jobs:
           cibuildwheel py_ballisticcalc.exts --output-dir dist --platform auto --archs ${{ matrix.cibw_archs }}
         shell: bash
 
-      - name: List ./dist
+      - name: list ./dist
         run: ls ./dist
         shell: bash
 
@@ -117,7 +117,7 @@ jobs:
           find ./all-dist -type f -exec cp {} dist/ \;
         shell: bash
 
-      - name: List ./dist
+      - name: list ./dist
         run: ls ./dist
         shell: bash
 

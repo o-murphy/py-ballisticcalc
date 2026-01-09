@@ -17,8 +17,6 @@ import os
 import sys
 
 # Third-party imports
-from typing_extensions import Dict, Optional
-
 # Local imports
 from .logger import logger as log
 from .unit import Unit, PreferredUnits
@@ -29,14 +27,14 @@ else:
     import tomllib
 
 
-def _load_config(filepath: Optional[str] = None, suppress_warnings: bool = False) -> None:
+def _load_config(filepath: str | None = None, suppress_warnings: bool = False) -> None:
     """Load configuration from a .pybc.toml file.
     
     Args:
         filepath: Path to configuration file. If None, searches for .pybc.toml or pybc.toml
         suppress_warnings: If True, suppress warning messages
     """
-    def find_pybc_toml(start_dir: str = os.getcwd()) -> Optional[str]:
+    def find_pybc_toml(start_dir: str = os.getcwd()) -> str | None:
         """Search for the pyproject.toml file starting from the specified directory.
         
         Args:
@@ -87,8 +85,8 @@ def _load_config(filepath: Optional[str] = None, suppress_warnings: bool = False
     log.debug("Calculator globals and PreferredUnits load success")
 
 
-def _basic_config(filename: Optional[str] = None,
-                  preferred_units: Optional[Dict[str, Unit]] = None, 
+def _basic_config(filename: str | None = None,
+                  preferred_units: dict[str, Unit] | None = None, 
                   suppress_warnings: bool = False) -> None:
     """Load preferred units from file or Mapping.
     
