@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- Fixed `Unit.Joule` conversion factor in `Energy` class returning incorrect foot-pounds to Joules values.
+
 ## [2.2.8] - 2026-01-26
 [:simple-github: GitHub release][2.2.8]
 

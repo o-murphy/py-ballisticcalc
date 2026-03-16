@@ -1145,7 +1145,7 @@ class Energy(GenericDimension):
 
     _conversion_factors = {
         Unit.FootPound: 1.0,
-        Unit.Joule: 1.3558179483314,
+        Unit.Joule: 1 / 1.3558179483314,
     }
 
     # Energy.* unit aliases
