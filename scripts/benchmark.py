@@ -28,7 +28,6 @@ import subprocess
 import sys
 from dataclasses import dataclass, asdict
 from pathlib import Path
-from typing import Optional
 from collections.abc import Sequence
 
 # Local imports (package must be importable)
@@ -252,7 +251,7 @@ def iter_engine_names() -> list[str]:
     return [ep.name for ep in Calculator.iter_engines()]
 
 
-def main(argv: Optional[Sequence[str]] = None) -> int:
+def main(argv: Sequence[str] | None = None) -> int:
     parser = get_parser()
     ns: argparse.Namespace = parser.parse_args(argv)
 

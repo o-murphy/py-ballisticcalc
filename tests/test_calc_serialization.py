@@ -1,6 +1,5 @@
 from dataclasses import dataclass
 from functools import partial
-from typing import Optional
 
 import pytest
 
@@ -59,7 +58,7 @@ class BaseCalcWrapper:
 @dataclass
 class CachingWrapper(BaseCalcWrapper):
     engine: object
-    _calc: Optional[Calculator] = None
+    _calc: Calculator | None = None
 
     def __post_init__(self):
         self._calc = create_zero_velocity_calc(self.engine)
