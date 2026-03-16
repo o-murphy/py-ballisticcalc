@@ -98,6 +98,7 @@ SOURCE_PATHS = {
     "engine": SRC_DIR_PATH / "engine.cpp",
     "euler": SRC_DIR_PATH / "euler.cpp",
     "rk4": SRC_DIR_PATH / "rk4.cpp",
+    "rk45": SRC_DIR_PATH / "rk45.cpp",
 }
 
 # Define dependencies for each extension as a dictionary
@@ -111,7 +112,8 @@ _BIND_DEPS = set([*_BASE_TYPES_DEPS, "bind"])
 _ENGINE_DEPS = set([*_BIND_DEPS, *_TRAJ_DATA_DEPS, "traj_filter", "engine"])
 _RK4_DEPS = set([*_ENGINE_DEPS, "rk4"])
 _EULER_DEPS = set([*_ENGINE_DEPS, "euler"])
-_TEST_DEPS = set([*_ENGINE_DEPS, *_RK4_DEPS, *_EULER_DEPS])
+_RK45_DEPS = set([*_ENGINE_DEPS, "rk45"])
+_TEST_DEPS = set([*_ENGINE_DEPS, *_RK4_DEPS, *_EULER_DEPS, *_RK45_DEPS])
 
 C_EXTENSION_DEPS = {
     # Test modules (expose internal C functions for tests only)
@@ -123,6 +125,7 @@ CPP_EXTENSION_DEPS = {
     "base_engine": _ENGINE_DEPS,
     "rk4_engine": _RK4_DEPS,
     "euler_engine": _EULER_DEPS,
+    "rk45_engine": _RK45_DEPS,
     # Test modules (expose internal C++ functions for tests only)
     "_test_helpers": _TEST_DEPS,
     "_test_engine": _TEST_DEPS,
