@@ -10,7 +10,7 @@ jobs:
   test:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 0 # required for setuptools-scm
 
@@ -35,7 +35,7 @@ jobs:
 #      run: coverage-badge -o coverage.svg
 #
 #    - name: Upload coverage badge
-#      uses: actions/upload-artifact@v4
+#      uses: actions/upload-artifact@v6
 #      with:
 #        name: coverage.svg
 #        path: coverage.svg

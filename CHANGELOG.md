@@ -7,8 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.2.9] - 2026-03-16
+[:simple-github: GitHub release][2.2.9]
+
+### Changed
+- Updated CI dependencies versions
+- Updated a list of package dependencies in pyproject.toml
+
 ### Fixed
 - Fixed `Unit.Joule` conversion factor in `Energy` class returning incorrect foot-pounds to Joules values.
+- Types annotations codestyle fix
+- Security fix for vulnerability described at (https://github.com/o-murphy/py-ballisticcalc/security/dependabot/1)
 
 ## [2.2.8] - 2026-01-26
 [:simple-github: GitHub release][2.2.8]
@@ -525,7 +534,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Issue #141
 - Trajectories that bend backwards
 
-[Unreleased]: https://github.com/o-murphy/py-ballisticcalc/compare/v2.2.8...HEAD
+[Unreleased]: https://github.com/o-murphy/py-ballisticcalc/compare/v2.2.9...HEAD
+[2.2.9]: https://github.com/o-murphy/py-ballisticcalc/releases/tag/v2.2.9
 [2.2.8]: https://github.com/o-murphy/py-ballisticcalc/releases/tag/v2.2.8
 [2.2.7]: https://github.com/o-murphy/py-ballisticcalc/releases/tag/v2.2.7
 [2.2.6.post1]: https://github.com/o-murphy/py-ballisticcalc/releases/tag/v2.2.6.post1
