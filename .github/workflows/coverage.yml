@@ -35,7 +35,7 @@ jobs:
 #      run: coverage-badge -o coverage.svg
 #
 #    - name: Upload coverage badge
-#      uses: actions/upload-artifact@v4
+#      uses: actions/upload-artifact@v6
 #      with:
 #        name: coverage.svg
 #        path: coverage.svg
