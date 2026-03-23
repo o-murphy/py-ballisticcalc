@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- bclibc sources now is a git submodule
+
 ## [2.2.9] - 2026-03-16
 [:simple-github: GitHub release][2.2.9]
 
