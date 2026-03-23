@@ -59,7 +59,7 @@ jobs:
 
       - name: Set up QEMU for Emulated Architectures
         if: ${{ matrix.needs_qemu }}
-        uses: docker/setup-qemu-action@v3
+        uses: docker/setup-qemu-action@v4
         with:
           platforms: all
 
@@ -107,7 +107,7 @@ jobs:
 
     steps:
       - name: Download all artifacts dynamically
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           pattern: dist-*
           path: ./all-dist
