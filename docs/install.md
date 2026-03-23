@@ -77,6 +77,7 @@ To install latest version from sources in editable mode:
 ```bash
 git clone https://github.com/o-murphy/py-ballisticcalc
 cd py-ballisticcalc
+git submodule update --init --recursive
 ```
 
 === "pip"

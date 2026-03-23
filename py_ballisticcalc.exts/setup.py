@@ -74,30 +74,39 @@ if ENABLE_CYTHON_SAFETY:
         }
     )
 
+
 FORCE_CYTHON_MACROS = [("__CYTHON__", "1")]
 
 EXTENSIONS_BASE_DIR = Path("py_ballisticcalc_exts")
 SRC_DIR_PATH = EXTENSIONS_BASE_DIR / "src"
 INCLUDE_DIR_PATH = EXTENSIONS_BASE_DIR / "include"
 
+# bclibc git submodule (lives inside the package so it ships with wheels)
+BCLIBC_DIR = EXTENSIONS_BASE_DIR / "external/bclibc"
+BCLIBC_SRC_DIR = BCLIBC_DIR / "src"
+BCLIBC_INCLUDE_DIR = BCLIBC_DIR / "include"
+
 # Use absolute paths for include directories
 include_dirs = [
-    str(EXTENSIONS_BASE_DIR),  # For .pxd files
+    str(EXTENSIONS_BASE_DIR),  # For .pxd files and include/bclibc/py_bind.hpp
     str(SRC_DIR_PATH),  # For source-level headers
-    str(INCLUDE_DIR_PATH),  # For public headers
+    str(INCLUDE_DIR_PATH),  # For bclibc/py_bind.hpp (short form)
+    str(BCLIBC_DIR),  # For include/bclibc/*.hpp (submodule)
+    str(BCLIBC_INCLUDE_DIR),  # For bclibc/*.hpp (submodule, short form)
 ]
 
 # Define all C source files and their paths
 SOURCE_PATHS = {
-    # C++ Sources:
-    "interp": SRC_DIR_PATH / "interp.cpp",
-    "types": SRC_DIR_PATH / "base_types.cpp",
+    # C++ Sources from bclibc submodule:
+    "interp": BCLIBC_SRC_DIR / "interp.cpp",
+    "types": BCLIBC_SRC_DIR / "base_types.cpp",
+    "traj_data": BCLIBC_SRC_DIR / "traj_data.cpp",
+    "traj_filter": BCLIBC_SRC_DIR / "traj_filter.cpp",
+    "engine": BCLIBC_SRC_DIR / "engine.cpp",
+    "euler": BCLIBC_SRC_DIR / "euler.cpp",
+    "rk4": BCLIBC_SRC_DIR / "rk4.cpp",
+    # Local Python-binding source (not in submodule):
     "bind": SRC_DIR_PATH / "py_bind.cpp",
-    "traj_data": SRC_DIR_PATH / "traj_data.cpp",
-    "traj_filter": SRC_DIR_PATH / "traj_filter.cpp",
-    "engine": SRC_DIR_PATH / "engine.cpp",
-    "euler": SRC_DIR_PATH / "euler.cpp",
-    "rk4": SRC_DIR_PATH / "rk4.cpp",
 }
 
 # Define dependencies for each extension as a dictionary
@@ -177,8 +186,7 @@ def collect_extensions(deps: dict[str, Path], path: Path, *, is_cpp: bool = Fals
             else:
                 print(f"Warning: C source '{dep_key}' not found in C_SOURCES dictionary for extension '{name}'.")
 
-        define_macros = []
-        define_macros.extend(FORCE_CYTHON_MACROS)
+        define_macros = list(FORCE_CYTHON_MACROS)
         if ENABLE_CYTHON_COVERAGE:
             # Enable tracing in both with-GIL and nogil regions
             define_macros.extend([("CYTHON_TRACE", "1"), ("CYTHON_TRACE_NOGIL", "1")])

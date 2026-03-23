@@ -37,6 +37,7 @@ jobs:
         name: Checkout Repository Code # A clear name for this foundational step
         with:
           fetch-depth: 0 # Required for setuptools-scm
+          submodules: recursive
 
       - name: Install uv and set the python version
         uses: astral-sh/setup-uv@v7

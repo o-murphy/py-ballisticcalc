@@ -66,6 +66,7 @@ Fork the repository on GitHub and clone your fork locally.
 # Clone your fork and cd into the repo directory
 git clone git@github.com:<your username>/py-ballisticcalc.git
 cd py-ballisticcalc
+git submodule update --init --recursive
 ```
 
 === "pip"

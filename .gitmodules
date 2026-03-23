@@ -1,0 +1,3 @@
+[submodule "py_ballisticcalc.exts/py_ballisticcalc_exts/external/bclibc"]
+	path = py_ballisticcalc.exts/py_ballisticcalc_exts/external/bclibc
+	url = https://github.com/ballistics-lab/bclibc
