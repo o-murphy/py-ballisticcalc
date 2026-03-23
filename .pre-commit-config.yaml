@@ -8,7 +8,7 @@ repos:
       - id: uv-sync
         name: uv sync before hooks
         entry: uv
-        args: ["sync", "--extra", "exts", "--reinstall"]
+        args: ["sync", "--extra", "exts", "--reinstall-package", "py_ballisticcalc.exts"]
         language: system
         pass_filenames: false
 
@@ -18,6 +18,7 @@ repos:
         args: ["run", "mypy"]
         language: system
         pass_filenames: false
+        files: '\.(py|pyi|pyx|pxd)$'
 
       - id: uv-ruff-check
         name: ruff lint & fix
@@ -25,6 +26,7 @@ repos:
         args: ["run", "ruff", "check", "--fix"]
         language: system
         pass_filenames: false
+        files: '\.py$'
 
       - id: uv-ruff-format
         name: ruff format
@@ -32,6 +34,7 @@ repos:
         args: ["run", "ruff", "format"]
         language: system
         pass_filenames: false
+        files: '\.py$'
 
       - id: uv-cython-lint
         name: cython lint

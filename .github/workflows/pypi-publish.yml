@@ -68,23 +68,14 @@ jobs:
         with:
           github-token: ${{ github.token }}
 
-      - name: Set up Python
-        uses: actions/setup-python@v6
-        with:
-          python-version: "3.12"
-
-      - name: Install dependencies
-        run: python -m pip install build cibuildwheel
-        shell: bash
-
       - name: Build pure python package
-        run: python -m build
+        run: uv build --out-dir dist
         shell: bash
 
       - name: Build binary python package
         run: |
-          python -m build py_ballisticcalc.exts --sdist --outdir dist
-          cibuildwheel py_ballisticcalc.exts --output-dir dist --platform auto --archs ${{ matrix.cibw_archs }}
+          uv build py_ballisticcalc.exts --sdist --out-dir dist
+          uvx cibuildwheel py_ballisticcalc.exts --output-dir dist --platform auto --archs ${{ matrix.cibw_archs }}
         shell: bash
 
       - name: list ./dist

@@ -151,11 +151,10 @@ dev = [
     "pylint>=4.0.5",
     "pytest>=8.4.2",
     "pytest-cov>=7.0.0",
-    "pytest-xdist>=3.8.0",
     "ruff>=0.15.6",
     "cython-lint>=0.19.0",
     "pre-commit>=4.5.1",
-    
+
     # stubs
     "scipy-stubs>=1.16.2.3; python_version>='3.11'",
     "types-deprecated>=1.3.1.20260130",
@@ -177,8 +176,8 @@ docs = [
 ]
 
 [dependency-groups]
-# Duplication of "dev" group here is required to support `uv sync --dev`
-# Previous declaration sufficient if we standardize on `uv pip install -e .[dev]`
+# Keep in sync with [tool.setuptools_dynamic_dependencies.optional-dependencies] dev above.
+# Use `uv sync --dev` to install.
 dev = [
     "Cython>=3.2.4",
     "build>=1.4.0",
@@ -200,7 +199,6 @@ dev = [
     "pylint>=4.0.5",
     "pytest>=8.4.2",
     "pytest-cov>=7.0.0",
-    "pytest-xdist>=3.8.0",
     "ruff>=0.15.6",
     "cython-lint>=0.19.0",
     "pre-commit>=4.5.1",
@@ -213,5 +211,4 @@ dev = [
 test = [
     "pytest>=8.4.2",
     "pytest-cov>=7.0.0",
-    "pytest-xdist>=3.8.0", 
 ]

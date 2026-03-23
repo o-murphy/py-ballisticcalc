@@ -9,22 +9,20 @@ on:
       - "*"
     paths:
       - "pyproject.toml"
-      - "setup.py"
       - "py_ballisticcalc/**"
       - "tests/**"
-      - "py_ballisticcalc.exts/**"
-      - ".github/**"
+      - ".github/workflows/pytest-scipy-engine.yml"
+      - ".github/workflows/pytest-reusable.yml"
 
   push:
     branches:
       - "*"
     paths:
       - "pyproject.toml"
-      - "setup.py"
       - "py_ballisticcalc/**"
       - "tests/**"
-      - "py_ballisticcalc.exts/**"
-      - ".github/**"
+      - ".github/workflows/pytest-scipy-engine.yml"
+      - ".github/workflows/pytest-reusable.yml"
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}

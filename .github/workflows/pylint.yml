@@ -6,11 +6,9 @@ on:
       - "*"
     paths:
       - "pyproject.toml"
-      - "setup.py"
       - "py_ballisticcalc/**"
       - "tests/**"
-      - "py_ballisticcalc.exts/**"
-      - ".github/**"
+      - ".github/workflows/pylint.yml"
       - ".pylintrc"
   workflow_dispatch:
 
