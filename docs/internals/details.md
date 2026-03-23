@@ -6,6 +6,9 @@ This page is for contributors who want to modify algorithms, add engines, or ext
 
 === "Linux / MacOS"
     ```bash
+    # initialize submodules (required for C extensions)
+    git submodule update --init --recursive
+
     # create/sync venv with dev + exts
     uv sync --python 3.13 --extra exts
 
@@ -16,6 +19,9 @@ This page is for contributors who want to modify algorithms, add engines, or ext
 
 === "Windows"
     ```powershell
+    # initialize submodules (required for C extensions)
+    git submodule update --init --recursive
+
     # create/sync venv with dev + exts
     uv sync --python 3.13 --extra exts
 

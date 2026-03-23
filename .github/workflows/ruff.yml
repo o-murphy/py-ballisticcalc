@@ -6,11 +6,10 @@ on:
       - "*"
     paths:
       - "pyproject.toml"
-      - "setup.py"
       - "py_ballisticcalc/**"
       - "tests/**"
       - "py_ballisticcalc.exts/**"
-      - ".github/**"
+      - ".github/workflows/ruff.yml"
   workflow_dispatch:
 
 concurrency:
