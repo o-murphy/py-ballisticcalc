@@ -111,51 +111,37 @@ namespace bclibc
     BCLIBC_Curve BCLIBC_Curve_fromPylist(PyObject *data_points)
     {
         Py_ssize_t n = PyList_Size(data_points);
-        // Check for PyList_Size error or insufficient data
         if (n < 2)
         {
             if (n < 0)
-            {
-                // Error in Python List access
                 return BCLIBC_Curve();
-            }
-            // insufficient data; return empty curve
             PyErr_SetString(PyExc_ValueError, "BCLIBC_Curve requires at least 2 data points.");
             return BCLIBC_Curve();
         }
 
-        // --- Phase 1: Extract x (Mach) and y (CD) into vectors (RAII) ---
-        // Instead of malloc(x) and malloc(y), we use std::vector.
+        // --- Phase 1: Prepare data ---
         std::vector<double> x((size_t)n);
         std::vector<double> y((size_t)n);
 
-        // If memory allocation fails here, std::vector will throw std::bad_alloc,
-        // which Cython's 'except +' will catch.
-
         for (Py_ssize_t i = 0; i < n; ++i)
         {
-            PyObject *item = PyList_GetItem(data_points, i); // borrowed
-            // Note: PyList_GetItem should not return nullptr here unless list size changed,
-            // but we keep the check for robustness.
+            PyObject *item = PyList_GetItem(data_points, i);
             if (item == nullptr)
             {
                 PyErr_SetString(PyExc_IndexError, "Curve generation: list item access failed.");
                 return BCLIBC_Curve();
             }
 
-            // Get x (Mach) and y (CD) attributes
-            PyObject *xobj = PyObject_GetAttrString(item, "Mach"); // new ref
-            PyObject *yobj = PyObject_GetAttrString(item, "CD");   // new ref
+            PyObject *xobj = PyObject_GetAttrString(item, "Mach");
+            PyObject *yobj = PyObject_GetAttrString(item, "CD");
 
             if (xobj == nullptr || yobj == nullptr)
             {
-                // Attribute access failed (PyErr_Occurred is true)
                 Py_XDECREF(xobj);
                 Py_XDECREF(yobj);
                 return BCLIBC_Curve();
             }
 
-            // Convert and assign
             x[i] = PyFloat_AsDouble(xobj);
             y[i] = PyFloat_AsDouble(yobj);
 
@@ -163,94 +149,11 @@ namespace bclibc
             Py_DECREF(yobj);
 
             if (PyErr_Occurred())
-            {
-                // Conversion failed (e.g., attribute was not a number)
                 return BCLIBC_Curve();
-            }
         }
 
-        // --- Phase 2: Calculate PCHIP Slopes and Coefficients ---
-
-        Py_ssize_t nm1 = n - 1;
-
-        // Temporary vectors for PCHIP calculation (RAII: no more free calls!)
-        std::vector<double> h((size_t)nm1); // Steps h[i] = x[i+1] - x[i]
-        std::vector<double> d((size_t)nm1); // Slopes d[i] = (y[i+1] - y[i]) / h[i]
-        std::vector<double> m((size_t)n);   // Final calculated slopes m[i]
-
-        // Final result vector (n-1 segments)
-        BCLIBC_Curve curve_points((size_t)nm1);
-
-        for (Py_ssize_t i = 0; i < nm1; ++i)
-        {
-            h[i] = x[i + 1] - x[i];
-            d[i] = (y[i + 1] - y[i]) / h[i];
-        }
-
-        if (n == 2)
-        {
-            m[0] = d[0];
-            m[1] = d[0];
-        }
-        else
-        {
-            // Interior slopes (Fritsch–Carlson algorithm)
-            for (Py_ssize_t i = 1; i < n - 1; ++i)
-            {
-                if (d[i - 1] == 0.0 || d[i] == 0.0 || d[i - 1] * d[i] < 0.0)
-                {
-                    m[i] = 0.0;
-                }
-                else
-                {
-                    double w1 = 2.0 * h[i] + h[i - 1];
-                    double w2 = h[i] + 2.0 * h[i - 1];
-                    m[i] = (w1 + w2) / (w1 / d[i - 1] + w2 / d[i]);
-                }
-            }
-
-            // Endpoint m[0]
-            double m0 = ((2.0 * h[0] + h[1]) * d[0] - h[0] * d[1]) / (h[0] + h[1]);
-            if (m0 * d[0] <= 0.0)
-                m0 = 0.0;
-            else if ((d[0] * d[1] < 0.0) && (std::fabs(m0) > 3.0 * std::fabs(d[0])))
-                m0 = 3.0 * d[0];
-            m[0] = m0;
-
-            // Endpoint m[n-1]
-            double mn = ((2.0 * h[n - 2] + h[n - 3]) * d[n - 2] - h[n - 2] * d[n - 3]) / (h[n - 2] + h[n - 3]);
-            if (mn * d[n - 2] <= 0.0)
-                mn = 0.0;
-            else if ((d[n - 2] * d[n - 3] < 0.0) && (std::fabs(mn) > 3.0 * std::fabs(d[n - 2])))
-                mn = 3.0 * d[n - 2];
-            m[n - 1] = mn;
-        }
-
-        // Build per-segment cubic coefficients in dx=(x-x_i):
-        for (Py_ssize_t i = 0; i < nm1; ++i)
-        {
-            double H = h[i];
-            double yi = y[i];
-            double mi = m[i];
-            double mip1 = m[i + 1];
-
-            // A and B helpers
-            double A = (y[i + 1] - yi - mi * H) / (H * H);
-            double B = (mip1 - mi) / H;
-
-            double a = (B - 2.0 * A) / H;
-            double b = 3.0 * A - B;
-
-            // Assign directly to the final curve vector element
-            curve_points[i].a = a;
-            curve_points[i].b = b;
-            curve_points[i].c = mi;
-            curve_points[i].d = yi;
-        }
-
-        // When we return curve_points, all temporary vectors (x, y, h, d, m)
-        // are automatically destroyed and memory freed.
-        return curve_points;
+        // --- Phase 2: Call universal core ---
+        return build_pchip_curve_from_arrays(x, y);
     }
 }; // namespace bclibc
 
