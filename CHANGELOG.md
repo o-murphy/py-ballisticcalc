@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 - bclibc sources now is a git submodule
-- bump to bclibc@v1.0.1
+- bump to bclibc@v1.0.2
 - update BCLIBC_Curve_fromPylist to use bclibc universal function
 
 ## [2.2.9] - 2026-03-16
