@@ -8,7 +8,16 @@ repos:
       - id: uv-sync
         name: uv sync before hooks
         entry: uv
-        args: ["sync", "--extra", "exts", "--reinstall-package", "py_ballisticcalc.exts"]
+        args:
+          [
+            "sync",
+            "--extra",
+            "exts",
+            "--reinstall-package",
+            "py_ballisticcalc",
+            "--reinstall-package",
+            "py_ballisticcalc.exts",
+          ]
         language: system
         pass_filenames: false
 

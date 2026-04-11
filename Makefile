@@ -28,7 +28,7 @@ build-exts: clean-exts
 	@echo "--- Initializing git submodules ---"
 	git submodule update --init --recursive
 	@echo "--- Building Cython extensions ---"
-	uv sync --extra exts --reinstall-package py_ballisticcalc.exts
+	uv sync --extra exts --reinstall-package py-ballisticcalc --reinstall-package py-ballisticcalc-exts
 	@echo "✅ Extensions built."
 
 # -------------------------------------------------------------

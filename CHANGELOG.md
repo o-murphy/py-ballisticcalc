@@ -7,10 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.2.10] - 2026-04-11
+
 ### Changed
-- bclibc sources now is a git submodule
-- bump to bclibc@v1.0.2
-- update BCLIBC_Curve_fromPylist to use bclibc universal function
+- bclibc C++ engine is now a git submodule (previously vendored sources)
+- bump bclibc to v1.0.3
+- `BCLIBC_Curve_fromPylist` in `py_bind.cpp` now delegates to `build_pchip_curve_from_arrays` — the universal PCHIP builder extracted into `base_types.hpp`/`base_types.cpp`; eliminates code duplication between the Cython and FFI paths
+- `BCLIBCFFI_CATCH` macro replaced with `ffi_call<F>` template — same catch logic, no hidden `return`, full `catch(...)` coverage for non-std exceptions across the FFI boundary
+- `try_get_exact` signature changed from `void` (exception-as-control-flow) to `bool`; call sites in `get_at` converted from `try/catch` blocks to plain `if` checks — removes overhead on the hot interpolation path
+
+### Fixed
+- bclibc: undefined behavior in `find_zero_angle` — missing `return` after Ridder's loop
+- bclibc: `~BCLIBC_TrajectoryDataFilter` destructor no longer throws (wrapped in `try/catch`)
+- bclibc: `BCLIBC_BaseTrajData::operator[]` bounds check used wrong constant and `>` instead of `>=`
+- bclibc: `BCLIBC_TrajectoryData::interpolate` bounds check used `>` instead of `>=`, allowing `FLAG` key
+- bclibc: `try_get_exact` refactored from exception-as-control-flow to returning `bool`
+- bclibc: memory leak in `BCLIBCFFI_integrate` when `toC` loop throws after `malloc`
+- bclibc: infinite loop guard added for `calc_step <= 0` in Euler and RK4 integrators
+- bclibc: `BCLIBC_ShotProps` constructor no longer propagates `domain_error` from stability coefficient calculation
+- bclibc: `BCLIBCFFI_CATCH` macro replaced with type-safe `ffi_call<F>` template (adds `catch(...)` for non-std exceptions)
 
 ## [2.2.9] - 2026-03-16
 [:simple-github: GitHub release][2.2.9]
