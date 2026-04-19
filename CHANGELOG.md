@@ -7,11 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [2.2.10] - 2026-04-11
+## [2.2.10] - 2026-04-20
 
 ### Changed
 - bclibc C++ engine is now a git submodule (previously vendored sources)
-- bump bclibc to v1.0.3
+- bump bclibc to v1.0.4
 - `BCLIBC_Curve_fromPylist` in `py_bind.cpp` now delegates to `build_pchip_curve_from_arrays` — the universal PCHIP builder extracted into `base_types.hpp`/`base_types.cpp`; eliminates code duplication between the Cython and FFI paths
 - `BCLIBCFFI_CATCH` macro replaced with `ffi_call<F>` template — same catch logic, no hidden `return`, full `catch(...)` coverage for non-std exceptions across the FFI boundary
 - `try_get_exact` signature changed from `void` (exception-as-control-flow) to `bool`; call sites in `get_at` converted from `try/catch` blocks to plain `if` checks — removes overhead on the hot interpolation path
