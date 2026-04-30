@@ -7,7 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [2.2.10] - 2026-04-20
+## [2.2.10] - 2026-04-30
+[:simple-github: GitHub release][2.2.10]
 
 ### Changed
 - bclibc C++ engine is now a git submodule (previously vendored sources)
@@ -554,7 +555,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Issue #141
 - Trajectories that bend backwards
 
-[Unreleased]: https://github.com/o-murphy/py-ballisticcalc/compare/v2.2.9...HEAD
+[Unreleased]: https://github.com/o-murphy/py-ballisticcalc/compare/v2.2.10...HEAD
+[2.2.10]: https://github.com/o-murphy/py-ballisticcalc/releases/tag/v2.2.10
 [2.2.9]: https://github.com/o-murphy/py-ballisticcalc/releases/tag/v2.2.9
 [2.2.8]: https://github.com/o-murphy/py-ballisticcalc/releases/tag/v2.2.8
 [2.2.7]: https://github.com/o-murphy/py-ballisticcalc/releases/tag/v2.2.7
