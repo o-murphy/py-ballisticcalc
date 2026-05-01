@@ -1,12 +1,5 @@
 [
   {
-    "version": "2.2.11.dev1+gbbac213d6",
-    "title": "2.2.11.dev1+gbbac213d6",
-    "aliases": [
-      "latest"
-    ]
-  },
-  {
     "version": "2.2.9",
     "title": "2.2.9",
     "aliases": []
