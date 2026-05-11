@@ -14,7 +14,7 @@ Installation is as simple as:
     uv add py-ballisticcalc 
     ```
 
-If you have Python 3.10+ and `pip` installed, you're good to go.
+If you have Python 3.11+ and `pip` installed, you're good to go.
 
 [//]: # (py-ballisticcalc is also available on [conda]&#40;https://www.anaconda.com&#41; under the [conda-forge]&#40;https://conda-forge.org&#41;)
 

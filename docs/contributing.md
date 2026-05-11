@@ -41,7 +41,7 @@ Following are the basics of creating a Pull Request.  For more developer guidanc
 
 You'll need the following prerequisites:
 
-- Any Python version >= **Python 3.10**
+- Any Python version >= **Python 3.11**
 - [**venv**](https://docs.python.org/3/library/venv.html) or [**uv**](https://docs.astral.sh/uv/getting-started/installation/) or other virtual environment tool
 - **git**
 

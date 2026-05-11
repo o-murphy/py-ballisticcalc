@@ -20,7 +20,10 @@ This script is CI-friendly and can be wired into pipelines to enforce that
 examples in docstrings stay correct and up to date.
 """
 
-import doctest, pkgutil, sys, pathlib, importlib
+import doctest
+import pkgutil
+import pathlib
+import importlib
 
 def main() -> int:
     root = pathlib.Path(__file__).resolve().parents[1] / 'py_ballisticcalc'

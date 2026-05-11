@@ -11,7 +11,7 @@ This QuickStart gets you from a fresh environment to running basic ballistic cal
 
 ## Install
 
-**Prerequisites:** Python 3.10+.
+**Prerequisites:** Python 3.11+.
 
 - Latest release (PyPI):
 
