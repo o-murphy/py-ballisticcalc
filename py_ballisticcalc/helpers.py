@@ -1,7 +1,8 @@
 import bisect
 import math
 from deprecated import deprecated
-from typing import Callable, Any, Final
+from collections.abc import Callable
+from typing import Any, Final
 
 from py_ballisticcalc.exceptions import RangeError
 from py_ballisticcalc.interface import Calculator

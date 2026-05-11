@@ -61,14 +61,10 @@ from typing import (
     runtime_checkable,
     SupportsFloat,
     SupportsInt,
-    Mapping,
     Any,
-    Iterable,
-    Callable,
-    Generator,
     TypeAlias,
 )
-from collections.abc import Sequence, Hashable
+from collections.abc import Callable, Generator, Hashable, Iterable, Mapping, Sequence
 
 from types import NotImplementedType  # type: ignore[attr-defined]
 

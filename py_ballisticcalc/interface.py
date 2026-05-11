@@ -10,11 +10,11 @@ Key Classes:
     - _EngineLoader: Internal utility for discovering and loading engine plugins
 """
 
-from collections.abc import Set
+from collections.abc import Generator, Set
 from dataclasses import dataclass
 from importlib.metadata import entry_points, EntryPoint
 from types import TracebackType
-from typing import TypeVar, Generator, Any, overload, Self
+from typing import TypeVar, Any, overload, Self
 import warnings
 
 from py_ballisticcalc import RK4IntegrationEngine
