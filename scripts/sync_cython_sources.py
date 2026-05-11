@@ -7,7 +7,6 @@ This script:
    so the Cython coverage plugin can parse C comments to reconstruct original .pyx lines at report time.
 """
 
-import os
 import shutil
 from pathlib import Path
 

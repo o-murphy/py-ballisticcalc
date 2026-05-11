@@ -14,10 +14,8 @@ from collections.abc import Set
 from dataclasses import dataclass
 from importlib.metadata import entry_points, EntryPoint
 from types import TracebackType
-from typing import TypeVar, Generator, Any, overload
+from typing import TypeVar, Generator, Any, overload, Self
 import warnings
-
-from typing_extensions import Self
 
 from py_ballisticcalc import RK4IntegrationEngine
 from py_ballisticcalc.generics.engine import EngineProtocol, EngineFactoryProtocol

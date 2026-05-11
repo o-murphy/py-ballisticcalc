@@ -72,7 +72,8 @@ from collections.abc import Sequence, Hashable
 
 from types import NotImplementedType  # type: ignore[attr-defined]
 
-from typing_extensions import Self, override
+from typing import Self
+from typing_extensions import override
 
 # Local imports
 from py_ballisticcalc.exceptions import UnitTypeError, UnitConversionError, UnitAliasError

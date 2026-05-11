@@ -1,6 +1,6 @@
 default_install_hook_types: [pre-commit]
 default_language_version:
-  python: python3.10
+  python: python3.11
 
 repos:
   - repo: local
@@ -103,6 +103,6 @@ repos:
       #   pass_filenames: false
 
   - repo: https://github.com/astral-sh/uv-pre-commit
-    rev: 0.9.13
+    rev: 0.11.13
     hooks:
       - id: uv-lock
