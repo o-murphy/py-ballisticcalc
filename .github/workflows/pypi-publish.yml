@@ -11,9 +11,14 @@ on:
         required: false
         type: boolean
         default: false
+      version:
+        description: "Override version (e.g. 2.3.0b1) — required for TestPyPI to get a clean version instead of a dev suffix"
+        required: false
+        type: string
+        default: ''
 
 run-name: >
-  Build & Publish → ${{ github.event_name == 'release' && 'PyPI' ||
+  Build & Publish → ${{ github.event_name == 'push' && 'PyPI' ||
       github.event_name == 'workflow_dispatch' && inputs.testpypi && 'TestPyPI' ||
       'Build Only' }}
 
@@ -93,10 +98,14 @@ jobs:
           github-token: ${{ github.token }}
 
       - name: Build pure python package
+        env:
+          SETUPTOOLS_SCM_PRETEND_VERSION: ${{ inputs.version }}
         run: uv build --out-dir dist
         shell: bash
 
       - name: Build binary python package
+        env:
+          SETUPTOOLS_SCM_PRETEND_VERSION: ${{ inputs.version }}
         run: |
           uv build py_ballisticcalc.exts --sdist --out-dir dist
           uvx cibuildwheel py_ballisticcalc.exts --output-dir dist --platform auto --archs ${{ matrix.cibw_archs }}
