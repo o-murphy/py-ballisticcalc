@@ -8,7 +8,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Changed
-- Code style - now uses `Python 3.11` type annotations and features
+- `isinstance(x, (A, B))` replaced with `isinstance(x, A | B)` union syntax (PEP 604) across `unit.py`, `vector.py`, `munition.py`, `trajectory_data.py`, `engines/scipy_engine.py`
+- Implicit type aliases annotated with `TypeAlias` in `interface.py`, `munition.py`, `interpolation.py`, `trajectory_data.py`
+- `typing.Self` merged into existing `from typing import (...)` block in `unit.py`; duplicate `from typing import` blocks merged in `trajectory_data.py` and `generics/engine.py`
+- `importlib.metadata` compatibility shim removed from `_EngineLoader._get_entries_by_group` — `entry_points().select()` used directly (available since Python 3.9)
+- `from __future__ import annotations` removed from `engines/base_engine.py`, `visualize/plot.py`, and `shot.py`; `shot.ShotProps.from_shot` return type updated to `Self`
+- `typing.Self` moved from `typing_extensions` to stdlib `typing` in `interface.py`
+- `tomllib` imported directly from stdlib (Python 3.11+), version guard removed
+- `Callable` moved from `typing` to `collections.abc` in `helpers.py`
 
 ### Removed
 - Python 3.10 support EOL - removed all references to Python 3.10, updated CI and dependencies
