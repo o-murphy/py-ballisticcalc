@@ -24,6 +24,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Python 3.10 support EOL - removed all references to Python 3.10, updated CI and dependencies
 
 ### CI
+- `uv audit` pre-commit hook added — checks for known vulnerabilities in locked dependencies before each commit
+- `uv lock --upgrade` — all dev/docs dependencies updated; resolves 18 Dependabot security alerts (Pillow, urllib3, tornado, CairoSVG, fonttools, requests, virtualenv, Pygments, pymdown-extensions)
 - `pypi-publish.yml` trigger changed from `release: published` to `push: tags: v*`; `create-release` job added — generates and creates a draft GitHub Release automatically on tag push
 - `.github/actions/gen_release_notes/` — new composite action with a Python script that builds formatted release notes from `CHANGELOG.md`; supports optional `> intro` and `### Upgrade Notes` sections; auto-collects contributors via `git log`
 - `.mailmap` added — normalizes git author aliases to GitHub usernames for consistent contributor attribution
