@@ -1,0 +1,47 @@
+name: Test gen-release-notes action
+
+on:
+  pull_request:
+    paths:
+      - '.github/actions/gen_release_notes/**'
+      - 'CHANGELOG.md'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Version to test (default uses latest git tag)
+        required: false
+        default: ''
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Resolve test version
+        id: version
+        run: |
+          INPUT="${{ inputs.version }}"
+          if [ -n "$INPUT" ]; then
+            echo "value=$INPUT" >> "$GITHUB_OUTPUT"
+          else
+            TAG=$(git tag --sort=-version:refname | head -1)
+            echo "value=${TAG:-0.0.0}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Run gen-release-notes action
+        id: notes
+        uses: ./.github/actions/gen_release_notes
+        with:
+          version: ${{ steps.version.outputs.value }}
+
+      - name: Verify output file exists and is non-empty
+        run: |
+          FILE="${{ steps.notes.outputs.notes_file }}"
+          [ -s "$FILE" ] || { echo "ERROR: notes file is empty or missing"; exit 1; }
+          echo "OK: $FILE ($(wc -l < "$FILE") lines)"

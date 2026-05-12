@@ -1,0 +1,44 @@
+name: Generate Release Notes
+description: Generate formatted GitHub release notes from CHANGELOG.md
+
+inputs:
+  version:
+    description: Version string (v-prefix is stripped automatically)
+    required: true
+  repository:
+    description: GitHub repository in owner/repo format
+    required: false
+    default: ${{ github.repository }}
+  changelog:
+    description: Path to CHANGELOG.md relative to workspace root
+    required: false
+    default: CHANGELOG.md
+  output_file:
+    description: File path where the generated notes are written
+    required: false
+    default: /tmp/release_notes.md
+
+outputs:
+  notes_file:
+    description: Path to the generated release notes file
+    value: ${{ steps.gen.outputs.notes_file }}
+
+runs:
+  using: composite
+  steps:
+    - name: Install uv
+      uses: astral-sh/setup-uv@v7
+
+    - name: Generate release notes
+      id: gen
+      shell: bash
+      run: |
+        VERSION="${{ inputs.version }}"
+        VERSION="${VERSION#v}"
+        uv run python "${{ github.action_path }}/gen_release_notes.py" \
+          "$VERSION" \
+          "${{ inputs.repository }}" \
+          "${{ inputs.changelog }}" > "${{ inputs.output_file }}"
+        echo "notes_file=${{ inputs.output_file }}" >> "$GITHUB_OUTPUT"
+        echo "--- release notes preview ---"
+        cat "${{ inputs.output_file }}"

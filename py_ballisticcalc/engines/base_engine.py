@@ -33,13 +33,14 @@ See Also:
     py_ballisticcalc.trajectory_data: Data structures for results
 """
 
+import functools
 import math
 import warnings
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, asdict
 from enum import Enum, auto
 from bisect import bisect_left
-from typing import NamedTuple, TypedDict
+from typing import Callable, Concatenate, NamedTuple, ParamSpec, TypedDict, TypeVar
 from collections.abc import Sequence
 
 from py_ballisticcalc.conditions import Wind
@@ -164,13 +165,13 @@ class BaseEngineConfigDict(TypedDict, total=False):
         - create_base_engine_config: Factory function for BaseEngineConfig creation
     """
 
-    cZeroFindingAccuracy: float | None
-    cMaxIterations: int | None
-    cMinimumAltitude: float | None
-    cMaximumDrop: float | None
-    cMinimumVelocity: float | None
-    cGravityConstant: float | None
-    cStepMultiplier: float | None
+    cZeroFindingAccuracy: float
+    cMaxIterations: int
+    cMinimumAltitude: float
+    cMaximumDrop: float
+    cMinimumVelocity: float
+    cGravityConstant: float
+    cStepMultiplier: float
 
 
 def create_base_engine_config(interface_config: BaseEngineConfigDict | None = None) -> BaseEngineConfig:
@@ -216,7 +217,7 @@ class TrajectoryDataFilter:
     """
 
     EPSILON = 1e-6  # Range difference (in feet) significant enough to justify interpolation for data
-    records: list[TrajectoryData] = []
+    records: list[TrajectoryData]
     props: ShotProps
     filter: TrajFlag | int
     time_of_last_record: float
@@ -492,12 +493,22 @@ class ZeroFindingProps(NamedTuple):
     start_height_ft: float | None = None
 
 
-def with_no_minimum_velocity(method):
+_P = ParamSpec("_P")
+_R = TypeVar("_R")
+
+
+_Self = TypeVar("_Self", bound="BaseIntegrationEngine")
+
+
+def with_no_minimum_velocity(
+    method: Callable[Concatenate[_Self, _P], _R],
+) -> Callable[Concatenate[_Self, _P], _R]:
     """Decorator to temporarily set minimum velocity to zero."""
 
-    def wrapper(self, *args, **kwargs):
+    @functools.wraps(method)
+    def wrapper(self: _Self, *args: _P.args, **kwargs: _P.kwargs) -> _R:
         restore = None
-        if getattr(self._config, "cMinimumVelocity", None) != 0:
+        if self._config.cMinimumVelocity != 0:
             restore = self._config.cMinimumVelocity
             self._config.cMinimumVelocity = 0
         try:
@@ -509,12 +520,15 @@ def with_no_minimum_velocity(method):
     return wrapper
 
 
-def with_max_drop_zero(method):
+def with_max_drop_zero(
+    method: Callable[Concatenate[_Self, _P], _R],
+) -> Callable[Concatenate[_Self, _P], _R]:
     """Decorator to temporarily set maximum drop to zero."""
 
-    def wrapper(self, *args, **kwargs):
+    @functools.wraps(method)
+    def wrapper(self: _Self, *args: _P.args, **kwargs: _P.kwargs) -> _R:
         restore = None
-        if getattr(self._config, "cMaximumDrop", None) != 0:
+        if self._config.cMaximumDrop != 0:
             restore = self._config.cMaximumDrop
             self._config.cMaximumDrop = 0
         try:
