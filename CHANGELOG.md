@@ -26,7 +26,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### CI
 - `pypi-publish.yml` trigger changed from `release: published` to `push: tags: v*`; `create-release` job added — generates and creates a draft GitHub Release automatically on tag push
 - `.github/actions/gen_release_notes/` — new composite action with a Python script that builds formatted release notes from `CHANGELOG.md`; supports optional `> intro` and `### Upgrade Notes` sections; auto-collects contributors via `git log`
-- `.github/workflows/test-gen-release-notes.yml` — test workflow for the action, triggers on PRs that touch the action or `CHANGELOG.md`
 - `.mailmap` added — normalizes git author aliases to GitHub usernames for consistent contributor attribution
 
 ## [2.2.10] - 2026-04-30
