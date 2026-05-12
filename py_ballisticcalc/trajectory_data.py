@@ -681,7 +681,7 @@ class TrajectoryData(NamedTuple):
                 else:
                     raise ValueError("method must be 'pchip' or 'linear'")
                 interpolated_fields[field_name] = type(y0_val).new_from_raw(interpolated_raw, y0_val.units)
-            elif isinstance(y0_val, (float, int)):
+            elif isinstance(y0_val, float | int):
                 fy0, fy1, fy2 = float(y0_val), float(y1_val), float(y2_val)
                 if method == "pchip":
                     interpolated_fields[field_name] = interpolate_3_pt(x_val, x0, fy0, x1, fy1, x2, fy2)

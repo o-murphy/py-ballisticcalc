@@ -33,7 +33,6 @@ See Also:
     py_ballisticcalc.trajectory_data: Data structures for results
 """
 
-from __future__ import annotations
 import math
 import warnings
 from abc import ABC, abstractmethod

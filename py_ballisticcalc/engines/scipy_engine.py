@@ -310,7 +310,7 @@ class ScipyWindSock:
             return
         elif isinstance(winds, Wind):
             self.winds = [winds]
-        elif isinstance(winds, (tuple, list)):
+        elif isinstance(winds, tuple | list):
             if not winds:  # Empty sequence
                 return
             # Sort by distance (ascending) for binary search

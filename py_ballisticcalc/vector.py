@@ -349,7 +349,7 @@ class Vector(NamedTuple):
         Note:
             Multiplication is commutative for scalars but not for vectors.
         """
-        if isinstance(other, (int, float)):
+        if isinstance(other, int | float):
             return self.mul_by_const(other)
         if isinstance(other, Vector):
             return self.mul_by_vector(other)

@@ -514,7 +514,7 @@ class Unit(IntEnum):
                     return units_(float(value_))
             raise UnitAliasError(f"Unsupported {preferred=} unit alias")
 
-        if isinstance(input_, (float, int)):
+        if isinstance(input_, float | int):
             return create_as_preferred(input_)
 
         if not isinstance(input_, str):
@@ -973,13 +973,13 @@ class GenericDimension:
         Returns:
             A new instance of the same dimension and units, scaled by `other`.
         """
-        if isinstance(other, (int, float)):
+        if isinstance(other, int | float):
             return self.__class__.new_from_raw(self._value * other, self.units)
         return NotImplemented
 
     def __rmul__(self, other: Number) -> Self | NotImplementedType:
         """Right-hand multiplication by a number (commutative): `other * this`."""
-        if isinstance(other, (int, float)):
+        if isinstance(other, int | float):
             return self.__class__.new_from_raw(self._value * other, self.units)
         return NotImplemented
 
@@ -993,7 +993,7 @@ class GenericDimension:
         Raises:
             ZeroDivisionError: If dividing by zero (number) or by zero-valued measure.
         """
-        if isinstance(other, (int, float)):
+        if isinstance(other, int | float):
             if other == 0:
                 raise ZeroDivisionError("division by zero")
             return self.__class__.new_from_raw(self._value / other, self.units)
@@ -1013,7 +1013,7 @@ class GenericDimension:
         Raises:
             ZeroDivisionError: If dividing by zero.
         """
-        if isinstance(other, (int, float)):
+        if isinstance(other, int | float):
             if other == 0:
                 raise ZeroDivisionError("division by zero")
             self._value = self._value / float(other)
@@ -1031,7 +1031,7 @@ class GenericDimension:
             - Number: Unit value incremented by `other`.
             - Same dimension: adds raw values, preserving left operand's units.
         """
-        if isinstance(other, (int, float)):
+        if isinstance(other, int | float):
             raw = self._value + float(other) * self._units_to_raw_delta()
             return self.__class__.new_from_raw(raw, self.units)
         if isinstance(other, self.__class__):
@@ -1041,14 +1041,14 @@ class GenericDimension:
 
     def __radd__(self, other: Number) -> Self | NotImplementedType:
         """Right-hand number addition: `other + this`."""
-        if isinstance(other, (int, float)):
+        if isinstance(other, int | float):
             raw = self._value + float(other) * self._units_to_raw_delta()
             return self.__class__.new_from_raw(raw, self.units)
         return NotImplemented
 
     def __sub__(self, other: Number | Self) -> Self | NotImplementedType:
         """Subtract a number (interpreted in current units) or same dimension value: `this - other`."""
-        if isinstance(other, (int, float)):
+        if isinstance(other, int | float):
             raw = self._value - float(other) * self._units_to_raw_delta()
             return self.__class__.new_from_raw(raw, self.units)
         if isinstance(other, self.__class__):
@@ -1058,14 +1058,14 @@ class GenericDimension:
 
     def __rsub__(self, other: Number) -> Self | NotImplementedType:
         """Right-hand subtraction: `other - this`."""
-        if isinstance(other, (int, float)):
+        if isinstance(other, int | float):
             raw = float(other) * self._units_to_raw_delta() - self._value
             return self.__class__.new_from_raw(raw, self.units)
         return NotImplemented
 
     def __iadd__(self, other: Number | Self) -> Self | NotImplementedType:
         """In-place addition with number or same-dimension value: `this += other`."""
-        if isinstance(other, (int, float)):
+        if isinstance(other, int | float):
             self._value = self._value + float(other) * self._units_to_raw_delta()
             return self
         if isinstance(other, self.__class__):
@@ -1075,7 +1075,7 @@ class GenericDimension:
 
     def __isub__(self, other: Number | Self) -> Self | NotImplementedType:
         """In-place subtraction with number or same-dimension value: `this -= other`."""
-        if isinstance(other, (int, float)):
+        if isinstance(other, int | float):
             self._value = self._value - float(other) * self._units_to_raw_delta()
             return self
         if isinstance(other, self.__class__):
@@ -1085,7 +1085,7 @@ class GenericDimension:
 
     def __imul__(self, other: Number) -> Self | NotImplementedType:
         """In-place multiplication by a number: `this *= other`."""
-        if isinstance(other, (int, float)):
+        if isinstance(other, int | float):
             self._value = self._value * float(other)
             return self
         return NotImplemented
@@ -1146,8 +1146,8 @@ class Energy(GenericDimension):
     }
 
     # Energy.* unit aliases
-    FootPound: Final = Unit.FootPound
-    Joule: Final = Unit.Joule
+    FootPound: Final[Unit] = Unit.FootPound
+    Joule: Final[Unit] = Unit.Joule
 
 
 class Distance(GenericDimension):
@@ -1306,7 +1306,7 @@ class Temperature(GenericDimension):
 
     def __add__(self, other: Number):  # type: ignore[override]
         """Add a number of this object's units; clamp at absolute zero."""
-        if isinstance(other, (int, float)):
+        if isinstance(other, int | float):
             raw = self._value + float(other) * self._units_to_raw_delta()
             if raw < self._ABS_ZERO_F:
                 raw = self._ABS_ZERO_F
@@ -1319,7 +1319,7 @@ class Temperature(GenericDimension):
 
     def __sub__(self, other: Number):  # type: ignore[override]
         """Subtract a numeric delta in the object's unit; clamp at absolute zero."""
-        if isinstance(other, (int, float)):
+        if isinstance(other, int | float):
             raw = self._value - float(other) * self._units_to_raw_delta()
             if raw < self._ABS_ZERO_F:
                 raw = self._ABS_ZERO_F
@@ -1328,7 +1328,7 @@ class Temperature(GenericDimension):
 
     def __rsub__(self, other: Number):  # type: ignore[override]
         """Right-hand numeric subtraction; clamp at absolute zero."""
-        if isinstance(other, (int, float)):
+        if isinstance(other, int | float):
             raw = float(other) * self._units_to_raw_delta() - self._value
             if raw < self._ABS_ZERO_F:
                 raw = self._ABS_ZERO_F
@@ -1337,7 +1337,7 @@ class Temperature(GenericDimension):
 
     def __iadd__(self, other: Number):  # type: ignore[override]
         """In-place numeric addition; clamp at absolute zero."""
-        if isinstance(other, (int, float)):
+        if isinstance(other, int | float):
             self._value = self._value + float(other) * self._units_to_raw_delta()
             if self._value < self._ABS_ZERO_F:
                 self._value = self._ABS_ZERO_F
@@ -1346,7 +1346,7 @@ class Temperature(GenericDimension):
 
     def __isub__(self, other: Number):  # type: ignore[override]
         """In-place numeric subtraction; clamp at absolute zero."""
-        if isinstance(other, (int, float)):
+        if isinstance(other, int | float):
             self._value = self._value - float(other) * self._units_to_raw_delta()
             if self._value < self._ABS_ZERO_F:
                 self._value = self._ABS_ZERO_F

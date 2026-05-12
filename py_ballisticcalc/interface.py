@@ -41,14 +41,7 @@ class _EngineLoader:
 
     @classmethod
     def _get_entries_by_group(cls) -> Set[EntryPoint]:
-        all_entry_points = entry_points()
-        if hasattr(all_entry_points, "select"):  # for importlib >= 5
-            ballistic_entry_points = all_entry_points.select(group=cls._entry_point_group)
-        elif hasattr(all_entry_points, "get"):  # for importlib < 5
-            ballistic_entry_points = all_entry_points.get(cls._entry_point_group, [])  # type: ignore[arg-type]
-        else:
-            raise RuntimeError("Entry point not supported")
-        return set(ballistic_entry_points)
+        return set(entry_points().select(group=cls._entry_point_group))
 
     @classmethod
     def iter_engines(cls) -> Generator[EntryPoint, None, None]:

@@ -164,7 +164,7 @@ class Sight:
         if not scale_factor and focal_plane == "SFP":
             raise ValueError("Scale_factor required for SFP sights")
 
-        if not isinstance(h_click_size, (Angular, float, int)) or not isinstance(v_click_size, (Angular, float, int)):
+        if not isinstance(h_click_size, Angular | float | int) or not isinstance(v_click_size, Angular | float | int):
             raise TypeError("Angle expected for 'h_click_size' and 'v_click_size'")
 
         self.focal_plane = focal_plane
