@@ -51,10 +51,9 @@ See Also:
 
 from __future__ import annotations
 import math
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Final, Literal, NamedTuple, TypeAlias
 from dataclasses import dataclass, field
 from deprecated import deprecated
-from typing import Final, Literal, NamedTuple
 
 from py_ballisticcalc.exceptions import RangeError
 from py_ballisticcalc.unit import Angular, Distance, Energy, Velocity, Weight, GenericDimension, Unit, PreferredUnits
@@ -184,7 +183,7 @@ class TrajFlag(int):
         return "|".join(parts) if parts else "UNKNOWN"
 
 
-BaseTrajDataAttribute = Literal[
+BaseTrajDataAttribute: TypeAlias = Literal[
     "time", "position.x", "position.y", "position.z", "velocity.x", "velocity.y", "velocity.z", "mach"
 ]
 
@@ -307,7 +306,7 @@ class BaseTrajData(NamedTuple):
         return BaseTrajData(time=time, position=position, velocity=velocity, mach=mach)
 
 
-TrajectoryDataAttribute = Literal[
+TrajectoryDataAttribute: TypeAlias = Literal[
     "time",
     "distance",
     "velocity",

@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- Code style - now uses `Python 3.11` type annotations and features
+
+### Removed
+- Python 3.10 support EOL - removed all references to Python 3.10, updated CI and dependencies
+
 ## [2.2.10] - 2026-04-30
 [:simple-github: GitHub release][2.2.10]
 

@@ -14,7 +14,7 @@ from collections.abc import Generator, Set
 from dataclasses import dataclass
 from importlib.metadata import entry_points, EntryPoint
 from types import TracebackType
-from typing import TypeVar, Any, overload, Self
+from typing import TypeAlias, TypeVar, Any, overload, Self
 import warnings
 
 from py_ballisticcalc import RK4IntegrationEngine
@@ -26,8 +26,8 @@ from py_ballisticcalc.unit import Angular, Distance, PreferredUnits
 
 ConfigT = TypeVar("ConfigT")
 
-EngineFactoryProtocolType = EngineFactoryProtocol[Any]
-EngineFactoryProtocolEntry = str | EngineFactoryProtocolType | None
+EngineFactoryProtocolType: TypeAlias = EngineFactoryProtocol[Any]
+EngineFactoryProtocolEntry: TypeAlias = str | EngineFactoryProtocolType | None
 
 DEFAULT_ENTRY_SUFFIX = "_engine"
 DEFAULT_ENTRY_GROUP = "py_ballisticcalc"

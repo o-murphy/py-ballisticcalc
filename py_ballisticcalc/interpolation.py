@@ -7,7 +7,7 @@ preserve monotonicity and prevent overshoot using the Fritsch–Carlson slope li
 """
 
 from dataclasses import dataclass
-from typing import Literal
+from typing import Literal, TypeAlias
 from collections.abc import Sequence
 
 __all__ = [
@@ -20,7 +20,7 @@ __all__ = [
     "pchip_eval",
 ]
 
-InterpolationMethod = Literal["pchip", "linear"]
+InterpolationMethod: TypeAlias = Literal["pchip", "linear"]
 
 
 def _sign(a: float) -> int:

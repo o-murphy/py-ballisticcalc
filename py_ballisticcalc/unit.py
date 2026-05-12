@@ -54,21 +54,21 @@ from enum import IntEnum
 from math import pi
 import re
 from typing import (
-    NamedTuple,
-    TypeVar,
+    Any,
     Final,
+    NamedTuple,
     Protocol,
-    runtime_checkable,
+    Self,
     SupportsFloat,
     SupportsInt,
-    Any,
     TypeAlias,
+    TypeVar,
+    runtime_checkable,
 )
 from collections.abc import Callable, Generator, Hashable, Iterable, Mapping, Sequence
 
 from types import NotImplementedType  # type: ignore[attr-defined]
 
-from typing import Self
 from typing_extensions import override
 
 # Local imports
