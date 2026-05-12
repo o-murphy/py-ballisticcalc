@@ -59,9 +59,9 @@ import math
 import warnings
 from dataclasses import dataclass, asdict
 from bisect import bisect_left, bisect_right
-from typing import Any, Callable, Literal, TYPE_CHECKING
+from typing import Any, Literal, TYPE_CHECKING
 from typing_extensions import override
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 
 # Third-party imports
 try:
@@ -310,7 +310,7 @@ class ScipyWindSock:
             return
         elif isinstance(winds, Wind):
             self.winds = [winds]
-        elif isinstance(winds, (tuple, list)):
+        elif isinstance(winds, tuple | list):
             if not winds:  # Empty sequence
                 return
             # Sort by distance (ascending) for binary search

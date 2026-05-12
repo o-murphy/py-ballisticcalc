@@ -4,7 +4,7 @@
 [build-system]
 requires = [
     "setuptools",
-    "setuptools-scm[toml]>=9.2",
+    "setuptools-scm[toml]>=10.0.5",
     "cython>=3.1.4"]
 build-backend = "setuptools.build_meta"
 
@@ -17,7 +17,7 @@ authors = [
 ]
 description = "LGPL library for small arms ballistic calculations (Python 3)"
 readme = "README.md"
-requires-python = ">=3.10"
+requires-python = ">=3.11"
 keywords = ["py_ballisticcalc", "ballistics", "Cython", "ballistic calculator", "python", "python3"]
 #license = {file = "LICENSE"}
 classifiers = [
@@ -27,7 +27,6 @@ classifiers = [
     "Topic :: Software Development :: Libraries :: Python Modules",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3 :: Only",
-    "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
@@ -70,7 +69,7 @@ include = ["py_ballisticcalc_exts*"]
 exclude = ["py_ballisticcalc_exts.include*", "py_ballisticcalc_exts.external*"]
 
 [project.optional-dependencies]
-dev = ["cython>=3.1.4", "cibuildwheel", "setuptools"]
+dev = ["cython>=3.2.4", "cibuildwheel", "setuptools"]
 
 [tool.cibuildwheel]
 # Use uv and build
@@ -87,7 +86,7 @@ fallback_version = "0.0.0.dev0"
 
 [dependency-groups]
 dev = [
-    "cibuildwheel>=2.23.2",
-    "cython>=3.1.4",
+    "cibuildwheel>=3.4.1",
+    "cython>=3.2.4",
     "setuptools>=80.9.0",
 ]

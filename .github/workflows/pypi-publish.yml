@@ -1,8 +1,9 @@
 name: Build and Upload Python Package to PyPI
 
 on:
-  release:
-    types: [published]
+  push:
+    tags:
+      - 'v*'
   workflow_dispatch:
     inputs:
       testpypi:
@@ -10,16 +11,44 @@ on:
         required: false
         type: boolean
         default: false
+      version:
+        description: "Override version (e.g. 2.3.0b1) — required for TestPyPI to get a clean version instead of a dev suffix"
+        required: false
+        type: string
+        default: ''
 
 run-name: >
-  Build & Publish → ${{ github.event_name == 'release' && 'PyPI' ||
+  Build & Publish → ${{ github.event_name == 'push' && 'PyPI' ||
       github.event_name == 'workflow_dispatch' && inputs.testpypi && 'TestPyPI' ||
       'Build Only' }}
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
+  create-release:
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Generate release notes
+        id: notes
+        uses: ./.github/actions/gen_release_notes
+        with:
+          version: ${{ github.ref_name }}
+
+      - name: Create GitHub Release (draft)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "${{ github.ref_name }}" \
+            --title "py-ballisticcalc ${{ github.ref_name }}" \
+            --notes-file "${{ steps.notes.outputs.notes_file }}" \
+            --draft
+
   build:
     name: Build wheels on ${{ matrix.os }}
     strategy:
@@ -69,10 +98,14 @@ jobs:
           github-token: ${{ github.token }}
 
       - name: Build pure python package
+        env:
+          SETUPTOOLS_SCM_PRETEND_VERSION: ${{ inputs.version }}
         run: uv build --out-dir dist
         shell: bash
 
       - name: Build binary python package
+        env:
+          SETUPTOOLS_SCM_PRETEND_VERSION: ${{ inputs.version }}
         run: |
           uv build py_ballisticcalc.exts --sdist --out-dir dist
           uvx cibuildwheel py_ballisticcalc.exts --output-dir dist --platform auto --archs ${{ matrix.cibw_archs }}
@@ -92,7 +125,7 @@ jobs:
   publish:
     needs: build
     runs-on: ubuntu-latest
-    environment: ${{ github.event_name == 'release' && 'pypi' || inputs.testpypi && 'testpypi' || 'build' }}
+    environment: ${{ github.event_name == 'push' && 'pypi' || inputs.testpypi && 'testpypi' || 'build' }}
     permissions:
       id-token: write
 
@@ -121,7 +154,7 @@ jobs:
           retention-days: 14
 
       - name: Publish package distributions to PyPI
-        if: ${{ github.event_name == 'release' }}
+        if: ${{ github.event_name == 'push' }}
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
           skip-existing: true

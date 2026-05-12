@@ -141,10 +141,10 @@ run_stress_tests() {
 # Main command dispatcher
 case "${1:-}" in
     install-system-deps)
-        install_system_deps "${2:-3.10}" "${3:-Linux}"
+        install_system_deps "${2:-3.11}" "${3:-Linux}"
         ;;
     install-project)
-        install_project "${2:-3.10}" "${3:-euler_engine}"
+        install_project "${2:-3.11}" "${3:-euler_engine}"
         ;;
     test)
         run_tests "${2:-tests}" "${3:-euler_engine}"

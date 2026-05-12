@@ -12,10 +12,9 @@ Notes:
 - HitResult objects include the ShotProps instance used to calculate a trajectory.
 """
 
-from __future__ import annotations
-
 import math
 from dataclasses import dataclass, field
+from typing import Self
 
 from collections.abc import Sequence
 
@@ -305,7 +304,7 @@ class ShotProps:
         return self.shot.winds
 
     @classmethod
-    def from_shot(cls, shot: Shot) -> ShotProps:
+    def from_shot(cls, shot: Shot) -> Self:
         """Initialize a ShotProps instance from a [`Shot`](py_ballisticcalc.shot.Shot) instance."""
         muzzle_velocity_fps = shot.ammo.get_velocity_for_temp(shot.atmo.powder_temp) >> Velocity.FPS
         return cls(

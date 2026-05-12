@@ -62,7 +62,6 @@ Styling and Customization:
 """
 
 # pylint: skip-file
-from __future__ import annotations
 
 # Standard library imports
 import math

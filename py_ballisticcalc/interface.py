@@ -10,14 +10,12 @@ Key Classes:
     - _EngineLoader: Internal utility for discovering and loading engine plugins
 """
 
-from collections.abc import Set
+from collections.abc import Generator, Set
 from dataclasses import dataclass
 from importlib.metadata import entry_points, EntryPoint
 from types import TracebackType
-from typing import TypeVar, Generator, Any, overload
+from typing import TypeAlias, TypeVar, Any, overload, Self
 import warnings
-
-from typing_extensions import Self
 
 from py_ballisticcalc import RK4IntegrationEngine
 from py_ballisticcalc.generics.engine import EngineProtocol, EngineFactoryProtocol
@@ -28,8 +26,8 @@ from py_ballisticcalc.unit import Angular, Distance, PreferredUnits
 
 ConfigT = TypeVar("ConfigT")
 
-EngineFactoryProtocolType = EngineFactoryProtocol[Any]
-EngineFactoryProtocolEntry = str | EngineFactoryProtocolType | None
+EngineFactoryProtocolType: TypeAlias = EngineFactoryProtocol[Any]
+EngineFactoryProtocolEntry: TypeAlias = str | EngineFactoryProtocolType | None
 
 DEFAULT_ENTRY_SUFFIX = "_engine"
 DEFAULT_ENTRY_GROUP = "py_ballisticcalc"
@@ -43,14 +41,7 @@ class _EngineLoader:
 
     @classmethod
     def _get_entries_by_group(cls) -> Set[EntryPoint]:
-        all_entry_points = entry_points()
-        if hasattr(all_entry_points, "select"):  # for importlib >= 5
-            ballistic_entry_points = all_entry_points.select(group=cls._entry_point_group)
-        elif hasattr(all_entry_points, "get"):  # for importlib < 5
-            ballistic_entry_points = all_entry_points.get(cls._entry_point_group, [])  # type: ignore[arg-type]
-        else:
-            raise RuntimeError("Entry point not supported")
-        return set(ballistic_entry_points)
+        return set(entry_points().select(group=cls._entry_point_group))
 
     @classmethod
     def iter_engines(cls) -> Generator[EntryPoint, None, None]:

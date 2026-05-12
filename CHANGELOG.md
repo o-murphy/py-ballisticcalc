@@ -7,6 +7,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- `BaseEngineConfigDict` fields changed from `T | None` to `T` — `total=False` already provides optionality; explicit `None` values no longer accepted
+- `with_no_minimum_velocity` and `with_max_drop_zero` decorators typed with `ParamSpec`, `Concatenate`, and `functools.wraps` — decorated methods now preserve their full signatures for static type checkers
+- `TrajectoryDataFilter.records` class-level mutable default `= []` removed; annotation-only declaration left, instance assigned in `__init__`
+- `isinstance(x, (A, B))` replaced with `isinstance(x, A | B)` union syntax (PEP 604) across `unit.py`, `vector.py`, `munition.py`, `trajectory_data.py`, `engines/scipy_engine.py`
+- Implicit type aliases annotated with `TypeAlias` in `interface.py`, `munition.py`, `interpolation.py`, `trajectory_data.py`
+- `typing.Self` merged into existing `from typing import (...)` block in `unit.py`; duplicate `from typing import` blocks merged in `trajectory_data.py` and `generics/engine.py`
+- `importlib.metadata` compatibility shim removed from `_EngineLoader._get_entries_by_group` — `entry_points().select()` used directly (available since Python 3.9)
+- `from __future__ import annotations` removed from `engines/base_engine.py`, `visualize/plot.py`, and `shot.py`; `shot.ShotProps.from_shot` return type updated to `Self`
+- `typing.Self` moved from `typing_extensions` to stdlib `typing` in `interface.py`
+- `tomllib` imported directly from stdlib (Python 3.11+), version guard removed
+- `Callable` moved from `typing` to `collections.abc` in `helpers.py`
+
+### Removed
+- Python 3.10 support EOL - removed all references to Python 3.10, updated CI and dependencies
+
+### CI
+- `uv audit` pre-commit hook added — checks for known vulnerabilities in locked dependencies before each commit
+- `uv lock --upgrade` — all dev/docs dependencies updated; resolves 18 Dependabot security alerts (Pillow, urllib3, tornado, CairoSVG, fonttools, requests, virtualenv, Pygments, pymdown-extensions)
+- `pypi-publish.yml` trigger changed from `release: published` to `push: tags: v*`; `create-release` job added — generates and creates a draft GitHub Release automatically on tag push
+- `.github/actions/gen_release_notes/` — new composite action with a Python script that builds formatted release notes from `CHANGELOG.md`; supports optional `> intro` and `### Upgrade Notes` sections; auto-collects contributors via `git log`
+- `.mailmap` added — normalizes git author aliases to GitHub usernames for consistent contributor attribution
+
 ## [2.2.10] - 2026-04-30
 [:simple-github: GitHub release][2.2.10]
 

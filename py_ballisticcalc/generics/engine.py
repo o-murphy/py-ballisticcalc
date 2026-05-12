@@ -22,13 +22,9 @@ Note:
     compatibility with the Calculator interface and other library components.
 """
 
-# Standard library imports
-from typing import Any, TypeVar
+from typing import Any, Protocol, TypeVar, runtime_checkable
 
-# Third-party imports
-from typing import Protocol, runtime_checkable
 
-# Local imports
 from py_ballisticcalc.shot import Shot
 from py_ballisticcalc.trajectory_data import HitResult, TrajFlag
 from py_ballisticcalc.unit import Distance, Angular

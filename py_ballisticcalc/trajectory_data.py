@@ -51,10 +51,9 @@ See Also:
 
 from __future__ import annotations
 import math
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Final, Literal, NamedTuple, TypeAlias
 from dataclasses import dataclass, field
 from deprecated import deprecated
-from typing import Final, Literal, NamedTuple
 
 from py_ballisticcalc.exceptions import RangeError
 from py_ballisticcalc.unit import Angular, Distance, Energy, Velocity, Weight, GenericDimension, Unit, PreferredUnits
@@ -184,7 +183,7 @@ class TrajFlag(int):
         return "|".join(parts) if parts else "UNKNOWN"
 
 
-BaseTrajDataAttribute = Literal[
+BaseTrajDataAttribute: TypeAlias = Literal[
     "time", "position.x", "position.y", "position.z", "velocity.x", "velocity.y", "velocity.z", "mach"
 ]
 
@@ -307,7 +306,7 @@ class BaseTrajData(NamedTuple):
         return BaseTrajData(time=time, position=position, velocity=velocity, mach=mach)
 
 
-TrajectoryDataAttribute = Literal[
+TrajectoryDataAttribute: TypeAlias = Literal[
     "time",
     "distance",
     "velocity",
@@ -681,7 +680,7 @@ class TrajectoryData(NamedTuple):
                 else:
                     raise ValueError("method must be 'pchip' or 'linear'")
                 interpolated_fields[field_name] = type(y0_val).new_from_raw(interpolated_raw, y0_val.units)
-            elif isinstance(y0_val, (float, int)):
+            elif isinstance(y0_val, float | int):
                 fy0, fy1, fy2 = float(y0_val), float(y1_val), float(y2_val)
                 if method == "pchip":
                     interpolated_fields[field_name] = interpolate_3_pt(x_val, x0, fy0, x1, fy1, x2, fy2)

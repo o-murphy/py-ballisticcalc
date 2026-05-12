@@ -14,17 +14,11 @@ __credits__ = ["o-murphy", "dbookstaber"]
 # Standard library imports
 import importlib.resources
 import os
-import sys
+import tomllib
 
-# Third-party imports
 # Local imports
 from .logger import logger as log
 from .unit import Unit, PreferredUnits
-
-if sys.version_info[:2] < (3, 11):
-    import tomli as tomllib
-else:
-    import tomllib
 
 
 def _load_config(filepath: str | None = None, suppress_warnings: bool = False) -> None:
@@ -169,7 +163,7 @@ _SKIP_GLOBALS = {
     "__name__", "__doc__", "__package__", "__loader__", "__spec__", 
     "__file__", "__cached__", "__builtins__",
     # Skip imported modules
-    "tomllib", "sys", "os", "importlib",
+    "tomllib", "os", "importlib",
     # Skip private/internal symbols
     "_load_config", "_basic_config", "_resolve_resource_path",
     "_load_imperial_units", "_load_metric_units", "_load_mixed_units"
