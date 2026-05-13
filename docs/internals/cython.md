@@ -7,6 +7,9 @@ It explains naming, error handling, Global Interpreter Lock (GIL) usage, and why
 
 - Keep hot numerical work free of the Python GIL to maximize throughput.
 - Provide Python-friendly, well-tested public APIs while preserving C/C++-level performance.
+- Build universal wheels using the Python stable ABI (`abi3`): one binary per platform/architecture
+  works on Python 3.11 and all later standard CPython releases, without recompiling per interpreter
+  version. Free-threaded Python (3.13t+) is built separately as it is incompatible with `Py_LIMITED_API`.
 
 ## GIL and `nogil`
 
@@ -188,3 +191,41 @@ pattern is confirmed or a corruption (crash, inconsistent data) is suspected.
 ### Tests
 * `pytest ./py_ballisticcalc.exts/tests` for cython-specific tests.
 * We use `@pytest.mark.stress` to keep stress tests separate.  To run those: `pytest ./py_ballisticcalc.exts/tests -m stress`
+
+## `@final` and the abi3 (stable ABI) constraint
+
+The wheels for this package are built against the Python stable ABI (`Py_LIMITED_API=0x030B0000`,
+producing `cp311-abi3-*` wheels). This interacts with Cython's `@final` decorator on `cdef class`
+types in a non-obvious way.
+
+### How it breaks
+
+Without `Py_LIMITED_API`, Cython initialises extension types directly through `PyTypeObject` /
+`PyType_Ready()`. With `Py_LIMITED_API`, Cython is forced to use `PyType_FromSpec()`. When a type
+is marked `@final`, Cython omits `Py_TPFLAGS_BASETYPE` from the type spec. `PyType_FromSpec()`
+enforces this flag strictly: any attempt to create a subtype — even from another Cython module at
+import time — raises `TypeError: type '...' is not an acceptable base type`.
+
+### Rule of thumb
+
+| Situation | Use `@final`? |
+|---|---|
+| `cdef class` — nothing in any `.pyx` subclasses it | ✅ safe |
+| `cdef class` — subclassed by another Cython module | ❌ omit `@final`; add a comment explaining why |
+| `cdef` function | ✅ safe — unrelated to `Py_TPFLAGS_BASETYPE` |
+
+### Current exceptions
+
+`CythonizedRK4IntegrationEngine` (`rk4_engine.pyx`) and `CythonizedEulerIntegrationEngine`
+(`euler_engine.pyx`) intentionally omit `@final`: the RK4 engine is subclassed by
+`CythonEngineTestHarness` in `_test_engine.pyx`, and the Euler engine is kept consistent
+as it may also be subclassed in the future.
+All other `cdef class` types in this package keep `@final` and are safe.
+
+### Free-threaded Python (`Py_GIL_DISABLED`)
+
+`Py_LIMITED_API` and `Py_GIL_DISABLED` (Python 3.13t / 3.14t) are mutually incompatible —
+CPython [issue #111506](https://github.com/python/cpython/issues/111506). The build system
+detects `Py_GIL_DISABLED` at build time (`setup.py`) and automatically disables `Py_LIMITED_API`
+for free-threaded builds. Those wheels are tagged `cp313t-cp313t-*` / `cp314t-cp314t-*` rather
+than `cp311-abi3-*`.

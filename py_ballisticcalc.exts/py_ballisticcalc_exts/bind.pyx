@@ -26,6 +26,8 @@ from py_ballisticcalc.vector import Vector
 from py_ballisticcalc.conditions import Coriolis
 
 
+# @final on cdef functions: unrelated to abi3/Py_TPFLAGS_BASETYPE — marks the function
+# as non-overridable in subclasses and allows the compiler to inline the call.
 @final
 cdef BCLIBC_Config BCLIBC_Config_from_pyobject(object config):
     cdef BCLIBC_Config result = BCLIBC_Config_fromPyObject(<PyObject *>config)

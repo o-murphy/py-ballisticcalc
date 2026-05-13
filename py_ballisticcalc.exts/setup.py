@@ -3,7 +3,9 @@
 
 import os
 import platform
+import sysconfig
 from setuptools import setup, Extension
+from setuptools.command.bdist_wheel import bdist_wheel
 from pathlib import Path
 
 try:
@@ -76,6 +78,14 @@ if ENABLE_CYTHON_SAFETY:
 
 
 FORCE_CYTHON_MACROS = [("__CYTHON__", "1")]
+
+# Stable ABI target: build once per platform, compatible with Python 3.11+.
+# Disabled when:
+#   - coverage tracing is requested (CYTHON_TRACE uses internal CPython APIs)
+#   - building on free-threaded Python (Py_GIL_DISABLED conflicts with Py_LIMITED_API)
+PY_LIMITED_API_HEX = "0x030B0000"  # CPython 3.11
+_GIL_DISABLED = bool(sysconfig.get_config_var("Py_GIL_DISABLED"))
+USE_LIMITED_API = not ENABLE_CYTHON_COVERAGE and not _GIL_DISABLED
 
 EXTENSIONS_BASE_DIR = Path("py_ballisticcalc_exts")
 SRC_DIR_PATH = EXTENSIONS_BASE_DIR / "src"
@@ -190,6 +200,8 @@ def collect_extensions(deps: dict[str, Path], path: Path, *, is_cpp: bool = Fals
         if ENABLE_CYTHON_COVERAGE:
             # Enable tracing in both with-GIL and nogil regions
             define_macros.extend([("CYTHON_TRACE", "1"), ("CYTHON_TRACE_NOGIL", "1")])
+        if USE_LIMITED_API:
+            define_macros.append(("Py_LIMITED_API", PY_LIMITED_API_HEX))
 
         sources = [str(s) for s in sources]
 
@@ -236,4 +248,15 @@ extensions = cythonize(
     force=ENABLE_CYTHON_COVERAGE or CYTHON_FORCE_REGEN,
 )
 
-setup(ext_modules=extensions)
+cmdclass = {}
+if USE_LIMITED_API:
+    # In setuptools 36+, py_limited_api is a bdist_wheel command option, not an
+    # Extension attribute. Subclass to set it so the wheel is tagged cpXY-abi3-*.
+    class _bdist_wheel_abi3(bdist_wheel):
+        def finalize_options(self):
+            super().finalize_options()
+            self.py_limited_api = "cp311"
+
+    cmdclass["bdist_wheel"] = _bdist_wheel_abi3
+
+setup(ext_modules=extensions, cmdclass=cmdclass)
