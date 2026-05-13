@@ -5,7 +5,6 @@ import os
 import platform
 import sysconfig
 from setuptools import setup, Extension
-from setuptools.command.bdist_wheel import bdist_wheel
 from pathlib import Path
 
 try:
@@ -214,6 +213,7 @@ def collect_extensions(deps: dict[str, Path], path: Path, *, is_cpp: bool = Fals
                     language="c",
                     define_macros=define_macros,
                     extra_compile_args=c_compile_args,
+                    py_limited_api=USE_LIMITED_API,
                     # libraries=['m'] # For Linux/macOS, add 'm' for math functions. For Windows, usually not needed or part of default C runtime.
                 )
             )
@@ -228,6 +228,7 @@ def collect_extensions(deps: dict[str, Path], path: Path, *, is_cpp: bool = Fals
                     define_macros=define_macros,
                     extra_compile_args=cpp_compile_args,
                     extra_link_args=cpp_extra_link_args,
+                    py_limited_api=USE_LIMITED_API,
                 )
             )
 
@@ -250,8 +251,12 @@ extensions = cythonize(
 
 cmdclass = {}
 if USE_LIMITED_API:
+    from setuptools.command.bdist_wheel import bdist_wheel
+
     # In setuptools 36+, py_limited_api is a bdist_wheel command option, not an
     # Extension attribute. Subclass to set it so the wheel is tagged cpXY-abi3-*.
+    # py_limited_api=True on the Extension above tells Cython to generate
+    # PyType_FromSpec-based code; this subclass handles the wheel filename tag.
     class _bdist_wheel_abi3(bdist_wheel):
         def finalize_options(self):
             super().finalize_options()
