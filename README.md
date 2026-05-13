@@ -40,9 +40,24 @@ LGPL library for small arms ballistic calculations based on point-mass (3 DoF) p
 * **[Contributors](#contributors)**
 * **[About project](#about-project)**
 
-# Installation
+## Installation
 
-## pip
+### uv
+
+```shell
+uv add py-ballisticcalc
+
+# Using precompiled backend (improves performance)
+uv add py-ballisticcalc[exts]
+
+# Using matplotlib and pandas uses additional dependencies
+uv add py-ballisticcalc[charts]
+
+# Get everything, including the SciPy engine
+uv add py-ballisticcalc[exts,charts,scipy]
+```
+
+### pip
 
 ```shell
 pip install py-ballisticcalc
@@ -58,6 +73,7 @@ pip install py-ballisticcalc[exts,charts,scipy]
 ```
 
 ----
+
 
 ## [Quick Start] - click here to open Quick Start guide
 
@@ -96,7 +112,6 @@ Choose between different calculation engines, or build your own.  Included engin
 | [`scipy_engine`][py_ballisticcalc.engines.SciPyIntegrationEngine]                   | :material-arrow-up:   6.2x / 5.8x (faster)    |          `[scipy]`          | Advanced numerical methods              |
 
 
-
 ## About project
 
 The library provides trajectory calculation for ballistic projectiles launched by airguns, bows, firearms, artillery, etc.
@@ -105,6 +120,7 @@ The core point-mass (3DoF) ballistic model underlying this project was used on t
 Alexandre Trofimov implemented a calculator in [JavaScript](https://ptosis.ch/ebalka/ebalka.html).
 
 This Python3 implementation has been expanded to support multiple ballistic coefficients and custom drag functions, such as those derived from Doppler radar data.
+
 
 ## Contributors
 
@@ -120,6 +136,7 @@ Special thanks to:
 *For helping in consultations, testing, and improving edge case compatibility*
 * **[Nikolay Gekht](https://github.com/nikolaygekht)** <br>
 *For the source code in C# and GO-lang from which this project firstly was forked*
+
 
 ## Sister projects
 
