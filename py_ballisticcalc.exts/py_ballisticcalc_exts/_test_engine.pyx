@@ -16,6 +16,7 @@ from py_ballisticcalc_exts.base_types cimport (
 __all__ = ["CythonEngineTestHarness"]
 
 
+# @final is safe with abi3: this is the leaf subclass; nothing subclasses CythonEngineTestHarness.
 @final
 cdef class CythonEngineTestHarness(CythonizedRK4IntegrationEngine):
     cdef bint _prepared

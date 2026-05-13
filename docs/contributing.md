@@ -35,6 +35,13 @@ Because of this, setting up and running the tests should be very simple.
 !!! note
     For high performance, [the py-ballisticcalc.exts subproject](internals/cython.md) requires [cython](https://cython.readthedocs.io/en/latest/src/quickstart/install.html) to create compiled calculation engines.
 
+!!! note "Stable ABI (abi3) wheels"
+    The extension package targets the Python stable ABI (`Py_LIMITED_API`, `cp311-abi3-*`),
+    so a single binary wheel works on CPython 3.11 and all later standard releases without
+    recompilation. Free-threaded Python (3.13t+) is built separately.
+    See [Cython conventions — `@final` and the abi3 constraint](internals/cython.md#final-and-the-abi3-stable-abi-constraint)
+    for the implications this has when writing `cdef class` types.
+
 Following are the basics of creating a Pull Request.  For more developer guidance see [Developer Details](internals/details.md) and [Architecture](internals/architecture.md).
 
 ### Prerequisites

@@ -8,6 +8,7 @@
 **/*.dylib
 **/build
 **/dist
+**/wheelhouse
 **/*.egg-info
 **/.venv
 **/*.ps1

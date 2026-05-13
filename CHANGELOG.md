@@ -24,6 +24,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Python 3.10 support EOL - removed all references to Python 3.10, updated CI and dependencies
 
 ### CI
+- `py_ballisticcalc.exts` wheels now target the Python stable ABI (`cp311-abi3-*`): one binary per platform/architecture is compatible with CPython 3.11 and all later standard releases; free-threaded Python 3.13t / 3.14t is built as separate version-specific wheels
+- `cibuildwheel` reduced to `cp311-* cp314t-*` — eliminates redundant per-interpreter builds for standard CPython; `cp313t-*` dropped (deprecated in cibuildwheel 3.4, removed in next minor), `cp314t-*` requires no `enable` flag
+- Cythonized engine test full matrix reduced from 6 to 3 Python versions (`3.11, 3.14, 3.14t`); `3.12`, `3.13`, `3.13t` removed — abi3 binary is identical across standard versions, boundary versions provide sufficient coverage
+- `CIBW_ENVIRONMENT_PASS: SETUPTOOLS_SCM_PRETEND_VERSION` added to the publish workflow — previously the version override was not forwarded into `cibuildwheel` build containers, causing `+gHASH` local version suffixes that PyPI rejects
 - `uv audit` pre-commit hook added — checks for known vulnerabilities in locked dependencies before each commit
 - `uv lock --upgrade` — all dev/docs dependencies updated; resolves 18 Dependabot security alerts (Pillow, urllib3, tornado, CairoSVG, fonttools, requests, virtualenv, Pygments, pymdown-extensions)
 - `pypi-publish.yml` trigger changed from `release: published` to `push: tags: v*`; `create-release` job added — generates and creates a draft GitHub Release automatically on tag push

@@ -74,6 +74,10 @@ dev = ["cython>=3.2.4", "cibuildwheel", "setuptools"]
 [tool.cibuildwheel]
 # Use uv and build
 build-frontend = "build[uv]"
+# cp311-abi3 covers standard CPython 3.11+; free-threaded (cp314t-*) is built separately
+# because Py_LIMITED_API and Py_GIL_DISABLED are mutually incompatible.
+# cp313t-* was removed: cibuildwheel 3.4 deprecated it and will drop it in the next minor.
+build = "cp311-* cp314t-*"
 
 [tool.pytest.ini_options]
 minversion = "7.0"
