@@ -26,6 +26,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### CI
 - `py_ballisticcalc.exts` wheels now target the Python stable ABI (`cp311-abi3-*`): one binary per platform/architecture is compatible with CPython 3.11 and all later standard releases; free-threaded Python 3.13t / 3.14t is built as separate version-specific wheels
 - `cibuildwheel` reduced to `cp311-* cp313t-* cp314t-*` with `enable = ["cpython-freethreading"]` — eliminates redundant per-interpreter builds for standard CPython; free-threaded group must be explicitly enabled in cibuildwheel 3.x
+- Cythonized engine test full matrix reduced from 6 to 4 Python versions (`3.11, 3.14, 3.13t, 3.14t`); `3.12` and `3.13` standard CPython removed — abi3 binary is identical across them, boundary versions provide sufficient coverage
 - `CIBW_ENVIRONMENT_PASS: SETUPTOOLS_SCM_PRETEND_VERSION` added to the publish workflow — previously the version override was not forwarded into `cibuildwheel` build containers, causing `+gHASH` local version suffixes that PyPI rejects
 - `uv audit` pre-commit hook added — checks for known vulnerabilities in locked dependencies before each commit
 - `uv lock --upgrade` — all dev/docs dependencies updated; resolves 18 Dependabot security alerts (Pillow, urllib3, tornado, CairoSVG, fonttools, requests, virtualenv, Pygments, pymdown-extensions)
