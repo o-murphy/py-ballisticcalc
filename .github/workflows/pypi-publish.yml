@@ -106,6 +106,7 @@ jobs:
       - name: Build binary python package
         env:
           SETUPTOOLS_SCM_PRETEND_VERSION: ${{ inputs.version }}
+          CIBW_ENVIRONMENT_PASS: SETUPTOOLS_SCM_PRETEND_VERSION
         run: |
           uv build py_ballisticcalc.exts --sdist --out-dir dist
           uvx cibuildwheel py_ballisticcalc.exts --output-dir dist --platform auto --archs ${{ matrix.cibw_archs }}
