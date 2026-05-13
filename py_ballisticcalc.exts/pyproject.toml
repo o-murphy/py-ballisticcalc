@@ -77,6 +77,7 @@ build-frontend = "build[uv]"
 # cp311-abi3 covers standard CPython 3.11+; free-threaded builds are separate
 # because Py_LIMITED_API and Py_GIL_DISABLED are mutually incompatible
 build = "cp311-* cp313t-* cp314t-*"
+enable = ["cpython-freethreading"]
 
 [tool.pytest.ini_options]
 minversion = "7.0"
