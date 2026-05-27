@@ -49,6 +49,43 @@ jobs:
             --notes-file "${{ steps.notes.outputs.notes_file }}" \
             --draft
 
+  build-sdist:
+    name: Build SDist and pure Python wheel
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          submodules: recursive
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          github-token: ${{ github.token }}
+
+      - name: Build pure python package
+        env:
+          SETUPTOOLS_SCM_PRETEND_VERSION: ${{ inputs.version }}
+        run: uv build --out-dir dist
+        shell: bash
+
+      - name: Build exts sdist
+        env:
+          SETUPTOOLS_SCM_PRETEND_VERSION: ${{ inputs.version }}
+        run: uv build py_ballisticcalc.exts --sdist --out-dir dist
+        shell: bash
+
+      - name: list ./dist
+        run: ls ./dist
+        shell: bash
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v7
+        with:
+          name: dist-sdist
+          path: ./dist
+          retention-days: 14
+
   build:
     name: Build wheels on ${{ matrix.os }}
     strategy:
@@ -97,18 +134,11 @@ jobs:
         with:
           github-token: ${{ github.token }}
 
-      - name: Build pure python package
-        env:
-          SETUPTOOLS_SCM_PRETEND_VERSION: ${{ inputs.version }}
-        run: uv build --out-dir dist
-        shell: bash
-
       - name: Build binary python package
         env:
           SETUPTOOLS_SCM_PRETEND_VERSION: ${{ inputs.version }}
           CIBW_ENVIRONMENT_PASS: SETUPTOOLS_SCM_PRETEND_VERSION
         run: |
-          uv build py_ballisticcalc.exts --sdist --out-dir dist
           uvx cibuildwheel py_ballisticcalc.exts --output-dir dist --platform auto --archs ${{ matrix.cibw_archs }}
         shell: bash
 
@@ -124,7 +154,7 @@ jobs:
           retention-days: 14
 
   publish:
-    needs: build
+    needs: [build-sdist, build]
     runs-on: ubuntu-latest
     environment: ${{ github.event_name == 'push' && 'pypi' || inputs.testpypi && 'testpypi' || 'build' }}
     permissions:

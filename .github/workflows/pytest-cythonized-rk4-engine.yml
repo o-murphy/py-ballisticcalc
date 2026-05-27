@@ -50,7 +50,7 @@ jobs:
           - macos-15-intel
           - macos-15
         python-version:
-          ["3.11", "3.14", "3.14t"]
+          ["3.11", "3.14", "3.13t", "3.14t"]
         engine: ["cythonized_rk4_engine"]
 
     uses: ./.github/workflows/pytest-reusable.yml
