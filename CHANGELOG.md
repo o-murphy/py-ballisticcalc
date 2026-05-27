@@ -20,13 +20,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `tomllib` imported directly from stdlib (Python 3.11+), version guard removed
 - `Callable` moved from `typing` to `collections.abc` in `helpers.py`
 
+### Fixed
+- `CythonizedBaseTrajData.__str__` unpacked `(name, value)` from an iterator that yields scalar values — raised `ValueError` on any call
+
 ### Removed
 - Python 3.10 support EOL - removed all references to Python 3.10, updated CI and dependencies
 
 ### CI
 - `py_ballisticcalc.exts` wheels now target the Python stable ABI (`cp311-abi3-*`): one binary per platform/architecture is compatible with CPython 3.11 and all later standard releases; free-threaded Python 3.13t / 3.14t is built as separate version-specific wheels
-- `cibuildwheel` reduced to `cp311-* cp314t-*` — eliminates redundant per-interpreter builds for standard CPython; `cp313t-*` dropped (deprecated in cibuildwheel 3.4, removed in next minor), `cp314t-*` requires no `enable` flag
-- Cythonized engine test full matrix reduced from 6 to 3 Python versions (`3.11, 3.14, 3.14t`); `3.12`, `3.13`, `3.13t` removed — abi3 binary is identical across standard versions, boundary versions provide sufficient coverage
+- `cibuildwheel` build selectors: `cp311-* cp313t-* cp314t-*`; `cp313t-*` requires `enable = ["cpython-freethreading"]` in cibuildwheel 3.4 (flag is deprecated but `cp313t` is silently skipped without it)
+- Cythonized engine test full matrix: `3.11, 3.14` (abi3 boundary versions) + `3.13t, 3.14t` (distinct free-threaded ABIs); `3.12`, `3.13` removed — abi3 binary is identical across standard CPython versions
+- `pypi-publish.yml`: extracted `build-sdist` job — pure Python wheel and exts sdist built once on `ubuntu-latest`; removed from per-OS `build` matrix jobs to eliminate 5× redundant platform-independent builds
 - `CIBW_ENVIRONMENT_PASS: SETUPTOOLS_SCM_PRETEND_VERSION` added to the publish workflow — previously the version override was not forwarded into `cibuildwheel` build containers, causing `+gHASH` local version suffixes that PyPI rejects
 - `uv audit` pre-commit hook added — checks for known vulnerabilities in locked dependencies before each commit
 - `uv lock --upgrade` — all dev/docs dependencies updated; resolves 18 Dependabot security alerts (Pillow, urllib3, tornado, CairoSVG, fonttools, requests, virtualenv, Pygments, pymdown-extensions)

@@ -114,10 +114,7 @@ cdef class CythonizedBaseTrajData:
         return f"{cls_name}({content})"
 
     def __str__(self):
-        content = ", ".join(
-            f"{repr(value)}"
-            for name, value in self.__iter__()
-        )
+        content = ", ".join(repr(value) for value in self)
         return f"({content})"
 
     def __len__(self):
