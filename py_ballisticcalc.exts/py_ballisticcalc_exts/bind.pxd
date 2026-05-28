@@ -22,9 +22,11 @@ cdef extern from "include/bclibc/py_bind.hpp" namespace "bclibc" nogil:
 # python to C objects conversion
 cdef BCLIBC_Config BCLIBC_Config_from_pyobject(object config)
 cdef BCLIBC_Atmosphere BCLIBC_Atmosphere_from_pyobject(object atmo)
+cdef BCLIBC_Atmosphere BCLIBC_Atmosphere_from_conditions(object atmo)
 cdef BCLIBC_MachList BCLIBC_MachList_from_pylist(list[object] data)
 cdef BCLIBC_Curve BCLIBC_Curve_from_pylist(list[object] data_points)
 cdef BCLIBC_Coriolis BCLIBC_Coriolis_from_pyobject(object coriolis_obj)
+cdef BCLIBC_Coriolis BCLIBC_Coriolis_from_lat_az(object latitude, object azimuth, double muzzle_velocity_fps)
 # Function to create and initialize a BCLIBC_WindSock
 cdef BCLIBC_WindSock BCLIBC_WindSock_from_pytuple(tuple[object] winds_py_tuple)
 cdef BCLIBC_ShotProps BCLIBC_ShotProps_from_pyobject(object shot_info, double calc_step = *)

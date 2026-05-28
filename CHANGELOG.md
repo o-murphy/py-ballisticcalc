@@ -8,6 +8,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Changed
+- `py_ballisticcalc.exts` (`bind.pyx`): `BCLIBC_ShotProps_from_pyobject` is now a thin field mapper — fills `BCLIBC_Shot` with natural-unit values and delegates all physics/unit conversions to `BCLIBC_Shot::to_shot_props()` in C++ (cant cos/sin, CIPM-2007 atmosphere, Coriolis trig, PCHIP drag curve, wind sock assembly); Step 2 of bclibc-wrapper-consolidation
+- `py_ballisticcalc.exts` (`base_types.pxd`): added `BCLIBC_Shot` cppclass declaration
+- `py_ballisticcalc.exts` (`base_types.pxd`): `BCLIBC_Coriolis` cppclass extended with `@staticmethod from_lat_az(lat_deg, muzzle_velocity_fps, az_deg)`
+- `py_ballisticcalc.exts` (`base_types.pxd`): `BCLIBC_Atmosphere` cppclass extended with `@staticmethod from_conditions(t_c, p_hpa, alt_ft, humidity)`
+- `py_ballisticcalc.exts` (`bind.pyx`): added `BCLIBC_Coriolis_from_lat_az` and `BCLIBC_Atmosphere_from_conditions` Cython helpers (available for callers that hold Python domain objects directly; `_from_pyobject` variants retained for the same reason)
+- bclibc submodule bumped to [`v1.1.0`](https://github.com/ballistics-lab/bclibc) — adds `BCLIBC_Shot` / `to_shot_props()`, `BCLIBC_Coriolis::from_lat_az()`, `BCLIBC_Atmosphere::from_conditions()` (Steps 1–2); renames all `BC*` struct/enum types in `bclibc_ffi.h` to `BCLIBCFFI_*` and adds `BCLIBCFFI_*_shot()` entry points in the C FFI layer (Step 3a, breaking for C FFI consumers); no effect on Cython path (`base_types.hpp` `BCLIBC_*` types are unchanged)
 - `BaseEngineConfigDict` fields changed from `T | None` to `T` — `total=False` already provides optionality; explicit `None` values no longer accepted
 - `with_no_minimum_velocity` and `with_max_drop_zero` decorators typed with `ParamSpec`, `Concatenate`, and `functools.wraps` — decorated methods now preserve their full signatures for static type checkers
 - `TrajectoryDataFilter.records` class-level mutable default `= []` removed; annotation-only declaration left, instance assigned in `__init__`
@@ -22,6 +28,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 - `CythonizedBaseTrajData.__str__` unpacked `(name, value)` from an iterator that yields scalar values — raised `ValueError` on any call
+- `BCLIBC_Atmosphere_from_conditions()` (`bind.pyx`): `Vacuum()._p0` is `1013.25 hPa` (not 0) because `Atmo.__init__` stores pressure via `pressure or cStandardPressure` — `0` is falsy so standard pressure wins, and `Vacuum.__init__` overrides `_pressure` but not `_p0`; the CIPM-2007 path was therefore computing density ≈ 1.0 for vacuum instead of 0, making the vacuum trajectory identical to normal-air and breaking `test_wind_lag_rule` (`t_lag = 0`); fix: pass `p_hpa = 0` when `atmo.density_ratio == 0` to trigger the vacuum early-return in `BCLIBC_Atmosphere::from_conditions()`
+
+### CI
+- `test_full_matrix` in `pytest-cythonized-rk4-engine.yml` and `pytest-cythonized-euler-engine.yml`: changed `fail-fast` from `false` to `true` — stops the 24-job matrix on the first failure instead of running all jobs to completion
 
 ### Removed
 - Python 3.10 support EOL - removed all references to Python 3.10, updated CI and dependencies
