@@ -8,6 +8,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Changed
+- `py_ballisticcalc.exts` (`bind.pyx`): `BCLIBC_ShotProps_from_pyobject` is now a thin field mapper — fills `BCLIBC_Shot` with natural-unit values and delegates all physics/unit conversions to `BCLIBC_Shot::to_shot_props()` in C++ (cant cos/sin, CIPM-2007 atmosphere, Coriolis trig, PCHIP drag curve, wind sock assembly); Step 2 of bclibc-wrapper-consolidation
+- `py_ballisticcalc.exts` (`base_types.pxd`): added `BCLIBC_Shot` cppclass declaration
+- `py_ballisticcalc.exts` (`base_types.pxd`): `BCLIBC_Coriolis` cppclass extended with `@staticmethod from_lat_az(lat_deg, muzzle_velocity_fps, az_deg)`
+- `py_ballisticcalc.exts` (`base_types.pxd`): `BCLIBC_Atmosphere` cppclass extended with `@staticmethod from_conditions(t_c, p_hpa, alt_ft, humidity)`
+- `py_ballisticcalc.exts` (`bind.pyx`): added `BCLIBC_Coriolis_from_lat_az` and `BCLIBC_Atmosphere_from_conditions` Cython helpers (available for callers that hold Python domain objects directly; `_from_pyobject` variants retained for the same reason)
+- bclibc submodule bumped to [`v1.1.2`](https://github.com/ballistics-lab/bclibc) — adds `BCLIBC_Shot` / `to_shot_props()`, `BCLIBC_Coriolis::from_lat_az()`, `BCLIBC_Atmosphere::from_conditions()` (Steps 1–2); renames all `BC*` struct/enum types in `bclibc_ffi.h` to `BCLIBCFFI_*` and adds `BCLIBCFFI_*_shot()` entry points in the C FFI layer (Step 3a, breaking for C FFI consumers); no effect on Cython path (`base_types.hpp` `BCLIBC_*` types are unchanged)
 - `BaseEngineConfigDict` fields changed from `T | None` to `T` — `total=False` already provides optionality; explicit `None` values no longer accepted
 - `with_no_minimum_velocity` and `with_max_drop_zero` decorators typed with `ParamSpec`, `Concatenate`, and `functools.wraps` — decorated methods now preserve their full signatures for static type checkers
 - `TrajectoryDataFilter.records` class-level mutable default `= []` removed; annotation-only declaration left, instance assigned in `__init__`
@@ -22,6 +28,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 - `CythonizedBaseTrajData.__str__` unpacked `(name, value)` from an iterator that yields scalar values — raised `ValueError` on any call
+- `Vacuum.__init__` (`conditions.py`): `Atmo.__init__` uses `pressure or standard_pressure(...)` so passing `pressure=0` (falsy) stores `_p0 = 1013.25 hPa` instead of `0`; `Vacuum.__init__` corrected `_pressure` and `_density_ratio` but not `_p0`; any C++ wrapper reading `_p0` directly (e.g. Dart FFI, WASM) would receive 1013.25 hPa for vacuum; fix: explicitly set `self._p0 = 0.0` in `Vacuum.__init__` after `super().__init__()`
+- `BCLIBC_ShotProps_from_pyobject` (`bind.pyx`): `shot_info.winds` was accessed twice (once for `len()`, once for the for-loop); `Shot.winds` returns `tuple(self._winds)` — a new tuple on every call; under free-threading a concurrent mutation of `_winds` between the two accesses could make `wind_count > winds_vec.size()`, causing an out-of-bounds read in `BCLIBC_Shot::to_shot_props()`; fix: cache `winds_py = shot_info.winds` once before both uses
+- `BCLIBC_ShotProps_from_pyobject` (`bind.pyx`): `shot_info.ammo`, `.ammo.dm`, `.atmo`, and `.weapon` were traversed multiple times each without being cached in `cdef object` locals, violating the function's own documented invariant ("Cython may forget to add DECREF") — each chain traversal creates a temporary reference that Cython may not release on exception paths; fix: cache all intermediates in named `cdef object` locals at the top of the function
+
+### CI
+- `test_full_matrix` in `pytest-cythonized-rk4-engine.yml` and `pytest-cythonized-euler-engine.yml`: changed `fail-fast` from `false` to `true` — stops the 24-job matrix on the first failure instead of running all jobs to completion
 
 ### Removed
 - Python 3.10 support EOL - removed all references to Python 3.10, updated CI and dependencies

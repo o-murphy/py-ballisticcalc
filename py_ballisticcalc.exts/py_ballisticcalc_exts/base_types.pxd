@@ -74,6 +74,14 @@ cdef extern from "include/bclibc/base_types.hpp" namespace "bclibc" nogil:
             double cLowestTempC
         ) except +
 
+        @staticmethod
+        BCLIBC_Atmosphere from_conditions(
+            double t_c,
+            double p_hpa,
+            double alt_ft,
+            double humidity
+        ) except +
+
         void update_density_factor_and_mach_for_altitude(
             double altitude,
             double &density_ratio_out,
@@ -123,6 +131,13 @@ cdef extern from "include/bclibc/base_types.hpp" namespace "bclibc" nogil:
             const BCLIBC_V3dT &velocity_vector,
             BCLIBC_V3dT &accel_out
         ) const
+
+        @staticmethod
+        BCLIBC_Coriolis from_lat_az(
+            double lat_deg,
+            double muzzle_velocity_fps,
+            double az_deg
+        ) except +
 
     cdef cppclass BCLIBC_Wind:
         double velocity
@@ -226,6 +241,48 @@ cdef extern from "include/bclibc/base_types.hpp" namespace "bclibc" nogil:
         void update_stability_coefficient() except +ZeroDivisionError
         double spin_drift(double time) const
         double drag_by_mach(double mach) except +ValueError
+
+    cdef cppclass BCLIBC_Shot:
+        # ammo
+        double bc
+        double weight_grain
+        double diameter_inch
+        double length_inch
+        double muzzle_velocity_fps
+        double stability_coefficient
+
+        # drag table (non-owning; caller keeps arrays alive until to_shot_props() returns)
+        double* mach_data
+        double* cd_data
+        int     drag_table_size
+
+        # weapon
+        double sight_height_ft
+        double twist_inch
+
+        # atmosphere
+        double temp_c
+        double pressure_hpa
+        double altitude_ft
+        double humidity
+
+        # winds (non-owning; caller keeps array alive until to_shot_props() returns)
+        BCLIBC_Wind* winds
+        int          wind_count
+
+        # aiming
+        double look_angle_rad
+        double barrel_elevation_rad
+        double barrel_azimuth_rad
+        double cant_angle_rad
+
+        # Coriolis (degrees; NaN disables)
+        double latitude_deg
+        double azimuth_deg
+
+        double calc_step
+
+        BCLIBC_ShotProps to_shot_props() except +
 
     # helpers
     double BCLIBC_getCorrection(double distance, double offset) noexcept nogil

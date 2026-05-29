@@ -426,6 +426,10 @@ class Vacuum(Atmo):
     def __init__(self, altitude: float | Distance | None = None, temperature: float | Temperature | None = None):
         super().__init__(altitude, 0, temperature, 0)
         self._pressure = PreferredUnits.pressure(0)
+        # Atmo.__init__ uses `pressure or standard_pressure(...)`, so passing 0 stores
+        # standard pressure in _p0 (since 0 is falsy).  Fix it explicitly so any code
+        # that reads _p0 directly (e.g. C++ wrappers) sees the correct vacuum value.
+        self._p0 = 0.0
         self._density_ratio = 0
 
     def update_density_ratio(self) -> None:
