@@ -5,7 +5,8 @@ import pytest
 
 from py_ballisticcalc import (DragModel, TableG1, TableG7, Distance, Weight, Ammo, Velocity, Weapon, Shot,
                               Angular, Atmo, Calculator, RangeError, HitResult, BaseEngineConfigDict,
-                              loadImperialUnits, loadMetricUnits, PreferredUnits)
+                              loadImperialUnits, loadMetricUnits, PreferredUnits,
+)
 
 pytestmark = pytest.mark.engine
 
@@ -156,7 +157,7 @@ class TestIssue204:
 
     @pytest.fixture(autouse=True)
     def setup_method(self, loaded_engine_instance):
-        self.calc = Calculator(engine=loaded_engine_instance)
+        self.calc = Calculator(engine=loaded_engine_instance, config=BaseEngineConfigDict(cStepMultiplier=5.0))
 
     def _make_shot(self, x_m: float, y_m: float):
         dm = DragModel(0.22, TableG7, Weight.Gram(10),
