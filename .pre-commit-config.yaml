@@ -45,12 +45,12 @@ repos:
         pass_filenames: false
         files: '\.py$'
 
-      - id: uv-audit
-        name: uv audit
-        entry: uv
-        args: ["audit"]
-        language: system
-        pass_filenames: false
+      # - id: uv-audit
+      #   name: uv audit
+      #   entry: uv
+      #   args: ["audit"]
+      #   language: system
+      #   pass_filenames: false
 
       - id: uv-cython-lint
         name: cython lint

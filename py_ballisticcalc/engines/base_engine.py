@@ -823,12 +823,17 @@ class BaseIntegrationEngine(ABC, EngineProtocol):
             reason += f"Errors at bracket: f(low)={f_low:.2f}, f(high)={f_high:.2f}"
             raise ZeroFindingError(target_y_ft, 0, Angular.Radian(props.barrel_elevation_rad), reason=reason)
 
-        # 4. Ridder's method implementation.  Absent bugs, this method is guaranteed to converge in
-        #    log₂(range / accuracy) = log₂(π/2 / cZeroFindingAccuracy) iterations.
-        # TODO: Consider replacing with ITP method
+        # 4. Ridder's method implementation.
+        # cZeroFindingAccuracy is a height tolerance in feet; use a separate
+        # constant for angle-bracket convergence so the two are not conflated.
+        # (Passing e.g. cZeroFindingAccuracy=0.1 ft would otherwise mean a
+        # 0.1 rad = 5.7° angle bracket tolerance and a completely wrong answer.)
+        angle_tol = 1e-7  # rad — ~0.000006°, independent of height accuracy
         for _ in range(self._config.cMaxIterations):
             mid_angle = (low_angle + high_angle) / 2.0
             f_mid = error_at_distance(mid_angle)
+            if abs(f_mid) < self._config.cZeroFindingAccuracy:
+                return Angular.Radian(mid_angle)
 
             # s is the updated point using the root of the linear function through (low_angle, f_low) and (high_angle, f_high)
             # and the quadratic function that passes through those points and (mid_angle, f_mid)
@@ -837,10 +842,13 @@ class BaseIntegrationEngine(ABC, EngineProtocol):
                 break  # Should not happen if f_low and f_high have opposite signs
 
             next_angle = mid_angle + (mid_angle - low_angle) * (math.copysign(1, f_low - f_high) * f_mid / s)
-            if abs(next_angle - mid_angle) < self._config.cZeroFindingAccuracy:
+            f_next = error_at_distance(next_angle)
+            if abs(f_next) < self._config.cZeroFindingAccuracy:
                 return Angular.Radian(next_angle)
 
-            f_next = error_at_distance(next_angle)
+            if abs(next_angle - mid_angle) < angle_tol:
+                return Angular.Radian(next_angle)
+
             # Update the bracket
             if f_mid * f_next < 0:
                 low_angle, f_low = mid_angle, f_mid
@@ -852,7 +860,7 @@ class BaseIntegrationEngine(ABC, EngineProtocol):
             else:
                 break  # If we are here, something is wrong, the root is not bracketed anymore
 
-            if abs(high_angle - low_angle) < self._config.cZeroFindingAccuracy:
+            if abs(high_angle - low_angle) < angle_tol:
                 return Angular.Radian((low_angle + high_angle) / 2)
 
         raise ZeroFindingError(
