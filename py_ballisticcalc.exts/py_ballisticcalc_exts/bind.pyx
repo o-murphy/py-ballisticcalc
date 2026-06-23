@@ -162,9 +162,9 @@ cdef BCLIBC_ShotProps BCLIBC_ShotProps_from_pyobject(object shot_info, double ca
     # Cache Python object intermediates — Cython may omit DECREF for temporaries in
     # chained attribute expressions (e.g. shot_info.ammo.dm.BC), leaking the
     # intermediate objects on exception paths.
-    cdef object ammo   = shot_info.ammo
-    cdef object dm     = ammo.dm
-    cdef object atmo   = shot_info.atmo
+    cdef object ammo = shot_info.ammo
+    cdef object dm = ammo.dm
+    cdef object atmo = shot_info.atmo
     cdef object weapon = shot_info.weapon
     # Shot.winds returns tuple(self._winds) — a new tuple on every access.
     # Cache once so len() and the loop see the same snapshot, and to avoid
