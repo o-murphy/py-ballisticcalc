@@ -140,8 +140,9 @@ Special thanks to:
 
 ## Sister projects
 
-* **[bclibc]** - High performance C++ Ballistic solver engine
-* **[ebalistyka-app]** - Ballistic Calculator built with Flutter and high performance C++ engine
+* **[bclibc]** - High performance C++/C99 Ballistic solver engine
+* **[micropython-bclibc]** - Pure C99 Ballistic Solver Engine for MicroPython ([bclibc] subset)
+* **[ebalistyka]** - Ballistic Calculator built with Flutter and high performance C++ engine
 * **[js-ballistics]** - ISC library for small arms ballistic calculations (JavaScript ES6+)
 
 
@@ -246,5 +247,6 @@ https://o-murphy.github.io/py-ballisticcalc/latest/concepts/engines
 
 
 [bclibc]: https://github.com/ballistics-lab/bclibc
-[ebalistyka-app]: https://github.com/o-murphy/ebalistyka-app
+[micropython-bclibc]: https://github.com/ballistics-lab/micropython-bclibc
+[ebalistyka]: https://github.com/o-murphy/ebalistyka-app
 [js-ballistics]: https://github.com/o-murphy/js-ballistics
