@@ -69,7 +69,11 @@ include = ["py_ballisticcalc_exts*"]
 exclude = ["py_ballisticcalc_exts.include*", "py_ballisticcalc_exts.external*"]
 
 [project.optional-dependencies]
-dev = ["cython>=3.2.4", "cibuildwheel", "setuptools"]
+dev = [
+    "cibuildwheel>=4.1.0",
+    "cython>=3.2.6",
+    "setuptools>=82.0.1",
+]
 
 [tool.cibuildwheel]
 # Use uv and build
@@ -89,7 +93,7 @@ fallback_version = "0.0.0.dev0"
 
 [dependency-groups]
 dev = [
-    "cibuildwheel>=3.4.1",
-    "cython>=3.2.4",
-    "setuptools>=80.9.0",
+    "cibuildwheel>=4.1.0",
+    "cython>=3.2.6",
+    "setuptools>=82.0.1",
 ]
