@@ -121,12 +121,12 @@ charts = [
     "matplotlib>=3.10.9",
     "pandas>=3.0.2",
     "numpy>=2.5.0; python_version>='3.12'",
-    "numpy>=2.4.6; python_version<'3.11'",
+    "numpy>=2.4.6; python_version<'3.12'",
     "scipy>=0.18.0",
 ]
 scipy = [
     "numpy>=2.5.0; python_version>='3.12'",
-    "numpy>=2.4.6; python_version<'3.11'",
+    "numpy>=2.4.6; python_version<'3.12'",
     "scipy>=0.18.0",
 ]
 dev = [
@@ -137,7 +137,7 @@ dev = [
     "matplotlib>=3.10.9",
     "pandas>=3.0.2",
     "numpy>=2.5.0; python_version>='3.12'",
-    "numpy>=2.4.6; python_version<'3.11'",
+    "numpy>=2.4.6; python_version<'3.12'",
     "scipy>=0.18.0",
 
     # jupyter
@@ -186,7 +186,7 @@ dev = [
     "matplotlib>=3.10.9",
     "pandas>=3.0.2",
     "numpy>=2.5.0; python_version>='3.12'",
-    "numpy>=2.4.6; python_version<'3.11'",
+    "numpy>=2.4.6; python_version<'3.12'",
     "scipy>=0.18.0",
 
     # jupyter
