@@ -45,7 +45,7 @@ current_atmo = Atmo(
     humidity=29
 )
 shot = Shot(weapon=weapon, ammo=ammo, atmo=current_atmo)
-shot_result = calc.fire(shot, Distance.Meter(1000))
+shot_result = calc.fire(shot, Distance.Meter(1000), Distance.Meter(100))
 
 from pprint import pprint
 fieldsss = TrajectoryData._fields
