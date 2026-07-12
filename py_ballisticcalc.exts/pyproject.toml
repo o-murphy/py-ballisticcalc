@@ -4,8 +4,9 @@
 [build-system]
 requires = [
     "setuptools",
-    "setuptools-scm[toml]>=10.0.5",
-    "cython>=3.1.4"]
+    "setuptools-scm",
+    "cython>=3.1.4"
+]
 build-backend = "setuptools.build_meta"
 
 
@@ -72,7 +73,6 @@ exclude = ["py_ballisticcalc_exts.include*", "py_ballisticcalc_exts.external*"]
 dev = [
     "cibuildwheel>=4.1.0",
     "cython>=3.2.6",
-    "setuptools>=82.0.1",
 ]
 
 [tool.cibuildwheel]
@@ -95,5 +95,4 @@ fallback_version = "0.0.0.dev0"
 dev = [
     "cibuildwheel>=4.1.0",
     "cython>=3.2.6",
-    "setuptools>=82.0.1",
 ]
