@@ -4,7 +4,7 @@
 [build-system]
 requires = [
     "setuptools",
-    "setuptools-scm[toml]>=10.0.5",
+    "setuptools-scm",
     "setuptools_dynamic_dependencies",
 ]
 build-backend = "setuptools.build_meta"
@@ -38,9 +38,6 @@ classifiers = [
 dependencies = [
     "typing_extensions>= 4.15.0",
     "Deprecated>=1.3.1",
-    "cython>=3.2.6",
-    "pylint>=4.0.6",
-    "scipy>=0.18.0",
 ]
 
 # NOTE:
@@ -130,9 +127,6 @@ scipy = [
     "scipy>=0.18.0",
 ]
 dev = [
-    "cython>=3.2.6",
-    "build>=1.5.0",
-
     # math and data
     "matplotlib>=3.10.9",
     "pandas>=3.0.2",
@@ -145,12 +139,12 @@ dev = [
     "nbformat>=5.10.4", # minimal installation for .ipynb for IDE (works in VS Code, PyCharm)
 
     # code standards
-    "mypy>=2.0.0",
+    "mypy>=2.2.0",
     "pylint>=4.0.6",
     "pytest>=9.1.1",
     "pytest-cov>=7.1.0",
-    "ruff>=0.15.20",
-    "cython-lint>=0.21.0",
+    "ruff>=0.15.21",
+    "cython-lint>=0.21.0", # lints py_ballisticcalc.exts/**/*.pyx; must run from root venv (pre-commit)
     "pre-commit>=4.6.0",
 
     # stubs
@@ -166,22 +160,18 @@ docs = [
     "mkdocs-exclude>=1.0.2",
     "mkdocs-material[imaging]>=9.7.0",
     "mkdocs-redirects>=1.2.2",
-    "mkdocstrings>=1.0.0",
+    "mkdocstrings>=1.0.6",
     "mkdocstrings-python>=2.0.5",
     "mkdocs-autorefs>=1.4.3",
     "mike>=2.2.0",
     "pydocstyle>=6.3.0",
     "mkdocs-macros-plugin>=1.3.7",
-    "setuptools-scm>=10.0.5"
 ]
 
 [dependency-groups]
 # Keep in sync with [tool.setuptools_dynamic_dependencies.optional-dependencies] dev above.
 # Use `uv sync --dev` to install.
 dev = [
-    "cython>=3.2.6",
-    "build>=1.5.0",
-
     # math and data
     "matplotlib>=3.10.9",
     "pandas>=3.0.2",
@@ -191,21 +181,21 @@ dev = [
 
     # jupyter
     "ipykernel>=7.3.0",
-    "nbformat>=5.10.4", # minimal installation for .ipynb for IDE (works in VS Code, PyCharm)
-
+    # minimal installation for .ipynb for IDE (works in VS Code, PyCharm)
+    "nbformat>=5.10.4",
     # code standards
-    "mypy>=2.0.0",
+    "mypy>=2.2.0",
     "pylint>=4.0.6",
     "pytest>=9.1.1",
     "pytest-cov>=7.1.0",
-    "ruff>=0.15.20",
-    "cython-lint>=0.21.0",
+    "ruff>=0.15.21",
+    "cython-lint>=0.21.0", # lints py_ballisticcalc.exts/**/*.pyx; must run from root venv (pre-commit)
     "pre-commit>=4.6.0",
 
     # stubs
     "scipy-stubs>=1.18.0.0; python_version>='3.12'",
     "scipy-stubs>=1.17.1.4; python_version<'3.12'",
-    
+
     "types-deprecated>=1.3.1.20260520",
     "pandas-stubs>=3.0.3.260530",
 ]
