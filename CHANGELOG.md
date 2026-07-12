@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Changed
+- Dependencies update to fix CVEs
 - `py_ballisticcalc.exts` (`bind.pyx`): `BCLIBC_ShotProps_from_pyobject` is now a thin field mapper — fills `BCLIBC_Shot` with natural-unit values and delegates all physics/unit conversions to `BCLIBC_Shot::to_shot_props()` in C++ (cant cos/sin, CIPM-2007 atmosphere, Coriolis trig, PCHIP drag curve, wind sock assembly); Step 2 of bclibc-wrapper-consolidation
 - `py_ballisticcalc.exts` (`base_types.pxd`): added `BCLIBC_Shot` cppclass declaration
 - `py_ballisticcalc.exts` (`base_types.pxd`): `BCLIBC_Coriolis` cppclass extended with `@staticmethod from_lat_az(lat_deg, muzzle_velocity_fps, az_deg)`
