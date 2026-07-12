@@ -145,11 +145,11 @@ dev = [
     "nbformat>=5.10.4", # minimal installation for .ipynb for IDE (works in VS Code, PyCharm)
 
     # code standards
-    "mypy>=2.0.0",
+    "mypy>=2.2.0",
     "pylint>=4.0.6",
     "pytest>=9.1.1",
     "pytest-cov>=7.1.0",
-    "ruff>=0.15.20",
+    "ruff>=0.15.21",
     "cython-lint>=0.21.0",
     "pre-commit>=4.6.0",
 
@@ -166,7 +166,7 @@ docs = [
     "mkdocs-exclude>=1.0.2",
     "mkdocs-material[imaging]>=9.7.0",
     "mkdocs-redirects>=1.2.2",
-    "mkdocstrings>=1.0.0",
+    "mkdocstrings>=1.0.6",
     "mkdocstrings-python>=2.0.5",
     "mkdocs-autorefs>=1.4.3",
     "mike>=2.2.0",
@@ -194,11 +194,11 @@ dev = [
     "nbformat>=5.10.4", # minimal installation for .ipynb for IDE (works in VS Code, PyCharm)
 
     # code standards
-    "mypy>=2.0.0",
+    "mypy>=2.2.0",
     "pylint>=4.0.6",
     "pytest>=9.1.1",
     "pytest-cov>=7.1.0",
-    "ruff>=0.15.20",
+    "ruff>=0.15.21",
     "cython-lint>=0.21.0",
     "pre-commit>=4.6.0",
 
