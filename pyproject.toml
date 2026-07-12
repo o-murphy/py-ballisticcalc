@@ -127,8 +127,6 @@ scipy = [
     "scipy>=0.18.0",
 ]
 dev = [
-    "cython>=3.2.6",
-
     # math and data
     "matplotlib>=3.10.9",
     "pandas>=3.0.2",
@@ -146,7 +144,7 @@ dev = [
     "pytest>=9.1.1",
     "pytest-cov>=7.1.0",
     "ruff>=0.15.21",
-    "cython-lint>=0.21.0",
+    "cython-lint>=0.21.0", # lints py_ballisticcalc.exts/**/*.pyx; must run from root venv (pre-commit)
     "pre-commit>=4.6.0",
 
     # stubs
@@ -168,15 +166,12 @@ docs = [
     "mike>=2.2.0",
     "pydocstyle>=6.3.0",
     "mkdocs-macros-plugin>=1.3.7",
-    "setuptools-scm>=10.0.5"
 ]
 
 [dependency-groups]
 # Keep in sync with [tool.setuptools_dynamic_dependencies.optional-dependencies] dev above.
 # Use `uv sync --dev` to install.
 dev = [
-    "cython>=3.2.6",
-
     # math and data
     "matplotlib>=3.10.9",
     "pandas>=3.0.2",
@@ -194,13 +189,13 @@ dev = [
     "pytest>=9.1.1",
     "pytest-cov>=7.1.0",
     "ruff>=0.15.21",
-    "cython-lint>=0.21.0",
+    "cython-lint>=0.21.0", # lints py_ballisticcalc.exts/**/*.pyx; must run from root venv (pre-commit)
     "pre-commit>=4.6.0",
 
     # stubs
     "scipy-stubs>=1.18.0.0; python_version>='3.12'",
     "scipy-stubs>=1.17.1.4; python_version<'3.12'",
-    
+
     "types-deprecated>=1.3.1.20260520",
     "pandas-stubs>=3.0.3.260530",
 ]

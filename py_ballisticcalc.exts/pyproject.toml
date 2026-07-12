@@ -71,8 +71,8 @@ exclude = ["py_ballisticcalc_exts.include*", "py_ballisticcalc_exts.external*"]
 
 [project.optional-dependencies]
 dev = [
-    "cibuildwheel>=4.1.0",
     "cython>=3.2.6",
+    "cython-lint>=0.21.0",
 ]
 
 [tool.cibuildwheel]
