@@ -36,3 +36,8 @@ updates:
     directory: "/"
     schedule:
       interval: "weekly"
+
+  - package-ecosystem: "pre-commit"
+    directory: "/" # .pre-commit-config.yaml lives at the repo root
+    schedule:
+      interval: "weekly"
