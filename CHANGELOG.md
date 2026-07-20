@@ -8,7 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
-- Codecov integration: `.github/workflows/coverage.yml` rewritten as a 3-job pipeline — `discover-engines` (lists engines via `Calculator.iter_engines()`), `test` (matrix over discovered engines, each writing an isolated `.coverage.<engine>` data file), `merge` (`coverage combine`/`xml`/`html`, then `codecov/codecov-action@v7` upload); `merge` runs even if one engine's tests fail (`if: ${{ !cancelled() }}`) so coverage is still reported
+- Codecov integration: `.github/workflows/coverage.yml` rewritten as a 3-job pipeline — `discover-engines` (lists engines via `Calculator.iter_engines()`), `test` (matrix over discovered engines, each writing an isolated `.coverage.<engine>` data file), `merge` (`coverage combine`/`xml`/`html`, then `codecov/codecov-action@v7` upload); `merge` runs even if one engine's tests fail (`if: {% raw %}${{ !cancelled() }}{% endraw %}`) so coverage is still reported
 - `CODECOV_TOKEN` repository secret added; README `[coverage]` badge now links to the live codecov.io report instead of the local `coverage.svg`
 
 ### Changed
