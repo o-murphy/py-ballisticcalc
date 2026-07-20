@@ -53,11 +53,14 @@ jobs:
   # Pure-Python engines: euler_engine, rk4_engine, scipy_engine
   # ---------------------------------------------------------------------------
   test_pure_full_matrix:
-    name: Run Full Matrix Tests (Pull Request)
+    name: Full (Pure)
     if: github.event_name == 'pull_request'
 
     strategy:
-      max-parallel: 10
+      # 3 engines merged into one matrix; was 10-per-engine (3 separate workflows x
+      # max-parallel:10 = 30 concurrent). Scale the cap accordingly so this job isn't
+      # throttled below what the old 3 separate workflows achieved together.
+      max-parallel: 30
       fail-fast: false
       matrix:
         os:
@@ -77,7 +80,7 @@ jobs:
       engine_name: ${{ matrix.engine }}
 
   test_pure_minimal_matrix:
-    name: Run Minimal Matrix Tests (Push)
+    name: Minimal (Pure)
     if: github.event_name == 'push'
 
     strategy:
@@ -98,12 +101,14 @@ jobs:
   # Only run when py_ballisticcalc.exts/** (or its submodule pin) changed.
   # ---------------------------------------------------------------------------
   test_cythonized_full_matrix:
-    name: Run Full Matrix Tests (Pull Request)
+    name: Full (Cythonized)
     needs: changes
     if: github.event_name == 'pull_request' && needs.changes.outputs.exts == 'true'
 
     strategy:
-      max-parallel: 10
+      # 2 engines merged into one matrix; was 10-per-engine (2 separate workflows x
+      # max-parallel:10 = 20 concurrent). Scale the cap accordingly.
+      max-parallel: 20
       fail-fast: false
       matrix:
         os:
@@ -123,7 +128,7 @@ jobs:
       engine_name: ${{ matrix.engine }}
 
   test_cythonized_minimal_matrix:
-    name: Run Minimal Matrix Tests (Push)
+    name: Minimal (Cythonized)
     needs: changes
     if: github.event_name == 'push' && needs.changes.outputs.exts == 'true'
 
