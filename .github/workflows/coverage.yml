@@ -48,8 +48,7 @@ jobs:
           engines=$(uv run python -c "
           import json
           from py_ballisticcalc import Calculator
-          # verlet_engine currently has known-failing tests unrelated to coverage collection; excluded here.
-          print(json.dumps(sorted(ep.name for ep in Calculator.iter_engines() if ep.name != 'verlet_engine')))
+          print(json.dumps(sorted(ep.name for ep in Calculator.iter_engines())))
           ")
           echo "engines=$engines" >> "$GITHUB_OUTPUT"
         shell: bash
