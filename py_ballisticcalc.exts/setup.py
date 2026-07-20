@@ -171,7 +171,7 @@ elif is_macos:
 else:
     # GCC/Clang flags
     c_compile_args = ["-g", "-O0", "-std=c99"]
-    cpp_compile_args = ["-fopenmp", "-x", "c++", "-std=c++11", "-O2", "-Wall", "-g"]
+    cpp_compile_args = ["-x", "c++", "-std=c++11", "-O2", "-Wall", "-g"]
     if DISABLE_STRIP:
         cpp_extra_link_args = []
     else:
