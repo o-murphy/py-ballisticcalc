@@ -101,6 +101,7 @@ jobs:
           COVERAGE_FILE: .coverage.${{ matrix.engine }}
 
       - name: Upload coverage data
+        if: ${{ !cancelled() }} # keep coverage data even if this engine's tests fail
         uses: actions/upload-artifact@v7
         with:
           name: coverage-data-${{ matrix.engine }}
@@ -111,6 +112,7 @@ jobs:
 
   merge:
     needs: test
+    if: ${{ !cancelled() }} # run even if one engine's tests failed, as long as coverage data was produced
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
