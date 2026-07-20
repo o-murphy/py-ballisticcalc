@@ -771,7 +771,7 @@ class BaseIntegrationEngine(ABC, EngineProtocol):
         if status is _ZeroCalcStatus.DONE:
             return Angular.Radian(look_angle_rad)
 
-        # Make mypy happy
+        # Make the type checker happy
         assert start_height_ft is not None
         assert target_x_ft is not None
         assert target_y_ft is not None
@@ -906,9 +906,9 @@ class BaseIntegrationEngine(ABC, EngineProtocol):
         if status is _ZeroCalcStatus.DONE:
             return Angular.Radian(look_angle_rad)
 
-        assert target_x_ft is not None  # Make mypy happy
-        assert target_y_ft is not None  # Make mypy happy
-        assert slant_range_ft is not None  # Make mypy happy
+        assert target_x_ft is not None  # Make the type checker happy
+        assert target_y_ft is not None  # Make the type checker happy
+        assert slant_range_ft is not None  # Make the type checker happy
         _cZeroFindingAccuracy = self._config.cZeroFindingAccuracy
         _cMaxIterations = self._config.cMaxIterations
 

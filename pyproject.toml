@@ -80,8 +80,13 @@ markers = [
     "stress: long-running or resource-intensive tests, opt-in only"
 ]
 
-[tool.mypy]
-packages = ["py_ballisticcalc"]
+[tool.pyright]
+include = ["py_ballisticcalc"]
+# __init__.py and drag_tables.py build __all__ dynamically from globals()/a
+# generated list by design (DRY, avoids a hand-maintained duplicate list);
+# pyright can't statically verify a non-literal __all__, hence this warning
+# is expected and not actionable without abandoning that pattern.
+reportUnsupportedDunderAll = false
 
 [tool.ruff]
 include = [
@@ -119,12 +124,14 @@ charts = [
     "pandas>=3.0.2",
     "numpy>=2.5.0; python_version>='3.12'",
     "numpy>=2.4.6; python_version<'3.12'",
-    "scipy>=1.17.1",
+    "scipy>=1.18.0; python_version>='3.12'",
+    "scipy>=1.17.1; python_version<'3.12'",
 ]
 scipy = [
     "numpy>=2.5.0; python_version>='3.12'",
     "numpy>=2.4.6; python_version<'3.12'",
-    "scipy>=1.17.1",
+    "scipy>=1.18.0; python_version>='3.12'",
+    "scipy>=1.17.1; python_version<'3.12'",
 ]
 dev = [
     # math and data
@@ -132,14 +139,15 @@ dev = [
     "pandas>=3.0.2",
     "numpy>=2.5.0; python_version>='3.12'",
     "numpy>=2.4.6; python_version<'3.12'",
-    "scipy>=1.17.1",
+    "scipy>=1.18.0; python_version>='3.12'",
+    "scipy>=1.17.1; python_version<'3.12'",
 
     # jupyter
     "ipykernel>=7.3.0",
     "nbformat>=5.10.4", # minimal installation for .ipynb for IDE (works in VS Code, PyCharm)
 
     # code standards
-    "mypy>=2.3.0",
+    "pyright>=1.1.411",
     "pylint>=4.0.6",
     "pytest>=9.1.1",
     "pytest-cov>=7.1.0",
@@ -177,14 +185,15 @@ dev = [
     "pandas>=3.0.2",
     "numpy>=2.5.0; python_version>='3.12'",
     "numpy>=2.4.6; python_version<'3.12'",
-    "scipy>=1.17.1",
+    "scipy>=1.18.0; python_version>='3.12'",
+    "scipy>=1.17.1; python_version<'3.12'",
 
     # jupyter
     "ipykernel>=7.3.0",
     "nbformat>=5.10.4", # minimal installation for .ipynb for IDE (works in VS Code, PyCharm)
 
     # code standards
-    "mypy>=2.3.0",
+    "pyright>=1.1.411",
     "pylint>=4.0.6",
     "pytest>=9.1.1",
     "pytest-cov>=7.1.0",

@@ -140,8 +140,8 @@ Run tests and linting locally to make sure everything is working as expected.
 # Run automated code linting
 ruff check
 
-# Run mypy static analysing 
-mypy
+# Run pyright static analysing
+pyright
 
 # Run automated tests
 pytest

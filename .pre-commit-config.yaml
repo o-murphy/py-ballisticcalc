@@ -29,10 +29,10 @@ repos:
         language: system
         pass_filenames: false
 
-      - id: uv-mypy
-        name: mypy
+      - id: uv-pyright
+        name: pyright
         entry: uv
-        args: ["run", "mypy"]
+        args: ["run", "pyright"]
         language: system
         pass_filenames: false
         files: '\.(py|pyi|pyx|pxd)$'

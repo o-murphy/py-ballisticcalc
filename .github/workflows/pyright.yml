@@ -1,4 +1,4 @@
-name: Mypy typing check
+name: Pyright typing check
 
 on:
   pull_request:
@@ -9,7 +9,7 @@ on:
       - "py_ballisticcalc/**"
       - "tests/**"
       - "py_ballisticcalc.exts/**"
-      - ".github/workflows/mypy.yml"
+      - ".github/workflows/pyright.yml"
 
   push:
     branches:
@@ -19,7 +19,7 @@ on:
       - "py_ballisticcalc/**"
       - "tests/**"
       - "py_ballisticcalc.exts/**"
-      - ".github/workflows/mypy.yml"
+      - ".github/workflows/pyright.yml"
 
   workflow_dispatch:
 
@@ -46,6 +46,6 @@ jobs:
         run: uv sync --dev
         shell: bash
 
-      - name: Run mypy checks
-        run: uv run mypy
+      - name: Run pyright checks
+        run: uv run pyright
         shell: bash
