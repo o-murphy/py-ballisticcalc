@@ -129,6 +129,8 @@ jobs:
 
       - name: Install the project
         run: uv sync --dev --extra exts
+        env:
+          CYTHON_COVERAGE: "1"
         shell: bash
 
       - name: Mirror Cython sources for coverage reporting
