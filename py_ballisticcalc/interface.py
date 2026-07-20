@@ -95,6 +95,7 @@ class _EngineLoader:
     @deprecated(
         reason=f"Entry points registered under the '{DEFAULT_ENTRY_GROUP}' group are deprecated; "
         f"register under the '{ENGINES_ENTRY_GROUP}' group instead.",
+        action="default",  # bypass the "only warn from __main__" default filter; this fires deep in library code
     )
     def _load_from_legacy_entry(cls, ep: EntryPoint) -> EngineFactoryProtocolType | None:
         return cls._load_from_entry(ep)
