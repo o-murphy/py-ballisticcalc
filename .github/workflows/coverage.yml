@@ -78,7 +78,7 @@ jobs:
         run: |
           if [[ "${{ matrix.engine }}" == cythonized_* ]]; then
             export CYTHON_COVERAGE=1
-            uv sync --dev --extra scipy --extra exts
+            uv sync --dev --extra scipy --extra exts --reinstall-package py_ballisticcalc.exts
           else
             uv sync --dev --extra scipy
           fi
@@ -128,7 +128,7 @@ jobs:
           github-token: ${{ github.token }}
 
       - name: Install the project
-        run: uv sync --dev --extra exts
+        run: uv sync --dev --extra exts --reinstall-package py_ballisticcalc.exts
         env:
           CYTHON_COVERAGE: "1"
         shell: bash

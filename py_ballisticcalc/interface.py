@@ -12,6 +12,7 @@ Key Classes:
 
 from collections.abc import Generator, Set
 from dataclasses import dataclass
+from functools import cache
 from importlib.metadata import entry_points, EntryPoint
 from types import TracebackType
 from typing import TypeAlias, TypeVar, Any, overload, Self
@@ -40,6 +41,7 @@ class _EngineLoader:
     _entry_point_suffix = DEFAULT_ENTRY_SUFFIX
 
     @classmethod
+    @cache
     def _get_entries_by_group(cls) -> Set[EntryPoint]:
         return set(entry_points().select(group=cls._entry_point_group))
 
