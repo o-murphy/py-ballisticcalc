@@ -63,6 +63,17 @@ from typing import Any, Literal, TYPE_CHECKING
 from typing_extensions import override
 from collections.abc import Callable, Sequence
 
+if TYPE_CHECKING:
+    # Unconditional for the type checker: numpy/scipy are optional at runtime
+    # (see try/except below), but every symbol used from them is only ever
+    # reached after SciPyIntegrationEngine.__init__ has confirmed _HAS_NUMPY/
+    # _HAS_SCIPY are True. Importing here unconditionally (evaluated only by
+    # the type checker, never at runtime) tells pyright these names are bound,
+    # instead of flagging every use site as "possibly unbound".
+    import numpy as np
+    from scipy.optimize import root_scalar, minimize_scalar
+    from scipy.integrate import solve_ivp
+
 # Third-party imports
 try:
     import numpy as np
@@ -289,7 +300,7 @@ class ScipyWindSock:
 
     __slots__ = ("winds", "_distances", "_vectors", "_single_wind")
 
-    def __init__(self, winds: Wind | Sequence[Wind | None]) -> None:
+    def __init__(self, winds: Wind | Sequence[Wind] | None) -> None:
         """Initialize WindSock with optimized data structures for fast lookups.
 
         Args:
@@ -691,12 +702,12 @@ class SciPyIntegrationEngine(BaseIntegrationEngine):
         if status is _ZeroCalcStatus.DONE:
             return Angular.Radian(look_angle_rad)
 
-        # region Make mypy happy
+        # region Make the type checker happy
         assert start_height_ft is not None
         assert target_x_ft is not None
         assert target_y_ft is not None
         assert slant_range_ft is not None
-        # endregion Make mypy happy
+        # endregion Make the type checker happy
 
         # 1. Find the maximum possible range to establish a search bracket.
         max_range, angle_at_max = self._find_max_range(props)

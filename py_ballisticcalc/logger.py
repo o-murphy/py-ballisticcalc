@@ -46,6 +46,7 @@ Note:
 """
 
 import logging
+from typing import Literal
 
 __all__ = (
     "logger",
@@ -79,7 +80,7 @@ FILE_LOG_FORMAT = "%(asctime)s:%(levelname)s:%(name)s:%(message)s"
 
 
 class ColoredFormatter(logging.Formatter):
-    def __init__(self, fmt, datefmt=None, style="%"):
+    def __init__(self, fmt, datefmt=None, style: Literal["%", "{", "$"] = "%"):
         super().__init__(fmt, datefmt, style)
         self.fmt = fmt
         if "(levelname)" not in fmt:

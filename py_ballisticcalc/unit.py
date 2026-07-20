@@ -837,12 +837,12 @@ class GenericDimension:
         return cls(value_in_units, to_units)
 
     @classmethod
-    def from_raw(cls, raw_value: float, unit: Unit) -> Number:
+    def from_raw(cls, raw_value: float, units: Unit) -> Number:
         """Convert a raw value to the specified units.
 
         Args:
             raw_value: Value in the dimension's raw unit.
-            unit: Target unit type for conversion.
+            units: Target unit type for conversion.
 
         Returns:
             Numeric value converted to the specified units.
@@ -850,7 +850,7 @@ class GenericDimension:
         Note:
             Static conversion method that doesn't create a unit instance.
         """
-        return raw_value / cls._get_conversion_factor(unit)
+        return raw_value / cls._get_conversion_factor(units)
 
     @classmethod
     def to_raw(cls, value: Number, units: Unit) -> Number:
