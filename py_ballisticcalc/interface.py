@@ -12,6 +12,7 @@ Key Classes:
 
 from collections.abc import Generator, Set
 from dataclasses import dataclass
+from functools import cache
 from importlib.metadata import entry_points, EntryPoint
 from types import TracebackType
 from typing import TypeAlias, TypeVar, Any, overload, Self
@@ -40,6 +41,7 @@ class _EngineLoader:
     _entry_point_suffix = DEFAULT_ENTRY_SUFFIX
 
     @classmethod
+    @cache
     def _get_entries_by_group(cls) -> Set[EntryPoint]:
         return set(entry_points().select(group=cls._entry_point_group))
 
@@ -68,23 +70,28 @@ class _EngineLoader:
         return None
 
     @classmethod
+    @cache
+    def _load_by_name(cls, name: str) -> EngineFactoryProtocolType | None:
+        for ep in cls.iter_engines():
+            if ep.name == name:
+                if factory := cls._load_from_entry(ep):
+                    return factory
+
+        ep = EntryPoint(name, name, cls._entry_point_group)
+        if factory := cls._load_from_entry(ep):
+            logger.info(f"Loaded calculator from: {ep.value} (Class: {factory})")
+            return factory
+        return None
+
+    @classmethod
     def load(cls, entry_point: EngineFactoryProtocolEntry = DEFAULT_ENTRY) -> EngineFactoryProtocolType:
         if entry_point is None:
             entry_point = DEFAULT_ENTRY
         if isinstance(entry_point, EngineFactoryProtocol):
             return entry_point  # type: ignore
         if isinstance(entry_point, str):
-            factory: EngineFactoryProtocolType | None = None
-            for ep in cls.iter_engines():
-                if ep.name == entry_point:
-                    if factory := cls._load_from_entry(ep):
-                        return factory
-
-            if not factory:
-                ep = EntryPoint(entry_point, entry_point, cls._entry_point_group)
-                if factory := cls._load_from_entry(ep):
-                    logger.info(f"Loaded calculator from: {ep.value} (Class: {factory})")
-                    return factory
+            if factory := cls._load_by_name(entry_point):
+                return factory
             raise ValueError(f"No 'engine' entry point found containing '{entry_point}'")
         raise TypeError("Invalid entry_point type, expected 'str' or 'EngineFactoryProtocol'")
 

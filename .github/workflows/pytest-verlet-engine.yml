@@ -1,4 +1,4 @@
-name: Pytest Cythonized Euler
+name: Pytest Verlet
 run-name: >
   ${{ github.event_name == 'pull_request' && 'Full Matrix — PR' || 'Minimal Matrix — Push' }}
   ${{ github.event.pull_request.number || github.ref_name }}
@@ -11,9 +11,7 @@ on:
       - "pyproject.toml"
       - "py_ballisticcalc/**"
       - "tests/**"
-      - "py_ballisticcalc.exts/**"
-      - ".gitmodules"
-      - ".github/workflows/pytest-cythonized-euler-engine.yml"
+      - ".github/workflows/pytest-verlet-engine.yml"
       - ".github/workflows/pytest-reusable.yml"
 
   push:
@@ -23,9 +21,7 @@ on:
       - "pyproject.toml"
       - "py_ballisticcalc/**"
       - "tests/**"
-      - "py_ballisticcalc.exts/**"
-      - ".gitmodules"
-      - ".github/workflows/pytest-cythonized-euler-engine.yml"
+      - ".github/workflows/pytest-verlet-engine.yml"
       - ".github/workflows/pytest-reusable.yml"
 
 concurrency:
@@ -40,7 +36,7 @@ jobs:
 
     strategy:
       max-parallel: 10
-      fail-fast: true
+      fail-fast: false
       matrix:
         os:
           - ubuntu-latest
@@ -50,7 +46,7 @@ jobs:
           - macos-15-intel
           - macos-15
         python-version: ["3.11", "3.14", "3.14t"]
-        engine: ["cythonized_euler_engine"]
+        engine: ["verlet_engine"]
 
     uses: ./.github/workflows/pytest-reusable.yml
     with:
@@ -68,7 +64,7 @@ jobs:
       matrix:
         os: [ubuntu-latest]
         python-version: ["3.11"]
-        engine: ["cythonized_euler_engine"]
+        engine: ["verlet_engine"]
 
     uses: ./.github/workflows/pytest-reusable.yml
     with:

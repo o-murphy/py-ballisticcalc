@@ -41,6 +41,7 @@ on:
           - euler_engine
           - rk4_engine
           - scipy_engine
+          - verlet_engine
           - cythonized_euler_engine
           - cythonized_rk4_engine
 

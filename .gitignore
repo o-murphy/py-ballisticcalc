@@ -13,11 +13,16 @@
 **/*.ps1
 **/debug
 .vscode
-.coverage
+
+# Coverage
+.coverage*
+**/coverage.xml
 htmlcov
+
 .env
 .testall
 compile_flags.txt
+
 # Mirror of Cython sources for coverage lookup:
 /py_ballisticcalc_exts/*
 **/site

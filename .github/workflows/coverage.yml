@@ -1,18 +1,114 @@
 name: Coverage
 
 on:
+  push:
+    branches:
+      - "master"
+    paths:
+      - "pyproject.toml"
+      - "py_ballisticcalc/**"
+      - "py_ballisticcalc.exts/**"
+      - "tests/**"
+      - ".github/workflows/coverage.yml"
   pull_request:
     branches:
       - "*"
     paths:
       - "pyproject.toml"
       - "py_ballisticcalc/**"
+      - "py_ballisticcalc.exts/**"
       - "tests/**"
       - ".github/workflows/coverage.yml"
   workflow_dispatch:
 
 jobs:
+  discover-engines:
+    runs-on: ubuntu-latest
+    outputs:
+      engines: ${{ steps.list.outputs.engines }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          submodules: recursive # required to see py_ballisticcalc.exts entry points
+
+      - name: Install uv and set the python version
+        uses: astral-sh/setup-uv@v7
+        with:
+          python-version: "3.11"
+          activate-environment: "true"
+          github-token: ${{ github.token }}
+
+      - name: Install the project (all engines)
+        run: uv sync --dev --extra exts --extra scipy
+        shell: bash
+
+      - name: List available engines
+        id: list
+        run: |
+          engines=$(uv run python -c "
+          import json
+          from py_ballisticcalc import Calculator
+          print(json.dumps(sorted(ep.name for ep in Calculator.iter_engines())))
+          ")
+          echo "engines=$engines" >> "$GITHUB_OUTPUT"
+        shell: bash
+
   test:
+    needs: discover-engines
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        engine: ${{ fromJSON(needs.discover-engines.outputs.engines) }}
+
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0 # required for setuptools-scm
+          submodules: recursive # required to build py_ballisticcalc.exts
+
+      - name: Install uv and set the python version
+        uses: astral-sh/setup-uv@v7
+        with:
+          python-version: "3.11"
+          activate-environment: "true"
+          github-token: ${{ github.token }}
+
+      - name: Install the project
+        run: |
+          if [[ "${{ matrix.engine }}" == cythonized_* ]]; then
+            uv sync --dev --extra scipy --extra exts
+          else
+            uv sync --dev --extra scipy
+          fi
+        shell: bash
+
+      - name: Run coverage
+        # Cython extension internals (.pyx) aren't line-traced here (uv builds
+        # them in an isolated dir with no persistent C sources to map back to);
+        # this still measures how much of the pure-Python package each engine exercises.
+        run: >
+          uv run pytest
+          --cov=py_ballisticcalc
+          --cov-report=
+          --engine=${{ matrix.engine }}
+        shell: bash
+        env:
+          COVERAGE_FILE: .coverage.${{ matrix.engine }}
+
+      - name: Upload coverage data
+        if: ${{ !cancelled() }} # keep coverage data even if this engine's tests fail
+        uses: actions/upload-artifact@v7
+        with:
+          name: coverage-data-${{ matrix.engine }}
+          path: .coverage.${{ matrix.engine }}
+          include-hidden-files: true
+          retention-days: 1
+          if-no-files-found: error
+
+  merge:
+    needs: test
+    if: ${{ !cancelled() }} # run even if one engine's tests failed, as long as coverage data was produced
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -30,17 +126,22 @@ jobs:
         run: uv sync --dev
         shell: bash
 
-      - name: Run coverage
-        run: uv run pytest tests --cov=py_ballisticcalc --cov-report=html
+      - name: Download coverage data
+        uses: actions/download-artifact@v7
+        with:
+          pattern: coverage-data-*
+          merge-multiple: true
+
+      - name: Combine coverage
+        run: |
+          uv run coverage combine
+          uv run coverage xml
+          uv run coverage html
         shell: bash
-#    - name: Install "coverage-badge"
-#      run: uv pip install coverage-badge
-#
-#    - name: Generate coverage badge
-#      run: coverage-badge -o coverage.svg
-#
-#    - name: Upload coverage badge
-#      uses: actions/upload-artifact@v7
-#      with:
-#        name: coverage.svg
-#        path: coverage.svg
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v7
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: ./coverage.xml
+          fail_ci_if_error: true

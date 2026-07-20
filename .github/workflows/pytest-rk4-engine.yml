@@ -31,7 +31,7 @@ concurrency:
 jobs:
   # Job for full matrix, runs ONLY on pull_request events
   test_full_matrix:
-    name: Run Full Matrix Tests (Pull Request)
+    name: Full
     if: github.event_name == 'pull_request'
 
     strategy:
@@ -56,7 +56,7 @@ jobs:
 
   # Job for minimal matrix, runs ONLY on push events
   test_minimal_matrix:
-    name: Run Minimal Matrix Tests (Push)
+    name: Minimal
     if: github.event_name == 'push'
 
     strategy:

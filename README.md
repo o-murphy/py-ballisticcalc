@@ -10,7 +10,7 @@ LGPL library for small arms ballistic calculations based on point-mass (3 DoF) p
 [![pypi-pre]][pypi-pre-url]
 [![downloads]][pepy]
 [![downloads/month]][pepy]
-[![coverage]][coverage]
+[![coverage]][CodecovUrl]
 [![py-versions]][sources]
 [![Made in Ukraine]][SWUBadge]
 
@@ -192,7 +192,10 @@ https://img.shields.io/github/v/release/o-murphy/py-ballisticcalc?include_prerel
 https://pypi.org/project/py-ballisticcalc/#history
 
 [coverage]:
-./coverage.svg
+https://codecov.io/gh/o-murphy/py-ballisticcalc/graph/badge.svg
+
+[CodecovUrl]:
+https://codecov.io/gh/o-murphy/py-ballisticcalc
 
 [downloads]:
 https://img.shields.io/pepy/dt/py-ballisticcalc?style=flat-square
