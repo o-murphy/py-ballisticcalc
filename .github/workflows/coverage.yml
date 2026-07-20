@@ -77,23 +77,19 @@ jobs:
       - name: Install the project
         run: |
           if [[ "${{ matrix.engine }}" == cythonized_* ]]; then
-            export CYTHON_COVERAGE=1
-            uv sync --dev --extra scipy --extra exts --reinstall-package py_ballisticcalc.exts
+            uv sync --dev --extra scipy --extra exts
           else
             uv sync --dev --extra scipy
           fi
         shell: bash
 
-      - name: Mirror Cython sources for coverage reporting
-        if: startsWith(matrix.engine, 'cythonized_')
-        run: uv run python scripts/sync_cython_sources.py
-        shell: bash
-
       - name: Run coverage
+        # Cython extension internals (.pyx) aren't line-traced here (uv builds
+        # them in an isolated dir with no persistent C sources to map back to);
+        # this still measures how much of the pure-Python package each engine exercises.
         run: >
           uv run pytest
           --cov=py_ballisticcalc
-          ${{ startsWith(matrix.engine, 'cythonized_') && '--cov=py_ballisticcalc_exts' || '' }}
           --cov-report=
           --engine=${{ matrix.engine }}
         shell: bash
@@ -118,7 +114,6 @@ jobs:
       - uses: actions/checkout@v7
         with:
           fetch-depth: 0 # required for setuptools-scm
-          submodules: recursive # required to build py_ballisticcalc.exts
 
       - name: Install uv and set the python version
         uses: astral-sh/setup-uv@v7
@@ -128,13 +123,7 @@ jobs:
           github-token: ${{ github.token }}
 
       - name: Install the project
-        run: uv sync --dev --extra exts --reinstall-package py_ballisticcalc.exts
-        env:
-          CYTHON_COVERAGE: "1"
-        shell: bash
-
-      - name: Mirror Cython sources for coverage reporting
-        run: uv run python scripts/sync_cython_sources.py
+        run: uv sync --dev
         shell: bash
 
       - name: Download coverage data

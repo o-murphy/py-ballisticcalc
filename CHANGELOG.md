@@ -38,14 +38,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Tests
 - `TestIssue204` added to `tests/test_issues.py` — parametrized regression suite covering 9 high-elevation target points from issue #204 that previously raised `ZeroFindingError`; tests both `zero_angle()` (iterative + Ridder's fallback) and `find_zero_angle()` (direct Ridder's); all engines run with `cStepMultiplier=5.0` to keep runtime reasonable on high-elevation trajectories
 
-### CI
-- `py_ballisticcalc.exts/pyproject.toml`: removed `enable = ["cpython-freethreading"]` — no longer a valid enable group in cibuildwheel 4.x; removed `cp313t-*` from `build` selectors — Python 3.13t is no longer available in cibuildwheel 4.1.0 (left preview stage); final selectors: `cp311-* cp314t-*`
-- `test_full_matrix` in `pytest-cythonized-rk4-engine.yml` and `pytest-cythonized-euler-engine.yml`: changed `fail-fast` from `false` to `true` — stops the 24-job matrix on the first failure instead of running all jobs to completion
-
 ### Removed
 - Python 3.10 support EOL - removed all references to Python 3.10, updated CI and dependencies
 
 ### CI
+- `py_ballisticcalc.exts/pyproject.toml`: removed `enable = ["cpython-freethreading"]` — no longer a valid enable group in cibuildwheel 4.x; removed `cp313t-*` from `build` selectors — Python 3.13t is no longer available in cibuildwheel 4.1.0 (left preview stage); final selectors: `cp311-* cp314t-*`
+- `test_full_matrix` in `pytest-cythonized-rk4-engine.yml` and `pytest-cythonized-euler-engine.yml`: changed `fail-fast` from `false` to `true` — stops the 24-job matrix on the first failure instead of running all jobs to completion
 - `py_ballisticcalc.exts` wheels now target the Python stable ABI (`cp311-abi3-*`): one binary per platform/architecture is compatible with CPython 3.11 and all later standard releases; free-threaded Python 3.13t / 3.14t is built as separate version-specific wheels
 - `cibuildwheel` build selectors: `cp311-* cp313t-* cp314t-*`; `cp313t-*` requires `enable = ["cpython-freethreading"]` in cibuildwheel 3.4 (flag is deprecated but `cp313t` is silently skipped without it)
 - Cythonized engine test full matrix: `3.11, 3.14` (abi3 boundary versions) + `3.13t, 3.14t` (distinct free-threaded ABIs); `3.12`, `3.13` removed — abi3 binary is identical across standard CPython versions
