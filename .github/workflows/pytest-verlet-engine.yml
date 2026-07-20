@@ -1,0 +1,73 @@
+name: Pytest Verlet
+run-name: >
+  ${{ github.event_name == 'pull_request' && 'Full Matrix — PR' || 'Minimal Matrix — Push' }}
+  ${{ github.event.pull_request.number || github.ref_name }}
+
+on:
+  pull_request:
+    branches:
+      - "*"
+    paths:
+      - "pyproject.toml"
+      - "py_ballisticcalc/**"
+      - "tests/**"
+      - ".github/workflows/pytest-verlet-engine.yml"
+      - ".github/workflows/pytest-reusable.yml"
+
+  push:
+    branches:
+      - "*"
+    paths:
+      - "pyproject.toml"
+      - "py_ballisticcalc/**"
+      - "tests/**"
+      - ".github/workflows/pytest-verlet-engine.yml"
+      - ".github/workflows/pytest-reusable.yml"
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # Job for full matrix, runs ONLY on pull_request events
+  test_full_matrix:
+    name: Full
+    if: github.event_name == 'pull_request'
+
+    strategy:
+      max-parallel: 10
+      fail-fast: false
+      matrix:
+        os:
+          - ubuntu-latest
+          - ubuntu-24.04-arm
+          - windows-latest
+          - windows-11-arm
+          - macos-15-intel
+          - macos-15
+        python-version: ["3.11", "3.14", "3.14t"]
+        engine: ["verlet_engine"]
+
+    uses: ./.github/workflows/pytest-reusable.yml
+    with:
+      os: ${{ matrix.os }}
+      python_version: ${{ matrix.python-version }}
+      engine_name: ${{ matrix.engine }}
+
+  # Job for minimal matrix, runs ONLY on push events
+  test_minimal_matrix:
+    name: Minimal
+    if: github.event_name == 'push'
+
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest]
+        python-version: ["3.11"]
+        engine: ["verlet_engine"]
+
+    uses: ./.github/workflows/pytest-reusable.yml
+    with:
+      os: ${{ matrix.os }}
+      python_version: ${{ matrix.python-version }}
+      engine_name: ${{ matrix.engine }}
