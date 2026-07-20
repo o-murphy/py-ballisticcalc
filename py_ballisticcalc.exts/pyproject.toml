@@ -41,9 +41,15 @@ dependencies = []
 #   version: will be calculated with setuptools-scm
 dynamic = ["version"]
 
+# Deprecated entry-points
 [project.entry-points.py_ballisticcalc]
 cythonized_euler_engine = "py_ballisticcalc_exts:CythonizedEulerIntegrationEngine"
 cythonized_rk4_engine = "py_ballisticcalc_exts:CythonizedRK4IntegrationEngine"
+
+# New entry-points
+[project.entry-points."py_ballisticcalc.engines"]
+cythonized_euler = "py_ballisticcalc_exts:CythonizedEulerIntegrationEngine"
+cythonized_rk4 = "py_ballisticcalc_exts:CythonizedRK4IntegrationEngine"
 
 [project.urls]
 "Homepage" = "https://github.com/o-murphy/py-ballisticcalc"

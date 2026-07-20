@@ -15,7 +15,20 @@ class TestEngineLoader:
 
     def test_iter_engines_non_empty(self):
         engines = list(Calculator.iter_engines())
-        assert any(ep.name.endswith('_engine') for ep in engines)
+        assert engines
+        assert all(ep.group == _EngineLoader._entry_point_group for ep in engines), (
+            "canonical entries should shadow their deprecated '_engine'-suffixed equivalents"
+        )
+
+    def test_iter_engines_no_duplicate_targets(self):
+        engines = list(Calculator.iter_engines())
+        targets = [ep.value for ep in engines]
+        assert len(targets) == len(set(targets))
+
+    def test_load_by_legacy_name_falls_back_with_warning(self):
+        with pytest.deprecated_call():
+            factory = _EngineLoader.load('rk4_engine')
+        assert isinstance(factory, EngineFactoryProtocol)
 
     def test_engine_loader_fallback_invalid(self):
         with pytest.raises(ValueError):

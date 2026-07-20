@@ -18,6 +18,8 @@ from types import TracebackType
 from typing import TypeAlias, TypeVar, Any, overload, Self
 import warnings
 
+from deprecated import deprecated
+
 from py_ballisticcalc import RK4IntegrationEngine
 from py_ballisticcalc.generics.engine import EngineProtocol, EngineFactoryProtocol
 from py_ballisticcalc.logger import logger
@@ -32,26 +34,46 @@ EngineFactoryProtocolEntry: TypeAlias = str | EngineFactoryProtocolType | None
 
 DEFAULT_ENTRY_SUFFIX = "_engine"
 DEFAULT_ENTRY_GROUP = "py_ballisticcalc"
+ENGINES_ENTRY_GROUP = "py_ballisticcalc.engines"
 DEFAULT_ENTRY: EngineFactoryProtocolType = RK4IntegrationEngine
 
 
 @dataclass
 class _EngineLoader:
-    _entry_point_group = DEFAULT_ENTRY_GROUP
+    _entry_point_group = ENGINES_ENTRY_GROUP
+    _legacy_entry_point_group = DEFAULT_ENTRY_GROUP
     _entry_point_suffix = DEFAULT_ENTRY_SUFFIX
 
     @classmethod
     @cache
-    def _get_entries_by_group(cls) -> Set[EntryPoint]:
-        return set(entry_points().select(group=cls._entry_point_group))
+    def _get_entries_by_group(cls, group: str) -> Set[EntryPoint]:
+        return set(entry_points().select(group=group))
+
+    @classmethod
+    def _iter_group(cls, group: str, *, legacy: bool = False) -> Generator[EntryPoint, None, None]:
+        for ep in cls._get_entries_by_group(group):
+            if legacy and not ep.name.endswith(cls._entry_point_suffix):
+                continue
+            yield ep
 
     @classmethod
     def iter_engines(cls) -> Generator[EntryPoint, None, None]:
-        """Iterate over all available engines in the entry points."""
-        ballistic_entry_points = cls._get_entries_by_group()
-        for ep in ballistic_entry_points:
-            if ep.name.endswith(cls._entry_point_suffix):
-                yield ep
+        """Iterate over all available engines in the entry points.
+
+        Entries from the current `py_ballisticcalc.engines` group are yielded first.
+        Legacy `*_engine` entries from the deprecated `py_ballisticcalc` group are
+        yielded afterwards, skipping any that resolve to the same target as an
+        entry already yielded, to avoid listing the same engine twice during migration.
+        """
+        seen_targets: set[str] = set()
+        for ep in cls._iter_group(cls._entry_point_group):
+            seen_targets.add(ep.value)
+            yield ep
+        for ep in cls._iter_group(cls._legacy_entry_point_group, legacy=True):
+            if ep.value in seen_targets:
+                continue
+            seen_targets.add(ep.value)
+            yield ep
 
     @classmethod
     def _load_from_entry(cls, ep: EntryPoint) -> EngineFactoryProtocolType | None:
@@ -70,11 +92,25 @@ class _EngineLoader:
         return None
 
     @classmethod
+    @deprecated(
+        reason=f"Entry points registered under the '{DEFAULT_ENTRY_GROUP}' group are deprecated; "
+        f"register under the '{ENGINES_ENTRY_GROUP}' group instead.",
+    )
+    def _load_from_legacy_entry(cls, ep: EntryPoint) -> EngineFactoryProtocolType | None:
+        return cls._load_from_entry(ep)
+
+    @classmethod
     @cache
     def _load_by_name(cls, name: str) -> EngineFactoryProtocolType | None:
-        for ep in cls.iter_engines():
+        for ep in cls._iter_group(cls._entry_point_group):
             if ep.name == name:
                 if factory := cls._load_from_entry(ep):
+                    return factory
+
+        # Fall back to the deprecated group so old entry-point names keep working.
+        for ep in cls._iter_group(cls._legacy_entry_point_group, legacy=True):
+            if ep.name == name:
+                if factory := cls._load_from_legacy_entry(ep):
                     return factory
 
         ep = EntryPoint(name, name, cls._entry_point_group)

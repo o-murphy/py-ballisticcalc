@@ -45,11 +45,19 @@ dependencies = [
 #   optional-dependencies: will be calculated with before-build hook
 dynamic = ["version", "optional-dependencies"]
 
+# Deprecated entry-points
 [project.entry-points.py_ballisticcalc]
 euler_engine = "py_ballisticcalc:EulerIntegrationEngine"
 rk4_engine = "py_ballisticcalc:RK4IntegrationEngine"
 scipy_engine = "py_ballisticcalc:SciPyIntegrationEngine"
 verlet_engine = "py_ballisticcalc:VelocityVerletIntegrationEngine"
+
+# New entry-points
+[project.entry-points."py_ballisticcalc.engines"]
+euler = "py_ballisticcalc:EulerIntegrationEngine"
+rk4 = "py_ballisticcalc:RK4IntegrationEngine"
+scipy = "py_ballisticcalc:SciPyIntegrationEngine"
+verlet = "py_ballisticcalc:VelocityVerletIntegrationEngine"
 
 [project.urls]
 "Homepage" = "https://github.com/o-murphy/py-ballisticcalc"
