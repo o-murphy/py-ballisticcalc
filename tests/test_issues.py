@@ -180,3 +180,40 @@ class TestIssue204:
         shot, target_dist = self._make_shot(x_m, y_m)
         angle = self.calc._engine_instance.find_zero_angle(shot, target_dist)
         assert angle is not None
+
+
+class TestIssue305:
+    """get_at() must return the last point when the requested value is within floating-point
+    precision of it, rather than raising ArithmeticError.
+
+    Root cause: the forward-search loop condition `curr_val < key_value <= next_val` excludes
+    any key_value greater than the last trajectory point, so target_idx stayed -1 and the
+    epsilon check against traj[-1] was never reached before the error was raised.
+    """
+
+    @pytest.fixture(autouse=True)
+    def setup_method(self, loaded_engine_instance):
+        drag_model = DragModel(bc=0.759, drag_table=TableG1, weight=Weight.Gram(108),
+                               diameter=Distance.Millimeter(23), length=Distance.Millimeter(108.2))
+        ammo = Ammo(drag_model, Velocity.MPS(930))
+        shot = Shot(ammo=ammo)
+        calc = Calculator(engine=loaded_engine_instance)
+        self.hit_result = calc.fire(shot, Distance.Meter(1000), Distance.Meter(100))
+        assert len(self.hit_result.trajectory) >= 3
+
+    def test_get_at_epsilon_past_last_point_returns_last_point(self):
+        last_point = self.hit_result.trajectory[-1]
+        just_past_last = math.nextafter(last_point.distance.raw_value, math.inf)
+        result = self.hit_result.get_at("distance", just_past_last)
+        assert result == last_point
+
+    def test_get_at_epsilon_before_first_point_returns_first_point(self):
+        first_point = self.hit_result.trajectory[0]
+        just_before_first = math.nextafter(first_point.distance.raw_value, -math.inf)
+        result = self.hit_result.get_at("distance", just_before_first)
+        assert result == first_point
+
+    def test_get_at_far_past_last_point_still_raises(self):
+        last_point = self.hit_result.trajectory[-1]
+        with pytest.raises(ArithmeticError, match="does not reach"):
+            self.hit_result.get_at("distance", last_point.distance.raw_value + 1e6)
