@@ -1,6 +1,6 @@
 name: Pytest Cythonized Euler
 run-name: >
-  ${{ github.event_name == 'pull_request' && 'Full Matrix — PR' || 'Minimal Matrix — Push' }}
+  Minimal Matrix
   ${{ github.event.pull_request.number || github.ref_name }}
 
 on:
@@ -33,35 +33,13 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  # Job for full matrix, runs ONLY on pull_request events
-  test_full_matrix:
-    name: Full
-    if: github.event_name == 'pull_request'
-
-    strategy:
-      max-parallel: 10
-      fail-fast: true
-      matrix:
-        os:
-          - ubuntu-latest
-          - ubuntu-24.04-arm
-          - windows-latest
-          - windows-11-arm
-          - macos-15-intel
-          - macos-15
-        python-version: ["3.11", "3.14", "3.14t"]
-        engine: ["cythonized_euler_engine"]
-
-    uses: ./.github/workflows/pytest-reusable.yml
-    with:
-      os: ${{ matrix.os }}
-      python_version: ${{ matrix.python-version }}
-      engine_name: ${{ matrix.engine }}
-
-  # Job for minimal matrix, runs ONLY on push events
+  # No full cross-OS/cross-Python matrix here: cythonized_euler_engine shares its integration/
+  # data-structure core with cythonized_rk4_engine (full matrix runs there), differing only in
+  # integration formula, so a full matrix for this engine would just re-test that shared core at
+  # extra CI cost with no new coverage. Minimal matrix runs unconditionally on both push and
+  # pull_request to still catch regressions specific to this engine's own logic.
   test_minimal_matrix:
     name: Minimal
-    if: github.event_name == 'push'
 
     strategy:
       fail-fast: false
