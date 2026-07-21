@@ -183,22 +183,24 @@ class TestIssue204:
 
 
 class TestIssue305:
-    """get_at() must return the last point when the requested value is within floating-point
-    precision of it, rather than raising ArithmeticError.
+    """get_at() must return the closest existing point when the requested value is within
+    floating-point precision of it, rather than raising ArithmeticError.
 
     Root cause: the forward-search loop condition `curr_val < key_value <= next_val` excludes
-    any key_value greater than the last trajectory point, so target_idx stayed -1 and the
-    epsilon check against traj[-1] was never reached before the error was raised.
+    any key_value past the last bracketing pair it can find, so target_idx stayed -1 and the
+    epsilon check was never reached before the error was raised. This affects not just the
+    trajectory's first/last points but also local extrema (e.g. the trajectory apex) for
+    non-monotonic attributes like height, since a value epsilon beyond an extremum falls
+    outside every bracket the same way a value epsilon beyond an endpoint does.
     """
 
     @pytest.fixture(autouse=True)
     def setup_method(self, loaded_engine_instance):
         drag_model = DragModel(bc=0.759, drag_table=TableG1, weight=Weight.Gram(108),
                                diameter=Distance.Millimeter(23), length=Distance.Millimeter(108.2))
-        ammo = Ammo(drag_model, Velocity.MPS(930))
-        shot = Shot(ammo=ammo)
-        calc = Calculator(engine=loaded_engine_instance)
-        self.hit_result = calc.fire(shot, Distance.Meter(1000), Distance.Meter(100))
+        self.ammo = Ammo(drag_model, Velocity.MPS(930))
+        self.calc = Calculator(engine=loaded_engine_instance)
+        self.hit_result = self.calc.fire(Shot(ammo=self.ammo), Distance.Meter(1000), Distance.Meter(100))
         assert len(self.hit_result.trajectory) >= 3
 
     def test_get_at_epsilon_past_last_point_returns_last_point(self):
@@ -217,3 +219,14 @@ class TestIssue305:
         last_point = self.hit_result.trajectory[-1]
         with pytest.raises(ArithmeticError, match="does not reach"):
             self.hit_result.get_at("distance", last_point.distance.raw_value + 1e6)
+
+    def test_get_at_epsilon_past_local_extremum_returns_that_point(self):
+        """Height is non-monotonic (rises then falls); the apex is an interior local extremum,
+        not an endpoint, and must be found the same way as an endpoint epsilon-overshoot is."""
+        shot = Shot(ammo=self.ammo, relative_angle=Angular.Degree(0.5))
+        apex_hit_result = self.calc.fire(shot, Distance.Meter(1500), Distance.Meter(50), raise_range_error=False)
+        apex = max(apex_hit_result.trajectory, key=lambda pt: pt.height.raw_value)
+        assert apex not in (apex_hit_result.trajectory[0], apex_hit_result.trajectory[-1])
+        just_past_apex = math.nextafter(apex.height.raw_value, math.inf)
+        result = apex_hit_result.get_at("height", just_past_apex)
+        assert result == apex

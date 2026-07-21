@@ -21,8 +21,13 @@ on:
       - ".github/workflows/coverage.yml"
   workflow_dispatch:
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   discover-engines:
+    if: github.actor != 'dependabot[bot]' # dependabot PRs get coverage from the base branch; skip the redundant full run
     runs-on: ubuntu-latest
     outputs:
       engines: ${{ steps.list.outputs.engines }}
@@ -108,7 +113,9 @@ jobs:
 
   merge:
     needs: test
-    if: ${{ !cancelled() }} # run even if one engine's tests failed, as long as coverage data was produced
+    # !cancelled() alone would still run this even when `test` was skipped (dependabot actor), since a
+    # skipped job isn't a cancelled one; the actor check keeps it skipped in that case too
+    if: ${{ !cancelled() && github.actor != 'dependabot[bot]' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7

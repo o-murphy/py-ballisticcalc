@@ -905,11 +905,11 @@ class HitResult:
 
         # Check if we found a valid index
         if target_idx == -1:
-            # key_value may be within epsilon of an endpoint that fell just outside every bracket above
-            if abs(get_key_val(traj[-1]) - key_value) < epsilon:
-                return traj[-1]
-            if abs(get_key_val(traj[0]) - key_value) < epsilon:
-                return traj[0]
+            # key_value may be within epsilon of a point (endpoint or local extremum, e.g. trajectory
+            # apex) that fell just outside every bracket above; O(n) scan is fine on this error path
+            closest_point = min(traj, key=lambda pt: abs(get_key_val(pt) - key_value))
+            if abs(get_key_val(closest_point) - key_value) < epsilon:
+                return closest_point
             raise ArithmeticError(f"Trajectory does not reach {key_attribute} = {value}")
         # Check for exact match here
         if abs(get_key_val(traj[target_idx]) - key_value) < epsilon:
