@@ -40,3 +40,34 @@ def test_get_at_slant_height_simple():
     r = seq.get_at_slant_height(look, target_slant)
     assert r.position.x == pytest.approx(15.0)
     assert r.time == pytest.approx(1.5)
+
+
+def test_get_at_epsilon_past_last_point_returns_last_point():
+    """A value a float-epsilon beyond the last point must still resolve to it, not raise."""
+    seq = make_linear_seq(5)  # px: 0, 10, 20, 30, 40
+    just_past_last = math.nextafter(40.0, math.inf)
+    r = seq.get_at("position.x", just_past_last)
+    assert r.position.x == pytest.approx(40.0)
+    assert r.time == pytest.approx(4.0)
+
+
+def test_get_at_epsilon_before_first_point_returns_first_point():
+    seq = make_linear_seq(5)  # px: 0, 10, 20, 30, 40
+    just_before_first = math.nextafter(0.0, -math.inf)
+    r = seq.get_at("position.x", just_before_first)
+    assert r.position.x == pytest.approx(0.0)
+    assert r.time == pytest.approx(0.0)
+
+
+def test_get_at_far_past_last_point_raises():
+    """Regression for bclibc#19: get_at() used to silently extrapolate past the trajectory's
+    range instead of signaling that it doesn't reach the requested value."""
+    seq = make_linear_seq(5)  # px: 0, 10, 20, 30, 40
+    with pytest.raises(IndexError, match="outside the trajectory's range"):
+        seq.get_at("position.x", 40.0 + 1e6)
+
+
+def test_get_at_far_before_first_point_raises():
+    seq = make_linear_seq(5)  # px: 0, 10, 20, 30, 40
+    with pytest.raises(IndexError, match="outside the trajectory's range"):
+        seq.get_at("position.x", -1e6)
