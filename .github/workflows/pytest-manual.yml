@@ -33,7 +33,7 @@ on:
           - "3.15t"
 
       engine_name:
-        description: "Engine name (e.g., euler_engine, rk4_engine, scipy_engine, cythonized_rk4_engine, cythonized_euler_engine)"
+        description: "Engine name (e.g., euler_engine, rk4_engine, scipy_engine, cythonized_rk4_engine, cythonized_euler_engine, cythonized_verlet_engine)"
         required: true
         type: choice
         default: rk4_engine
@@ -44,6 +44,7 @@ on:
           - verlet_engine
           - cythonized_euler_engine
           - cythonized_rk4_engine
+          - cythonized_verlet_engine
 
       stress_test:
         description: "Enable stress tests (only runs for cythonized engines)"
