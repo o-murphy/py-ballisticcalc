@@ -8,6 +8,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 [:simple-github: Diff since v2.3.0rc2][Unreleased]
 
+### Added
+- `cythonized_verlet_engine` (`py_ballisticcalc_exts.CythonizedVelocityVerletIntegrationEngine`): compiled counterpart to the existing pure-Python `verlet_engine`, wired up the same way as `cythonized_rk4_engine`/`cythonized_euler_engine` (`velocity_verlet_engine.pxd`/`.pyx`/`.pyi`, `setup.py` source/dependency registration, `py_ballisticcalc_exts/__init__.py` export, `[project.entry-points.py_ballisticcalc]` in `py_ballisticcalc.exts/pyproject.toml`) against bclibc's new `BCLIBC_integrateVELOCITY_VERLET` (`include/bclibc/velocity_verlet.hpp`); produces identical trajectories to `verlet_engine` bit-for-bit on a standard test shot and passes the full `pytest` suite (373 passed, 2 skipped) and `py_ballisticcalc.exts/tests`; benchmarked at 100x (Trajectory) / 157x (Find Zero) faster than `rk4_engine` — added to the engine comparison table in `README.md`/`docs/concepts/engines.md`
+  - **Provisional**: the bclibc submodule is temporarily pinned to the `method/verlet` branch (commit `5413c96`, not yet merged/released upstream) to enable this; must be re-pinned to a tagged bclibc release before this ships
+
 ### Changed
 - bclibc submodule bumped to [`v1.1.6`]
 - `.pylintrc` (643 lines, essentially unmodified `pylint --generate-rcfile` output) replaced by `[tool.pylint.main]`/`[tool.pylint.design]`/`[tool.pylint."messages control"]` in `pyproject.toml`; diffed against a freshly generated default rcfile of the same pylint version to isolate the actual overrides (`fail-under=9.0` vs default `9.5`, `max-positional-arguments=6` vs default `5`, `ignore`, `py-version`, and the `disable=` list — which, despite reading like `--generate-rcfile`'s own suggested defaults, is *not* applied unless present in a config file: without it, pylint's score on `py_ballisticcalc` drops from 9.57/10 to 7.89/10); verified byte-for-byte equivalent pylint findings/score before deleting `.pylintrc`
