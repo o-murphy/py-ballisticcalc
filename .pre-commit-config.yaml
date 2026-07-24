@@ -6,12 +6,20 @@ repos:
   - repo: local
     hooks:
       - id: uv-lock
-        name: uv lock check
+        name: uv lock upgrade
         entry: uv
         args: ["lock", "--upgrade"]
         language: system
         pass_filenames: false
         files: '^(pyproject\.toml|uv\.lock)$'
+
+      - id: uv-lock-exts
+        name: uv lock upgrade (exts)
+        entry: uv
+        args: ["lock", "--upgrade", "--project", "py_ballisticcalc.exts"]
+        language: system
+        pass_filenames: false
+        files: '^py_ballisticcalc\.exts/(pyproject\.toml|uv\.lock)$'
 
       - id: uv-sync
         name: uv sync before hooks
