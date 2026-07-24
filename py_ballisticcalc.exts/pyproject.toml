@@ -44,6 +44,7 @@ dynamic = ["version"]
 [project.entry-points.py_ballisticcalc]
 cythonized_euler_engine = "py_ballisticcalc_exts:CythonizedEulerIntegrationEngine"
 cythonized_rk4_engine = "py_ballisticcalc_exts:CythonizedRK4IntegrationEngine"
+cythonized_verlet_engine = "py_ballisticcalc_exts:CythonizedVelocityVerletIntegrationEngine"
 
 [project.urls]
 "Homepage" = "https://github.com/o-murphy/py-ballisticcalc"

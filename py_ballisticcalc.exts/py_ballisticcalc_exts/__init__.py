@@ -11,6 +11,7 @@ from .traj_data import CythonizedBaseTrajData, CythonizedBaseTrajSeq
 from .base_engine import CythonizedBaseIntegrationEngine
 from .euler_engine import CythonizedEulerIntegrationEngine
 from .rk4_engine import CythonizedRK4IntegrationEngine
+from .velocity_verlet_engine import CythonizedVelocityVerletIntegrationEngine
 
 
 # Version matching guard
@@ -36,6 +37,7 @@ if __core_version != __exts_version:
 __all__ = (
     "CythonizedEulerIntegrationEngine",
     "CythonizedRK4IntegrationEngine",
+    "CythonizedVelocityVerletIntegrationEngine",
     # externs for docs generation
     "CythonizedBaseIntegrationEngine",
     "CythonizedBaseTrajData",
