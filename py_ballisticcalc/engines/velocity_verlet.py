@@ -39,8 +39,8 @@ from py_ballisticcalc.engines.base_engine import (
 from py_ballisticcalc.exceptions import RangeError
 from py_ballisticcalc.logger import logger
 from py_ballisticcalc.shot import ShotProps
-from py_ballisticcalc.trajectory_data import BaseTrajData, TrajectoryData, TrajFlag, HitResult
-from py_ballisticcalc.vector import Vector, ZERO_VECTOR
+from py_ballisticcalc.trajectory_data import BaseTrajData, HitResult, TrajectoryData, TrajFlag
+from py_ballisticcalc.vector import ZERO_VECTOR, Vector
 
 __all__ = ("VelocityVerletIntegrationEngine",)
 

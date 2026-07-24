@@ -3,13 +3,13 @@ Type stubs for the compiled extension module `py_ballisticcalc_exts.traj_data`
 to improve IDE completion for low-level trajectory buffer and interpolation helpers.
 """
 
+from collections.abc import Iterator
 from typing import overload
-from typing_extensions import Iterator
 
-from py_ballisticcalc.unit import Vector
 from py_ballisticcalc.trajectory_data import BaseTrajDataAttribute
+from py_ballisticcalc.unit import Vector
 
-__all__ = ("CythonizedBaseTrajSeq", "CythonizedBaseTrajData")
+__all__ = ("CythonizedBaseTrajData", "CythonizedBaseTrajSeq")
 
 class CythonizedBaseTrajSeq:
     """Contiguous C buffer of BCLIBC_BaseTrajData points with fast append and interpolation.
@@ -32,25 +32,20 @@ class CythonizedBaseTrajSeq:
         mach: float,
     ) -> None:
         """Append a new point to the sequence."""
-        ...
 
     def reserve(self, min_capacity: int) -> None:
         """Ensure capacity is at least min_capacity (no-op if already large enough)."""
-        ...
 
     def __len__(self) -> int:
         """Number of points in the sequence."""
-        ...
 
     def __getitem__(self, idx: int) -> CythonizedBaseTrajData:
         """Return CythonizedBaseTrajData for the given index.  Supports negative indices."""
-        ...
 
     def interpolate_at(
         self, idx: int, key_attribute: BaseTrajDataAttribute, key_value: float
     ) -> CythonizedBaseTrajData:
         """Interpolate using points (idx-1, idx, idx+1) keyed by key_attribute at key_value."""
-        ...
 
     def get_at(
         self, key_attribute: BaseTrajDataAttribute, key_value: float, start_from_time: float | None = None
@@ -61,25 +56,18 @@ class CythonizedBaseTrajSeq:
         and proceeds forward or backward depending on local direction, mirroring
         trajectory_data.HitResult.get_at().
         """
-        ...
 
     def get_at_slant_height(self, look_angle_rad: float, value: float) -> CythonizedBaseTrajData:
         """Get CythonizedBaseTrajData where value == slant_height === position.y*cos(a) - position.x*sin(a)."""
-        ...
 
 class CythonizedBaseTrajData:
     """Lightweight wrapper for a single BCLIBC_BaseTrajData point."""
 
-    __slots__ = ("time", "position", "velocity", "mach")
+    __slots__ = ("mach", "position", "time", "velocity")
 
-    def __repr__(self) -> str: ...
-    def __str__(self) -> str: ...
-    def __len__(self) -> int:
-        return ...
-
+    def __len__(self) -> int: ...
     def __iter__(self) -> Iterator[float | Vector]:
         """Yields time, position, velocity, mach."""
-        ...
 
     @overload
     def __getitem__(self, index: int) -> float | Vector: ...
@@ -89,11 +77,9 @@ class CythonizedBaseTrajData:
         """
         Implements access to fields by index (0-3 or -4--1) or slice.
         """
-        ...
 
     def __eq__(self, other: object) -> bool:
         """Implements self comparing (self == other)."""
-        ...
 
     @property
     def time(self) -> float: ...
@@ -102,12 +88,10 @@ class CythonizedBaseTrajData:
     @property
     def position(self) -> Vector:
         """Return position as Vector."""
-        ...
 
     @property
     def velocity(self) -> Vector:
         """Return velocity as Vector."""
-        ...
 
     @staticmethod
     def interpolate(
@@ -136,4 +120,3 @@ class CythonizedBaseTrajData:
             ZeroDivisionError: If the interpolation fails due to zero division.
                                (This will result if two of the points are identical).
         """
-        ...

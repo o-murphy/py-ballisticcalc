@@ -37,7 +37,7 @@ jobs:
           submodules: recursive # required to see py_ballisticcalc.exts entry points
 
       - name: Install uv and set the python version
-        uses: astral-sh/setup-uv@v7
+        uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9
         with:
           python-version: "3.11"
           activate-environment: "true"
@@ -73,7 +73,7 @@ jobs:
           submodules: recursive # required to build py_ballisticcalc.exts
 
       - name: Install uv and set the python version
-        uses: astral-sh/setup-uv@v7
+        uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9
         with:
           python-version: "3.11"
           activate-environment: "true"
@@ -123,7 +123,7 @@ jobs:
           fetch-depth: 0 # required for setuptools-scm
 
       - name: Install uv and set the python version
-        uses: astral-sh/setup-uv@v7
+        uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9
         with:
           python-version: "3.11"
           activate-environment: "true"

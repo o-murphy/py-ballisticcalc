@@ -32,7 +32,6 @@ Note:
 # Third-party imports
 from typing import TypedDict
 
-
 # Type definitions
 DragTablePointDictType = TypedDict("DragTablePointDictType", {"Mach": float, "CD": float})
 
@@ -818,5 +817,5 @@ def get_drag_tables_names() -> list[str]:
     return names
 
 
-__all__ = ["get_drag_tables_names", "DragTablePointDictType"]
-__all__ += get_drag_tables_names()
+__all__ = ["DragTablePointDictType", "get_drag_tables_names"]
+__all__.extend(get_drag_tables_names())

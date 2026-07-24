@@ -51,8 +51,8 @@ from py_ballisticcalc.engines.base_engine import (
 from py_ballisticcalc.exceptions import RangeError
 from py_ballisticcalc.logger import logger
 from py_ballisticcalc.shot import ShotProps
-from py_ballisticcalc.trajectory_data import BaseTrajData, TrajFlag, HitResult
-from py_ballisticcalc.vector import Vector, ZERO_VECTOR
+from py_ballisticcalc.trajectory_data import BaseTrajData, HitResult, TrajFlag
+from py_ballisticcalc.vector import ZERO_VECTOR, Vector
 
 __all__ = ("RK4IntegrationEngine",)
 
@@ -210,7 +210,7 @@ class RK4IntegrationEngine(BaseIntegrationEngine):
             delta_time = props.calc_step
             k_m = density_ratio * props.drag_by_mach(relative_speed / mach)
 
-            def acceleration(rel_vel: Vector, ground_vel: Vector) -> Vector:
+            def acceleration(rel_vel: Vector, ground_vel: Vector, k_m: float = k_m) -> Vector:
                 """Acceleration is net effect of gravity, drag, and Coriolis forces."""
                 coriolis_term = coriolis_fn(ground_vel) if coriolis_fn else ZERO_VECTOR
                 return self.gravity_vector + coriolis_term - k_m * rel_vel * rel_vel.magnitude()  # type: ignore[operator]

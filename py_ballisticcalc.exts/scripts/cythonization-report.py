@@ -6,9 +6,9 @@
 # ]
 # ///
 
-import re
-from datetime import datetime
 import argparse  # Import the argparse module
+import re
+from datetime import UTC, datetime
 from pathlib import Path
 
 from bs4 import BeautifulSoup
@@ -178,7 +178,7 @@ def compose_results(results: dict[Path, tuple[float, float, float]]) -> tuple[fl
     sum_col2 = 0.0
     sum_col3 = 0.0
 
-    for path, values_tuple in results.items():
+    for values_tuple in results.values():
         sum_col1 += values_tuple[0]
         sum_col2 += values_tuple[1]
         sum_col3 += values_tuple[2]
@@ -208,7 +208,7 @@ def generate_html_report(results: dict[Path, tuple[float, float, float]]) -> str
     Returns:
         A string containing the complete HTML report.
     """
-    current_date = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    current_date = datetime.now(UTC).strftime("%Y-%m-%d %H:%M:%S")
     html_content = """
     <!DOCTYPE html>
     <html lang="en">
@@ -359,7 +359,7 @@ def generate_markdown_report(results: dict[Path, tuple[float, float, float]]) ->
     Returns:
         A string containing the complete Markdown report.
     """
-    current_date = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    current_date = datetime.now(UTC).strftime("%Y-%m-%d %H:%M:%S")
     markdown_content = "# Cythonization Report\n\n"
     markdown_content += "This report summarizes the Cythonization percentage for various source files, indicating the level of Python interaction within the compiled code.\n\n"
 
@@ -481,7 +481,7 @@ def main():
             with open(html_report_path, "w", encoding="utf-8") as f:
                 f.write(html_report_output)
             print(f"\nHTML report generated successfully: {html_report_path}")
-        except IOError as e:
+        except OSError as e:
             print(f"Error saving HTML report to {html_report_path}: {e}")
 
     if args.format == "markdown" or args.format == "both":
@@ -490,7 +490,7 @@ def main():
             with open(markdown_report_path, "w", encoding="utf-8") as f:
                 f.write(markdown_report_output)
             print(f"Markdown report generated successfully: {markdown_report_path}")
-        except IOError as e:
+        except OSError as e:
             print(f"Error saving Markdown report to {markdown_report_path}: {e}")
 
     # Generate and save SVG badge if requested
@@ -500,7 +500,7 @@ def main():
             with open(svg_badge_path, "w", encoding="utf-8") as f:
                 f.write(svg_content)
             print(f"SVG badge generated successfully: {svg_badge_path}")
-        except IOError as e:
+        except OSError as e:
             print(f"Error saving SVG badge to {svg_badge_path}: {e}")
 
 

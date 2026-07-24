@@ -49,9 +49,9 @@ import logging
 from typing import Literal
 
 __all__ = (
-    "logger",
-    "enable_file_logging",
     "disable_file_logging",
+    "enable_file_logging",
+    "logger",
 )
 
 

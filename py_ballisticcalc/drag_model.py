@@ -378,4 +378,4 @@ def linear_interpolation(
     return y
 
 
-__all__ = ("DragModel", "DragDataPoint", "BCPoint", "DragModelMultiBC")
+__all__ = ("BCPoint", "DragDataPoint", "DragModel", "DragModelMultiBC")

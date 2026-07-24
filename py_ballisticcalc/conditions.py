@@ -35,27 +35,27 @@ import warnings
 from dataclasses import dataclass
 
 from py_ballisticcalc.constants import (
-    cStandardDensity,
-    cLapseRateKperFoot,
-    cLowestTempF,
-    cStandardDensityMetric,
     cDegreesCtoK,
-    cPressureExponent,
-    cStandardTemperatureF,
-    cLapseRateImperial,
-    cStandardPressureMetric,
-    cLapseRateMetric,
-    cStandardTemperatureC,
-    cStandardHumidity,
-    cSpeedOfSoundImperial,
     cDegreesFtoR,
-    cSpeedOfSoundMetric,
-    cMaxWindDistanceFeet,
-    cGravityImperial,
     cEarthAngularVelocityRadS,
+    cGravityImperial,
+    cLapseRateImperial,
+    cLapseRateKperFoot,
+    cLapseRateMetric,
+    cLowestTempF,
+    cMaxWindDistanceFeet,
+    cPressureExponent,
+    cSpeedOfSoundImperial,
+    cSpeedOfSoundMetric,
+    cStandardDensity,
+    cStandardDensityMetric,
+    cStandardHumidity,
+    cStandardPressureMetric,
+    cStandardTemperatureC,
+    cStandardTemperatureF,
 )
 from py_ballisticcalc.unit import Angular, Distance, PreferredUnits, Pressure, Temperature, Velocity
-from py_ballisticcalc.vector import Vector, ZERO_VECTOR
+from py_ballisticcalc.vector import ZERO_VECTOR, Vector
 
 __all__ = ("Atmo", "Vacuum", "Wind")
 
@@ -140,7 +140,7 @@ class Atmo:  # pylint: disable=too-many-instance-attributes
         self._initializing = False
         self.update_density_ratio()
 
-    def __str__(self) -> str:  # noqa: D401 - short repr style acceptable
+    def __str__(self) -> str:
         return (
             f"Atmo(altitude={self.altitude}, pressure={self.pressure}, temperature={self.temperature}, "
             f"humidity={self.humidity}, density_ratio={self.density_ratio}, mach={self.mach})"
@@ -370,17 +370,17 @@ class Atmo:  # pylint: disable=too-many-instance-attributes
         M_a = 28.96546e-3  # kg/mol, molar mass of dry air
         M_v = 18.01528e-3  # kg/mol, molar mass of water vapor
 
-        def saturation_vapor_pressure(T):  # noqa: N802 (retain formula variable naming)
+        def saturation_vapor_pressure(T):
             A = [1.2378847e-5, -1.9121316e-2, 33.93711047, -6.3431645e3]
             return math.exp(A[0] * T**2 + A[1] * T + A[2] + A[3] / T)
 
-        def enhancement_factor(p, T):  # noqa: N802
+        def enhancement_factor(p, T):
             alpha = 1.00062
             beta = 3.14e-8
             gamma = 5.6e-7
             return alpha + beta * p + gamma * T**2
 
-        def compressibility_factor(p, T, x_v):  # noqa: N802
+        def compressibility_factor(p, T, x_v):
             a0 = 1.58123e-6
             a1 = -2.9331e-8
             a2 = 1.1043e-10

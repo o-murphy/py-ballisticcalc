@@ -4,8 +4,9 @@
 import os
 import platform
 import sysconfig
-from setuptools import setup, Extension
 from pathlib import Path
+
+from setuptools import Extension, setup
 
 try:
     from Cython.Build import cythonize
@@ -122,14 +123,14 @@ SOURCE_PATHS = {
 # Keys are extension names (as in extension_names list)
 # Values are lists of C source file keys from SOURCE_PATHS that they depend on.
 
-_BASE_TYPES_DEPS = set(["types"])
-_INTERP_DEPS = set(["interp"])
-_TRAJ_DATA_DEPS = set([*_BASE_TYPES_DEPS, *_INTERP_DEPS, "traj_data"])
-_BIND_DEPS = set([*_BASE_TYPES_DEPS, "bind"])
-_ENGINE_DEPS = set([*_BIND_DEPS, *_TRAJ_DATA_DEPS, "traj_filter", "engine"])
-_RK4_DEPS = set([*_ENGINE_DEPS, "rk4"])
-_EULER_DEPS = set([*_ENGINE_DEPS, "euler"])
-_TEST_DEPS = set([*_ENGINE_DEPS, *_RK4_DEPS, *_EULER_DEPS])
+_BASE_TYPES_DEPS = {"types"}
+_INTERP_DEPS = {"interp"}
+_TRAJ_DATA_DEPS = {*_BASE_TYPES_DEPS, *_INTERP_DEPS, "traj_data"}
+_BIND_DEPS = {*_BASE_TYPES_DEPS, "bind"}
+_ENGINE_DEPS = {*_BIND_DEPS, *_TRAJ_DATA_DEPS, "traj_filter", "engine"}
+_RK4_DEPS = {*_ENGINE_DEPS, "rk4"}
+_EULER_DEPS = {*_ENGINE_DEPS, "euler"}
+_TEST_DEPS = {*_ENGINE_DEPS, *_RK4_DEPS, *_EULER_DEPS}
 
 C_EXTENSION_DEPS = {
     # Test modules (expose internal C functions for tests only)
@@ -183,13 +184,13 @@ else:
 # Dynamically create extensions for names in extension_names
 def collect_extensions(deps: dict[str, Path], path: Path, *, is_cpp: bool = False):
     extensions_local = []
-    for name, deps in deps.items():
+    for name, ext_deps in deps.items():
         # Use subproject-local .pyx paths (these exist during build)
         sources = [(path / name).with_suffix(".pyx")]
 
         # Add dependent C source files from the EXTENSION_DEPS dictionary
         # Use .get(name, []) to safely get an empty list if an extension has no explicit C dependencies
-        for dep_key in deps:
+        for dep_key in ext_deps:
             if dep_key in SOURCE_PATHS:
                 sources.append(SOURCE_PATHS[dep_key])
             else:

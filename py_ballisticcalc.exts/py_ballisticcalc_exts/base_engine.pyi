@@ -5,13 +5,14 @@ to improve IDE completion for the Cythonized API.
 
 from typing import Any
 
-from py_ballisticcalc.generics.engine import EngineProtocol
-from py_ballisticcalc.engines.base_engine import BaseEngineConfigDict
-from py_ballisticcalc.shot import Shot
-from py_ballisticcalc.trajectory_data import HitResult, TrajFlag, TrajectoryData
-from py_ballisticcalc.unit import Angular, Distance
 from py_ballisticcalc_exts.traj_data import CythonizedBaseTrajData
+
+from py_ballisticcalc.engines.base_engine import BaseEngineConfigDict
 from py_ballisticcalc.exceptions import SolverRuntimeError
+from py_ballisticcalc.generics.engine import EngineProtocol
+from py_ballisticcalc.shot import Shot
+from py_ballisticcalc.trajectory_data import HitResult, TrajectoryData, TrajFlag
+from py_ballisticcalc.unit import Angular, Distance
 
 class InterceptionError(SolverRuntimeError):
     def __init__(self, *args, last_data: tuple[CythonizedBaseTrajData, TrajectoryData]): ...
@@ -37,7 +38,6 @@ class CythonizedBaseIntegrationEngine(EngineProtocol[BaseEngineConfigDict]):
             `__init__` is called after `__cinit__`, so any memory allocated in `__cinit__`
             that is not referenced in Python will be leaked if `__init__` raises an exception.
         """
-        ...
 
     def __cinit__(self, config: BaseEngineConfigDict | None) -> None:
         """
@@ -48,11 +48,9 @@ class CythonizedBaseIntegrationEngine(EngineProtocol[BaseEngineConfigDict]):
             The BCLIBC_BaseEngine is built-in to CythonizedBaseIntegrationEngine,
             so we are need no set it's fields to null
         """
-        ...
 
     def __dealloc__(self) -> None:
         """Frees any allocated resources."""
-        ...
 
     @property
     def DEFAULT_TIME_STEP(self) -> float: ...
@@ -66,7 +64,6 @@ class CythonizedBaseIntegrationEngine(EngineProtocol[BaseEngineConfigDict]):
         Returns:
             int: The number of integration steps.
         """
-        ...
 
     def find_max_range(
         self, shot_info: Shot, angle_bracket_deg: tuple[float, float] = (0, 90)
@@ -83,7 +80,6 @@ class CythonizedBaseIntegrationEngine(EngineProtocol[BaseEngineConfigDict]):
         Returns:
             tuple[Distance, Angular]: The maximum slant range and the launch angle to reach it.
         """
-        ...
 
     def find_zero_angle(self, shot_info: Shot, distance: Distance, lofted: bool = False) -> Angular:
         """
@@ -98,7 +94,6 @@ class CythonizedBaseIntegrationEngine(EngineProtocol[BaseEngineConfigDict]):
         Returns:
             Angular: The required barrel elevation angle.
         """
-        ...
 
     def find_apex(self, shot_info: Shot) -> TrajectoryData:
         """
@@ -111,7 +106,6 @@ class CythonizedBaseIntegrationEngine(EngineProtocol[BaseEngineConfigDict]):
         Returns:
             TrajectoryData: The trajectory data at the apex.
         """
-        ...
 
     def zero_angle(self, shot_info: Shot, distance: Distance) -> Angular:
         """
@@ -125,7 +119,6 @@ class CythonizedBaseIntegrationEngine(EngineProtocol[BaseEngineConfigDict]):
         Returns:
             Angular: Barrel elevation to hit height zero at zero distance along sight line
         """
-        ...
 
     def integrate(
         self,
@@ -156,7 +149,6 @@ class CythonizedBaseIntegrationEngine(EngineProtocol[BaseEngineConfigDict]):
         Returns:
             HitResult: Object for describing the trajectory.
         """
-        ...
 
     def integrate_raw_at(
         self, shot_info: Shot, key_attribute: str, target_value: float
@@ -188,4 +180,3 @@ class CythonizedBaseIntegrationEngine(EngineProtocol[BaseEngineConfigDict]):
                 the target point (e.g., due to insufficient range or data issues).
             SolverRuntimeError: If some other internal error occured
         """
-        ...

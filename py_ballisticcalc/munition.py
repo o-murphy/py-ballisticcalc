@@ -35,11 +35,11 @@ Examples:
 """
 
 import math
-from typing import NamedTuple, Literal, TypeAlias, get_args, TYPE_CHECKING
 from dataclasses import dataclass
+from typing import TYPE_CHECKING, Literal, NamedTuple, TypeAlias, get_args
 
 from py_ballisticcalc.drag_model import DragModel
-from py_ballisticcalc.unit import Velocity, Temperature, Distance, Angular, PreferredUnits
+from py_ballisticcalc.unit import Angular, Distance, PreferredUnits, Temperature, Velocity
 
 if TYPE_CHECKING:
     from py_ballisticcalc.trajectory_data import TrajectoryData
@@ -517,7 +517,7 @@ class Ammo:
             raise ValueError("calc_powder_sens requires positive muzzle velocities")
         v_delta = math.fabs(v0 - v1)
         t_delta = math.fabs(t0 - t1)
-        v_lower = v1 if v1 < v0 else v0
+        v_lower = min(v0, v1)
 
         if v_delta == 0 or t_delta == 0:
             raise ValueError("other_velocity and temperature can't be same as default")
@@ -573,4 +573,4 @@ class Ammo:
         return Velocity.MPS(muzzle_velocity)
 
 
-__all__ = ("Weapon", "Ammo", "Sight", "SightFocalPlane", "SightClicks", "SightReticleStep")
+__all__ = ("Ammo", "Sight", "SightClicks", "SightFocalPlane", "SightReticleStep", "Weapon")

@@ -49,12 +49,16 @@ Supported Dimensions:
 
 # Standard library imports
 from __future__ import annotations
-from dataclasses import dataclass, fields, MISSING
+
+import re
+from collections.abc import Callable, Generator, Hashable, Iterable, Mapping, Sequence
+from dataclasses import MISSING, dataclass, fields
 from enum import IntEnum
 from math import pi
-import re
+from types import NotImplementedType  # type: ignore[attr-defined]
 from typing import (
     Any,
+    ClassVar,
     Final,
     NamedTuple,
     Protocol,
@@ -65,14 +69,11 @@ from typing import (
     TypeVar,
     runtime_checkable,
 )
-from collections.abc import Callable, Generator, Hashable, Iterable, Mapping, Sequence
-
-from types import NotImplementedType  # type: ignore[attr-defined]
 
 from typing_extensions import override
 
 # Local imports
-from py_ballisticcalc.exceptions import UnitTypeError, UnitConversionError, UnitAliasError
+from py_ballisticcalc.exceptions import UnitAliasError, UnitConversionError, UnitTypeError
 from py_ballisticcalc.logger import logger
 
 Number: TypeAlias = float | int
@@ -183,8 +184,7 @@ def iterator(
     """
     if sort:
         items = sorted(items, key=key, reverse=reverse)
-    for v in items:
-        yield v
+    yield from items
 
 
 @runtime_checkable
@@ -388,7 +388,7 @@ class Unit(IntEnum):
             value._value = raw_value
             yield value
             if i == MAX_ITERATIONS:
-                raise ValueError("Reached generator limit %d" % MAX_ITERATIONS)
+                raise ValueError(f"Reached generator limit {MAX_ITERATIONS}")
 
     def iterator(
         self, items: Sequence[Number], /, *, sort: bool = False, reverse: bool = False
@@ -423,7 +423,7 @@ class Unit(IntEnum):
             Unit enum if a match is found, None otherwise.
         """
         # Iterate over the keys of the dictionary
-        for aliases_tuple in aliases.keys():
+        for aliases_tuple in aliases:
             # Check if the string is present in any of the tuples
             # if any(string_to_find in alias for alias in aliases_tuple):
             if string_to_find in (each.lower() for each in aliases_tuple):
@@ -509,9 +509,8 @@ class Unit(IntEnum):
         def create_as_preferred(value_):
             if isinstance(preferred, Unit):
                 return preferred(float(value_))
-            if isinstance(preferred, str):
-                if units_ := Unit._parse_unit(preferred):
-                    return units_(float(value_))
+            if isinstance(preferred, str) and (units_ := Unit._parse_unit(preferred)):
+                return units_(float(value_))
             raise UnitAliasError(f"Unsupported {preferred=} unit alias")
 
         if isinstance(input_, float | int):
@@ -676,7 +675,7 @@ UnitAliases: UnitAliasesType = {
 class Measurable(SupportsFloat, SupportsInt, Hashable, Comparable, Protocol):
     _value: Number
     _defined_units: Unit
-    __slots__ = ("_value", "_defined_units")
+    __slots__ = ("_defined_units", "_value")
 
     def __init__(self, value: Number, units: Unit): ...
 
@@ -736,8 +735,8 @@ class GenericDimension:
 
     _value: Number
     _defined_units: Unit
-    __slots__ = ("_value", "_defined_units")
-    _conversion_factors: Mapping[Unit, float] = {}
+    __slots__ = ("_defined_units", "_value")
+    _conversion_factors: ClassVar[Mapping[Unit, float]] = {}
 
     def __init__(self, value: Number, units: Unit):
         """Initialize a unit measurement with value and unit type.
@@ -813,9 +812,8 @@ class GenericDimension:
         if not isinstance(units, Unit):
             err_msg = f"Type expected: {Unit}, {type(Unit).__name__}; got: {type(units).__name__} ({units})"
             raise TypeError(err_msg)
-        if units not in cls._conversion_factors.keys():
+        if units not in cls._conversion_factors:
             raise UnitConversionError(f"{cls.__name__}: unit {units.name} is not supported")
-        return
 
     @classmethod
     def _get_conversion_factor(cls, unit: Unit) -> float:
@@ -1099,7 +1097,7 @@ class Angular(GenericDimension):
     This class tries to normalize angles to the range (-π, π].
     """
 
-    _conversion_factors = {
+    _conversion_factors: ClassVar[Mapping[Unit, float]] = {
         Unit.Radian: 1.0,
         Unit.Degree: pi / 180,
         Unit.MOA: pi / (60 * 180),
@@ -1140,7 +1138,7 @@ class Angular(GenericDimension):
 class Energy(GenericDimension):
     """Energy measurements.  Raw unit is foot-pounds."""
 
-    _conversion_factors = {
+    _conversion_factors: ClassVar[Mapping[Unit, float]] = {
         Unit.FootPound: 1.0,
         Unit.Joule: 1 / 1.3558179483314,
     }
@@ -1153,7 +1151,7 @@ class Energy(GenericDimension):
 class Distance(GenericDimension):
     """Distance measurements.  Raw value is inches."""
 
-    _conversion_factors = {
+    _conversion_factors: ClassVar[Mapping[Unit, float]] = {
         Unit.Inch: 1.0,
         Unit.Foot: 12.0,
         Unit.Yard: 36.0,
@@ -1193,7 +1191,7 @@ class Distance(GenericDimension):
 class Pressure(GenericDimension):
     """Pressure unit.  Raw value is mmHg."""
 
-    _conversion_factors = {
+    _conversion_factors: ClassVar[Mapping[Unit, float]] = {
         Unit.MmHg: 1.0,
         Unit.InHg: 25.4,
         Unit.Bar: 750.061683,
@@ -1215,7 +1213,12 @@ class Temperature(GenericDimension):
     This dimension only supports addition and subtraction operations, and tries to clamp results at absolute zero.
     """
 
-    _conversion_factors = {Unit.Fahrenheit: 0.0, Unit.Rankin: 0.0, Unit.Celsius: 0.0, Unit.Kelvin: 0.0}
+    _conversion_factors: ClassVar[Mapping[Unit, float]] = {
+        Unit.Fahrenheit: 0.0,
+        Unit.Rankin: 0.0,
+        Unit.Celsius: 0.0,
+        Unit.Kelvin: 0.0,
+    }
 
     @property
     def _F(self) -> Number:
@@ -1308,8 +1311,7 @@ class Temperature(GenericDimension):
         """Add a number of this object's units; clamp at absolute zero."""
         if isinstance(other, int | float):
             raw = self._value + float(other) * self._units_to_raw_delta()
-            if raw < self._ABS_ZERO_F:
-                raw = self._ABS_ZERO_F
+            raw = max(raw, self._ABS_ZERO_F)
             return self.__class__.new_from_raw(raw, self.units)
         return NotImplemented
 
@@ -1321,8 +1323,7 @@ class Temperature(GenericDimension):
         """Subtract a numeric delta in the object's unit; clamp at absolute zero."""
         if isinstance(other, int | float):
             raw = self._value - float(other) * self._units_to_raw_delta()
-            if raw < self._ABS_ZERO_F:
-                raw = self._ABS_ZERO_F
+            raw = max(raw, self._ABS_ZERO_F)
             return self.__class__.new_from_raw(raw, self.units)
         return NotImplemented
 
@@ -1330,8 +1331,7 @@ class Temperature(GenericDimension):
         """Right-hand numeric subtraction; clamp at absolute zero."""
         if isinstance(other, int | float):
             raw = float(other) * self._units_to_raw_delta() - self._value
-            if raw < self._ABS_ZERO_F:
-                raw = self._ABS_ZERO_F
+            raw = max(raw, self._ABS_ZERO_F)
             return self.__class__.new_from_raw(raw, self.units)
         return NotImplemented
 
@@ -1339,8 +1339,7 @@ class Temperature(GenericDimension):
         """In-place numeric addition; clamp at absolute zero."""
         if isinstance(other, int | float):
             self._value = self._value + float(other) * self._units_to_raw_delta()
-            if self._value < self._ABS_ZERO_F:
-                self._value = self._ABS_ZERO_F
+            self._value = max(self._value, self._ABS_ZERO_F)
             return self
         return NotImplemented
 
@@ -1348,8 +1347,7 @@ class Temperature(GenericDimension):
         """In-place numeric subtraction; clamp at absolute zero."""
         if isinstance(other, int | float):
             self._value = self._value - float(other) * self._units_to_raw_delta()
-            if self._value < self._ABS_ZERO_F:
-                self._value = self._ABS_ZERO_F
+            self._value = max(self._value, self._ABS_ZERO_F)
             return self
         return NotImplemented
 
@@ -1363,7 +1361,7 @@ class Temperature(GenericDimension):
 class Time(GenericDimension):
     """Time measurements.  Raw unit is seconds."""
 
-    _conversion_factors = {
+    _conversion_factors: ClassVar[Mapping[Unit, float]] = {
         Unit.Second: 1.0,
         Unit.Minute: 60.0,
         Unit.Millisecond: 1.0 / 1_000,
@@ -1389,7 +1387,7 @@ class Time(GenericDimension):
 class Velocity(GenericDimension):
     """Velocity measurements.  Raw unit is meters per second."""
 
-    _conversion_factors = {
+    _conversion_factors: ClassVar[Mapping[Unit, float]] = {
         Unit.MPS: 1.0,
         Unit.KMH: 1.0 / 3.6,
         Unit.FPS: 1.0 / 3.2808399,
@@ -1413,7 +1411,7 @@ class Velocity(GenericDimension):
 class Weight(GenericDimension):
     """Weight unit.  Raw value is grains."""
 
-    _conversion_factors = {
+    _conversion_factors: ClassVar[Mapping[Unit, float]] = {
         Unit.Grain: 1.0,
         Unit.Ounce: 437.5,
         Unit.Gram: 15.4323584,
@@ -1440,7 +1438,9 @@ class PreferredUnitsMeta(type):
     """Provide representation method for static dataclasses."""
 
     def __repr__(cls):
-        return "\n".join(f"{field} = {getattr(cls, field)!r}" for field in getattr(cls, "__dataclass_fields__"))
+        # getattr avoids static access: __dataclass_fields__ is added by @dataclass at runtime,
+        # not known to the type checker on the metaclass.
+        return "\n".join(f"{field} = {getattr(cls, field)!r}" for field in getattr(cls, "__dataclass_fields__"))  # noqa: B009
 
 
 @dataclass
@@ -1577,24 +1577,24 @@ class PreferredUnits(metaclass=PreferredUnitsMeta):  # pylint: disable=too-many-
 
 
 __all__ = (
+    "Angular",
+    "Distance",
+    "Energy",
+    "GenericDimension",
+    "Measurable",
+    "PreferredUnits",
+    "Pressure",
+    "Temperature",
+    "Time",
     "Unit",
+    "UnitAliasError",
+    "UnitAliases",
+    "UnitConversionError",
+    "UnitProps",
+    "UnitPropsDict",
+    "UnitTypeError",
+    "Velocity",
+    "Weight",
     "counter",
     "iterator",
-    "Measurable",
-    "GenericDimension",
-    "UnitProps",
-    "UnitAliases",
-    "UnitPropsDict",
-    "Distance",
-    "Velocity",
-    "Angular",
-    "Temperature",
-    "Pressure",
-    "Energy",
-    "Weight",
-    "Time",
-    "PreferredUnits",
-    "UnitAliasError",
-    "UnitTypeError",
-    "UnitConversionError",
 )

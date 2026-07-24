@@ -79,18 +79,18 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from py_ballisticcalc.trajectory_data import TrajectoryData, BaseTrajData
+    from py_ballisticcalc.trajectory_data import BaseTrajData, TrajectoryData
     from py_ballisticcalc.unit import Angular, Distance
 
 __all__ = (
-    "UnitTypeError",
-    "UnitConversionError",
-    "UnitAliasError",
-    "SolverRuntimeError",
-    "OutOfRangeError",
-    "ZeroFindingError",
-    "RangeError",
     "InterceptionError",
+    "OutOfRangeError",
+    "RangeError",
+    "SolverRuntimeError",
+    "UnitAliasError",
+    "UnitConversionError",
+    "UnitTypeError",
+    "ZeroFindingError",
 )
 
 

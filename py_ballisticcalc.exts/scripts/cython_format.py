@@ -1,6 +1,6 @@
-import sys
-import re
 import argparse
+import re
+import sys
 from pathlib import Path
 
 
@@ -13,7 +13,7 @@ def cython_fmt(f: Path):
     try:
         with open(f, "r", encoding="utf-8") as fp:
             data = fp.read()
-    except Exception as e:
+    except OSError as e:
         print(f"Error reading file {f}: {e}", file=sys.stderr)
         return
 
@@ -31,7 +31,7 @@ def cython_fmt(f: Path):
         with open(f, "w", encoding="utf-8") as fp:
             fp.write(data)
         print(f"Formatting complete: {f}")
-    except Exception as e:
+    except OSError as e:
         print(f"Error writing to file {f}: {e}", file=sys.stderr)
 
 

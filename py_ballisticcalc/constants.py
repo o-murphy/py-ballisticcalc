@@ -108,7 +108,7 @@ cLowestTempF: Final[float] = -130  # °F
 cMaxWindDistanceFeet: Final[float] = 1e8
 """Maximum wind effect distance for computational limits (ft)"""
 
-__all__ = (
+__all__ = (  # noqa: RUF022 -- grouped by category (see comments), not alphabetical
     "cGravityImperial",
     "cEarthAngularVelocityRadS",
     # Global atmosphere constants

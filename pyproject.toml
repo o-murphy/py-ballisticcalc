@@ -100,11 +100,41 @@ extend-exclude = [
     "__init__.py",
     "tests",
     "examples",
+    "py_ballisticcalc.exts/py_ballisticcalc_exts/external/bclibc",
 ]
 line-length = 120
 
 [tool.ruff.lint]
 ignore = ["F403", "F405"]
+
+[tool.pylint.main]
+ignore = ["CVS", "setup.py", "tests.py"]
+fail-under = 9.0
+py-version = 3.11
+
+[tool.pylint.design]
+max-positional-arguments = 6
+
+[tool.pylint."messages control"]
+disable = [
+    "raw-checker-failed",
+    "bad-inline-option",
+    "locally-disabled",
+    "file-ignored",
+    "suppressed-message",
+    "useless-suppression",
+    "deprecated-pragma",
+    "use-symbolic-message-instead",
+    "use-implicit-booleaness-not-comparison-to-string",
+    "use-implicit-booleaness-not-comparison-to-zero",
+    "logging-fstring-interpolation",
+    "line-too-long",
+    "invalid-name",
+    "too-many-locals",
+    "too-many-arguments",
+    "too-many-branches",
+    "too-few-public-methods",
+]
 
 [tool.uv.sources]
 "py_ballisticcalc.exts" = { path = "./py_ballisticcalc.exts" }  # required for `uv sync`
@@ -151,7 +181,7 @@ dev = [
     "pylint>=4.0.6",
     "pytest>=9.1.1",
     "pytest-cov>=7.1.0",
-    "ruff>=0.15.21",
+    "ruff>=0.16.0",
     "cython-lint>=0.21.0", # lints py_ballisticcalc.exts/**/*.pyx; must run from root venv (pre-commit)
     "pre-commit>=4.6.0",
 
@@ -198,7 +228,7 @@ dev = [
     "pylint>=4.0.6",
     "pytest>=9.1.1",
     "pytest-cov>=7.1.0",
-    "ruff>=0.15.21",
+    "ruff>=0.16.0",
     "cython-lint>=0.21.0", # lints py_ballisticcalc.exts/**/*.pyx; must run from root venv (pre-commit)
     "pre-commit>=4.6.1",
 

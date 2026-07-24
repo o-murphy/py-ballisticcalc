@@ -50,31 +50,34 @@ See Also:
 """
 
 from __future__ import annotations
+
 import math
-from typing import TYPE_CHECKING, Any, Final, Literal, NamedTuple, TypeAlias
 from dataclasses import dataclass, field
+from typing import TYPE_CHECKING, Any, Final, Literal, NamedTuple, TypeAlias
+
 from deprecated import deprecated
 
 from py_ballisticcalc.exceptions import RangeError
-from py_ballisticcalc.unit import Angular, Distance, Energy, Velocity, Weight, GenericDimension, Unit, PreferredUnits
-from py_ballisticcalc.vector import Vector
 from py_ballisticcalc.interpolation import (
     InterpolationMethod,
-    interpolate_3_pt,
     interpolate_2_pt,
+    interpolate_3_pt,
 )
+from py_ballisticcalc.unit import Angular, Distance, Energy, GenericDimension, PreferredUnits, Unit, Velocity, Weight
+from py_ballisticcalc.vector import Vector
 
 if TYPE_CHECKING:
-    from pandas import DataFrame
     from matplotlib.axes import Axes  # type: ignore[import-not-found]
+    from pandas import DataFrame
+
     from py_ballisticcalc.shot import ShotProps
 
 __all__ = (
-    "TrajFlag",
     "BaseTrajData",
-    "TrajectoryData",
-    "HitResult",
     "DangerSpace",
+    "HitResult",
+    "TrajFlag",
+    "TrajectoryData",
 )
 
 
@@ -257,7 +260,7 @@ class BaseTrajData(NamedTuple):
             ValueError: If method is not one of 'pchip' or 'linear'.
         """
 
-        def get_key_val(td: "BaseTrajData", path: str) -> float:
+        def get_key_val(td: BaseTrajData, path: str) -> float:
             """Helper to get the key value from a BaseTrajData point."""
             if "." in path:
                 top, component = path.split(".", 1)
