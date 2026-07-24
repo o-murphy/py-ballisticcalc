@@ -1,0 +1,55 @@
+name: Pytest Cythonized Verlet
+run-name: >
+  Minimal Matrix
+  ${{ github.event.pull_request.number || github.ref_name }}
+
+on:
+  pull_request:
+    branches:
+      - "*"
+    paths:
+      - "pyproject.toml"
+      - "py_ballisticcalc/**"
+      - "tests/**"
+      - "py_ballisticcalc.exts/**"
+      - ".gitmodules"
+      - ".github/workflows/pytest-cythonized-verlet-engine.yml"
+      - ".github/workflows/pytest-reusable.yml"
+
+  push:
+    branches:
+      - "*"
+    paths:
+      - "pyproject.toml"
+      - "py_ballisticcalc/**"
+      - "tests/**"
+      - "py_ballisticcalc.exts/**"
+      - ".gitmodules"
+      - ".github/workflows/pytest-cythonized-verlet-engine.yml"
+      - ".github/workflows/pytest-reusable.yml"
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # No full cross-OS/cross-Python matrix here: cythonized_verlet_engine shares its integration/
+  # data-structure core with cythonized_rk4_engine (full matrix runs there), differing only in
+  # integration formula, so a full matrix for this engine would just re-test that shared core at
+  # extra CI cost with no new coverage. Minimal matrix runs unconditionally on both push and
+  # pull_request to still catch regressions specific to this engine's own logic.
+  test_minimal_matrix:
+    name: Minimal
+
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest]
+        python-version: ["3.11"]
+        engine: ["cythonized_verlet_engine"]
+
+    uses: ./.github/workflows/pytest-reusable.yml
+    with:
+      os: ${{ matrix.os }}
+      python_version: ${{ matrix.python-version }}
+      engine_name: ${{ matrix.engine }}

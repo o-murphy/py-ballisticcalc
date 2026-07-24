@@ -6,14 +6,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
-[:simple-github: Diff since v2.3.0rc2][Unreleased]
+[:simple-github: Diff since v2.3.0][Unreleased]
+
+## [2.3.0] - 2026-07-24
+[:simple-github: GitHub release][2.3.0]
 
 ### Added
-- `cythonized_verlet_engine` (`py_ballisticcalc_exts.CythonizedVelocityVerletIntegrationEngine`): compiled counterpart to the existing pure-Python `verlet_engine`, wired up the same way as `cythonized_rk4_engine`/`cythonized_euler_engine` (`velocity_verlet_engine.pxd`/`.pyx`/`.pyi`, `setup.py` source/dependency registration, `py_ballisticcalc_exts/__init__.py` export, `[project.entry-points.py_ballisticcalc]` in `py_ballisticcalc.exts/pyproject.toml`) against bclibc's new `BCLIBC_integrateVELOCITY_VERLET` (`include/bclibc/velocity_verlet.hpp`); produces identical trajectories to `verlet_engine` bit-for-bit on a standard test shot and passes the full `pytest` suite (373 passed, 2 skipped) and `py_ballisticcalc.exts/tests`; benchmarked at 100x (Trajectory) / 157x (Find Zero) faster than `rk4_engine` — added to the engine comparison table in `README.md`/`docs/concepts/engines.md`
-  - **Provisional**: the bclibc submodule is temporarily pinned to the `method/verlet` branch (commit `5413c96`, not yet merged/released upstream) to enable this; must be re-pinned to a tagged bclibc release before this ships
+- `cythonized_verlet_engine` (`py_ballisticcalc_exts.CythonizedVelocityVerletIntegrationEngine`): compiled counterpart to the existing pure-Python `verlet_engine`, wired up the same way as `cythonized_rk4_engine`/`cythonized_euler_engine` (`velocity_verlet_engine.pxd`/`.pyx`/`.pyi`, `setup.py` source/dependency registration, `py_ballisticcalc_exts/__init__.py` export, `[project.entry-points.py_ballisticcalc]` in `py_ballisticcalc.exts/pyproject.toml`) against bclibc's `BCLIBC_integrateVELOCITY_VERLET` (`include/bclibc/velocity_verlet.hpp`, released in bclibc [`v1.1.7`](https://github.com/ballistics-lab/bclibc/releases/tag/v1.1.7)); produces identical trajectories to `verlet_engine` bit-for-bit on a standard test shot and passes the full `pytest` suite (373 passed, 2 skipped) and `py_ballisticcalc.exts/tests`; benchmarked at 100x (Trajectory) / 157x (Find Zero) faster than `rk4_engine` — added to the engine comparison table in `README.md`/`docs/concepts/engines.md`
+- `.github/workflows/pytest-cythonized-verlet-engine.yml`: minimal-matrix CI (`ubuntu-latest` × `3.11`, push + PR) for `cythonized_verlet_engine`, mirroring `pytest-cythonized-euler-engine.yml` — no full cross-OS/version matrix since it shares its integration/data-structure core with `cythonized_rk4_engine` (which keeps the full matrix); `README.md` badge added; `.github/workflows/coverage.yml` needs no change since it discovers engines dynamically via `Calculator.iter_engines()`
 
 ### Changed
-- bclibc submodule bumped to [`v1.1.6`]
+- bclibc submodule bumped to [`v1.1.7`](https://github.com/ballistics-lab/bclibc/releases/tag/v1.1.7) — adds the `velocity_verlet` integration method (see Added)
 - `.pylintrc` (643 lines, essentially unmodified `pylint --generate-rcfile` output) replaced by `[tool.pylint.main]`/`[tool.pylint.design]`/`[tool.pylint."messages control"]` in `pyproject.toml`; diffed against a freshly generated default rcfile of the same pylint version to isolate the actual overrides (`fail-under=9.0` vs default `9.5`, `max-positional-arguments=6` vs default `5`, `ignore`, `py-version`, and the `disable=` list — which, despite reading like `--generate-rcfile`'s own suggested defaults, is *not* applied unless present in a config file: without it, pylint's score on `py_ballisticcalc` drops from 9.57/10 to 7.89/10); verified byte-for-byte equivalent pylint findings/score before deleting `.pylintrc`
 - `[tool.ruff] extend-exclude` (`pyproject.toml`) gained `py_ballisticcalc.exts/py_ballisticcalc_exts/external/bclibc` — `ruff check --fix` was reaching into the vendored bclibc submodule (a separate upstream repo) and rewriting its typing (`Optional[X]` → `X | None`, etc.); confirmed `[tool.ruff.lint].exclude` does *not* control file discovery the way top-level `exclude`/`extend-exclude` do (ruff still walked and linted files under it when only `lint.exclude` was set), so the fix went into the shared top-level exclude instead
 - `py_ballisticcalc/interface.py`: `from py_ballisticcalc import RK4IntegrationEngine` → `from py_ballisticcalc.engines import RK4IntegrationEngine` — the former was a real (if currently-working) circular import: `py_ballisticcalc/__init__.py` imports `interface.py`, which imported back from the partially-initialized `py_ballisticcalc` package itself; it only worked because `__init__.py` happens to import `.engines` before `.interface`, leaving the whole package's importability fragile to any future reordering of that file (caught by pylint's `cyclic-import`, which `ruff`'s `PL*` rule subset does not implement)
@@ -699,7 +702,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Issue #141
 - Trajectories that bend backwards
 
-[Unreleased]: https://github.com/o-murphy/py-ballisticcalc/compare/v2.3.0rc2...HEAD
+[Unreleased]: https://github.com/o-murphy/py-ballisticcalc/compare/v2.3.0...HEAD
+[2.3.0]: https://github.com/o-murphy/py-ballisticcalc/releases/tag/v2.3.0
 [2.3.0rc2]: https://github.com/o-murphy/py-ballisticcalc/releases/tag/v2.3.0rc2
 [2.3.0rc1]: https://github.com/o-murphy/py-ballisticcalc/releases/tag/v2.3.0rc1
 [2.3.0b5]: https://github.com/o-murphy/py-ballisticcalc/releases/tag/v2.3.0b5
