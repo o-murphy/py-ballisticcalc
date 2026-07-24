@@ -10,16 +10,17 @@ Key Classes:
     - _EngineLoader: Internal utility for discovering and loading engine plugins
 """
 
-from collections.abc import Generator, Set
+import warnings
+from collections.abc import Generator
+from collections.abc import Set as AbstractSet
 from dataclasses import dataclass
 from functools import cache
-from importlib.metadata import entry_points, EntryPoint
+from importlib.metadata import EntryPoint, entry_points
 from types import TracebackType
-from typing import TypeAlias, TypeVar, Any, overload, Self
-import warnings
+from typing import Any, Self, TypeAlias, TypeVar, overload
 
 from py_ballisticcalc import RK4IntegrationEngine
-from py_ballisticcalc.generics.engine import EngineProtocol, EngineFactoryProtocol
+from py_ballisticcalc.generics.engine import EngineFactoryProtocol, EngineProtocol
 from py_ballisticcalc.logger import logger
 from py_ballisticcalc.shot import Shot
 from py_ballisticcalc.trajectory_data import HitResult, TrajFlag
@@ -42,7 +43,7 @@ class _EngineLoader:
 
     @classmethod
     @cache
-    def _get_entries_by_group(cls) -> Set[EntryPoint]:
+    def _get_entries_by_group(cls) -> AbstractSet[EntryPoint]:
         return set(entry_points().select(group=cls._entry_point_group))
 
     @classmethod
@@ -65,7 +66,7 @@ class _EngineLoader:
             logger.error(f"Error loading engine from {ep.value}: {e}")
         except AttributeError as e:
             logger.error(f"Error loading attribute from {ep.value}: {e}")
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001 -- plugin boundary: third-party entry points may raise anything
             logger.exception(f"An unexpected error occurred loading {ep.value}: {e}")
         return None
 
@@ -73,9 +74,8 @@ class _EngineLoader:
     @cache
     def _load_by_name(cls, name: str) -> EngineFactoryProtocolType | None:
         for ep in cls.iter_engines():
-            if ep.name == name:
-                if factory := cls._load_from_entry(ep):
-                    return factory
+            if ep.name == name and (factory := cls._load_from_entry(ep)):
+                return factory
 
         ep = EntryPoint(name, name, cls._entry_point_group)
         if factory := cls._load_from_entry(ep):
@@ -169,7 +169,6 @@ class Calculator:
             exc_val: Exception instance if an exception was raised, None otherwise.
             exc_tb: Traceback if an exception was raised, None otherwise.
         """
-        pass
 
     @property
     def _engine_instance(self) -> EngineProtocol:

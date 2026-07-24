@@ -57,11 +57,12 @@ from __future__ import annotations
 # Standard library imports
 import math
 import warnings
-from dataclasses import dataclass, asdict
 from bisect import bisect_left, bisect_right
-from typing import Any, Literal, TYPE_CHECKING
-from typing_extensions import override
 from collections.abc import Callable, Sequence
+from dataclasses import asdict, dataclass
+from typing import TYPE_CHECKING, Any, Literal
+
+from typing_extensions import override
 
 if TYPE_CHECKING:
     # Unconditional for the type checker: numpy/scipy are optional at runtime
@@ -71,8 +72,8 @@ if TYPE_CHECKING:
     # the type checker, never at runtime) tells pyright these names are bound,
     # instead of flagging every use site as "possibly unbound".
     import numpy as np
-    from scipy.optimize import root_scalar, minimize_scalar
     from scipy.integrate import solve_ivp
+    from scipy.optimize import minimize_scalar, root_scalar
 
 # Third-party imports
 try:
@@ -83,8 +84,8 @@ except ImportError:
     _HAS_NUMPY = False
 
 try:
-    from scipy.optimize import root_scalar, minimize_scalar  # type: ignore[import-untyped]
     from scipy.integrate import solve_ivp  # type: ignore[import-untyped]
+    from scipy.optimize import minimize_scalar, root_scalar  # type: ignore[import-untyped]
 
     _HAS_SCIPY = True
 except ImportError:
@@ -102,16 +103,16 @@ from py_ballisticcalc.engines.base_engine import (
 from py_ballisticcalc.exceptions import OutOfRangeError, RangeError, ZeroFindingError
 from py_ballisticcalc.logger import logger
 from py_ballisticcalc.shot import ShotProps
-from py_ballisticcalc.trajectory_data import HitResult, TrajFlag, TrajectoryData
+from py_ballisticcalc.trajectory_data import HitResult, TrajectoryData, TrajFlag
 from py_ballisticcalc.unit import Angular, Distance
 from py_ballisticcalc.vector import Vector
 
 __all__ = (
-    "SciPyIntegrationEngine",
+    "DEFAULT_SCIPY_ENGINE_CONFIG",
     "SciPyEngineConfig",
     "SciPyEngineConfigDict",
+    "SciPyIntegrationEngine",
     "ScipyWindSock",
-    "DEFAULT_SCIPY_ENGINE_CONFIG",
     "create_scipy_engine_config",
 )
 
@@ -298,7 +299,7 @@ class ScipyWindSock:
         - Minimal compared to performance gain
     """
 
-    __slots__ = ("winds", "_distances", "_vectors", "_single_wind")
+    __slots__ = ("_distances", "_single_wind", "_vectors", "winds")
 
     def __init__(self, winds: Wind | Sequence[Wind] | None) -> None:
         """Initialize WindSock with optimized data structures for fast lookups.
@@ -928,26 +929,25 @@ class SciPyIntegrationEngine(BaseIntegrationEngine):
 
         logger.debug(f"SciPy integration via {self._config.integration_method} done with {sol.nfev} function calls.")
         termination_reason = None
-        if sol.status == 1 and sol.t_events:  # A termination event occurred
-            if len(sol.t_events) > 0:
-                if sol.t_events[0].size > 0:  # Expected termination event: we reached requested range
-                    # logger.debug(f"Integration stopped at max range: {sol.t_events[0][0]}")
-                    pass
-                elif sol.t_events[1].size > 0:  # event_max_drop
-                    y = sol.sol(sol.t_events[1][0])[1]  # Get y at max drop event
-                    if y < _cMaximumDrop + 1e-9:
-                        termination_reason = RangeError.MaximumDropReached
-                    else:
-                        termination_reason = RangeError.MinimumAltitudeReached
-                elif sol.t_events[2].size > 0:  # event_min_velocity
-                    termination_reason = RangeError.MinimumVelocityReached
-                elif (
-                    stop_at_zero
-                    and len(traj_events) > 3
-                    and sol.t_events[-1].size > 0
-                    and traj_events[-1].func is event_zero_crossing
-                ):
-                    termination_reason = self.HitZero
+        if sol.status == 1 and sol.t_events and len(sol.t_events) > 0:  # A termination event occurred
+            if sol.t_events[0].size > 0:  # Expected termination event: we reached requested range
+                # logger.debug(f"Integration stopped at max range: {sol.t_events[0][0]}")
+                pass
+            elif sol.t_events[1].size > 0:  # event_max_drop
+                y = sol.sol(sol.t_events[1][0])[1]  # Get y at max drop event
+                if y < _cMaximumDrop + 1e-9:
+                    termination_reason = RangeError.MaximumDropReached
+                else:
+                    termination_reason = RangeError.MinimumAltitudeReached
+            elif sol.t_events[2].size > 0:  # event_min_velocity
+                termination_reason = RangeError.MinimumVelocityReached
+            elif (
+                stop_at_zero
+                and len(traj_events) > 3
+                and sol.t_events[-1].size > 0
+                and traj_events[-1].func is event_zero_crossing
+            ):
+                termination_reason = self.HitZero
 
         # region Find requested TrajectoryData points
         if sol.sol is not None and sol.status != -1:
@@ -992,8 +992,8 @@ class SciPyIntegrationEngine(BaseIntegrationEngine):
                         t_root = t_vals[0]
                     else:
                         # Use root_scalar to find t where x(t) == x_target
-                        def x_minus_target(t):  # Function for root finding: x(t) - x_target
-                            return sol.sol(t)[0] - x_target  # type: ignore  # pylint: disable=cell-var-from-loop
+                        def x_minus_target(t, x_target=x_target):  # Function for root finding: x(t) - x_target
+                            return sol.sol(t)[0] - x_target  # type: ignore
 
                         t_lo, t_hi = t_vals[idx - 1], t_vals[idx]
                         res = root_scalar(x_minus_target, bracket=(t_lo, t_hi), method="brentq")

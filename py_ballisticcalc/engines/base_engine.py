@@ -37,33 +37,33 @@ import functools
 import math
 import warnings
 from abc import ABC, abstractmethod
-from dataclasses import dataclass, asdict
-from enum import Enum, auto
 from bisect import bisect_left
-from typing import Callable, Concatenate, NamedTuple, ParamSpec, TypedDict, TypeVar
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
+from dataclasses import asdict, dataclass
+from enum import Enum, auto
+from typing import Concatenate, NamedTuple, ParamSpec, TypedDict, TypeVar
 
 from py_ballisticcalc.conditions import Wind
 from py_ballisticcalc.constants import cGravityImperial
-from py_ballisticcalc.exceptions import ZeroFindingError, OutOfRangeError, SolverRuntimeError
+from py_ballisticcalc.exceptions import OutOfRangeError, SolverRuntimeError, ZeroFindingError
 from py_ballisticcalc.generics.engine import EngineProtocol
 from py_ballisticcalc.logger import logger
 from py_ballisticcalc.shot import Shot, ShotProps
 from py_ballisticcalc.trajectory_data import BaseTrajData, HitResult, TrajectoryData, TrajFlag
-from py_ballisticcalc.unit import Distance, Angular
+from py_ballisticcalc.unit import Angular, Distance
 from py_ballisticcalc.vector import Vector
 
 __all__ = (
-    "create_base_engine_config",
+    "DEFAULT_BASE_ENGINE_CONFIG",
     "BaseEngineConfig",
     "BaseEngineConfigDict",
-    "DEFAULT_BASE_ENGINE_CONFIG",
     "BaseIntegrationEngine",
     "TrajectoryDataFilter",
     "_WindSock",
     "_ZeroCalcStatus",
-    "with_no_minimum_velocity",
+    "create_base_engine_config",
     "with_max_drop_zero",
+    "with_no_minimum_velocity",
 )
 
 cZeroFindingAccuracy: float = 0.000005  # Max allowed slant-error in feet to end zero search
@@ -265,18 +265,21 @@ class TrajectoryDataFilter:
                 self.filter &= ~(TrajFlag.ZERO | TrajFlag.MRT)
 
     def finalize(self, termination_reason: str | None = None):
-        if termination_reason:
-            if self.prev_data is not None and (not self.records or self.prev_data.time > self.records[-1].time):
-                self.records.append(
-                    TrajectoryData.from_props(
-                        self.props,
-                        self.prev_data.time,
-                        self.prev_data.position,
-                        self.prev_data.velocity,
-                        self.prev_data.mach,
-                        TrajFlag.NONE,
-                    )
+        if (
+            termination_reason
+            and self.prev_data is not None
+            and (not self.records or self.prev_data.time > self.records[-1].time)
+        ):
+            self.records.append(
+                TrajectoryData.from_props(
+                    self.props,
+                    self.prev_data.time,
+                    self.prev_data.position,
+                    self.prev_data.velocity,
+                    self.prev_data.mach,
+                    TrajFlag.NONE,
                 )
+            )
 
     def record(self, new_data: BaseTrajData):
         """For each integration step, creates TrajectoryData records based on filter/step criteria."""
@@ -376,10 +379,9 @@ class TrajectoryDataFilter:
                         compute_flags |= TrajFlag.ZERO_UP
                         self.filter &= ~TrajFlag.ZERO_UP
                 # We've crossed above sight line; now look for crossing back through it
-                elif self.filter & TrajFlag.ZERO_DOWN:
-                    if new_data.position.y < reference_height:
-                        compute_flags |= TrajFlag.ZERO_DOWN
-                        self.filter &= ~TrajFlag.ZERO_DOWN
+                elif self.filter & TrajFlag.ZERO_DOWN and new_data.position.y < reference_height:
+                    compute_flags |= TrajFlag.ZERO_DOWN
+                    self.filter &= ~TrajFlag.ZERO_DOWN
             # endregion ZERO checks
             if compute_flags:
                 # Instantiate TrajectoryData and interpolate
@@ -428,7 +430,7 @@ class _WindSock:
         Args:
             winds: A sequence of Wind objects. Defaults to None.
         """
-        self.winds: Sequence[Wind] = winds or tuple()
+        self.winds: Sequence[Wind] = winds or ()
         self.current_index: int = 0
         self.next_range: float = Wind.MAX_DISTANCE_FEET
         self._last_vector_cache: Vector | None = None
@@ -900,8 +902,8 @@ class BaseIntegrationEngine(ABC, EngineProtocol):
         Returns:
             Barrel elevation to hit height zero at zero distance along sight line
         """
-        status, look_angle_rad, slant_range_ft, target_x_ft, target_y_ft, start_height_ft = self._init_zero_calculation(
-            props, distance
+        status, look_angle_rad, slant_range_ft, target_x_ft, target_y_ft, _start_height_ft = (
+            self._init_zero_calculation(props, distance)
         )
         if status is _ZeroCalcStatus.DONE:
             return Angular.Radian(look_angle_rad)

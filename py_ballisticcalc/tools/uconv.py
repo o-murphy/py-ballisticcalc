@@ -4,14 +4,15 @@
 # dependencies = [
 # ]
 # ///
-from py_ballisticcalc.unit import Unit, UnitTypeError
 from argparse import ArgumentParser
+
+from py_ballisticcalc.unit import Unit, UnitTypeError
 
 try:
     from importlib.metadata import metadata
 
     __version__ = metadata("py-ballisticcalc")["Version"]
-except Exception:
+except Exception:  # noqa: BLE001 -- version lookup is best-effort, any failure falls back to "unknown"
     __version__ = "unknown"
 
 
@@ -62,8 +63,8 @@ def main() -> None:
     except UnitTypeError as exc:
         parser.error(str(exc))
     except TypeError as exc:
-        parser.error(f"Invalid input: {str(exc)}")
-    except Exception as exc:
+        parser.error(f"Invalid input: {exc!s}")
+    except Exception as exc:  # noqa: BLE001 -- CLI boundary: surface any failure as a usage error, not a traceback
         parser.error(str(exc))
 
 

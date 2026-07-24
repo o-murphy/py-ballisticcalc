@@ -24,12 +24,11 @@ Note:
 
 from typing import Any, Protocol, TypeVar, runtime_checkable
 
-
 from py_ballisticcalc.shot import Shot
 from py_ballisticcalc.trajectory_data import HitResult, TrajFlag
-from py_ballisticcalc.unit import Distance, Angular
+from py_ballisticcalc.unit import Angular, Distance
 
-__all__ = ["EngineProtocol", "ConfigT"]
+__all__ = ["ConfigT", "EngineProtocol"]
 
 
 @runtime_checkable
@@ -200,7 +199,7 @@ class EngineProtocol(Protocol):
 
 
 # Type variable for engine configuration
-ConfigT = TypeVar("ConfigT", contravariant=True)
+ConfigT = TypeVar("ConfigT", contravariant=True)  # noqa: PLC0105 -- public name, re-exported from generics/__init__.py
 
 
 @runtime_checkable

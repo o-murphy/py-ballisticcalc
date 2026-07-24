@@ -13,18 +13,17 @@ Notes:
 """
 
 import math
+from collections.abc import Sequence
 from dataclasses import dataclass, field
 from typing import Self
 
-from collections.abc import Sequence
-
 from py_ballisticcalc.conditions import Atmo, Coriolis, Wind
 from py_ballisticcalc.drag_model import DragDataPoint
-from py_ballisticcalc.interpolation import PchipPrepared, pchip_prepare, pchip_eval
-from py_ballisticcalc.munition import Weapon, Ammo
+from py_ballisticcalc.interpolation import PchipPrepared, pchip_eval, pchip_prepare
+from py_ballisticcalc.munition import Ammo, Weapon
 from py_ballisticcalc.trajectory_data import TrajFlag
 from py_ballisticcalc.unit import Angular, Distance, PreferredUnits, Pressure, Temperature, Velocity, Weight
-from py_ballisticcalc.vector import Vector, ZERO_VECTOR
+from py_ballisticcalc.vector import ZERO_VECTOR, Vector
 
 __all__ = ("Shot", "ShotProps")
 

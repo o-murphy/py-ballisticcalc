@@ -3,8 +3,9 @@ Type stubs for the compiled extension module `py_ballisticcalc_exts.rk4_engine`
 to improve IDE completion for the Cythonized RK4 integration API.
 """
 
-from py_ballisticcalc.engines.base_engine import BaseEngineConfigDict
 from py_ballisticcalc_exts.base_engine import CythonizedBaseIntegrationEngine
+
+from py_ballisticcalc.engines.base_engine import BaseEngineConfigDict
 
 __all__ = ["CythonizedRK4IntegrationEngine"]
 
@@ -19,4 +20,3 @@ class CythonizedRK4IntegrationEngine(CythonizedBaseIntegrationEngine[BaseEngineC
         C/C++-level initializer for the RK4 engine.
         Sets up the RK4 integration function pointer.
         """
-        ...

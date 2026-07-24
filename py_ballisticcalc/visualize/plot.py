@@ -73,26 +73,26 @@ from typing import Any
 # Local imports
 from py_ballisticcalc import HitResult
 from py_ballisticcalc.helpers import find_time_for_distance_in_shot
-from py_ballisticcalc.trajectory_data import TrajFlag, DangerSpace
-from py_ballisticcalc.unit import PreferredUnits, Angular
+from py_ballisticcalc.trajectory_data import DangerSpace, TrajFlag
+from py_ballisticcalc.unit import Angular, PreferredUnits
 
 # Handle optional matplotlib dependency with graceful degradation
 try:
     import matplotlib  # type: ignore[import-not-found]
-    from matplotlib.patches import Polygon  # type: ignore[import-not-found]
-    from matplotlib.axes import Axes  # type: ignore[import-not-found]
     from matplotlib import pyplot, ticker
+    from matplotlib.axes import Axes  # type: ignore[import-not-found]
+    from matplotlib.patches import Polygon  # type: ignore[import-not-found]
 
     assert matplotlib
 except (ImportError, AssertionError) as error:
     raise ImportError("Install matplotlib to get results as a plot") from error
 
 __all__ = (
-    "show_hit_result_plot",
     "add_danger_space_overlay",
-    "trajectory_as_plot",
-    "hit_result_as_plot",
     "add_time_of_flight_axis",
+    "hit_result_as_plot",
+    "show_hit_result_plot",
+    "trajectory_as_plot",
 )
 
 # Plotting configuration constants

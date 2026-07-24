@@ -1,6 +1,6 @@
 import os
-from pathlib import Path
 import shutil
+from pathlib import Path
 
 # Assuming this script is located in your project's root directory,
 # where the .gitignore file would typically reside.

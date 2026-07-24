@@ -6,11 +6,11 @@ PCHIP (interpolate_3_pt) requires 3 points and produces smoother results that
 preserve monotonicity and prevent overshoot using the Fritsch–Carlson slope limiting algorithm.
 """
 
+from collections.abc import Sequence
 from dataclasses import dataclass
 from typing import Literal, TypeAlias
-from collections.abc import Sequence
 
-__all__ = [
+__all__ = [  # noqa: RUF022 -- grouped by category (see comments), not alphabetical
     "InterpolationMethod",
     "interpolate_3_pt",
     "interpolate_2_pt",

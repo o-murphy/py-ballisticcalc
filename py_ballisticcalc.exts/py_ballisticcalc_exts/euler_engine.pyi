@@ -3,8 +3,9 @@ Type stubs for the compiled extension module `py_ballisticcalc_exts.euler_engine
 to improve IDE completion for the Cythonized Euler integration API.
 """
 
-from py_ballisticcalc.engines.base_engine import BaseEngineConfigDict
 from py_ballisticcalc_exts.base_engine import CythonizedBaseIntegrationEngine
+
+from py_ballisticcalc.engines.base_engine import BaseEngineConfigDict
 
 __all__ = ["CythonizedEulerIntegrationEngine"]
 
@@ -19,4 +20,3 @@ class CythonizedEulerIntegrationEngine(CythonizedBaseIntegrationEngine[BaseEngin
         C/C++-level initializer for the Euler engine.
         Sets up the Euler integration function pointer.
         """
-        ...

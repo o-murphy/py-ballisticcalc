@@ -3,7 +3,6 @@ from __future__ import annotations
 import sys
 from pathlib import Path
 
-
 # Ensure the repository root sitecustomize is importable and takes effect
 HERE = Path(__file__).resolve().parent
 ROOT = HERE.parent
