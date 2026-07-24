@@ -3,7 +3,7 @@ name: Build and Upload Python Package to PyPI
 on:
   push:
     tags:
-      - 'v*'
+      - "v*"
   workflow_dispatch:
     inputs:
       testpypi:
@@ -15,7 +15,7 @@ on:
         description: "Override version (e.g. 2.3.0b1) — required for TestPyPI to get a clean version instead of a dev suffix"
         required: false
         type: string
-        default: ''
+        default: ""
 
 run-name: >
   Build & Publish → ${{ github.event_name == 'push' && 'PyPI' ||
@@ -59,7 +59,7 @@ jobs:
           submodules: recursive
 
       - name: Install uv
-        uses: astral-sh/setup-uv@v7
+        uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9
         with:
           github-token: ${{ github.token }}
 
@@ -130,7 +130,7 @@ jobs:
           platforms: all
 
       - name: Install uv
-        uses: astral-sh/setup-uv@v7
+        uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9
         with:
           github-token: ${{ github.token }}
 

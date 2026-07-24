@@ -68,6 +68,14 @@ repos:
       #   language: system
       #   pass_filenames: false
 
+      - id: uv-pylint
+        name: pylint
+        entry: uv
+        args: ["run", "pylint", "py_ballisticcalc"]
+        language: system
+        pass_filenames: false
+        files: '^py_ballisticcalc/.*\.(py|pyi)$'
+
       - id: uv-cython-lint
         name: cython lint
         entry: uv

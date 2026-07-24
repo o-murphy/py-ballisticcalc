@@ -19,7 +19,7 @@ from importlib.metadata import EntryPoint, entry_points
 from types import TracebackType
 from typing import Any, Self, TypeAlias, TypeVar, overload
 
-from py_ballisticcalc import RK4IntegrationEngine
+from py_ballisticcalc.engines import RK4IntegrationEngine
 from py_ballisticcalc.generics.engine import EngineFactoryProtocol, EngineProtocol
 from py_ballisticcalc.logger import logger
 from py_ballisticcalc.shot import Shot
