@@ -11,10 +11,10 @@ LGPL library for small arms ballistic calculations based on point-mass (3 DoF) p
 [![downloads]][pepy]
 [![downloads/month]][pepy]
 [![coverage]][CodecovUrl]
-[![pyright]][pyright-workflow]
 [![py-versions]][sources]
 [![Made in Ukraine]][SWUBadge]
 
+[![Pre-commit](https://github.com/o-murphy/py-ballisticcalc/actions/workflows/pre-commit.yml/badge.svg)](https://github.com/o-murphy/py-ballisticcalc/actions/workflows/pre-commit.yml)
 [![Pytest RK4](https://github.com/o-murphy/py-ballisticcalc/actions/workflows/pytest-rk4-engine.yml/badge.svg)](https://github.com/o-murphy/py-ballisticcalc/actions/workflows/pytest-rk4-engine.yml)
 [![Python Euler](https://github.com/o-murphy/py-ballisticcalc/actions/workflows/pytest-euler-engine.yml/badge.svg)](https://github.com/o-murphy/py-ballisticcalc/actions/workflows/pytest-euler-engine.yml)
 [![Pytest Euler (Cython)](https://github.com/o-murphy/py-ballisticcalc/actions/workflows/pytest-cythonized-euler-engine.yml/badge.svg)](https://github.com/o-murphy/py-ballisticcalc/actions/workflows/pytest-cythonized-euler-engine.yml)
@@ -199,12 +199,6 @@ https://codecov.io/gh/o-murphy/py-ballisticcalc/graph/badge.svg
 
 [CodecovUrl]:
 https://codecov.io/gh/o-murphy/py-ballisticcalc
-
-[pyright]:
-https://github.com/o-murphy/py-ballisticcalc/actions/workflows/pyright.yml/badge.svg
-
-[pyright-workflow]:
-https://github.com/o-murphy/py-ballisticcalc/actions/workflows/pyright.yml
 
 [downloads]:
 https://img.shields.io/pepy/dt/py-ballisticcalc?style=flat-square
