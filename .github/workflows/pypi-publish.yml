@@ -87,7 +87,7 @@ jobs:
           retention-days: 14
 
   build:
-    name: Build wheels on ${{ matrix.os }}
+    name: Build wheels on ${{ matrix.os }} / ${{ matrix.name }}
     strategy:
       fail-fast: false
       matrix:
