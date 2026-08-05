@@ -79,13 +79,47 @@ if ENABLE_CYTHON_SAFETY:
 
 FORCE_CYTHON_MACROS = [("__CYTHON__", "1")]
 
+# Cross-compiled target detection.
+# NOTE: platform.system() reports the *host* OS under cross-compilation
+# (pyodide-build, Android, and iOS builds all run setup.py with the host
+# interpreter and only patch sysconfig to describe the target), so it cannot
+# be used to detect these targets. sysconfig.get_platform() is the correct
+# signal, since the cross-build tooling overrides the host's sysconfig data
+# to reflect the target platform.
+_SYSCONFIG_PLATFORM = sysconfig.get_platform()
+IS_EMSCRIPTEN = "emscripten" in _SYSCONFIG_PLATFORM
+IS_ANDROID = "android" in _SYSCONFIG_PLATFORM
+IS_IOS = "ios" in _SYSCONFIG_PLATFORM
+
 # Stable ABI target: build once per platform, compatible with Python 3.11+.
 # Disabled when:
 #   - coverage tracing is requested (CYTHON_TRACE uses internal CPython APIs)
 #   - building on free-threaded Python (Py_GIL_DISABLED conflicts with Py_LIMITED_API)
+#   - targeting Emscripten: each Pyodide release pins one exact
+#     CPython+Emscripten build with no forward-ABI guarantee between
+#     versions, and wheel resolution there requires an exact cp3XX match
+#     rather than abi3.
+#   - targeting Android: extensions must link libpythonX.Y.so explicitly,
+#     because Bionic's dlopen requires every dependency to resolve to a
+#     literal file at load time (no lazy/implicit symbol resolution from the
+#     host process the way glibc allows for stable-ABI extensions). This
+#     hardcodes a runtime dependency on one specific CPython point release
+#     regardless of the abi3 tag on the wheel, so stable ABI buys nothing
+#     here and only hides a real version pin (confirmed empirically: a
+#     cp311-abi3-android wheel built against the cp313 Android crossenv
+#     failed to import on a 3.14 runtime with
+#     "library libpython3.13.so not found").
+#   - targeting iOS: same rationale as Android, app runtimes typically embed
+#     one specific CPython build.
 PY_LIMITED_API_HEX = "0x030B0000"  # CPython 3.11
 _GIL_DISABLED = bool(sysconfig.get_config_var("Py_GIL_DISABLED"))
-USE_LIMITED_API = not ENABLE_CYTHON_COVERAGE and not _GIL_DISABLED
+USE_LIMITED_API = (
+    not ENABLE_CYTHON_COVERAGE
+    and not _GIL_DISABLED
+    and not IS_EMSCRIPTEN
+    and not IS_ANDROID
+    and not IS_IOS
+)
 
 EXTENSIONS_BASE_DIR = Path("py_ballisticcalc_exts")
 SRC_DIR_PATH = EXTENSIONS_BASE_DIR / "src"
@@ -172,8 +206,19 @@ elif is_macos:
     cpp_extra_link_args = ["-stdlib=libc++"]
     os.environ["CC"] = "clang"
     os.environ["CXX"] = "clang++"
+elif IS_EMSCRIPTEN:
+    # pyodide-build already sets CC=emcc/CXX=em++ and its own CFLAGS/CXXFLAGS/
+    # LDFLAGS (typically -Oz for size) before invoking setup.py -- don't
+    # override CC/CXX here, and keep flags minimal so we don't fight or
+    # duplicate what the cross-build environment already applies.
+    # "-Wl,-strip-all" is dropped: em++'s linker wrapper does not reliably
+    # support arbitrary native-ld passthrough flags for stripping.
+    c_compile_args = ["-std=c99"]
+    cpp_compile_args = ["-x", "c++", "-std=c++11", "-Wall"]
+    cpp_extra_link_args = []
 else:
-    # GCC/Clang flags
+    # GCC/Clang flags (also covers Android and iOS cross-builds, which use a
+    # GNU-compatible clang toolchain via their respective NDK/Xcode setups)
     c_compile_args = ["-g", "-O0", "-std=c99"]
     cpp_compile_args = ["-x", "c++", "-std=c++11", "-O2", "-Wall", "-g"]
     if DISABLE_STRIP:
