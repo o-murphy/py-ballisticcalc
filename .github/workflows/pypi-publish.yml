@@ -92,31 +92,38 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - os: ubuntu-latest
+          - name: Linux x64 / x86
+            os: ubuntu-latest
             cibw_archs: "i686,x86_64" # x64 native, i686 over QEMU
             needs_qemu: true
 
-          - os: ubuntu-24.04-arm
+          - name: Linux ARM64 / ARMv7
+            os: ubuntu-24.04-arm
             cibw_archs: "aarch64,armv7l" # aarch64
             needs_qemu: false
 
-          - os: windows-latest
+          - name: Windows x64 / x86
+            os: windows-latest
             cibw_archs: "x86,AMD64"
             needs_qemu: false
 
-          - os: windows-11-arm
+          - name: Windows ARM64
+            os: windows-11-arm
             cibw_archs: "ARM64"
             needs_qemu: false
 
-          - os: macos-15
+          - name: macOS Apple Silicon
+            os: macos-15
             cibw_archs: "arm64,universal2"
             needs_qemu: false
 
-          - os: macos-15-intel
+          - name: macOS Intel
+            os: macos-15-intel
             cibw_archs: "x86_64,universal2"
             needs_qemu: false
 
-          - os: ubuntu-latest
+          - name: Android
+            os: ubuntu-latest
             cibw_archs: "arm64_v8a,x86_64"
             cibw_platform: android
             needs_qemu: false
