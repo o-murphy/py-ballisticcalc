@@ -114,11 +114,7 @@ IS_IOS = "ios" in _SYSCONFIG_PLATFORM
 PY_LIMITED_API_HEX = "0x030B0000"  # CPython 3.11
 _GIL_DISABLED = bool(sysconfig.get_config_var("Py_GIL_DISABLED"))
 USE_LIMITED_API = (
-    not ENABLE_CYTHON_COVERAGE
-    and not _GIL_DISABLED
-    and not IS_EMSCRIPTEN
-    and not IS_ANDROID
-    and not IS_IOS
+    not ENABLE_CYTHON_COVERAGE and not _GIL_DISABLED and not IS_EMSCRIPTEN and not IS_ANDROID and not IS_IOS
 )
 
 EXTENSIONS_BASE_DIR = Path("py_ballisticcalc_exts")
