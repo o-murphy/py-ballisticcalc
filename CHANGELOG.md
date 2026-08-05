@@ -8,6 +8,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 [:simple-github: Diff since v2.3.0][Unreleased]
 
+### Added
+- Added automatic build of native wheels for Android.
+
 ## [2.3.0] - 2026-07-24
 [:simple-github: GitHub release][2.3.0]
 
