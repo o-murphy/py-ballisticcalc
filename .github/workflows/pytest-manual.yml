@@ -17,6 +17,7 @@ on:
           - macos-15
           - macos-15-intel
           - macos-26
+          - macos-26-intel
 
       python_version:
         description: "Python version to use"

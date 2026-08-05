@@ -123,12 +123,12 @@ jobs:
             needs_qemu: false
 
           - name: macOS Apple Silicon
-            os: macos-15
+            os: macos-26
             cibw_archs: "arm64,universal2"
             needs_qemu: false
 
           - name: macOS Intel
-            os: macos-15-intel
+            os: macos-26-intel
             cibw_archs: "x86_64,universal2"
             needs_qemu: false
 
