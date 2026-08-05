@@ -116,6 +116,11 @@ jobs:
             cibw_archs: "x86_64,universal2"
             needs_qemu: false
 
+          - os: ubuntu-24.04
+            cibw_archs: "arm64_v8a,x86_64"
+            cibw_platform: android
+            needs_qemu: false
+
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v7
@@ -139,7 +144,10 @@ jobs:
           SETUPTOOLS_SCM_PRETEND_VERSION: ${{ inputs.version }}
           CIBW_ENVIRONMENT_PASS: SETUPTOOLS_SCM_PRETEND_VERSION
         run: |
-          uvx cibuildwheel py_ballisticcalc.exts --output-dir dist --platform auto --archs ${{ matrix.cibw_archs }}
+          uvx cibuildwheel py_ballisticcalc.exts \
+            --output-dir dist \
+            --platform ${{ matrix.cibw_platform || 'auto' }} \ 
+            --archs ${{ matrix.cibw_archs }}
         shell: bash
 
       - name: list ./dist
