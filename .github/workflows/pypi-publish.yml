@@ -105,31 +105,37 @@ jobs:
           - name: Linux x64 / x86
             os: ubuntu-latest
             cibw_archs: "i686,x86_64" # x64 native, i686 over QEMU
+            cibw_platform: linux
             needs_qemu: true
 
           - name: Linux ARM64 / ARMv7
             os: ubuntu-24.04-arm
-            cibw_archs: "aarch64,armv7l" # aarch64
+            cibw_archs: "aarch64,armv7l"
+            cibw_platform: linux
             needs_qemu: false
 
           - name: Windows x64 / x86
             os: windows-latest
             cibw_archs: "x86,AMD64"
+            cibw_platform: windows
             needs_qemu: false
 
           - name: Windows ARM64
             os: windows-11-arm
             cibw_archs: "ARM64"
+            cibw_platform: windows
             needs_qemu: false
 
           - name: macOS Apple Silicon
             os: macos-26
             cibw_archs: "arm64,universal2"
+            cibw_platform: macos
             needs_qemu: false
 
           - name: macOS Intel
             os: macos-26-intel
             cibw_archs: "x86_64,universal2"
+            cibw_platform: macos
             needs_qemu: false
 
           - name: Android
@@ -179,7 +185,7 @@ jobs:
       - name: Upload artifacts
         uses: actions/upload-artifact@v7
         with:
-          name: dist-${{ matrix.os }}
+          name: dist-${{ matrix.cibw_platform }}
           path: ./dist
           retention-days: 14
 
