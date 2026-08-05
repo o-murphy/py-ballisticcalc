@@ -116,7 +116,7 @@ jobs:
             cibw_archs: "x86_64,universal2"
             needs_qemu: false
 
-          - os: ubuntu-24.04
+          - os: ubuntu-latest
             cibw_archs: "arm64_v8a,x86_64"
             cibw_platform: android
             needs_qemu: false
@@ -146,7 +146,7 @@ jobs:
         run: |
           uvx cibuildwheel py_ballisticcalc.exts \
             --output-dir dist \
-            --platform ${{ matrix.cibw_platform || 'auto' }} \ 
+            --platform ${{ matrix.cibw_platform || 'auto' }} \
             --archs ${{ matrix.cibw_archs }}
         shell: bash
 
