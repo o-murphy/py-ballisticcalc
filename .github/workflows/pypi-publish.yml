@@ -173,7 +173,7 @@ jobs:
 
       - name: Cache cibuildwheel/pyodide toolchain
         if: ${{ matrix.cibw_platform == 'pyodide' }}
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: ~/.cache/cibuildwheel
           key: cibw-pyodide-${{ runner.os }}-${{ hashFiles('py_ballisticcalc.exts/pyproject.toml') }}
