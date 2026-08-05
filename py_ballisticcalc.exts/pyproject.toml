@@ -94,6 +94,7 @@ markers = ["stress: long-running or resource-intensive tests, opt-in only"]
 [tool.setuptools_scm]
 root = ".."  # required for valid .git repo root detect for subpackage in monorepo
 fallback_version = "0.0.0.dev0"
+# local_scheme = "no-local-version"
 
 [dependency-groups]
 dev = [

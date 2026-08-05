@@ -66,12 +66,14 @@ jobs:
       - name: Build pure python package
         env:
           SETUPTOOLS_SCM_PRETEND_VERSION: ${{ inputs.version }}
+          SETUPTOOLS_SCM_OVERRIDES_FOR_PY_BALLISTICCALC_EXTS: "{local_scheme = 'no-local-version'}"
         run: uv build --out-dir dist
         shell: bash
 
       - name: Build exts sdist
         env:
           SETUPTOOLS_SCM_PRETEND_VERSION: ${{ inputs.version }}
+          SETUPTOOLS_SCM_OVERRIDES_FOR_PY_BALLISTICCALC_EXTS: "{local_scheme = 'no-local-version'}"
         run: uv build py_ballisticcalc.exts --sdist --out-dir dist
         shell: bash
 
@@ -149,6 +151,7 @@ jobs:
       - name: Build binary python package
         env:
           SETUPTOOLS_SCM_PRETEND_VERSION: ${{ inputs.version }}
+          SETUPTOOLS_SCM_OVERRIDES_FOR_PY_BALLISTICCALC_EXTS: "{local_scheme = 'no-local-version'}"
           CIBW_ENVIRONMENT_PASS: SETUPTOOLS_SCM_PRETEND_VERSION
         run: |
           uvx cibuildwheel py_ballisticcalc.exts \
