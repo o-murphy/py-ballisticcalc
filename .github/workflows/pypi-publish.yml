@@ -66,15 +66,22 @@ jobs:
       - name: Build pure python package
         env:
           SETUPTOOLS_SCM_PRETEND_VERSION: ${{ inputs.version }}
-          SETUPTOOLS_SCM_OVERRIDES_FOR_PY_BALLISTICCALC: ${{ (github.event_name == 'push' || inputs.testpypi) && '{local_scheme = "no-local-version"}' || '' }}
-          SETUPTOOLS_SCM_OVERRIDES_FOR_PY_BALLISTICCALC_EXTS: ${{ (github.event_name == 'push' || inputs.testpypi) && '{local_scheme = "no-local-version"}' || '' }}
+          # setuptools_scm/vcs_versioning first tries SETUPTOOLS_SCM_OVERRIDES_FOR_<DIST>
+          # (dist name canonicalized, e.g. PY_BALLISTICCALC / PY_BALLISTICCALC_EXTS), then
+          # falls back to this un-scoped SETUPTOOLS_SCM_OVERRIDES for any dist without its
+          # own var. Both py_ballisticcalc and py_ballisticcalc.exts need the same override,
+          # so one shared var covers both instead of a _FOR_<DIST> var per package.
+          # Only strip the local version (+g<hash>) when this run will actually publish —
+          # PyPI/TestPyPI reject local version segments; build-only runs keep it for traceability.
+          SETUPTOOLS_SCM_OVERRIDES: ${{ (github.event_name == 'push' || inputs.testpypi) && '{local_scheme = "no-local-version"}' || '' }}
         run: uv build --out-dir dist
         shell: bash
 
       - name: Build exts sdist
         env:
           SETUPTOOLS_SCM_PRETEND_VERSION: ${{ inputs.version }}
-          SETUPTOOLS_SCM_OVERRIDES_FOR_PY_BALLISTICCALC_EXTS: ${{ (github.event_name == 'push' || inputs.testpypi) && '{local_scheme = "no-local-version"}' || '' }}
+          # see SETUPTOOLS_SCM_OVERRIDES comment in "Build pure python package" above
+          SETUPTOOLS_SCM_OVERRIDES: ${{ (github.event_name == 'push' || inputs.testpypi) && '{local_scheme = "no-local-version"}' || '' }}
         run: uv build py_ballisticcalc.exts --sdist --out-dir dist
         shell: bash
 
@@ -152,8 +159,12 @@ jobs:
       - name: Build binary python package
         env:
           SETUPTOOLS_SCM_PRETEND_VERSION: ${{ inputs.version }}
-          SETUPTOOLS_SCM_OVERRIDES_FOR_PY_BALLISTICCALC_EXTS: ${{ (github.event_name == 'push' || inputs.testpypi) && '{local_scheme = "no-local-version"}' || '' }}
-          CIBW_ENVIRONMENT_PASS: SETUPTOOLS_SCM_PRETEND_VERSION SETUPTOOLS_SCM_OVERRIDES_FOR_PY_BALLISTICCALC_EXTS
+          # see SETUPTOOLS_SCM_OVERRIDES comment in build-sdist / "Build pure python package".
+          # Must also be listed in CIBW_ENVIRONMENT_PASS below, otherwise it never reaches
+          # container-based builds (e.g. manylinux via Docker) — only Windows/macOS/Android
+          # inherit the full host environment automatically.
+          SETUPTOOLS_SCM_OVERRIDES: ${{ (github.event_name == 'push' || inputs.testpypi) && '{local_scheme = "no-local-version"}' || '' }}
+          CIBW_ENVIRONMENT_PASS: SETUPTOOLS_SCM_PRETEND_VERSION SETUPTOOLS_SCM_OVERRIDES
         run: |
           uvx cibuildwheel py_ballisticcalc.exts \
             --output-dir dist \
