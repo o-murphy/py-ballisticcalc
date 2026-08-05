@@ -6,7 +6,9 @@
 version: 2
 updates:
   - package-ecosystem: "uv"
-    directory: "/"
+    directories: 
+      - "/"
+      - "py_ballisticcalc.exts/"
     schedule:
       interval: "weekly"
     groups:
@@ -14,12 +16,12 @@ updates:
         patterns:
           - "*"
 
-  - package-ecosystem: "uv"
-    directory: "py_ballisticcalc.exts/"
+  - package-ecosystem: "npm"
+    directory: "py_ballisticcalc.exts/pyodide/"
     schedule:
       interval: "weekly"
     groups:
-      exts-python-dependencies:
+      npm-dependencies:
         patterns:
           - "*"
 

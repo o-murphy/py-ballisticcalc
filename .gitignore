@@ -7,6 +7,7 @@
 **/*.dylib
 **/build
 **/dist
+**/wheelhouse
 **/*.egg-info
 **/.venv
 **/*.ps1
@@ -26,3 +27,7 @@ compile_flags.txt
 /py_ballisticcalc_exts/*
 **/site
 /benchmarks/*
+
+# Pyodide
+**/.pyodide_build
+**/node_modules/

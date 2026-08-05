@@ -86,6 +86,9 @@ build = "cp311-* cp314t-*"
 [tool.cibuildwheel.android]
 build = "cp313-android_* cp314-android_*"
 
+[tool.cibuildwheel.pyodide]
+build = "cp313-pyodide_* cp314-pyodide_*"
+
 [tool.pytest.ini_options]
 minversion = "7.0"
 addopts = "-m 'not stress'"
