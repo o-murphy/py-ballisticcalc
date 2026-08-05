@@ -81,7 +81,10 @@ dev = [
 build-frontend = "build[uv]"
 # cp311-abi3 covers standard CPython 3.11+; free-threaded build (cp314t-*) is
 # built separately because Py_LIMITED_API and Py_GIL_DISABLED are mutually incompatible.
-build = "cp311-* cp314t-* cp311-android_* cp314t-android_*"
+build = "cp311-* cp314t-*"
+
+[tool.cibuildwheel.android]
+build = "cp313-*"
 
 [tool.pytest.ini_options]
 minversion = "7.0"
