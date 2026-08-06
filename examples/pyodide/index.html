@@ -1,6 +1,15 @@
 <!doctype html>
 <html>
 <head>
+  <!--
+    Interactive py-ballisticcalc REPL, running entirely client-side via
+    Pyodide (https://pyodide.org — CPython compiled to WebAssembly).
+
+    The console below is adapted from Pyodide's own console.html template:
+    https://github.com/pyodide/pyodide/blob/main/src/templates/console.html
+    (jQuery Terminal + pyodide.console.PyodideConsole), with the
+    packages/demo install script fed in on load instead of an empty prompt.
+  -->
   <meta charset="UTF-8" />
   <title>py-ballisticcalc — Pyodide REPL</title>
   <link
@@ -9,7 +18,7 @@
   />
   <style>
     .terminal {
-      --size: 0.85;
+      --size: 1.2;
       --color: rgba(255, 255, 255, 0.8);
     }
     .noblink {
@@ -51,14 +60,18 @@
   <script>
     "use strict";
 
-    const PKG_VERSION = "2.3.1b2";
-
     // Executed inside the live console (via term.exec) so the install +
     // setup steps show up as a normal REPL transcript, not a black box.
+    // Unpinned + pre=True always resolves to the latest release, including
+    // pre-releases (needed while the wasm32 wheel is only published as one:
+    // 2.3.1b2). Pin both to a matching `==x.y.z` instead if you need a
+    // specific, reproducible version rather than "whatever's newest now".
     const PRELOAD = `
-# 1) install packages from PyPI: ${PKG_VERSION} is a pre-release, hence pre=True
+# 1) install packages from PyPI (pre=True: also allow pre-releases)
 import micropip
-await micropip.install(["py_ballisticcalc==${PKG_VERSION}", "py_ballisticcalc.exts==${PKG_VERSION}"], pre=True)
+await micropip.install(["py_ballisticcalc", "py_ballisticcalc.exts"], pre=True)
+import importlib.metadata
+print("py_ballisticcalc", importlib.metadata.version("py_ballisticcalc"))
 
 # 2) py_ballisticcalc_exts registers the cythonized_* engines via entry points
 import py_ballisticcalc_exts
@@ -100,7 +113,7 @@ calc, shot, result = _demo()
       const { repr_shorten, BANNER, PyodideConsole } =
         pyodide.pyimport("pyodide.console");
       const banner =
-        `py-ballisticcalc ${PKG_VERSION} — Pyodide ${pyodide.version} REPL\n` +
+        `py-ballisticcalc — Pyodide ${pyodide.version} REPL\n` +
         `Installing packages and cooking calc/shot/result...\n\n` +
         BANNER;
       const pyconsole = PyodideConsole(pyodide.globals);
@@ -240,6 +253,14 @@ calc, shot, result = _demo()
       // if it had been pasted at the prompt — this is what puts the
       // micropip install trace and the trajectory result in the transcript.
       await term.exec(PRELOAD);
+
+      // py_ballisticcalc is unpinned (see PRELOAD comment), so the resolved
+      // version is only known post-install — read it back from the actually
+      // installed package rather than hardcoding it anywhere.
+      const version = pyodide.runPython(
+        "import importlib.metadata; importlib.metadata.version('py_ballisticcalc')",
+      );
+      document.title = `py-ballisticcalc ${version} — Pyodide REPL`;
     }
 
     main();
