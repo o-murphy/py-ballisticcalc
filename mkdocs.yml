@@ -3,14 +3,23 @@ site_description: LGPL ballistic calculation library
 edit_uri: edit/main/docs/
 site_url: https://o-murphy.github.io/py-ballisticcalc/
 
+# docs/pyodide/ is a symlink to examples/pyodide/ (raw, non-md static REPL
+# page, linked directly from nav/index.md, not wrapped in a doc page). Any
+# other file dropped in that folder won't be in nav either — silence the
+# "omitted from nav" validation warning for the whole dir instead of an
+# `exclude` entry, which would drop it from the build.
+not_in_nav: |
+  pyodide/*
+
 nav:
   - Get started:
       - QuickStart: index.md
       - Installation: install.md
       #  - Examples: examples/Examples
       - Help: help.md
+      - Interactive Web REPL: pyodide/index.html
       - Contributing: contributing.md
-  #  - Version policy: version-policy.md
+      #  - Version policy: version-policy.md
       - Changelog: changelog.md
   - Concepts:
       - Basics: concepts/index.md
@@ -204,12 +213,12 @@ plugins:
         - __pycache__/*
         - why.md
         - version-policy.md
-  - mkdocstrings:    
+  - mkdocstrings:
       enable_inventory: true
       handlers:
         python:
           load_external_modules: true
-          paths: ['py_ballisticcalc', 'py_ballisticcalc.exts']
+          paths: ["py_ballisticcalc", "py_ballisticcalc.exts"]
           options:
             docstring_style: google
             group_by_category: true

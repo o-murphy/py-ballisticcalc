@@ -53,6 +53,12 @@ This QuickStart gets you from a fresh environment to running basic ballistic cal
     uv sync --extra exts           # build/install C extensions (optional)
     ```
 
+## Interactive Web REPL
+
+<img src="https://raw.githubusercontent.com/pyodide/pyodide-artwork/refs/heads/main/logo-dark.svg" style="height: 64px; width: auto; background-color: black" />
+
+Prefer to try it before installing anything? Open the <a href="pyodide/index.html" target="_blank">Interactive Web REPL</a> — runs entirely in your browser via <a href="https://pyodide.org" target="_blank">Pyodide</a>.
+
 ## Examples
 
 ### Simple Zero
@@ -80,14 +86,14 @@ range_card = calc.fire(zero, trajectory_range=500, trajectory_step=100)
 range_card.dataframe(True)[['distance', 'velocity', 'mach', 'time', 'height', 'drop_angle', 'windage', 'windage_angle']]
 ```
 
-| distance  | velocity    | mach      | time    | height      | drop_angle | windage   | windage_angle |
-|-----------|-------------|-----------|---------|-------------|------------|-----------|---------------|
-| 0.0 yd    | 2600.0 ft/s | 2.33 mach | 0.000 s | -2.0 inch   | 0.00 mil   | -0.0 inch | 0.00 mil      |
-| 100.0 yd  | 2398.1 ft/s | 2.15 mach | 0.120 s | -0.0 inch   | -0.00 mil  | 0.4 inch  | 0.12 mil      |
-| 200.0 yd  | 2205.5 ft/s | 1.98 mach | 0.251 s | -4.1 inch   | -0.57 mil  | 1.7 inch  | 0.25 mil      |
-| 300.0 yd  | 2022.3 ft/s | 1.81 mach | 0.393 s | -15.3 inch  | -1.44 mil  | 4.1 inch  | 0.39 mil      |
-| 400.0 yd  | 1847.5 ft/s | 1.65 mach | 0.548 s | -35.0 inch  | -2.48 mil  | 7.6 inch  | 0.54 mil      |
-| 500.0 yd  | 1680.1 ft/s | 1.50 mach | 0.718 s | -65.0 inch  | -3.68 mil  | 12.4 inch | 0.70 mil      |
+| distance | velocity    | mach      | time    | height     | drop_angle | windage   | windage_angle |
+| -------- | ----------- | --------- | ------- | ---------- | ---------- | --------- | ------------- |
+| 0.0 yd   | 2600.0 ft/s | 2.33 mach | 0.000 s | -2.0 inch  | 0.00 mil   | -0.0 inch | 0.00 mil      |
+| 100.0 yd | 2398.1 ft/s | 2.15 mach | 0.120 s | -0.0 inch  | -0.00 mil  | 0.4 inch  | 0.12 mil      |
+| 200.0 yd | 2205.5 ft/s | 1.98 mach | 0.251 s | -4.1 inch  | -0.57 mil  | 1.7 inch  | 0.25 mil      |
+| 300.0 yd | 2022.3 ft/s | 1.81 mach | 0.393 s | -15.3 inch | -1.44 mil  | 4.1 inch  | 0.39 mil      |
+| 400.0 yd | 1847.5 ft/s | 1.65 mach | 0.548 s | -35.0 inch | -2.48 mil  | 7.6 inch  | 0.54 mil      |
+| 500.0 yd | 1680.1 ft/s | 1.50 mach | 0.718 s | -65.0 inch | -3.68 mil  | 12.4 inch | 0.70 mil      |
 
 
 ### More Examples
