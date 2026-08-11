@@ -10,14 +10,19 @@ concurrency:
   group: pre-commit-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+permissions:
+  contents: write
+
 jobs:
   pre-commit:
     name: pre-commit run --all-files
     runs-on: ubuntu-latest
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
     steps:
       - uses: actions/checkout@v7
         with:
           fetch-depth: 0
+          ref: ${{ github.head_ref || github.ref_name }}
           submodules: recursive # required: py_ballisticcalc.exts build needs bclibc submodule C++ sources
 
       - name: Install uv
@@ -29,5 +34,44 @@ jobs:
         run: uv tool install pre-commit
 
       - name: Run pre-commit
+        id: first_run
+        continue-on-error: true
+        run: pre-commit run --all-files --show-diff-on-failure
+
+      - name: Check for changes
+        id: diff
         run: |
-          pre-commit run --all-files --show-diff-on-failure
+          if [ -n "$(git status --porcelain)" ]; then
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Fail (no auto-fixable changes, but hooks failed)
+        if: steps.diff.outputs.changed == 'false' && steps.first_run.outcome == 'failure'
+        run: exit 1
+
+      - name: Fail (changes produced, but not on a pull_request)
+        if: steps.diff.outputs.changed == 'true' && github.event_name != 'pull_request'
+        run: |
+          echo "pre-commit modified files, but auto-commit only runs on pull_request events."
+          exit 1
+
+      - name: Re-run pre-commit after auto-fixes
+        id: verify_run
+        if: steps.diff.outputs.changed == 'true' && github.event_name == 'pull_request'
+        continue-on-error: true
+        run: pre-commit run --all-files --show-diff-on-failure
+
+      - name: Fail (issues remain after auto-fix)
+        if: steps.diff.outputs.changed == 'true' && github.event_name == 'pull_request' && steps.verify_run.outcome == 'failure'
+        run: exit 1
+
+      - name: Commit and push auto-fixes
+        if: steps.diff.outputs.changed == 'true' && github.event_name == 'pull_request' && steps.verify_run.outcome == 'success'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "style: auto-fix via pre-commit"
+          git push origin HEAD:${{ github.head_ref || github.ref_name }}
