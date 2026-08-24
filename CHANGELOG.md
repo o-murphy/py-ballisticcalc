@@ -8,6 +8,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 [:simple-github: Diff since v2.3.1][Unreleased]
 
+### CI
+- `.github/workflows/pypi-publish.yml`: the `Cache cibuildwheel/pyodide toolchain` step (`actions/cache@v6` on `~/.cache/cibuildwheel`) is no longer Pyodide-only — it now runs for every `matrix.cibw_platform` except `linux` (macOS, Windows, Android also download interpreters/toolchains that `CIBW_CACHE_PATH` covers: CPython/PyPy/GraalPy installers, nuget packages, the Android NDK), keyed per `matrix.artifact_key` instead of one shared `cibw-pyodide-<runner.os>` key; Linux is excluded because manylinux/musllinux builds fetch their Docker base images via `docker pull`, which `CIBW_CACHE_PATH` does not cover. The "Build binary python package" step now also sets `CIBW_CACHE_PATH: ~/.cache/cibuildwheel` explicitly (kept in sync with the cache step's `path`) instead of relying on cibuildwheel's platform-specific default cache location
+- `uv lock --upgrade` (both `uv.lock` and `py_ballisticcalc.exts/uv.lock`) — routine dependency bump surfaced by `pre-commit`'s `uv-lock`/`uv-lock-exts` hooks once the `bclibc` submodule was initialized locally (cython, ruff, scipy, scipy-stubs, filelock, dependency-groups, pymdown-extensions, pyzmq, vcs-versioning, appnope)
+
 ## [2.3.1] - 2026-07-06
 
 ### Added
