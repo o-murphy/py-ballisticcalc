@@ -171,14 +171,19 @@ jobs:
         with:
           platforms: all
 
-      - name: Cache cibuildwheel/pyodide toolchain
-        if: ${{ matrix.cibw_platform == 'pyodide' }}
+      - name: Cache cibuildwheel toolchain downloads
+        # No benefit on Linux: manylinux/musllinux builds pull Docker images via
+        # `docker pull`, which CIBW_CACHE_PATH does not cover. On every other
+        # platform it caches cibuildwheel's downloaded interpreters/toolchains
+        # (CPython/PyPy/GraalPy installers, nuget packages, Android NDK, the
+        # pyodide emscripten/xbuildenv toolchain).
+        if: ${{ matrix.cibw_platform != 'linux' }}
         uses: actions/cache@v6
         with:
           path: ~/.cache/cibuildwheel
-          key: cibw-pyodide-${{ runner.os }}-${{ hashFiles('py_ballisticcalc.exts/pyproject.toml') }}
+          key: cibw-${{ matrix.artifact_key }}-${{ hashFiles('py_ballisticcalc.exts/pyproject.toml') }}
           restore-keys: |
-            cibw-pyodide-${{ runner.os }}-
+            cibw-${{ matrix.artifact_key }}-
 
       - name: Install uv
         uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d
@@ -194,6 +199,10 @@ jobs:
           # inherit the full host environment automatically.
           SETUPTOOLS_SCM_OVERRIDES: ${{ (github.event_name == 'push' || inputs.testpypi) && '{local_scheme = "no-local-version"}' || '' }}
           CIBW_ENVIRONMENT_PASS: SETUPTOOLS_SCM_PRETEND_VERSION SETUPTOOLS_SCM_OVERRIDES
+          # Keep in sync with the cache step's `path` above — this makes the cache
+          # location explicit instead of relying on cibuildwheel's platform-specific
+          # default (which differs between Linux/macOS and Windows).
+          CIBW_CACHE_PATH: ~/.cache/cibuildwheel
         run: |
           uvx cibuildwheel py_ballisticcalc.exts \
             --output-dir wheelhouse \
