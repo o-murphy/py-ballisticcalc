@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 """setup.py script for py_ballisticcalc library"""
 
+import copy
 import os
 import platform
 import sysconfig
@@ -302,12 +303,30 @@ from setuptools.command.build_ext import build_ext as _build_ext
 
 
 class _parallel_build_ext(_build_ext):
-    """Compile extension modules across multiple CPU cores (like `-j`)."""
+    """Compile extension modules across multiple CPU cores (like `-j`).
+
+    Several extensions intentionally re-list the same bclibc .cpp sources
+    (each engine .so must be self-contained -- notably on Android/iOS, whose
+    dlopen can't resolve a companion shared library at load time). distutils
+    derives an object file's path purely from the source's relative path
+    under build_temp, so building extensions concurrently would make two
+    threads write the same .o file at once (observed as MSVC C1083
+    "Permission denied" on Windows and corrupt/truncated .o files on Linux).
+    Building each extension against its own build_temp subdirectory -- via a
+    private copy of this command instead of mutating shared state -- keeps
+    object files isolated while still reusing the one shared self.compiler
+    instance, which is what makes --parallel safe here.
+    """
 
     def finalize_options(self):
         super().finalize_options()
         if self.parallel is None:
             self.parallel = os.cpu_count() or 1
+
+    def build_extension(self, ext):
+        per_ext = copy.copy(self)
+        per_ext.build_temp = os.path.join(self.build_temp, ext.name)
+        _build_ext.build_extension(per_ext, ext)
 
 
 cmdclass["build_ext"] = _parallel_build_ext
