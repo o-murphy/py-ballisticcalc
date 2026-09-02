@@ -286,15 +286,32 @@ extensions_list.extend(collect_extensions(C_EXTENSION_DEPS, EXTENSIONS_BASE_DIR)
 extensions_list.extend(collect_extensions(CPP_EXTENSION_DEPS, EXTENSIONS_BASE_DIR, is_cpp=True))
 
 # Standard cythonize with a clean in-project build dir; annotate only if coverage requested
+# nthreads parallelizes the .pyx -> .c/.cpp translation step across CPU cores.
 extensions = cythonize(
     extensions_list,
     compiler_directives=compiler_directives,
     annotate=True,  # ENABLE_CYTHON_COVERAGE, # whether to generate .html annotations
     build_dir="build",  # to keep built data
     force=ENABLE_CYTHON_COVERAGE or CYTHON_FORCE_REGEN,
+    nthreads=os.cpu_count() or 1,
 )
 
 cmdclass = {}
+
+from setuptools.command.build_ext import build_ext as _build_ext
+
+
+class _parallel_build_ext(_build_ext):
+    """Compile extension modules across multiple CPU cores (like `-j`)."""
+
+    def finalize_options(self):
+        super().finalize_options()
+        if self.parallel is None:
+            self.parallel = os.cpu_count() or 1
+
+
+cmdclass["build_ext"] = _parallel_build_ext
+
 if USE_LIMITED_API:
     from setuptools.command.bdist_wheel import bdist_wheel
 
