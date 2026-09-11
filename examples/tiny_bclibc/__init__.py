@@ -8,9 +8,11 @@ and `run_example.py` for a runnable demo.
 
 `tiny_bclibc` (see https://github.com/ballistics-lab/bclibc/tree/main/tiny_bclibc) is a pure
 C99 reimplementation of the ballistic engine. `sp.py` / `dp.py` each load a compiled build via
-ctypes and drive its raw RK4 stepping function (`tiny_bclibc_integrate_raw`) from
+ctypes and drive its filtered trajectory-streaming function (`tiny_bclibc_integrate_stream`)
+from
 [`BaseIntegrationEngine._integrate`][py_ballisticcalc.engines.base_engine.BaseIntegrationEngine];
-`_common.py` holds the shared ctypes bindings and engine base class.
+`_common.py` holds the shared ctypes bindings, engine base class, and the row-coalescing/
+finalize post-processing described under Architecture below.
 
 Two engine classes are provided, built from the same code driving two separately-compiled
 tiny_bclibc libraries (one with `TINY_BCLIBC_SINGLE_PRECISION`, `real_t = float`; one without,
@@ -20,22 +22,32 @@ tiny_bclibc libraries (one with `TINY_BCLIBC_SINGLE_PRECISION`, `real_t = float`
 - `dp.TinyBclibcDoubleIntegrationEngine`
 
 Running both against the same pytest suite separates precision effects from logic bugs: a
-failure that reproduces under *both* engines is a bug in this ctypes binding, the raw-streaming
-addition to tiny_bclibc, or the tiny_bclibc RK4 core itself — not single-precision accumulation
-error. A failure that appears only under the single-precision engine is (most likely) genuinely
-a float32-vs-float64 precision effect.
+failure that reproduces under *both* engines is a bug in this ctypes binding or the tiny_bclibc
+core itself — not single-precision accumulation error. A failure that appears only under the
+single-precision engine is (most likely) genuinely a float32-vs-float64 precision effect (see
+`sp.TinyBclibcSingleIntegrationEngine`'s docstring for the specific, verified mechanisms behind
+its 11 known failures out of the full 375-test suite; `dp.TinyBclibcDoubleIntegrationEngine`
+passes all 375).
 
 Architecture:
-    Only the numerically-sensitive per-step RK4 integration (position/velocity update under
-    drag, gravity, wind, and Coriolis) runs inside the compiled C code. Every other algorithm —
-    trajectory-point filtering/interpolation, zero-angle search, apex, max-range — is inherited
-    unmodified from `BaseIntegrationEngine`/`TrajectoryDataFilter` and runs in Python (double
-    precision), exactly as it does for
+    Both the RK4 integration itself and its range-step/APEX/MACH/ZERO filtering and
+    derived-field computation (density_ratio, drag, spin drift, Coriolis-adjusted range,
+    slant_height, angles, energy, ogw) run inside the compiled C code via
+    `tiny_bclibc_integrate_stream` — Python's callback only fires once per *output* row, not
+    once per raw RK4 step, which is what makes this fast (roughly cythonized_rk4_engine-scale
+    on a Trajectory/Zero microbenchmark, vs. tens of milliseconds when streaming every raw
+    step). `_common.py` closes two gaps against tiny_bclibc's C-side filtering in Python
+    (`_coalesce_rows`, `_maybe_finalize`) rather than in tiny_bclibc itself, to keep that
+    library's C surface minimal — it targets bare-metal/MCU embedding, where code size is a
+    real constraint and neither gap is needed by tiny_bclibc's own native consumers. See
+    `_common.py`'s module docstring for what each closes and why. `zero_angle`/`find_apex`/
+    `find_max_range` themselves are still `BaseIntegrationEngine`'s own Python implementations,
+    unmodified — they just call `_integrate` (and therefore `tiny_bclibc_integrate_stream`)
+    repeatedly, exactly as
     [`EulerIntegrationEngine`][py_ballisticcalc.engines.euler.EulerIntegrationEngine] and
-    [`RK4IntegrationEngine`][py_ballisticcalc.engines.rk4.RK4IntegrationEngine]. This isolates
-    the effect of tiny_bclibc's precision to the RK4 core itself, so either engine can be run
-    against the full py_ballisticcalc pytest suite like any other engine — e.g. from the repo
-    root:
+    [`RK4IntegrationEngine`][py_ballisticcalc.engines.rk4.RK4IntegrationEngine] do. Either
+    engine can be run against the full py_ballisticcalc pytest suite like any other engine —
+    e.g. from the repo root:
     ```bash
     git submodule update --init py_ballisticcalc.exts/py_ballisticcalc_exts/external/bclibc
     cmake -B examples/tiny_bclibc/build -S examples/tiny_bclibc
