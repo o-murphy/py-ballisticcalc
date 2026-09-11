@@ -3,12 +3,35 @@
 Not meant to be used directly — import `TinyBclibcSingleIntegrationEngine` from `.sp` or
 `TinyBclibcDoubleIntegrationEngine` from `.dp`. See the `tiny_bclibc` package docstring
 (`__init__.py`) for the full picture and `CMakeLists.txt` for building the native libraries.
+
+Both engines call `tiny_bclibc_integrate_stream`: tiny_bclibc does the range-step/APEX/MACH/ZERO
+filtering AND derived-field computation (density_ratio, drag, spin drift, Coriolis-adjusted
+range, slant_height, angles, energy, ogw) in C, and only calls back into Python at the handful
+of points actually requested -- not once per raw RK4 step. Two gaps against
+`BaseIntegrationEngine`'s Python engines are closed here in Python rather than in tiny_bclibc
+itself, to keep that library's C surface minimal (it targets bare-metal/MCU embedding, where
+code size is a real constraint and neither of these is needed by tiny_bclibc's own native
+consumers) -- see `_coalesce_rows`/`_maybe_finalize` below, cross-checked against bclibc's C++
+`BCLIBC_TrajectoryDataFilter` (src/traj_filter.cpp) as the reference implementation:
+
+1. Row coalescing: tiny_bclibc_integrate_stream emits one row per event with no merging, so a
+   ZERO crossing landing on the same instant as a RANGE-sampled row comes back as two adjacent
+   (or, since events aren't always emitted in strict time order -- see `_coalesce_rows` --
+   not even adjacent) rows instead of one row carrying both flags.
+2. Finalize: whenever a trajectory ends other than by reaching the requested range,
+   tiny_bclibc_integrate_stream's optional out_final_raw parameter exposes the exact terminal
+   raw state (regardless of whether the C-side filter emitted a row for it); this is turned
+   into a TrajectoryData the same way BCLIBC_TrajectoryDataFilter's destructor does.
+
+dense_output is NOT supported (raises NotImplementedError) -- the C stream only ever delivers
+filtered/interpolated rows, never raw per-step BaseTrajData, so there is nothing to populate
+HitResult.base_data with.
 """
 
+import bisect
 import ctypes
 import math
 import os
-import warnings
 from functools import lru_cache
 from types import SimpleNamespace
 
@@ -17,12 +40,11 @@ from typing_extensions import override
 from py_ballisticcalc.engines.base_engine import (
     BaseEngineConfigDict,
     BaseIntegrationEngine,
-    TrajectoryDataFilter,
 )
 from py_ballisticcalc.exceptions import RangeError, SolverRuntimeError
 from py_ballisticcalc.logger import logger
 from py_ballisticcalc.shot import ShotProps
-from py_ballisticcalc.trajectory_data import BaseTrajData, HitResult, TrajFlag
+from py_ballisticcalc.trajectory_data import HitResult, TrajectoryData, TrajFlag
 from py_ballisticcalc.unit import Angular, Distance, Pressure, Temperature, Velocity
 from py_ballisticcalc.vector import Vector
 
@@ -43,6 +65,10 @@ _TERM_REASON_MAP = {
 }
 
 _TINY_BCLIBC_OK = 0
+
+# Matches BaseIntegrationEngine.SEPARATE_ROW_TIME_DELTA -- how close (in seconds) two events
+# must be to land on the same output row instead of two adjacent ones.
+_SEPARATE_ROW_TIME_DELTA = 1e-5
 
 
 @lru_cache(maxsize=None)
@@ -178,7 +204,39 @@ def _make_ctypes_bindings(real_t) -> SimpleNamespace:
             ("mach", real_t),
         )
 
-    raw_step_cb = ctypes.CFUNCTYPE(ctypes.c_int32, ctypes.POINTER(TbBaseTrajData), ctypes.c_void_p)
+    class TbTrajectoryRequest(ctypes.Structure):
+        _fields_ = (
+            ("range_limit_ft", real_t),
+            ("range_step_ft", real_t),
+            ("time_step", real_t),
+            ("filter_flags", ctypes.c_int32),
+        )
+
+    class TbTrajResult(ctypes.Structure):
+        """Mirrors TINY_BCLIBC_TrajectoryData (named TrajResult here to avoid shadowing
+        py_ballisticcalc.trajectory_data.TrajectoryData, which every consumer of this module
+        also imports)."""
+
+        _fields_ = (
+            ("time", real_t),
+            ("distance_ft", real_t),
+            ("velocity_fps", real_t),
+            ("mach", real_t),
+            ("height_ft", real_t),
+            ("slant_height_ft", real_t),
+            ("drop_angle_rad", real_t),
+            ("windage_ft", real_t),
+            ("windage_angle_rad", real_t),
+            ("slant_distance_ft", real_t),
+            ("angle_rad", real_t),
+            ("density_ratio", real_t),
+            ("drag", real_t),
+            ("energy_ft_lb", real_t),
+            ("ogw_lb", real_t),
+            ("flag", ctypes.c_int32),
+        )
+
+    stream_cb = ctypes.CFUNCTYPE(ctypes.c_int32, ctypes.POINTER(TbTrajResult), ctypes.c_void_p)
 
     return SimpleNamespace(
         real_t=real_t,
@@ -188,7 +246,9 @@ def _make_ctypes_bindings(real_t) -> SimpleNamespace:
         ShotProps=TbShotProps,
         Shot=TbShot,
         BaseTrajData=TbBaseTrajData,
-        RawStepCb=raw_step_cb,
+        TrajectoryRequest=TbTrajectoryRequest,
+        TrajResult=TbTrajResult,
+        StreamCb=stream_cb,
     )
 
 
@@ -241,19 +301,91 @@ def _load_library(env_var: str, precision_flag: str, real_t) -> ctypes.CDLL:
     )
     lib.tiny_bclibc_build_shot_props.restype = ctypes.c_int32
 
-    lib.tiny_bclibc_integrate_raw.argtypes = (
+    lib.tiny_bclibc_integrate_stream.argtypes = (
         ctypes.POINTER(b.ShotProps),
-        b.real_t,
-        b.RawStepCb,
+        ctypes.POINTER(b.TrajectoryRequest),
+        b.StreamCb,
         ctypes.c_void_p,
         ctypes.POINTER(ctypes.c_int32),
+        ctypes.POINTER(ctypes.c_int32),
+        ctypes.POINTER(b.BaseTrajData),
     )
-    lib.tiny_bclibc_integrate_raw.restype = ctypes.c_int32
+    lib.tiny_bclibc_integrate_stream.restype = ctypes.c_int32
 
     lib.tiny_bclibc_last_error.argtypes = ()
     lib.tiny_bclibc_last_error.restype = ctypes.c_char_p
 
     return lib
+
+
+def _to_trajectory_data(pt) -> TrajectoryData:
+    return TrajectoryData(
+        time=pt.time,
+        distance=TrajectoryData._new_feet(pt.distance_ft),
+        velocity=TrajectoryData._new_fps(pt.velocity_fps),
+        mach=pt.mach,
+        height=TrajectoryData._new_feet(pt.height_ft),
+        slant_height=TrajectoryData._new_feet(pt.slant_height_ft),
+        drop_angle=TrajectoryData._new_rad(pt.drop_angle_rad),
+        windage=TrajectoryData._new_feet(pt.windage_ft),
+        windage_angle=TrajectoryData._new_rad(pt.windage_angle_rad),
+        slant_distance=TrajectoryData._new_feet(pt.slant_distance_ft),
+        angle=TrajectoryData._new_rad(pt.angle_rad),
+        density_ratio=pt.density_ratio,
+        drag=pt.drag,
+        energy=TrajectoryData._new_ft_lb(pt.energy_ft_lb),
+        ogw=TrajectoryData._new_lb(pt.ogw_lb),
+        flag=pt.flag,
+    )
+
+
+def _coalesce_rows(records: list[TrajectoryData]) -> list[TrajectoryData]:
+    """Sorted-insert-or-merge rows within _SEPARATE_ROW_TIME_DELTA of each other (OR flags).
+
+    tiny_bclibc_integrate_stream emits rows in the order its internal checks run -- all
+    RANGE-step rows for one raw RK4 step first, then APEX/MACH/ZERO for that same step -- not
+    strictly by interpolated time: a MACH/ZERO crossing interpolated to *before* several
+    already-emitted RANGE rows (e.g. a shot that starts already supersonic and past zero, all
+    within the first couple of raw steps) can arrive after them. So merging must find each
+    row's correct chronological position (by bisecting on time) rather than only checking
+    whichever row was emitted immediately before it. This mirrors bclibc's C++
+    BCLIBC_TrajectoryDataFilter::merge_sorted_record (std::lower_bound + check both
+    neighbors) and Python's TrajectoryDataFilter.add_row/bisect_left, which handle the same
+    out-of-order-interpolation case in their own record()/on_step() rather than here.
+    """
+    merged: list[TrajectoryData] = []
+    times: list[float] = []
+    for row in records:
+        idx = bisect.bisect_left(times, row.time)
+        if idx < len(times) and abs(times[idx] - row.time) < _SEPARATE_ROW_TIME_DELTA:
+            merged[idx] = merged[idx]._replace(flag=merged[idx].flag | row.flag)
+            continue
+        if idx > 0 and abs(times[idx - 1] - row.time) < _SEPARATE_ROW_TIME_DELTA:
+            merged[idx - 1] = merged[idx - 1]._replace(flag=merged[idx - 1].flag | row.flag)
+            continue
+        merged.insert(idx, row)
+        times.insert(idx, row.time)
+    return merged
+
+
+def _maybe_finalize(
+    props: ShotProps, records: list[TrajectoryData], reason: int, final_raw
+) -> list[TrajectoryData]:
+    """Append the exact terminal point when the trajectory ended other than by reaching range.
+
+    Mirrors BCLIBC_TrajectoryDataFilter's destructor / Python's TrajectoryDataFilter.finalize():
+    only skip this when the reason for stopping was simply reaching the requested range (or no
+    termination at all, which run_rk4 never actually returns).
+    """
+    if reason in (_TERM_NO_TERMINATE, _TERM_TARGET_RANGE_REACHED):
+        return records
+    if records and final_raw.time <= records[-1].time:
+        return records
+    position = Vector(final_raw.px, final_raw.py, final_raw.pz)
+    velocity = Vector(final_raw.vx, final_raw.vy, final_raw.vz)
+    _density_ratio, mach = props.get_density_and_mach_for_altitude(position.y)
+    final_row = TrajectoryData.from_props(props, final_raw.time, position, velocity, mach, TrajFlag.NONE)
+    return [*records, final_row]
 
 
 class TinyBclibcIntegrationEngineBase(BaseIntegrationEngine):
@@ -262,8 +394,9 @@ class TinyBclibcIntegrationEngineBase(BaseIntegrationEngine):
     Subclasses (`sp.TinyBclibcSingleIntegrationEngine`, `dp.TinyBclibcDoubleIntegrationEngine`)
     set `REAL_T` (`ctypes.c_float` or `ctypes.c_double`), `LIB_ENV_VAR` (the env var naming that
     precision's compiled library), and `PRECISION_LABEL` (used in error/log messages).
-    Everything else — building the tiny_bclibc Shot/ShotProps, streaming raw RK4 steps into
-    `TrajectoryDataFilter`, mapping termination reasons — is precision-agnostic.
+    Everything else — building the tiny_bclibc Shot/ShotProps, streaming filtered trajectory
+    rows via tiny_bclibc_integrate_stream, coalescing/finalizing them, mapping termination
+    reasons — is precision-agnostic.
     """
 
     DEFAULT_TIME_STEP = 0.0025  # matches tiny_bclibc_build_shot_props' calc_step formula
@@ -380,23 +513,19 @@ class TinyBclibcIntegrationEngineBase(BaseIntegrationEngine):
     ) -> HitResult:
         """Create HitResult for the specified shot.
 
-        Runs tiny_bclibc's RK4 core (at this engine's precision) for the raw kinematic
-        stepping; all trajectory-point filtering, interpolation, and derived-quantity math run
-        in Python exactly as they do for
-        [`RK4IntegrationEngine`][py_ballisticcalc.engines.rk4.RK4IntegrationEngine].
+        Runs tiny_bclibc's RK4 core AND its range-step/APEX/MACH/ZERO filtering (at this
+        engine's precision) via tiny_bclibc_integrate_stream, then coalesces/finalizes the
+        streamed rows in Python (see module docstring) to match
+        `BaseIntegrationEngine`'s other engines' output exactly.
         """
+        if dense_output:
+            raise NotImplementedError(
+                f"{type(self).__name__} doesn't support dense_output (tiny_bclibc_integrate_stream "
+                "only delivers filtered rows, no raw per-step data)."
+            )
         self.trajectory_count += 1
         props.filter_flags = filter_flags
         b = self._b
-
-        step_data: list[BaseTrajData] = []
-        data_filter = TrajectoryDataFilter(
-            props=props,
-            filter_flags=filter_flags,
-            range_limit=range_limit_ft,
-            range_step=range_step_ft,
-            time_step=time_step,
-        )
 
         tb_shot, _keepalive = self._build_tiny_shot(props)
         curve_buf = (b.CurvePoint * tb_shot.drag_table_size)()
@@ -408,51 +537,52 @@ class TinyBclibcIntegrationEngineBase(BaseIntegrationEngine):
                 f"{self._lib.tiny_bclibc_last_error().decode('utf-8', 'replace')}"
             )
 
-        integration_step_count = 0
+        req = b.TrajectoryRequest(
+            range_limit_ft=range_limit_ft,
+            range_step_ft=range_step_ft,
+            time_step=time_step,
+            filter_flags=int(filter_flags),
+        )
+
+        records: list[TrajectoryData] = []
         callback_error: list[BaseException] = []
 
-        def _on_step(pt_ptr, _ctx) -> int:  # type: ignore[no-untyped-def]
-            nonlocal integration_step_count
+        def _on_point(pt_ptr, _ctx) -> int:  # type: ignore[no-untyped-def]
             try:
-                pt = pt_ptr.contents
-                integration_step_count += 1
-                position = Vector(pt.px, pt.py, pt.pz)
-                velocity = Vector(pt.vx, pt.vy, pt.vz)
-                _density_ratio, mach = props.get_density_and_mach_for_altitude(position.y)
-                data = BaseTrajData(time=pt.time, position=position, velocity=velocity, mach=mach)
-                data_filter.record(data)
-                if dense_output:
-                    step_data.append(data)
+                records.append(_to_trajectory_data(pt_ptr.contents))
             except BaseException as exc:  # pylint: disable=broad-except
                 callback_error.append(exc)
-                return _TERM_HANDLER_STOP
+                return 1
             return 0
 
+        out_total = ctypes.c_int32(0)
         out_reason = ctypes.c_int32(_TERM_NO_TERMINATE)
-        warnings.simplefilter("once")
-        rc = self._lib.tiny_bclibc_integrate_raw(
+        out_final_raw = b.BaseTrajData()
+        rc = self._lib.tiny_bclibc_integrate_stream(
             ctypes.byref(tb_props),
-            b.real_t(range_limit_ft),
-            b.RawStepCb(_on_step),
+            ctypes.byref(req),
+            b.StreamCb(_on_point),
             None,
+            ctypes.byref(out_total),
             ctypes.byref(out_reason),
+            ctypes.byref(out_final_raw),
         )
 
         if callback_error:
             raise callback_error[0]
         if rc != _TINY_BCLIBC_OK:
             raise SolverRuntimeError(
-                f"tiny_bclibc_integrate_raw failed: "
+                f"tiny_bclibc_integrate_stream failed: "
                 f"{self._lib.tiny_bclibc_last_error().decode('utf-8', 'replace')}"
             )
 
-        termination_reason = _TERM_REASON_MAP.get(out_reason.value)
-        data_filter.finalize(termination_reason)
+        records = _coalesce_rows(records)
+        records = _maybe_finalize(props, records, out_reason.value, out_final_raw)
 
-        ranges = data_filter.records
-        logger.debug(f"tiny_bclibc ({self.PRECISION_LABEL}) ran {integration_step_count} iterations")
-        self.integration_step_count += integration_step_count
+        termination_reason = _TERM_REASON_MAP.get(out_reason.value)
+        logger.debug(f"tiny_bclibc ({self.PRECISION_LABEL}) emitted {out_total.value} rows")
+        self.integration_step_count += out_total.value
         error = None
         if termination_reason is not None:
-            error = RangeError(termination_reason, ranges)
-        return HitResult(props, ranges, step_data, filter_flags > 0, error)
+            error = RangeError(termination_reason, records)
+        return HitResult(props, records, [], filter_flags > 0, error)

@@ -26,6 +26,20 @@ class TinyBclibcSingleIntegrationEngine(TinyBclibcIntegrationEngineBase):
     falls back to the ~10-50x more expensive guaranteed method (`_find_zero_angle`, which
     itself requires a `_find_max_range` golden-section search first).
 
+    Known precision limitation (11 of 375 tests in the full pytest suite, all with tolerances
+    tighter than float32's ~7 significant digits; `dp.TinyBclibcDoubleIntegrationEngine` passes
+    all 375): `tiny_bclibc_integrate_stream`'s `TINY_BCLIBC_TrajectoryRequest.range_limit_ft` /
+    `.range_step_ft` fields are `real_t`, so a requested target more precise than `real_t` can
+    represent is already rounded at that C call boundary, before any physics or interpolation
+    runs -- e.g. requesting an exact ~741 m range step is off by ~3e-5 m purely from that one
+    rounding (confirmed empirically; see bclibc's tiny_bclibc CHANGELOG). This is inherent to
+    driving tiny_bclibc's filtering/range-step API end-to-end in single precision, not a logic
+    bug, and is why `test_issues.py::TestIssue144` (written for double-precision engines, `abs
+    =1e-6` on a ~740 m distance) fails only here. The two other failures
+    (`test_wind_lag_rule`, `test_full_coriolis_by_latitude`) compare values near float32's
+    precision floor directly; `test_vertical_shot` accumulates float32's rounding of 90°=π/2
+    over ~18000 RK4 steps into a ~0.01 ft position error.
+
     Examples:
         >>> from py_ballisticcalc.engines.base_engine import BaseEngineConfigDict
         >>> config = BaseEngineConfigDict(cMinimumVelocity=0.0)
