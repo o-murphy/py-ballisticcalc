@@ -2,8 +2,7 @@
 
 Not meant to be used directly — import `TinyBclibcSingleIntegrationEngine` from `.sp` or
 `TinyBclibcDoubleIntegrationEngine` from `.dp`. See the `tiny_bclibc` package docstring
-(`__init__.py`) for the full picture and `build_tiny_bclibc.sh` for building the native
-libraries.
+(`__init__.py`) for the full picture and `CMakeLists.txt` for building the native libraries.
 """
 
 import ctypes
@@ -200,13 +199,14 @@ def _find_library_path(env_var: str, precision_flag: str) -> str:
             raise FileNotFoundError(f"{env_var} is set to '{path}', but no such file exists.")
         return path
     raise FileNotFoundError(
-        f"tiny_bclibc shared library not found. Build it ({precision_flag}) from the "
-        "bclibc repository:\n"
-        "  cmake -B build -S tiny_bclibc -DTINY_BCLIBC_BUILD_SHARED=ON "
-        f"{'-DTINY_BCLIBC_SINGLE_PRECISION=ON' if precision_flag == 'single precision' else ''}\n"
-        "  cmake --build build\n"
-        f"then set {env_var} to the resulting libtiny_bclibc.so (.dylib/.dll) path. See "
-        "build_tiny_bclibc.sh in this directory."
+        f"tiny_bclibc shared library not found ({precision_flag}). Build it via the "
+        "CMakeLists.txt in this directory (builds both precisions from the bclibc git "
+        "submodule already vendored at "
+        "py_ballisticcalc.exts/py_ballisticcalc_exts/external/bclibc):\n"
+        "  git submodule update --init py_ballisticcalc.exts/py_ballisticcalc_exts/external/bclibc\n"
+        "  cmake -B examples/tiny_bclibc/build -S examples/tiny_bclibc\n"
+        "  cmake --build examples/tiny_bclibc/build\n"
+        f"then set {env_var} to the resulting libtiny_bclibc.so (.dylib/.dll) path."
     )
 
 
