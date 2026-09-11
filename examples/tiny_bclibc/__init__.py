@@ -2,8 +2,9 @@
 
 This is example code, not part of the installed py_ballisticcalc package: it depends on
 natively-compiled `tiny_bclibc` shared libraries that py_ballisticcalc does not ship or build
-itself. Use `build_tiny_bclibc.sh` in this directory to build them, and `run_example.py` for a
-runnable demo.
+itself. Use `CMakeLists.txt` in this directory to build them (from the bclibc git submodule
+already vendored at `py_ballisticcalc.exts/py_ballisticcalc_exts/external/bclibc` — see below),
+and `run_example.py` for a runnable demo.
 
 `tiny_bclibc` (see https://github.com/ballistics-lab/bclibc/tree/main/tiny_bclibc) is a pure
 C99 reimplementation of the ballistic engine. `sp.py` / `dp.py` each load a compiled build via
@@ -33,23 +34,26 @@ Architecture:
     [`EulerIntegrationEngine`][py_ballisticcalc.engines.euler.EulerIntegrationEngine] and
     [`RK4IntegrationEngine`][py_ballisticcalc.engines.rk4.RK4IntegrationEngine]. This isolates
     the effect of tiny_bclibc's precision to the RK4 core itself, so either engine can be run
-    against the full py_ballisticcalc pytest suite like any other engine — e.g.:
+    against the full py_ballisticcalc pytest suite like any other engine — e.g. from the repo
+    root:
     ```bash
-    ./build_tiny_bclibc.sh                  # single precision -> bclibc/tiny_bclibc/build
-    ./build_tiny_bclibc.sh bclibc double     # double precision -> bclibc/tiny_bclibc/build_double
-    export PYBALLISTICCALC_TINY_BCLIBC_LIB=$(pwd)/bclibc/tiny_bclibc/build/libtiny_bclibc.so
-    export PYBALLISTICCALC_TINY_BCLIBC_DP_LIB=$(pwd)/bclibc/tiny_bclibc/build_double/libtiny_bclibc.so
-    cd ../..  # repo root
+    git submodule update --init py_ballisticcalc.exts/py_ballisticcalc_exts/external/bclibc
+    cmake -B examples/tiny_bclibc/build -S examples/tiny_bclibc
+    cmake --build examples/tiny_bclibc/build
+    export PYBALLISTICCALC_TINY_BCLIBC_LIB=$(pwd)/examples/tiny_bclibc/build/single/libtiny_bclibc.so
+    export PYBALLISTICCALC_TINY_BCLIBC_DP_LIB=$(pwd)/examples/tiny_bclibc/build/double/libtiny_bclibc.so
     PYTHONPATH=examples uv run pytest --engine=tiny_bclibc.sp:TinyBclibcSingleIntegrationEngine
     PYTHONPATH=examples uv run pytest --engine=tiny_bclibc.dp:TinyBclibcDoubleIntegrationEngine
     ```
 
 Requirements:
-    Build tiny_bclibc as a shared library from the `bclibc` repository, once per precision (see
-    `build_tiny_bclibc.sh`). Then point `PYBALLISTICCALC_TINY_BCLIBC_LIB` (single) /
-    `PYBALLISTICCALC_TINY_BCLIBC_DP_LIB` (double) at the resulting `libtiny_bclibc.so`
-    (`.dylib`/`.dll`). Each library is loaded lazily on first use of its engine class, so
-    importing this package never requires either to be present.
+    Build tiny_bclibc as a shared library, once per precision, via `CMakeLists.txt` in this
+    directory — it reuses the bclibc git submodule already vendored for the Cython engine at
+    `py_ballisticcalc.exts/py_ballisticcalc_exts/external/bclibc` rather than fetching a second,
+    independently-versioned copy of bclibc. Then point `PYBALLISTICCALC_TINY_BCLIBC_LIB`
+    (single) / `PYBALLISTICCALC_TINY_BCLIBC_DP_LIB` (double) at the resulting
+    `libtiny_bclibc.so` (`.dylib`/`.dll`). Each library is loaded lazily on first use of its
+    engine class, so importing this package never requires either to be present.
 
 Modules:
     _common: Shared ctypes bindings + `TinyBclibcIntegrationEngineBase`.

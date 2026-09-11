@@ -15,7 +15,7 @@ class TinyBclibcSingleIntegrationEngine(TinyBclibcIntegrationEngineBase):
     separate precision effects from logic bugs.
 
     Requires the `PYBALLISTICCALC_TINY_BCLIBC_LIB` environment variable to point at the
-    compiled `libtiny_bclibc.so` (`.dylib`/`.dll`) — see `build_tiny_bclibc.sh`.
+    compiled `libtiny_bclibc.so` (`.dylib`/`.dll`) — see `CMakeLists.txt` in this directory.
 
     Examples:
         >>> from py_ballisticcalc.engines.base_engine import BaseEngineConfigDict

@@ -1,15 +1,15 @@
 """Example: run a trajectory through the tiny_bclibc single- and double-precision engines.
 
-Prerequisite: build the shared libraries and point the env vars at them.
-    cd examples/tiny_bclibc
-    ./build_tiny_bclibc.sh                 # single precision
-    ./build_tiny_bclibc.sh bclibc double    # double precision
-    export PYBALLISTICCALC_TINY_BCLIBC_LIB=$(pwd)/bclibc/tiny_bclibc/build/libtiny_bclibc.so
-    export PYBALLISTICCALC_TINY_BCLIBC_DP_LIB=$(pwd)/bclibc/tiny_bclibc/build_double/libtiny_bclibc.so
+Prerequisite: build the shared libraries (from the repo root) and point the env vars at them.
+    git submodule update --init py_ballisticcalc.exts/py_ballisticcalc_exts/external/bclibc
+    cmake -B examples/tiny_bclibc/build -S examples/tiny_bclibc
+    cmake --build examples/tiny_bclibc/build
+    export PYBALLISTICCALC_TINY_BCLIBC_LIB=$(pwd)/examples/tiny_bclibc/build/single/libtiny_bclibc.so
+    export PYBALLISTICCALC_TINY_BCLIBC_DP_LIB=$(pwd)/examples/tiny_bclibc/build/double/libtiny_bclibc.so
 
 Then, from the `examples` directory (this is a package, run with `-m` so the relative
 imports in sp.py/dp.py/_common.py resolve):
-    cd ..
+    cd examples
     python -m tiny_bclibc.run_example
 """
 

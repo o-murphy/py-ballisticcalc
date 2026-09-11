@@ -18,7 +18,7 @@ class TinyBclibcDoubleIntegrationEngine(TinyBclibcIntegrationEngineBase):
     failure both hit is a bug.
 
     Requires the `PYBALLISTICCALC_TINY_BCLIBC_DP_LIB` environment variable to point at the
-    compiled `libtiny_bclibc.so` (`.dylib`/`.dll`) — see `build_tiny_bclibc.sh`.
+    compiled `libtiny_bclibc.so` (`.dylib`/`.dll`) — see `CMakeLists.txt` in this directory.
 
     Examples:
         >>> from py_ballisticcalc.engines.base_engine import BaseEngineConfigDict
