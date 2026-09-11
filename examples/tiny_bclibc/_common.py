@@ -272,7 +272,22 @@ class TinyBclibcIntegrationEngineBase(BaseIntegrationEngine):
     LIB_ENV_VAR: str
     PRECISION_LABEL: str
 
+    # Subclasses may set this to override BaseEngineConfig's default cZeroFindingAccuracy
+    # (5e-6 ft) when the caller doesn't explicitly configure it -- see
+    # TinyBclibcSingleIntegrationEngine, whose default is loosened to match float32's
+    # representable precision at typical zero distances (mirroring tiny_bclibc's own
+    # TINY_BCLIBC_SINGLE_PRECISION zero_angle_newton, which uses the same 1e-3 ft). Without
+    # this, BaseIntegrationEngine._zero_angle's primary (fast, damped-Newton) method can
+    # never converge tight enough for single precision and always falls back to
+    # _find_zero_angle's guaranteed-but-~10-50x-more-expensive golden-section + Ridder's
+    # search.
+    DEFAULT_ZERO_FINDING_ACCURACY: float | None = None
+
     def __init__(self, config: BaseEngineConfigDict | None) -> None:
+        if self.DEFAULT_ZERO_FINDING_ACCURACY is not None and (
+            config is None or "cZeroFindingAccuracy" not in config
+        ):
+            config = {**(config or {}), "cZeroFindingAccuracy": self.DEFAULT_ZERO_FINDING_ACCURACY}
         super().__init__(config)
         self._b = _make_ctypes_bindings(self.REAL_T)
         self._lib = _load_library(self.LIB_ENV_VAR, self.PRECISION_LABEL, self.REAL_T)
