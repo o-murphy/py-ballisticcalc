@@ -999,7 +999,7 @@ class BaseIntegrationEngine(ABC, EngineProtocol):
             prev_range_error_ft = range_error_ft
             prev_height_error_ft = height_error_ft
 
-            if height_error_ft > cZeroFindingAccuracy or range_error_ft > self.ALLOWED_ZERO_ERROR_FEET:
+            if height_error_ft > _cZeroFindingAccuracy or range_error_ft > self.ALLOWED_ZERO_ERROR_FEET:
                 # Adjust barrel elevation to close height at zero distance
                 applied_correction = correction * damping_factor
                 props.barrel_elevation_rad += applied_correction

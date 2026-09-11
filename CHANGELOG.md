@@ -8,6 +8,41 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 [:simple-github: Diff since v2.3.1][Unreleased]
 
+### Added
+- `examples/tiny_bclibc/`: single- and double-precision `BaseIntegrationEngine` subclasses
+  (`sp.TinyBclibcSingleIntegrationEngine` / `dp.TinyBclibcDoubleIntegrationEngine`) driving
+  [bclibc](https://github.com/ballistics-lab/bclibc)'s `tiny_bclibc` C99 RK4 core via ctypes
+  (`tiny_bclibc_integrate_raw`, a new raw-per-step-streaming API added to `tiny_bclibc` for
+  this purpose). Only the per-step kinematic integration runs in the compiled library; all
+  trajectory filtering, zero-angle search, apex, and max-range logic is the shared
+  `BaseIntegrationEngine`/`TrajectoryDataFilter` implementation, unmodified. `CMakeLists.txt`
+  builds both precisions from the `bclibc` git submodule already vendored for the Cython
+  engine at `py_ballisticcalc.exts/py_ballisticcalc_exts/external/bclibc` (bumped here to a
+  commit carrying `tiny_bclibc_integrate_raw`). Running both against the full pytest suite
+  separates precision effects from logic bugs: the double-precision engine passes the entire
+  suite identically to `rk4_engine`/`cythonized_rk4_engine` (373 passed, 2 skipped); the
+  single-precision engine differs on exactly 3 tests, each comparing against a tolerance
+  tighter than float32's ~7 significant digits. Not wired into `py_ballisticcalc`'s own entry
+  points/public API — it depends on a natively-compiled library the package does not ship or
+  build itself.
+
+### Fixed
+- `py_ballisticcalc/engines/base_engine.py`: `BaseIntegrationEngine._zero_angle`'s convergence
+  check inside its damped-Newton iteration loop compared `height_error_ft` against the
+  hardcoded module-level `cZeroFindingAccuracy` constant (`5e-6` ft) instead of
+  `self._config.cZeroFindingAccuracy` (already used correctly two lines above, for the initial
+  `height_error_ft`, and after the loop, for the final success/failure check) — so a caller
+  who configured a looser `cZeroFindingAccuracy` still had the loop itself hold out for `5e-6`
+  ft every iteration. No effect under the default config (`5e-6` ft either way). Found while
+  adding `TinyBclibcSingleIntegrationEngine` above: float32 cannot represent position to `5e-6`
+  ft at typical zero distances, so `_zero_angle`'s primary method always exhausted its
+  iteration budget and fell back to the ~10-50x more expensive guaranteed method
+  (`_find_zero_angle`, which itself requires a `_find_max_range` golden-section search first)
+  — fixing this bug (so the configured, looser tolerance is honored throughout) plus giving
+  `TinyBclibcSingleIntegrationEngine` a `1e-3` ft default (matching `tiny_bclibc`'s own
+  `TINY_BCLIBC_SINGLE_PRECISION` zero-finding tolerance) cut a `set_weapon_zero` call at 2000m
+  from ~2.2s to ~36ms on the affected shot.
+
 ### CI
 - `.github/workflows/pypi-publish.yml`: the `Cache cibuildwheel/pyodide toolchain` step (`actions/cache@v6` on `~/.cache/cibuildwheel`) is no longer Pyodide-only — it now runs for every `matrix.cibw_platform` except `linux` (macOS, Windows, Android also download interpreters/toolchains that `CIBW_CACHE_PATH` covers: CPython/PyPy/GraalPy installers, nuget packages, the Android NDK), keyed per `matrix.artifact_key` instead of one shared `cibw-pyodide-<runner.os>` key; Linux is excluded because manylinux/musllinux builds fetch their Docker base images via `docker pull`, which `CIBW_CACHE_PATH` does not cover. The "Build binary python package" step now also sets `CIBW_CACHE_PATH: ~/.cache/cibuildwheel` explicitly (kept in sync with the cache step's `path`) instead of relying on cibuildwheel's platform-specific default cache location
 - `uv lock --upgrade` (both `uv.lock` and `py_ballisticcalc.exts/uv.lock`) — routine dependency bump surfaced by `pre-commit`'s `uv-lock`/`uv-lock-exts` hooks once the `bclibc` submodule was initialized locally (cython, ruff, scipy, scipy-stubs, filelock, dependency-groups, pymdown-extensions, pyzmq, vcs-versioning, appnope)
