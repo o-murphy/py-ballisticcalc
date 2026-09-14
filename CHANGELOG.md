@@ -10,7 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - `examples/tiny_bclibc/`: single- and double-precision `BaseIntegrationEngine` subclasses
-  (`sp.TinyBclibcSingleIntegrationEngine` / `dp.TinyBclibcDoubleIntegrationEngine`) driving
+  (`TinyBclibcSingleIntegrationEngine` / `TinyBclibcDoubleIntegrationEngine`) driving
   [bclibc](https://github.com/ballistics-lab/bclibc)'s `tiny_bclibc` C99 engine via ctypes
   and `tiny_bclibc_integrate_stream`, a new filtered-trajectory-streaming API added to
   `tiny_bclibc` for this purpose: both the RK4 integration and its range-step/APEX/MACH/ZERO
@@ -34,7 +34,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   skipped); the single-precision engine differs on 11 of 375 tests, each comparing against a
   tolerance tighter than float32 can resolve end-to-end (including, for 8 of them, that
   `tiny_bclibc_integrate_stream`'s `range_limit_ft`/`range_step_ft` request fields are
-  themselves `real_t` — see `sp.TinyBclibcSingleIntegrationEngine`'s docstring for the verified
+  themselves `real_t` — see `TinyBclibcSingleIntegrationEngine`'s docstring for the verified
   mechanism behind each). Not wired into `py_ballisticcalc`'s own entry points/public API — it
   depends on a natively-compiled library the package does not ship or build itself.
 

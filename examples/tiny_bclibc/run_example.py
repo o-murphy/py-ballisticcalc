@@ -8,15 +8,14 @@ Prerequisite: build the shared libraries (from the repo root) and point the env 
     export PYBALLISTICCALC_TINY_BCLIBC_DP_LIB=$(pwd)/examples/tiny_bclibc/build/double/libtiny_bclibc.so
 
 Then, from the `examples` directory (this is a package, run with `-m` so the relative
-imports in sp.py/dp.py/_common.py resolve):
+imports in __init__.py/_common.py resolve):
     cd examples
     python -m tiny_bclibc.run_example
 """
 
 from py_ballisticcalc import Ammo, Calculator, DragModel, Shot, TableG7, Unit, Weapon
 
-from tiny_bclibc.dp import TinyBclibcDoubleIntegrationEngine
-from tiny_bclibc.sp import TinyBclibcSingleIntegrationEngine
+from tiny_bclibc import TinyBclibcDoubleIntegrationEngine, TinyBclibcSingleIntegrationEngine
 
 
 def main() -> None:

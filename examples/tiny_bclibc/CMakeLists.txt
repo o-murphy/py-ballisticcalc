@@ -1,5 +1,5 @@
 # Builds tiny_bclibc as shared libraries (single- and double-precision) for the example
-# engines in this directory (sp.py / dp.py).
+# engines in this directory (__init__.py).
 #
 # Usage (from repo root, after `git submodule update --init`):
 #   cmake -B examples/tiny_bclibc/build -S examples/tiny_bclibc
@@ -37,7 +37,7 @@ file(STRINGS "${_engine_h}" _raw_api_line REGEX "tiny_bclibc_integrate_raw")
 if(NOT _raw_api_line)
     message(FATAL_ERROR
         "The bclibc submodule checkout at ${_submodule_dir} is pinned to a commit that "
-        "predates tiny_bclibc_integrate_raw() (the raw-streaming API sp.py/dp.py call). "
+        "predates tiny_bclibc_integrate_raw() (the raw-streaming API the example engines call). "
         "Update the submodule to a commit that has it, e.g. from the repo root:\n"
         "  cd py_ballisticcalc.exts/py_ballisticcalc_exts/external/bclibc\n"
         "  git fetch origin claude/tiny-bclibc-single-precision-9mvkk6\n"

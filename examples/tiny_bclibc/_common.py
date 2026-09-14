@@ -1,4 +1,4 @@
-"""Shared ctypes/FFI plumbing for the tiny_bclibc example engines (see sp.py / dp.py).
+"""Shared ctypes/FFI plumbing for the tiny_bclibc example engines (see __init__.py).
 
 Not meant to be used directly — import `TinyBclibcSingleIntegrationEngine` from `.sp` or
 `TinyBclibcDoubleIntegrationEngine` from `.dp`. See the `tiny_bclibc` package docstring
@@ -33,7 +33,7 @@ import ctypes
 import math
 import os
 from functools import lru_cache
-from types import SimpleNamespace
+from typing import Any, NamedTuple
 
 from typing_extensions import override
 
@@ -71,8 +71,29 @@ _TINY_BCLIBC_OK = 0
 _SEPARATE_ROW_TIME_DELTA = 1e-5
 
 
+# ctypes.c_float for a TINY_BCLIBC_SINGLE_PRECISION build, ctypes.c_double otherwise. Typed
+# explicitly (as are _Bindings' fields) so type checkers resolve ctypes.POINTER(...) calls to its
+# class overload instead of the deprecated string one.
+_RealT = type[ctypes.c_float] | type[ctypes.c_double]
+
+
+class _Bindings(NamedTuple):
+    """ctypes mirrors of tiny_bclibc's structs for one precision (see `_make_ctypes_bindings`)."""
+
+    real_t: _RealT
+    Wind: type[ctypes.Structure]
+    Config: type[ctypes.Structure]
+    CurvePoint: type[ctypes.Structure]
+    ShotProps: type[ctypes.Structure]
+    Shot: type[ctypes.Structure]
+    BaseTrajData: type[ctypes.Structure]
+    TrajectoryRequest: type[ctypes.Structure]
+    TrajResult: type[ctypes.Structure]
+    StreamCb: Any  # ctypes.CFUNCTYPE prototype
+
+
 @lru_cache(maxsize=None)
-def _make_ctypes_bindings(real_t) -> SimpleNamespace:
+def _make_ctypes_bindings(real_t: _RealT) -> _Bindings:
     """Build the ctypes Structure mirrors for one precision (real_t = c_float or c_double).
 
     Field order/types are taken from
@@ -238,7 +259,7 @@ def _make_ctypes_bindings(real_t) -> SimpleNamespace:
 
     stream_cb = ctypes.CFUNCTYPE(ctypes.c_int32, ctypes.POINTER(TbTrajResult), ctypes.c_void_p)
 
-    return SimpleNamespace(
+    return _Bindings(
         real_t=real_t,
         Wind=Wind,
         Config=Config,
@@ -271,7 +292,7 @@ def _find_library_path(env_var: str, precision_flag: str) -> str:
 
 
 @lru_cache(maxsize=None)
-def _load_library(env_var: str, precision_flag: str, real_t) -> ctypes.CDLL:
+def _load_library(env_var: str, precision_flag: str, real_t: _RealT) -> ctypes.CDLL:
     b = _make_ctypes_bindings(real_t)
     lib = ctypes.CDLL(_find_library_path(env_var, precision_flag))
 
@@ -391,7 +412,7 @@ def _maybe_finalize(
 class TinyBclibcIntegrationEngineBase(BaseIntegrationEngine):
     """Shared implementation for the single- and double-precision tiny_bclibc engines.
 
-    Subclasses (`sp.TinyBclibcSingleIntegrationEngine`, `dp.TinyBclibcDoubleIntegrationEngine`)
+    Subclasses (`TinyBclibcSingleIntegrationEngine`, `TinyBclibcDoubleIntegrationEngine`)
     set `REAL_T` (`ctypes.c_float` or `ctypes.c_double`), `LIB_ENV_VAR` (the env var naming that
     precision's compiled library), and `PRECISION_LABEL` (used in error/log messages).
     Everything else — building the tiny_bclibc Shot/ShotProps, streaming filtered trajectory
@@ -401,7 +422,7 @@ class TinyBclibcIntegrationEngineBase(BaseIntegrationEngine):
 
     DEFAULT_TIME_STEP = 0.0025  # matches tiny_bclibc_build_shot_props' calc_step formula
 
-    REAL_T: type
+    REAL_T: _RealT
     LIB_ENV_VAR: str
     PRECISION_LABEL: str
 
