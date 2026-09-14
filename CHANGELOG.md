@@ -8,6 +8,53 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 [:simple-github: Diff since v2.3.1][Unreleased]
 
+### Added
+- `examples/tiny_bclibc/`: single- and double-precision `BaseIntegrationEngine` subclasses
+  (`TinyBclibcSingleIntegrationEngine` / `TinyBclibcDoubleIntegrationEngine`) driving
+  [bclibc](https://github.com/ballistics-lab/bclibc)'s `tiny_bclibc` C99 engine via ctypes
+  and `tiny_bclibc_integrate_stream`, a new filtered-trajectory-streaming API added to
+  `tiny_bclibc` for this purpose: both the RK4 integration and its range-step/APEX/MACH/ZERO
+  filtering and derived-field computation run in the compiled library, with Python's callback
+  firing once per *output* row rather than once per raw RK4 step (a `tiny_bclibc_integrate_raw`
+  raw-per-step variant was tried first and is ~20-34x slower — kept in `tiny_bclibc` as a small,
+  generically useful primitive, but not used by these engines). `zero_angle`/`find_apex`/
+  `find_max_range` are still `BaseIntegrationEngine`'s own unmodified Python implementations,
+  repeatedly calling `_integrate`. Two gaps between tiny_bclibc's C-side filtering and
+  `TrajectoryDataFilter`'s Python one (row coalescing when e.g. a ZERO crossing lands on a
+  RANGE-sampled row; finalizing the exact terminal point on abnormal termination) are closed in
+  `_common.py` rather than in tiny_bclibc itself, to keep that (bare-metal/MCU-targeted)
+  library's C surface minimal. `CMakeLists.txt` builds both precisions from the `bclibc` git
+  submodule already vendored for the Cython engine at
+  `py_ballisticcalc.exts/py_ballisticcalc_exts/external/bclibc` (bumped here to a commit
+  carrying `tiny_bclibc_integrate_stream` and three MACH/ZERO crossing-detection bug fixes
+  found and fixed while building this, cross-checked against bclibc's own C++
+  `BCLIBC_TrajectoryDataFilter` — see `bclibc`'s CHANGELOG). Running both engines against the
+  full pytest suite separates precision effects from logic bugs: the double-precision engine
+  passes the entire suite identically to `rk4_engine`/`cythonized_rk4_engine` (373 passed, 2
+  skipped); the single-precision engine differs on 11 of 375 tests, each comparing against a
+  tolerance tighter than float32 can resolve end-to-end (including, for 8 of them, that
+  `tiny_bclibc_integrate_stream`'s `range_limit_ft`/`range_step_ft` request fields are
+  themselves `real_t` — see `TinyBclibcSingleIntegrationEngine`'s docstring for the verified
+  mechanism behind each). Not wired into `py_ballisticcalc`'s own entry points/public API — it
+  depends on a natively-compiled library the package does not ship or build itself.
+
+### Fixed
+- `py_ballisticcalc/engines/base_engine.py`: `BaseIntegrationEngine._zero_angle`'s convergence
+  check inside its damped-Newton iteration loop compared `height_error_ft` against the
+  hardcoded module-level `cZeroFindingAccuracy` constant (`5e-6` ft) instead of
+  `self._config.cZeroFindingAccuracy` (already used correctly two lines above, for the initial
+  `height_error_ft`, and after the loop, for the final success/failure check) — so a caller
+  who configured a looser `cZeroFindingAccuracy` still had the loop itself hold out for `5e-6`
+  ft every iteration. No effect under the default config (`5e-6` ft either way). Found while
+  adding `TinyBclibcSingleIntegrationEngine` above: float32 cannot represent position to `5e-6`
+  ft at typical zero distances, so `_zero_angle`'s primary method always exhausted its
+  iteration budget and fell back to the ~10-50x more expensive guaranteed method
+  (`_find_zero_angle`, which itself requires a `_find_max_range` golden-section search first)
+  — fixing this bug (so the configured, looser tolerance is honored throughout) plus giving
+  `TinyBclibcSingleIntegrationEngine` a `1e-3` ft default (matching `tiny_bclibc`'s own
+  `TINY_BCLIBC_SINGLE_PRECISION` zero-finding tolerance) cut a `set_weapon_zero` call at 2000m
+  from ~2.2s to ~36ms on the affected shot.
+
 ### CI
 - `.github/workflows/pypi-publish.yml`: the `Cache cibuildwheel/pyodide toolchain` step (`actions/cache@v6` on `~/.cache/cibuildwheel`) is no longer Pyodide-only — it now runs for every `matrix.cibw_platform` except `linux` (macOS, Windows, Android also download interpreters/toolchains that `CIBW_CACHE_PATH` covers: CPython/PyPy/GraalPy installers, nuget packages, the Android NDK), keyed per `matrix.artifact_key` instead of one shared `cibw-pyodide-<runner.os>` key; Linux is excluded because manylinux/musllinux builds fetch their Docker base images via `docker pull`, which `CIBW_CACHE_PATH` does not cover. The "Build binary python package" step now also sets `CIBW_CACHE_PATH: ~/.cache/cibuildwheel` explicitly (kept in sync with the cache step's `path`) instead of relying on cibuildwheel's platform-specific default cache location
 - `uv lock --upgrade` (both `uv.lock` and `py_ballisticcalc.exts/uv.lock`) — routine dependency bump surfaced by `pre-commit`'s `uv-lock`/`uv-lock-exts` hooks once the `bclibc` submodule was initialized locally (cython, ruff, scipy, scipy-stubs, filelock, dependency-groups, pymdown-extensions, pyzmq, vcs-versioning, appnope)
