@@ -77,25 +77,29 @@ SciPy is something of a black box: one cannot be certain exactly how it will pro
 
 `cythonized_ck_engine` is not (yet) part of the `BenchmarkEngines.ipynb` study above; the
 numbers here come from `scripts/benchmark.py` (`Trajectory`/`Zero` cases, same 2000m G7 shot
-profile: 0.22 BC, 10g/7.62mm, 800 m/s, ICAO atmosphere), each engine run separately (500
-repeats, 50 warmup for the two Cython engines; the pure-Python `rk4_engine` used fewer repeats
+profile: 0.22 BC, 10g/7.62mm, 800 m/s, ICAO atmosphere), each engine run separately (2000
+repeats, 100 warmup for the Cython engines; the pure-Python `rk4_engine` used fewer repeats
 since it's much slower per call — see the "mean-ms" caveat below):
 
 | Case | Engine | Mean (ms) |
 |---|---|---|
 | Trajectory | `rk4_engine` (pure Python) | 86.52 |
-| Trajectory | `cythonized_rk4_engine` | 0.75 |
-| Trajectory | `cythonized_ck_engine` | 0.31 (2.4x faster than `cythonized_rk4_engine`) |
+| Trajectory | `cythonized_rk4_engine` | 0.67 |
+| Trajectory | `cythonized_ck_engine` | 0.33 (2.0x faster than `cythonized_rk4_engine`) |
 | Zero | `rk4_engine` (pure Python) | 376.13 |
-| Zero | `cythonized_rk4_engine` | 1.86 |
-| Zero | `cythonized_ck_engine` | 0.13 (14.3x faster than `cythonized_rk4_engine`) |
+| Zero | `cythonized_rk4_engine` | 1.84 |
+| Zero | `cythonized_ck_engine` | 0.13 (14.2x faster than `cythonized_rk4_engine`) |
 
 These are mean wall-clock milliseconds per call on one particular machine, not a portable
 constant — re-running this script elsewhere reproduces the *relative* Cython-vs-Cython ratios
-(2.4x / 14.3x) far more reliably than any ratio involving the pure-Python row, because
-interpreter overhead varies a lot more across hardware than compiled-code throughput does. Use
-the raw ms figures (or run the script yourself) if you need a ratio for your own machine rather
-than trusting the ones quoted here or in the [engines](engines.md#summary) table.
+(~2x / ~14x) far more reliably than any ratio involving the pure-Python row, because interpreter
+overhead varies a lot more across hardware than compiled-code throughput does. `cythonized_ck_engine`'s
+own mean is the noisiest figure in this table (its raw calls are sub-millisecond, so a rare OS
+scheduling hiccup shows up as a large relative outlier) — repeated runs at these repeat counts
+put its Trajectory mean anywhere from about 0.28 to 0.4ms, so treat "2.0x" as "roughly 2x" rather
+than a precise constant. Use the raw ms figures (or run the script yourself) if you need a ratio
+for your own machine rather than trusting the ones quoted here or in the
+[engines](engines.md#summary) table.
 
 Like SciPy's adaptive solvers, Cash-Karp dynamically adjusts its internal step size to meet an
 error tolerance (`relative_tolerance`, default `1e-6`) rather than taking a fixed number of
