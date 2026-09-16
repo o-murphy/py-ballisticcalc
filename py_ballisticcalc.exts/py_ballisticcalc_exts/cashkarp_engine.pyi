@@ -13,19 +13,22 @@ class CashKarpEngineConfig(BaseEngineConfigDict, total=False):
     """Configuration accepted by :class:`CythonizedCashKarpIntegrationEngine`."""
 
     relative_tolerance: float
+    absolute_tolerance: float
 
 class CythonizedCashKarpIntegrationEngine(CythonizedBaseIntegrationEngine[BaseEngineConfigDict]):
     """Cythonized Cash-Karp (embedded adaptive RK45) integration engine for ballistic calculations.
 
-    The ``relative_tolerance`` config key controls the embedded local-error
-    estimate and defaults to ``1e-6``.
+    The scalar ``relative_tolerance`` and ``absolute_tolerance`` config keys
+    control the embedded local-error estimate with ``solve_ivp`` semantics.
+    Both default to ``1e-6``.
     """
 
     DEFAULT_TIME_STEP: float
     relative_tolerance: float
+    absolute_tolerance: float
 
     def __init__(self, config: CashKarpEngineConfig | BaseEngineConfigDict | None = None) -> None:
-        """Initialize with standard options and optional ``relative_tolerance``."""
+        """Initialize with standard options and optional SciPy-style tolerances."""
 
     def get_step_stats(self) -> tuple[int, int]:
         """Returns (accepted, rejected) step counts from the most recent integration call."""

@@ -98,9 +98,9 @@ because its calls are sub-millisecond, so use the raw ms figures (or run the scr
 you need a ratio for your own machine rather than trusting the ones quoted here or in the
 [engines](engines.md#summary) table.
 
-Like SciPy's adaptive solvers, Cash-Karp dynamically adjusts its internal step size to meet an
-error tolerance (`relative_tolerance`, default `1e-6`) rather than taking a fixed number of
-steps — see [Adaptive integration (Cash-Karp)](engines.md#adaptive-integration-cash-karp) for
+Like SciPy's adaptive solvers, Cash-Karp dynamically adjusts its internal step size to meet
+scalar `absolute_tolerance` and `relative_tolerance` values (both default `1e-6`) rather than
+taking a fixed number of steps — see [Adaptive integration (Cash-Karp)](engines.md#adaptive-integration-cash-karp) for
 how that tolerance was chosen, what had to be fixed elsewhere in the engine (event/row
 interpolation) to make sparse adaptive sampling produce correct output, and why `Zero`'s speedup
 over `Trajectory`'s is so much larger even when comparing the same two Cython engines directly

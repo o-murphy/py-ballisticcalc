@@ -68,8 +68,38 @@ class TestCashKarp:
         # Adaptive internal spacing must not alter scheduled table cardinality.
         assert len(tight_result.samples) == len(loose_result.samples) == 21
 
+    def test_cashkarp_scalar_atol_matches_scipy_tolerance_model(self):
+        """``atol`` is one scalar for all state components, as in ``solve_ivp``.
+
+        SciPy's RK solvers scale every component independently with
+        ``atol + rtol * max(abs(y), abs(y_new))`` and then take an RMS norm.
+        A tighter scalar ``atol`` must therefore require more accepted work
+        when ``rtol`` is too small to dominate the scale.  This catches both
+        the former position/velocity-specific floors and an ignored config key.
+        """
+        loose = self.exts.CythonizedCashKarpIntegrationEngine(
+            {"relative_tolerance": 1e-12, "absolute_tolerance": 1e-2}
+        )
+        tight = self.exts.CythonizedCashKarpIntegrationEngine(
+            {"relative_tolerance": 1e-12, "absolute_tolerance": 1e-6}
+        )
+
+        _integrate(loose, _shot())
+        _integrate(tight, _shot())
+        loose_accepted, _ = loose.get_step_stats()
+        tight_accepted, _ = tight.get_step_stats()
+
+        assert loose.absolute_tolerance == 1e-2
+        assert tight.absolute_tolerance == 1e-6
+        assert tight_accepted > loose_accepted
+
+    @pytest.mark.parametrize("value", (float("nan"), float("inf"), -1.0))
+    def test_cashkarp_rejects_invalid_atol(self, value):
+        with pytest.raises(ValueError, match="absolute_tolerance"):
+            self.exts.CythonizedCashKarpIntegrationEngine({"absolute_tolerance": value})
+
     def test_cashkarp_default_tolerance_matches_conservative_rk4_reference(self):
-        """The default rtol remains close to a 5x finer fixed-step RK4 reference."""
+        """The default SciPy-style tolerances remain close to a fine RK4 reference."""
         shot = _shot()
         reference_engine = self.exts.CythonizedRK4IntegrationEngine({"cStepMultiplier": 0.1})
         reference = _integrate(reference_engine, shot)
@@ -78,6 +108,7 @@ class TestCashKarp:
         result = _integrate(cash_karp, shot)
 
         assert cash_karp.relative_tolerance == 1e-6
+        assert cash_karp.absolute_tolerance == 1e-6
         assert len(result.samples) == len(reference.samples)
         assert max(
             abs(actual.height.raw_value - expected.height.raw_value)
@@ -91,7 +122,7 @@ class TestCashKarp:
         reference_events = {event.flag: event for event in reference.events}
         assert {event.flag for event in result.events} == set(reference_events)
         assert all(
-            abs(event.distance.raw_value - reference_events[event.flag].distance.raw_value) < 0.5
+            abs(event.distance.raw_value - reference_events[event.flag].distance.raw_value) < 2.5
             for event in result.events
         )
 

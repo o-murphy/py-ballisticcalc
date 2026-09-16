@@ -63,7 +63,11 @@ Cythonized engines are compiled for maximum performance.  Include the `[exts]` o
 its internal step size is adaptive rather than fixed *only* by `cStepMultiplier`:
 `cStepMultiplier` sets the configured base step, and Cash-Karp grows it up to 64x during smooth
 flight or shrinks it down to 1/64 whenever its embedded error estimate
-exceeds `relative_tolerance` (default `1e-6`, configurable per instance). This needs far fewer
+exceeds its SciPy-compatible tolerances, `relative_tolerance` and scalar
+`absolute_tolerance` (both default `1e-6`, configurable per instance). Each of the three
+position and three velocity state components is scaled independently as
+`atol + rtol * max(abs(y), abs(y_new))`; their scaled errors are combined with an RMS norm,
+matching `scipy.integrate.solve_ivp`'s Runge-Kutta controllers. This needs far fewer
 accepted steps than fixed-step RK4 for comparable accuracy.
 
 That step-count reduction alone doesn't explain why `set_weapon_zero`'s speedup (~16x vs.
@@ -87,7 +91,9 @@ from py_ballisticcalc import Calculator
 calc = Calculator(engine="cythonized_ck_engine")
 # or, to tune the error tolerance:
 from py_ballisticcalc_exts import CythonizedCashKarpIntegrationEngine
-calc = Calculator(engine=CythonizedCashKarpIntegrationEngine({"relative_tolerance": 1e-6}))
+calc = Calculator(engine=CythonizedCashKarpIntegrationEngine(
+    {"relative_tolerance": 1e-6, "absolute_tolerance": 1e-6}
+))
 ```
 
 Two things had to be fixed to make this correct, not just fast — both apply to every engine now,

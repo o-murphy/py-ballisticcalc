@@ -19,8 +19,11 @@ cdef extern from "include/bclibc/cash_karp.hpp" namespace "bclibc" nogil:
 
     void BCLIBC_cashKarpSetRelativeTolerance(double tolerance) except +
 
+    void BCLIBC_cashKarpSetAbsoluteTolerance(double tolerance) except +
+
 cdef class CythonizedCashKarpIntegrationEngine(CythonizedBaseIntegrationEngine):
     cdef double _relative_tolerance
+    cdef double _absolute_tolerance
     # Per-instance snapshot of BCLIBC_cashKarpGetStats(), taken right after this
     # engine's own integrate() call returns. BCLIBC_cashKarpGetStats() itself
     # reads thread-local counters *shared* across every CythonizedCashKarpIntegrationEngine

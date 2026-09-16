@@ -25,13 +25,17 @@ cdef class CythonizedCashKarpIntegrationEngine(CythonizedBaseIntegrationEngine):
         # separate tuning knob.
         self._DEFAULT_TIME_STEP = 0.0025
         self._relative_tolerance = 1e-6
+        self._absolute_tolerance = 1e-6
         self._this.integrate_func = BCLIBC_IntegrateCallable(BCLIBC_integrateCashKarp)
 
     def __init__(self, object config):
-        """Configure Cash-Karp with standard engine options and ``relative_tolerance``.
+        """Configure Cash-Karp with standard engine options and SciPy-style tolerances.
 
-        ``relative_tolerance`` is Cash-Karp-specific and defaults to ``1e-6``.
-        It controls the embedded local-error estimate. Lower values always
+        ``relative_tolerance`` and scalar ``absolute_tolerance`` are both
+        Cash-Karp-specific and default to ``1e-6``. They use the same
+        component-wise error scale as :func:`scipy.integrate.solve_ivp`:
+        ``atol + rtol * max(abs(y), abs(y_new))`` for each of the six position
+        and velocity state values, followed by an RMS norm. Lower values always
         require more accepted/attempted steps, but do NOT reliably improve
         accuracy: measured against a 5x-finer fixed-step RK4 reference,
         1e-6 gave both the fewest total steps and the best event-root
@@ -43,16 +47,19 @@ cdef class CythonizedCashKarpIntegrationEngine(CythonizedBaseIntegrationEngine):
         the harness (project issue #350).
         """
         base_config = config
-        tolerance = 1e-6
+        relative_tolerance = 1e-6
+        absolute_tolerance = 1e-6
         if isinstance(config, dict):
             base_config = config.copy()
-            tolerance = base_config.pop("relative_tolerance", tolerance)
-        self.relative_tolerance = tolerance
+            relative_tolerance = base_config.pop("relative_tolerance", relative_tolerance)
+            absolute_tolerance = base_config.pop("absolute_tolerance", absolute_tolerance)
+        self.relative_tolerance = relative_tolerance
+        self.absolute_tolerance = absolute_tolerance
         CythonizedBaseIntegrationEngine.__init__(self, base_config)
 
     @property
     def relative_tolerance(self):
-        """Relative local-error tolerance used by Cash-Karp (default: ``1e-6``)."""
+        """SciPy-style relative local-error tolerance (default: ``1e-6``)."""
         return self._relative_tolerance
 
     @relative_tolerance.setter
@@ -61,11 +68,27 @@ cdef class CythonizedCashKarpIntegrationEngine(CythonizedBaseIntegrationEngine):
             raise ValueError("relative_tolerance must be finite and positive")
         self._relative_tolerance = tolerance
 
+    @property
+    def absolute_tolerance(self):
+        """Scalar SciPy-style absolute local-error tolerance (default: ``1e-6``).
+
+        It is applied independently to all six state components; it is not a
+        separate position or velocity tolerance.
+        """
+        return self._absolute_tolerance
+
+    @absolute_tolerance.setter
+    def absolute_tolerance(self, double tolerance):
+        if not math.isfinite(tolerance) or tolerance < 0.0:
+            raise ValueError("absolute_tolerance must be finite and non-negative")
+        self._absolute_tolerance = tolerance
+
     cdef BCLIBC_ShotProps* _init_trajectory(
         CythonizedCashKarpIntegrationEngine self,
         object shot_info,
     ):
         BCLIBC_cashKarpSetRelativeTolerance(self._relative_tolerance)
+        BCLIBC_cashKarpSetAbsoluteTolerance(self._absolute_tolerance)
         return CythonizedBaseIntegrationEngine._init_trajectory(self, shot_info)
 
     def integrate(self, *args, **kwargs):

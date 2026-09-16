@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- `cythonized_ck_engine`: Cash-Karp's adaptive error controller now has
+  `scipy.integrate.solve_ivp` semantics. `absolute_tolerance` is a single scalar (default
+  `1e-6`) used independently for all six position/velocity state components; it replaces the
+  former hidden, unequal position and velocity floors. Each component uses
+  `atol + rtol * max(abs(y), abs(y_new))`, and the controller accepts/rejects steps using the
+  RMS of those six scaled errors. `relative_tolerance` remains scalar and defaults to `1e-6`.
+
 ## [3.0.0-beta.1] - 2026-09-16
 [:simple-github: Diff since v2.3.1][3.0.0-beta.1]
 
