@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- `cythonized_dopri_engine`, a compiled Dormand--Prince 5(4) adaptive engine.
+  Its component scaling and controller factors follow SciPy RK45, while
+  `cythonized_ck_engine` deliberately retains its historical controller.
+
 ### Changed
 - `cythonized_ck_engine`: Cash-Karp's adaptive error controller now has
   `scipy.integrate.solve_ivp` semantics. `absolute_tolerance` is a single scalar (default

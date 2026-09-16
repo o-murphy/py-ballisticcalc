@@ -1,5 +1,9 @@
 # BallisticCalculator
 
+The compiled extensions include `cythonized_dopri_engine`, a Dormand--Prince
+5(4) adaptive engine with SciPy RK45-style controller semantics. The existing
+Cash--Karp engine remains available with its compatibility controller.
+
 LGPL library for small arms ballistic calculations based on point-mass (3 DoF) plus spin drift.
 
 [![license]][LGPL-3]

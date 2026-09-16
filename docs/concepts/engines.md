@@ -13,6 +13,7 @@ py-ballisticcalc provides various calculation engines with identical public sema
 | [`cythonized_euler_engine`][py_ballisticcalc_exts.CythonizedEulerIntegrationEngine] | :material-arrow-up:    54x / 52x (faster)     | [`[exts]`](#cython-engines) | Compiled Euler integration              |
 | [`cythonized_verlet_engine`][py_ballisticcalc_exts.CythonizedVelocityVerletIntegrationEngine] | :material-arrow-up:   130x / 99x (faster)     | [`[exts]`](#cython-engines) | Compiled Verlet 2nd-order symplectic    |
 | [`cythonized_ck_engine`][py_ballisticcalc_exts.CythonizedCashKarpIntegrationEngine][^ck] | :material-arrow-up: ~3370x / ~335x (faster)  | [`[exts]`](#cython-engines) | Compiled Cash-Karp adaptive RK45        |
+| `cythonized_dopri_engine` | compiled adaptive | [`[exts]`](#cython-engines) | Dormand--Prince 5(4), SciPy RK45-style controller |
 | [`scipy_engine`][py_ballisticcalc.engines.SciPyIntegrationEngine]                   | :material-arrow-up:  4.6x / 8.3x (faster)     |          `[scipy]`          | Advanced numerical methods              |
 
 The current rows for `rk4_engine`, Cython RK4/Euler/Cash-Karp, and SciPy were measured with
@@ -55,7 +56,12 @@ Cythonized engines are compiled for maximum performance.  Include the `[exts]` o
     uv add py-ballisticcalc[exts]
     ```
 
-## Adaptive integration (Cash-Karp)
+## Adaptive integration (Cash-Karp, Dormand-Prince)
+
+`cythonized_dopri_engine` is a companion Dormand--Prince 5(4) engine. It uses
+scalar `relative_tolerance` and `absolute_tolerance` (both default to `1e-6`),
+SciPy RK45 component scaling, safety `0.9`, and factors in `[0.2, 10]`.
+Cash-Karp intentionally keeps its existing controller for compatibility.
 
 `cythonized_ck_engine` (`py_ballisticcalc_exts.CythonizedCashKarpIntegrationEngine`) wraps
 [bclibc](https://github.com/ballistics-lab/bclibc)'s Cash-Karp adaptive RK45 integrator

@@ -13,6 +13,7 @@ from .euler_engine import CythonizedEulerIntegrationEngine
 from .rk4_engine import CythonizedRK4IntegrationEngine
 from .velocity_verlet_engine import CythonizedVelocityVerletIntegrationEngine
 from .cashkarp_engine import CythonizedCashKarpIntegrationEngine
+from .dopri_engine import CythonizedDormandPrinceIntegrationEngine
 
 
 # Version matching guard
@@ -40,6 +41,7 @@ __all__ = (
     "CythonizedRK4IntegrationEngine",
     "CythonizedVelocityVerletIntegrationEngine",
     "CythonizedCashKarpIntegrationEngine",
+    "CythonizedDormandPrinceIntegrationEngine",
     # externs for docs generation
     "CythonizedBaseIntegrationEngine",
     "CythonizedBaseTrajData",
