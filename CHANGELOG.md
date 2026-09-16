@@ -6,39 +6,73 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
-[:simple-github: Diff since v2.3.1][Unreleased]
+
+## [2.4.0-beta.1] - 2026-09-16
+[:simple-github: Diff since v2.3.1][2.4.0-beta.1]
 
 ### Added
+- `cythonized_ck_engine` (`py_ballisticcalc_exts.CythonizedCashKarpIntegrationEngine`): a
+  Cython engine wrapping [bclibc](https://github.com/ballistics-lab/bclibc)'s new Cash-Karp
+  adaptive RK45 integrator (Numerical Recipes' `rkck`, embedded 4th/5th-order error estimate).
+  Grows its internal step up to 64x the configured base step during smooth flight and shrinks
+  it on error-estimate rejection, needing far fewer accepted steps than fixed-step RK4 for
+  comparable accuracy — benchmarked at 2.1x (`Trajectory`) / 14.3x (`Zero`, which integrates
+  repeatedly per Newton iteration, so per-call step-count savings compound) faster than
+  `cythonized_rk4_engine` on the standard 2000m G7 benchmark shot. Exposes a
+  `relative_tolerance` config option (default `1e-6`, empirically Pareto-optimal on the one
+  shot profile measured so far — see the engine's `__init__` docstring and
+  `tests/test_cashkarp.py::test_cashkarp_accuracy_across_tolerances` for the data; height/
+  velocity accuracy plateaus below this, but event-root distance accuracy is *not* monotonic in
+  tolerance) and a `get_step_stats()` method returning this instance's own
+  `(accepted, rejected)` step counts from its most recent `integrate()` call.
 - `examples/tiny_bclibc/`: single- and double-precision `BaseIntegrationEngine` subclasses
   (`TinyBclibcSingleIntegrationEngine` / `TinyBclibcDoubleIntegrationEngine`) driving
   [bclibc](https://github.com/ballistics-lab/bclibc)'s `tiny_bclibc` C99 engine via ctypes
-  and `tiny_bclibc_integrate_stream`, a new filtered-trajectory-streaming API added to
-  `tiny_bclibc` for this purpose: both the RK4 integration and its range-step/APEX/MACH/ZERO
+  and `tiny_bclibc_integrate_stream`, a filtered-trajectory-streaming API added to
+  `tiny_bclibc` for this purpose: both the integration and its range-step/APEX/MACH/ZERO
   filtering and derived-field computation run in the compiled library, with Python's callback
-  firing once per *output* row rather than once per raw RK4 step (a `tiny_bclibc_integrate_raw`
-  raw-per-step variant was tried first and is ~20-34x slower — kept in `tiny_bclibc` as a small,
-  generically useful primitive, but not used by these engines). `zero_angle`/`find_apex`/
-  `find_max_range` are still `BaseIntegrationEngine`'s own unmodified Python implementations,
-  repeatedly calling `_integrate`. Two gaps between tiny_bclibc's C-side filtering and
-  `TrajectoryDataFilter`'s Python one (row coalescing when e.g. a ZERO crossing lands on a
-  RANGE-sampled row; finalizing the exact terminal point on abnormal termination) are closed in
-  `_common.py` rather than in tiny_bclibc itself, to keep that (bare-metal/MCU-targeted)
-  library's C surface minimal. `CMakeLists.txt` builds both precisions from the `bclibc` git
-  submodule already vendored for the Cython engine at
-  `py_ballisticcalc.exts/py_ballisticcalc_exts/external/bclibc` (bumped here to a commit
-  carrying `tiny_bclibc_integrate_stream` and three MACH/ZERO crossing-detection bug fixes
-  found and fixed while building this, cross-checked against bclibc's own C++
-  `BCLIBC_TrajectoryDataFilter` — see `bclibc`'s CHANGELOG). Running both engines against the
-  full pytest suite separates precision effects from logic bugs: the double-precision engine
-  passes the entire suite identically to `rk4_engine`/`cythonized_rk4_engine` (373 passed, 2
-  skipped); the single-precision engine differs on 11 of 375 tests, each comparing against a
-  tolerance tighter than float32 can resolve end-to-end (including, for 8 of them, that
-  `tiny_bclibc_integrate_stream`'s `range_limit_ft`/`range_step_ft` request fields are
-  themselves `real_t` — see `TinyBclibcSingleIntegrationEngine`'s docstring for the verified
-  mechanism behind each). Not wired into `py_ballisticcalc`'s own entry points/public API — it
-  depends on a natively-compiled library the package does not ship or build itself.
+  firing once per *output* row rather than once per raw integration step (a
+  `tiny_bclibc_integrate_raw` raw-per-step variant was tried first and is ~20-34x slower — kept
+  in `tiny_bclibc` as a small, generically useful primitive, but not used by these engines).
+  `tiny_bclibc_integrate`/`_stream` now run `tiny_bclibc`'s own Cash-Karp adaptive core (see
+  `bclibc`'s CHANGELOG) rather than fixed-step RK4; `zero_angle`/`find_apex`/`find_max_range`
+  are still `BaseIntegrationEngine`'s own unmodified Python implementations, repeatedly calling
+  `_integrate`. `CMakeLists.txt` builds both precisions from the `bclibc` git submodule already
+  vendored for the Cython engine at
+  `py_ballisticcalc.exts/py_ballisticcalc_exts/external/bclibc`. Running both engines against
+  the full pytest suite separates precision effects from logic bugs: the double-precision
+  engine passes the entire suite identically to `rk4_engine`/`cythonized_rk4_engine` (373
+  passed, 8 skipped); the single-precision engine differs on 13 of 381 tests, all traceable to
+  float32's representable precision (8 compare `tiny_bclibc_integrate_stream`'s
+  `range_limit_ft`/`range_step_ft` request fields, themselves `real_t`, against a
+  double-precision-tight tolerance; the remainder compare values within a few ULPs of float32's
+  precision floor, including two whose adaptive step-size selection is itself sensitive to
+  sub-ULP differences between two numerically-equivalent drag models — see
+  `TinyBclibcSingleIntegrationEngine`'s docstring for the verified mechanism behind each). Not
+  wired into `py_ballisticcalc`'s own entry points/public API — it depends on a
+  natively-compiled library the package does not ship or build itself.
+
+### Changed
+- `HitResult.records`/`_common.py`'s `_sort_rows` (formerly `_coalesce_rows`): a scheduled
+  RANGE-step sample and a physical event (ZERO/MACH/APEX) that happen to fall at nearly the
+  same instant are no longer merged into one row with combined flags — they are kept as
+  independent records, only re-sorted into chronological order (each was already correctly
+  positioned relative to *its own* neighbors; only cross-interval ordering needed restoring).
+  `HitResult.trajectory`'s own "annotate the closest scheduled sample with each event's flag"
+  projection already performs the equivalent view generically from independent records (see
+  `docs/concepts/trajectory_data.md`), so pre-merging here duplicated — and could conflict
+  with — that step. Matches the same fix applied to `TrajectoryDataFilter.record_step` and
+  bclibc's C++ `BCLIBC_TrajectoryDataFilter::handle_step` (project issue #350).
 
 ### Fixed
+- `py_ballisticcalc/trajectory_data.py`: `TrajectoryStep.at_x()` now assigns the exact queried
+  downrange target to the result's `position.x` instead of re-deriving it from the
+  bisection-converged Hermite sample (`TrajectoryStep.at_value`, which `record_step`'s
+  RANGE-step sampling used directly before this). Invisible at Python's double precision
+  (residual is far below any existing tolerance) — the same pattern in `tiny_bclibc`'s C port of
+  this logic measurably missed an exact RANGE-step target once run in single precision (see
+  `bclibc`'s CHANGELOG), so this keeps all three implementations (this one, bclibc's C++, and
+  `tiny_bclibc`'s C99) consistent rather than relying on double precision to hide it here too.
 - `py_ballisticcalc/engines/base_engine.py`: `BaseIntegrationEngine._zero_angle`'s convergence
   check inside its damped-Newton iteration loop compared `height_error_ft` against the
   hardcoded module-level `cZeroFindingAccuracy` constant (`5e-6` ft) instead of
@@ -773,7 +807,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Issue #141
 - Trajectories that bend backwards
 
-[Unreleased]: https://github.com/o-murphy/py-ballisticcalc/compare/v2.3.1...HEAD
+[2.4.0-beta.1]: https://github.com/o-murphy/py-ballisticcalc/compare/v2.3.1...HEAD
 [2.3.1]: https://github.com/o-murphy/py-ballisticcalc/releases/tag/v2.3.1
 [#339]: https://github.com/o-murphy/py-ballisticcalc/pull/339
 [#340]: https://github.com/o-murphy/py-ballisticcalc/pull/340

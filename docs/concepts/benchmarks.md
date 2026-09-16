@@ -14,6 +14,7 @@ The engines covered here:
 4. **Cython RK4** (`cythonized_rk4_engine`): Same as the RK4 engine, but implemented in C++/Cython and compiled (instead of interpreting) for maximum compute speed.
 5. **Cython Euler** (`cythonized_euler_engine`): Same as the Euler engine, but implemented in C++/Cython and compiled (instead of interpreting) for maximum compute speed.
 6. **SciPy** (`scipy_engine`): The [SciPy](https://scipy.org) library contains the most sophisticated numerical methods with compiled backends.
+7. **Cython Cash-Karp** (`cythonized_ck_engine`): An adaptive embedded RK45 method (see [Cash-Karp Engine](#cash-karp-engine) below), implemented in C++/Cython and compiled.
 
 ## Key Concepts
 
@@ -72,6 +73,27 @@ SciPy is something of a black box: one cannot be certain exactly how it will pro
 
 ![SciPy realized error vs. tolerance parameter for LSODA method](SciPy_Error_v_Tolerance.svg)
 
+### Cash-Karp Engine
+
+`cythonized_ck_engine` is not (yet) part of the `BenchmarkEngines.ipynb` study above; the
+numbers here come from `scripts/benchmark.py` (`Trajectory`/`Zero` cases, same 2000m G7 shot
+profile: 0.22 BC, 10g/7.62mm, 800 m/s, ICAO atmosphere) run head-to-head against
+`cythonized_rk4_engine` in the same process (500 repeats, 50 warmup):
+
+| Case | Engine | Mean (ms) |
+|---|---|---|
+| Trajectory | `cythonized_rk4_engine` | 0.59 |
+| Trajectory | `cythonized_ck_engine` | 0.28 (2.1x faster) |
+| Zero | `cythonized_rk4_engine` | 1.72 |
+| Zero | `cythonized_ck_engine` | 0.12 (14.3x faster) |
+
+Like SciPy's adaptive solvers, Cash-Karp dynamically adjusts its internal step size to meet an
+error tolerance (`relative_tolerance`, default `1e-6`) rather than taking a fixed number of
+steps — see [Adaptive integration (Cash-Karp)](engines.md#adaptive-integration-cash-karp) for
+how that tolerance was chosen and what had to be fixed elsewhere in the engine (event/row
+interpolation) to make sparse adaptive sampling produce correct output. `Zero`'s much larger
+speedup than `Trajectory`'s reflects `set_weapon_zero` integrating repeatedly — once per
+damped-Newton iteration — so a per-call reduction in accepted steps compounds across iterations.
 
 [BenchmarkEngines.ipynb]:
 https://github.com/o-murphy/py_ballisticcalc/blob/master/examples/BenchmarkEngines.ipynb
