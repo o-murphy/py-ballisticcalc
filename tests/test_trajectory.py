@@ -84,7 +84,7 @@ class TestTrajectory:
                          winds=[Wind(Velocity(5, Velocity.MPH), Angular(10.5, Angular.OClock))])
 
         calc = Calculator(engine=loaded_engine_instance)
-        data = calc.fire(shot_info, Distance.Yard(1000), Distance.Yard(100)).trajectory
+        data = calc.fire(shot_info, Distance.Yard(1000), Distance.Yard(100)).samples
         assert len(data) == 11, "Trajectory Row Count"
         self.validate_one(data_point(data), distance, velocity, mach, energy, path, hold, windage, wind_adjustment,
                           time, ogv, adjustment_unit)
@@ -107,7 +107,7 @@ class TestTrajectory:
         shot_info = Shot(weapon=weapon, ammo=ammo, winds=[Wind(Velocity(5, Velocity.MPH), Angular.Degree(-45))])
 
         calc = Calculator(engine=loaded_engine_instance)
-        data = calc.fire(shot_info, Distance.Yard(1000), Distance.Yard(100)).trajectory
+        data = calc.fire(shot_info, Distance.Yard(1000), Distance.Yard(100)).samples
         assert len(data) == 11, "Trajectory Row Count"
         self.validate_one(data_point(data), distance, velocity, mach, energy, path, hold, windage, wind_adjustment,
                           time, ogv, adjustment_unit)
@@ -148,7 +148,7 @@ class TestTrajectoryDataFilter:
         # Pick a trajectory range and a coarse step that likely doesn't align with integration steps
         res = calc.fire(shot, trajectory_range=Distance.Yard(350), trajectory_step=Distance.Yard(137))
         # We should have RANGE rows at 0 yd (initial), then ~137yd and ~274yd plus the end
-        ranges = [td for td in res.trajectory if td.flag & TrajFlag.RANGE]
+        ranges = [td for td in res.samples if td.flag & TrajFlag.RANGE]
         assert len(ranges) >= 2
         # Distances after the initial should be near multiples of 137 yd (within tolerance)
         yards = [td.distance >> Distance.Yard for td in ranges[:-1]]
@@ -165,9 +165,9 @@ class TestTrajectoryDataFilter:
         # No trajectory_step specified -> default equals trajectory_range, so RANGE would be at end only.
         res = calc.fire(shot, trajectory_range=Distance.Yard(300), time_step=0.02, raise_range_error=False)
         # Expect >2 rows due to time-based recording
-        assert len(res.trajectory) > 2
+        assert len(res.samples) > 2
         # And at least one has RANGE flag set via time-step sampling
-        assert any(td.flag & TrajFlag.RANGE for td in res.trajectory)
+        assert any(td.flag & TrajFlag.RANGE for td in res.samples)
 
 
     def test_zero_up_then_zero_down_ordering(self, loaded_engine_instance):
@@ -216,7 +216,7 @@ class TestTrajectoryDataFilter:
         step = Distance.Yard(60)
         res = calc.fire(shot, trajectory_range=rng, trajectory_step=step)
         limit_yards = rng >> Distance.Yard
-        range_rows = [td for td in res.trajectory if td.flag & TrajFlag.RANGE]
+        range_rows = [td for td in res.samples if td.flag & TrajFlag.RANGE]
         assert len(range_rows) >= 2
         for row in range_rows:
             assert (row.distance >> Distance.Yard) <= limit_yards + 1e-6
@@ -245,26 +245,26 @@ class TestTrajectoryDataFilter:
         assert len(zero_rows) >= 1
 
 
-    def test_records_preserve_events_while_trajectory_annotates_samples(self, loaded_engine_instance):
-        """Exact records and stable trajectory presentation serve distinct purposes."""
+    def test_records_preserve_events_while_samples_annotate_schedule(self, loaded_engine_instance):
+        """Exact records and the deterministic samples table serve distinct purposes."""
         calc = Calculator(engine=loaded_engine_instance)
         shot = self._mk_shot(2750.0)
         calc.set_weapon_zero(shot, Distance.Yard(200))
         res = calc.fire(shot, trajectory_range=Distance.Yard(600), trajectory_step=Distance.Yard(200),
                         flags=TrajFlag.ZERO)
         event_rows = [td for td in res.events if td.flag & TrajFlag.ZERO]
-        sample_rows = [td for td in res.trajectory if td.flag & TrajFlag.RANGE]
+        sample_rows = [td for td in res.samples if td.flag & TrajFlag.RANGE]
         assert event_rows
         assert sample_rows
         assert all(not (td.flag & TrajFlag.RANGE) for td in event_rows)
         assert 0.0 < min(abs(event.time - sample.time) for event in event_rows for sample in sample_rows) < 1e-5
-        assert any(td.flag & TrajFlag.ZERO for td in res.trajectory)
-        assert len(res.records) == len(res.trajectory) + len(res.events)
+        assert any(td.flag & TrajFlag.ZERO for td in res.samples)
+        assert len(res.records) == len(res.samples) + len(res.events)
         for event in event_rows:
             closest_time = min((sample.time for sample in sample_rows), key=lambda time: abs(time - event.time))
             assert any(
                 sample.time == closest_time and sample.flag & event.flag
-                for sample in res.trajectory
+                for sample in res.samples
             )
         compatible = HitResult(
             res.props,
@@ -274,7 +274,7 @@ class TestTrajectoryDataFilter:
             error=res.error,
         )
         assert compatible.records is res.records
-        assert compatible.trajectory == res.trajectory
+        assert compatible.samples == res.samples
 
 
     def test_zero_event_and_range_sample_have_independent_rows(self, loaded_engine_instance):
@@ -286,7 +286,7 @@ class TestTrajectoryDataFilter:
         res = calc.fire(shot, trajectory_range=Distance.Yard(600), trajectory_step=Distance.Yard(200),
                         flags=TrajFlag.ZERO)
         zero_rows = [td for td in res.events if td.flag & TrajFlag.ZERO]
-        range_rows = [td for td in res.trajectory if td.flag & TrajFlag.RANGE]
+        range_rows = [td for td in res.samples if td.flag & TrajFlag.RANGE]
         assert zero_rows
         assert range_rows
         assert all(not (td.flag & TrajFlag.RANGE) for td in zero_rows)

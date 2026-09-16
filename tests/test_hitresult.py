@@ -77,3 +77,19 @@ class TestHitResult:
                             trajectory_step=Distance.Meter(0.2), flags=TrajFlag.ALL)
         assert len(result) == 6, "Result should contain the requested six range samples"
         assert result[0].flag == TrajFlag.RANGE
+
+    def test_trajectory_is_deprecated_alias_for_records(self):
+        """`.trajectory` must keep returning `.records` (with a warning) for source compatibility."""
+        with pytest.deprecated_call():
+            legacy = self.shot_result.trajectory
+        assert legacy == self.shot_result.records
+        assert len(self.shot_result) == len(self.shot_result.records)
+        assert list(self.shot_result) == self.shot_result.records
+        assert self.shot_result[0] == self.shot_result.records[0]
+
+    def test_samples_annotate_schedule_while_records_stay_exact(self):
+        """`.samples` is the fixed-cardinality schedule table; `.records` keeps every exact row."""
+        # This shot's flags=TrajFlag.ALL triggers ZERO/APEX/MACH events (see test_flags above),
+        # so records must be strictly longer than the schedule-only samples table.
+        assert len(self.shot_result.records) > len(self.shot_result.samples)
+        assert len(self.shot_result.records) == len(self.shot_result.samples) + len(self.shot_result.events)

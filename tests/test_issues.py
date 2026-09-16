@@ -66,7 +66,7 @@ class TestIssue144:
         PreferredUnits.set(**self.previous_preferred_units)
 
     def check_expected_last_point(self, hit_result):
-        assert 11 == len(hit_result.trajectory)
+        assert 11 == len(hit_result.samples)
         last_hit_point = hit_result[-1]
         assert pytest.approx(0.992020943919257, abs=1e-3) == last_hit_point.time
         assert pytest.approx(740.8068308628334, abs=1e-6) == (last_hit_point.distance >> Distance.Meter)
@@ -201,22 +201,22 @@ class TestIssue305:
         self.ammo = Ammo(drag_model, Velocity.MPS(930))
         self.calc = Calculator(engine=loaded_engine_instance)
         self.hit_result = self.calc.fire(Shot(ammo=self.ammo), Distance.Meter(1000), Distance.Meter(100))
-        assert len(self.hit_result.trajectory) >= 3
+        assert len(self.hit_result.records) >= 3
 
     def test_get_at_epsilon_past_last_point_returns_last_point(self):
-        last_point = self.hit_result.trajectory[-1]
+        last_point = self.hit_result.records[-1]
         just_past_last = math.nextafter(last_point.distance.raw_value, math.inf)
         result = self.hit_result.get_at("distance", just_past_last)
         assert result == last_point
 
     def test_get_at_epsilon_before_first_point_returns_first_point(self):
-        first_point = self.hit_result.trajectory[0]
+        first_point = self.hit_result.records[0]
         just_before_first = math.nextafter(first_point.distance.raw_value, -math.inf)
         result = self.hit_result.get_at("distance", just_before_first)
         assert result == first_point
 
     def test_get_at_far_past_last_point_still_raises(self):
-        last_point = self.hit_result.trajectory[-1]
+        last_point = self.hit_result.records[-1]
         with pytest.raises(ArithmeticError, match="does not reach"):
             self.hit_result.get_at("distance", last_point.distance.raw_value + 1e6)
 
@@ -225,8 +225,8 @@ class TestIssue305:
         not an endpoint, and must be found the same way as an endpoint epsilon-overshoot is."""
         shot = Shot(ammo=self.ammo, relative_angle=Angular.Degree(0.5))
         apex_hit_result = self.calc.fire(shot, Distance.Meter(1500), Distance.Meter(50), raise_range_error=False)
-        apex = max(apex_hit_result.trajectory, key=lambda pt: pt.height.raw_value)
-        assert apex not in (apex_hit_result.trajectory[0], apex_hit_result.trajectory[-1])
+        apex = max(apex_hit_result.records, key=lambda pt: pt.height.raw_value)
+        assert apex not in (apex_hit_result.records[0], apex_hit_result.records[-1])
         just_past_apex = math.nextafter(apex.height.raw_value, math.inf)
         result = apex_hit_result.get_at("height", just_past_apex)
         assert result == apex

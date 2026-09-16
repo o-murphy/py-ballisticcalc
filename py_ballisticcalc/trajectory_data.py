@@ -27,7 +27,7 @@ Typical Usage:
     hit_result = calc.fire(shot, trajectory_range=1000, flags=TrajFlag.ALL)
 
     # Access trajectory data
-    for point in hit_result.trajectory:
+    for point in hit_result.records:
         print(f"Time: {point.time:.3f}s, Distance: {point.distance}, "
               f"Height: {point.height}, Velocity: {point.velocity}")
 
@@ -851,9 +851,15 @@ class HitResult:
 
     Attributes:
         shot: The parameters of the shot calculation.
-        records: Exact, chronological output records produced by the integrator.
-        trajectory: Scheduled sample table with nearby event flags annotated.
+        records: Exact, chronological output records produced by the integrator. Default
+            source for `len()`, iteration, indexing, `dataframe()`, and `plot()`.
+        samples: Deterministic scheduled-sample table with nearby event flags annotated;
+            its cardinality tracks the requested RANGE/TIME schedule regardless of the
+            integrator's internal step choices, so it is the source to use when comparing
+            results across engines or tolerances.
         events: Exact physical event records (ZERO, MACH, APEX, and MRT).
+        trajectory: [DEPRECATED] Alias for `records`. Use `records` (exact stream) or
+            `samples` (deterministic scheduled table) instead.
         base_data: Continuous accepted trajectory steps for interpolation.
         extra: [DEPRECATED] Whether extra_data was requested.
         error: RangeError, if any.
@@ -883,7 +889,7 @@ class HitResult:
 
         ``trajectory=`` remains accepted for source compatibility with the
         former public dataclass constructor.  It is interpreted as the exact
-        record stream, before the :attr:`trajectory` presentation projection.
+        record stream, before the :attr:`samples` presentation projection.
         """
         if records is None:
             if trajectory is None:
@@ -905,13 +911,16 @@ class HitResult:
         return [row for row in self.records if row.flag & event_flags]
 
     @cached_property
-    def trajectory(self) -> list[TrajectoryData]:
+    def samples(self) -> list[TrajectoryData]:
         """Return the deterministic scheduled-sample table.
 
         Physical events remain exact in :attr:`events`; this presentation view
         annotates the closest scheduled sample with each event flag.  Thus its
         cardinality is determined by the sampling schedule rather than the
-        integrator's accepted-step boundaries or event proximity.
+        integrator's accepted-step boundaries or event proximity — use this
+        (rather than :attr:`records`) when comparing output across engines or
+        solver tolerances, where accepted-step timing differs but the
+        requested RANGE/TIME schedule does not.
         """
         event_flags = TrajFlag.ZERO | TrajFlag.MACH | TrajFlag.APEX | TrajFlag.MRT
         samples = [
@@ -940,14 +949,23 @@ class HitResult:
             projected[index] = sample._replace(flag=sample.flag | event.flag)
         return projected
 
+    @property
+    @deprecated(
+        reason="Use `.records` for the exact chronological stream (same rows/order this alias "
+        "returns today) or `.samples` for the deterministic scheduled-sample table."
+    )
+    def trajectory(self) -> list[TrajectoryData]:
+        """Deprecated alias for :attr:`records`."""
+        return self.records
+
     def __len__(self) -> int:
-        return len(self.trajectory)
+        return len(self.records)
 
     def __iter__(self):
-        yield from self.trajectory
+        yield from self.records
 
     def __getitem__(self, item):
-        return self.trajectory[item]
+        return self.records[item]
 
     def _check_extra(self):
         if not self.extra:
@@ -977,7 +995,7 @@ class HitResult:
         """
         self._check_flag(flag)
         event_flags = TrajFlag.ZERO | TrajFlag.MACH | TrajFlag.APEX | TrajFlag.MRT
-        rows = self.events if flag & event_flags else self.trajectory
+        rows = self.events if flag & event_flags else self.records
         for row in rows:
             if row.flag & flag:
                 return row
@@ -1026,7 +1044,7 @@ class HitResult:
         if key_attribute == "flag":
             raise KeyError("Cannot interpolate based on 'flag' attribute")
 
-        # ``trajectory`` is a presentation table of scheduled samples.  It may
+        # ``samples`` is a presentation table of scheduled samples.  It may
         # coalesce physical events onto nearby RANGE rows, so it must not be
         # the fallback source for a numerical query.  ``base_data`` above is
         # preferred because it supplies the integrator's local interpolant;
@@ -1242,11 +1260,11 @@ class HitResult:
         try:
             begin_row = self.get_at("slant_height", slant_height_begin, start_from_time=target_row.time)
         except ArithmeticError:
-            begin_row = self.trajectory[0]
+            begin_row = self.records[0]
         try:
             end_row = self.get_at("slant_height", slant_height_end, start_from_time=target_row.time)
         except ArithmeticError:
-            end_row = self.trajectory[-1]
+            end_row = self.records[-1]
 
         return DangerSpace(target_row, target_height, begin_row, end_row, Angular.Radian(self.props.look_angle_rad))
 

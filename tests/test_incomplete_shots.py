@@ -86,7 +86,7 @@ def test_no_duplicate_points(loaded_engine_instance):
     calc = Calculator(config=config, engine=loaded_engine_instance)
     hit_result = calc.fire(shot, range, trajectory_step=Distance.Foot(100), raise_range_error=False)
     print_out_trajectory_compact(hit_result)
-    assert len(hit_result.trajectory) >= 2
+    assert len(hit_result.records) >= 2
     assert hit_result[-2] != hit_result[-1]
     result_at_zero = hit_result.get_at('distance', zero_distance)
     assert result_at_zero is not None
@@ -139,7 +139,7 @@ def test_end_points_are_included(distance, height, angle_in_degrees, zero_height
     start_time_extra_data = time.time()
     hit_result_extra_data = calc.fire(shot, range, flags=flags, raise_range_error=False)
     end_time_extra_data = time.time()
-    print(f'{flags=} {len(hit_result_extra_data.trajectory)=} {(end_time_extra_data-start_time_extra_data)=:.3f}s')
+    print(f'{flags=} {len(hit_result_extra_data.records)=} {(end_time_extra_data-start_time_extra_data)=:.3f}s')
     print_out_trajectory_compact(hit_result_extra_data, f"{flags=}")
     last_point_extra_data = hit_result_extra_data[-1]
     distance_extra_data = last_point_extra_data.distance >> Distance.Meter
@@ -150,7 +150,7 @@ def test_end_points_are_included(distance, height, angle_in_degrees, zero_height
     start_time_no_extra_data = time.time()
     hit_result_no_extra_data = calc.fire(shot, range, flags=flags, raise_range_error=False)
     end_time_no_extra_data = time.time()
-    print(f'{flags=} {len(hit_result_no_extra_data.trajectory)=} {(end_time_no_extra_data-start_time_no_extra_data)=:.3f}s')
+    print(f'{flags=} {len(hit_result_no_extra_data.records)=} {(end_time_no_extra_data-start_time_no_extra_data)=:.3f}s')
     print_out_trajectory_compact(hit_result_no_extra_data, f"extra_data={flags=}")
 
     last_point_no_extra_data = hit_result_no_extra_data[-1]
@@ -170,8 +170,8 @@ def test_time_step_recording_and_range_steps(loaded_engine_instance):
     shot = create_5_56_mm_shot()
     # tiny range; request time sampling so we get RANGE flags even if dist_step not set
     res = calc.integrate(shot, Distance.Yard(5), None, time_step=0.001)
-    assert len(res.trajectory) >= 2
-    assert res.trajectory[1].flag & TrajFlag.RANGE
+    assert len(res.samples) >= 2
+    assert res.samples[1].flag & TrajFlag.RANGE
 
 
 def test_mach_and_zero_flags_found(loaded_engine_instance):

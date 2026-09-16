@@ -200,7 +200,7 @@ def find_index_of_point_for_distance(shot: HitResult, distance: float, distance_
         return (p.distance >> distance_unit) >= distance
 
     # return find_first_index_matching_condition(shot, distance_is_bigger_or_equal)
-    return find_first_index_satisfying_monotonic_condition(shot.trajectory, distance_ge)
+    return find_first_index_satisfying_monotonic_condition(shot.records, distance_ge)
 
 
 def find_index_for_time_point(
@@ -230,10 +230,10 @@ def find_index_for_time_point(
     if time < 0:
         raise ValueError(f"Illegal searched time passed {time}")
     if strictly_bigger_or_equal:
-        return find_first_index_satisfying_monotonic_condition(shot.trajectory, lambda e: e.time - time >= 0)
+        return find_first_index_satisfying_monotonic_condition(shot.records, lambda e: e.time - time >= 0)
     else:
-        index = find_nearest_index_satisfying_monotonic_condition(shot.trajectory, time, lambda e: e.time)
-        if abs(shot.trajectory[index].time - time) <= max_time_deviation_in_seconds:
+        index = find_nearest_index_satisfying_monotonic_condition(shot.records, time, lambda e: e.time)
+        if abs(shot.records[index].time - time) <= max_time_deviation_in_seconds:
             return index
         return -1
 

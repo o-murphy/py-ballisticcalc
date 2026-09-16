@@ -80,8 +80,8 @@ class TestFindIndex:
             one_degree_shot, one_second_time_point, strictly_bigger_or_equal=False
         )
         print(f"{index=}")
-        assert abs(one_degree_shot.trajectory[index].time - one_second_time_point) <= abs(
-            one_degree_shot.trajectory[index + 1].time - one_second_time_point
+        assert abs(one_degree_shot.records[index].time - one_second_time_point) <= abs(
+            one_degree_shot.records[index + 1].time - one_second_time_point
         )
 
         # when strictly_bigger_or_equal is True, we are finding first existing time point, which is bigger or equal to
@@ -98,15 +98,15 @@ class TestFindIndex:
             one_degree_shot, shot_max_time_point, strictly_bigger_or_equal=False
         )
         assert last_point_index != -1
-        # print(f"{shot_max_time_point=} {one_degree_shot.trajectory[last_point_index].time=} {last_point_index=}" )
-        # print(f"{shot_max_time_point=} {one_degree_shot.trajectory[len(one_degree_shot.trajectory) - 1].time=} {len(one_degree_shot.trajectory) - 1=}")
-        assert last_point_index == len(one_degree_shot.trajectory) - 1
+        # print(f"{shot_max_time_point=} {one_degree_shot.records[last_point_index].time=} {last_point_index=}" )
+        # print(f"{shot_max_time_point=} {one_degree_shot.records[len(one_degree_shot.records) - 1].time=} {len(one_degree_shot.records) - 1=}")
+        assert last_point_index == len(one_degree_shot.records) - 1
 
         last_point_index = find_index_for_time_point(
             one_degree_shot, shot_max_time_point, strictly_bigger_or_equal=True
         )
         assert last_point_index != -1
-        assert last_point_index == len(one_degree_shot.trajectory) - 1
+        assert last_point_index == len(one_degree_shot.records) - 1
 
         # if deviation of searched time point is equal to max_time_deviation_in_seconds, then last point should be found
         index = find_index_for_time_point(
@@ -115,7 +115,7 @@ class TestFindIndex:
             strictly_bigger_or_equal=False,
             max_time_deviation_in_seconds=1,
         )
-        assert index == len(one_degree_shot.trajectory) - 1
+        assert index == len(one_degree_shot.records) - 1
 
         index = find_index_for_time_point(
             one_degree_shot,
@@ -144,7 +144,7 @@ class TestFindIndex:
 
     def test_find_index_for_distance(self, one_degree_shot):
         shot = one_degree_shot
-        shot_max_distance = shot.trajectory[-1].distance >> Distance.Meter
+        shot_max_distance = shot.records[-1].distance >> Distance.Meter
         print(f"{shot_max_distance=}")
         assert 0 == find_index_of_point_for_distance(shot, 0)
 
@@ -152,15 +152,15 @@ class TestFindIndex:
         assert find_index_of_point_for_distance(shot, 500) < find_index_of_point_for_distance(shot, 1000)
         assert 1000 < shot_max_distance
 
-        assert len(shot.trajectory) - 1 == find_index_of_point_for_distance(
+        assert len(shot.records) - 1 == find_index_of_point_for_distance(
             shot, shot_max_distance, distance_unit=Distance.Meter
         )
         # for reproducibility
         random.seed(42)
-        random_indices = random.sample(range(len(shot.trajectory)), min(10, len(shot.trajectory)))
+        random_indices = random.sample(range(len(shot.records)), min(10, len(shot.records)))
         start_time = time.time()
         for i in random_indices:
-            p = shot.trajectory[i]
+            p = shot.records[i]
             assert find_index_for_time_point(
                 shot, p.time
             ) == find_index_of_point_for_distance(

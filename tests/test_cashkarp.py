@@ -66,7 +66,7 @@ class TestCashKarp:
         assert tight.relative_tolerance == 1e-8
         assert tight_accepted > loose_accepted
         # Adaptive internal spacing must not alter scheduled table cardinality.
-        assert len(tight_result.trajectory) == len(loose_result.trajectory) == 21
+        assert len(tight_result.samples) == len(loose_result.samples) == 21
 
     def test_cashkarp_default_tolerance_matches_conservative_rk4_reference(self):
         """The default rtol remains close to a 5x finer fixed-step RK4 reference."""
@@ -78,14 +78,14 @@ class TestCashKarp:
         result = _integrate(cash_karp, shot)
 
         assert cash_karp.relative_tolerance == 1e-6
-        assert len(result.trajectory) == len(reference.trajectory)
+        assert len(result.samples) == len(reference.samples)
         assert max(
             abs(actual.height.raw_value - expected.height.raw_value)
-            for actual, expected in zip(result.trajectory, reference.trajectory)
+            for actual, expected in zip(result.samples, reference.samples)
         ) < 0.06
         assert max(
             abs(actual.velocity.raw_value - expected.velocity.raw_value)
-            for actual, expected in zip(result.trajectory, reference.trajectory)
+            for actual, expected in zip(result.samples, reference.samples)
         ) < 0.03
 
         reference_events = {event.flag: event for event in reference.events}
@@ -125,14 +125,14 @@ class TestCashKarp:
         cash_karp = self.exts.CythonizedCashKarpIntegrationEngine({"relative_tolerance": rtol})
         result = _integrate(cash_karp, shot)
 
-        assert len(result.trajectory) == len(reference.trajectory)
+        assert len(result.samples) == len(reference.samples)
         assert max(
             abs(actual.height.raw_value - expected.height.raw_value)
-            for actual, expected in zip(result.trajectory, reference.trajectory)
+            for actual, expected in zip(result.samples, reference.samples)
         ) < 0.1
         assert max(
             abs(actual.velocity.raw_value - expected.velocity.raw_value)
-            for actual, expected in zip(result.trajectory, reference.trajectory)
+            for actual, expected in zip(result.samples, reference.samples)
         ) < 0.05
 
         reference_events = {event.flag: event for event in reference.events}

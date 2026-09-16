@@ -7,8 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [2.4.0-beta.1] - 2026-09-16
-[:simple-github: Diff since v2.3.1][2.4.0-beta.1]
+## [3.0.0-beta.1] - 2026-09-16
+[:simple-github: Diff since v2.3.1][3.0.0-beta.1]
 
 ### Added
 - `cythonized_ck_engine` (`py_ballisticcalc_exts.CythonizedCashKarpIntegrationEngine`): a
@@ -58,11 +58,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   same instant are no longer merged into one row with combined flags — they are kept as
   independent records, only re-sorted into chronological order (each was already correctly
   positioned relative to *its own* neighbors; only cross-interval ordering needed restoring).
-  `HitResult.trajectory`'s own "annotate the closest scheduled sample with each event's flag"
+  `HitResult.samples`'s own "annotate the closest scheduled sample with each event's flag"
   projection already performs the equivalent view generically from independent records (see
   `docs/concepts/trajectory_data.md`), so pre-merging here duplicated — and could conflict
   with — that step. Matches the same fix applied to `TrajectoryDataFilter.record_step` and
   bclibc's C++ `BCLIBC_TrajectoryDataFilter::handle_step` (project issue #350).
+- **BREAKING:** `HitResult.__len__`/`__iter__`/`__getitem__`, `dataframe()`, and `plot()` now
+  read from `records` (the exact chronological stream) instead of the old `trajectory`
+  presentation table. Concretely: `len(hit_result)`, `for row in hit_result`, and
+  `hit_result[i]` now include every exact ZERO/MACH/APEX/MRT event row in its own chronological
+  position, rather than folding its flag onto the nearest RANGE-scheduled sample. Renamed the
+  old `trajectory` presentation view (fixed cardinality tracking the requested RANGE/TIME
+  schedule regardless of solver internals — see `test_cashkarp_tolerance_controls_adaptive_step_count`)
+  to `samples`, so it stays available under an explicit name for anyone comparing output across
+  engines or tolerances. `HitResult.trajectory` itself is kept as a deprecated alias for
+  `records` (see Deprecated below) so existing attribute access keeps working, just with a
+  different row count/order than before if event flags were requested; code that indexed
+  `.trajectory` assuming the fixed RANGE/TIME schedule should switch to `.samples`.
+
+### Deprecated
+- `HitResult.trajectory`: alias for `HitResult.records` retained for source compatibility
+  (emits `DeprecationWarning`). Use `.records` for the exact chronological stream, or `.samples`
+  for the deterministic scheduled-sample table (what `.trajectory` used to mean before this
+  release's `records`/`samples`/`events` split).
 
 ### Fixed
 - `py_ballisticcalc/trajectory_data.py`: `HitResult.interpolate()`, `index_at_distance()`,
@@ -816,7 +834,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Issue #141
 - Trajectories that bend backwards
 
-[2.4.0-beta.1]: https://github.com/o-murphy/py-ballisticcalc/compare/v2.3.1...HEAD
+[3.0.0-beta.1]: https://github.com/o-murphy/py-ballisticcalc/compare/v2.3.1...HEAD
 [2.3.1]: https://github.com/o-murphy/py-ballisticcalc/releases/tag/v2.3.1
 [#339]: https://github.com/o-murphy/py-ballisticcalc/pull/339
 [#340]: https://github.com/o-murphy/py-ballisticcalc/pull/340

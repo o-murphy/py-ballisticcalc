@@ -25,7 +25,7 @@ class TestMBC:
         self.calc = Calculator(engine=loaded_engine_instance)
         self.baseline_shot = Shot(weapon=self.weapon, ammo=self.ammo)
         self.baseline_trajectory = self.calc.fire(shot=self.baseline_shot, trajectory_range=self.range,
-                                                  trajectory_step=self.step).trajectory
+                                                  trajectory_step=self.step).samples
 
     def test_bcpoint_validation_errors(self):
         with pytest.raises(ValueError):
@@ -61,7 +61,7 @@ class TestMBC:
             [BCPoint(.22, V=Velocity.FPS(2500)), BCPoint(.22, V=Velocity.FPS(1500)), BCPoint(BC=.22, Mach=3)], TableG7)
         multi_shot = Shot(weapon=self.weapon, ammo=Ammo(dm_multi, self.ammo.mv))
         multi_trajectory = self.calc.fire(shot=multi_shot, trajectory_range=self.range,
-                                          trajectory_step=self.step).trajectory
+                                          trajectory_step=self.step).samples
         for i in range(len(multi_trajectory)):
             assert multi_trajectory[i].formatted() == self.baseline_trajectory[i].formatted()
 
@@ -70,7 +70,7 @@ class TestMBC:
         dm_multi = DragModelMultiBC([BCPoint(.22, V=Velocity.FPS(2700)), BCPoint(.5, V=Velocity.FPS(3500))], TableG7)
         multi_shot = Shot(weapon=self.weapon, ammo=Ammo(dm_multi, self.ammo.mv))
         multi_trajectory = self.calc.fire(shot=multi_shot, trajectory_range=self.range,
-                                          trajectory_step=self.step).trajectory
+                                          trajectory_step=self.step).samples
         for i in range(len(multi_trajectory)):
             assert multi_trajectory[i].formatted() == self.baseline_trajectory[i].formatted()
 
@@ -83,7 +83,7 @@ class TestMBC:
             TableG7)
         multi_shot = Shot(weapon=self.weapon, ammo=Ammo(dm_multi, self.ammo.mv))
         multi_trajectory = self.calc.fire(shot=multi_shot, trajectory_range=self.range,
-                                          trajectory_step=self.step).trajectory
+                                          trajectory_step=self.step).samples
         # Should show no change before 200 yards
         assert pytest.approx(multi_trajectory[1].velocity.raw_value, abs=1e-3) == self.baseline_trajectory[
             1].velocity.raw_value

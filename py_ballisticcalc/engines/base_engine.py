@@ -736,7 +736,7 @@ class BaseIntegrationEngine(ABC, EngineProtocol):
             _res = self._integrate(props, target_x_ft, target_x_ft, filter_flags=TrajFlag.NONE)
             if _res.error is not None:
                 logger.warning(f"Integrator error in error_at_distance({angle_rad}): {_res.error}")
-            t = _res.trajectory[-1]
+            t = _res.records[-1]
             if t.time == 0.0:
                 logger.warning("Integrator returned initial point. Consider removing constraints.")
                 return 9e9

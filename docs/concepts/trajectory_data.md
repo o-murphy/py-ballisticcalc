@@ -16,32 +16,46 @@ time-tolerance merge between a scheduled row and a physical event.
 
 | View | Contents | Use it for |
 | --- | --- | --- |
-| `trajectory` | Deterministic scheduled RANGE/TIME samples. Nearby event flags are annotated on the closest sample. | Tables, plots, indexing, and a stable row count. |
+| `records` | The complete, exact chronological output stream: every scheduled sample and every physical event, each its own row. | `len(result)`, iteration, indexing, `dataframe()`, `plot()` — anything that wants full fidelity. |
+| `samples` | Deterministic scheduled RANGE/TIME samples. Nearby event flags are annotated on the closest sample. | Comparing output across engines or solver tolerances, where accepted-step timing differs but the requested schedule does not (its cardinality tracks the schedule, not the integrator's internal steps). |
 | `events` | Exact interpolated physical events: ZERO, MACH, APEX, and MRT. | The physical time, position, velocity, or other state at an event. |
-| `records` | The complete chronological output stream before table projection. | Integrator-level consumers that need both scheduled samples and exact event rows. |
 
-`trajectory` is the normal public table, so `len(result)`, iteration,
-indexing, `dataframe()`, and plotting all use it. Its cardinality follows
-the requested RANGE/TIME schedule rather than accepted integration steps or
-whether an event happens to land close to a scheduled sample. An annotated
-row is a scheduled sample; its data must not be treated as the exact event
-root.
+`records` backs the everyday container protocol, so `len(result)`,
+iteration, indexing, `dataframe()`, and `plot()` all see every exact event
+row in its own chronological position — nothing is folded onto a
+neighboring sample. Use `samples` instead when you specifically need a
+table whose row count doesn't change with solver internals (e.g.
+`test_cashkarp_tolerance_controls_adaptive_step_count` relies on this to
+compare a tight- and loose-tolerance run row-for-row). A `samples` row
+annotated with an event flag is still a scheduled sample; its data must not
+be treated as the exact event root — use `events` for that.
 
 ```python
 result = calc.fire(shot, trajectory_range=Distance.Yard(1_000), flags=TrajFlag.ALL)
 
-# Stable output table for presentation.
-for sample in result.trajectory:
-    print(sample.distance, sample.flag)
+# Full-fidelity output: every event gets its own exact row.
+for row in result:  # equivalent to `for row in result.records`
+    print(row.distance, row.flag)
 
 # Exact event state.
 zero_down = result.flag(TrajFlag.ZERO_DOWN)
 mach_transition = result.flag(TrajFlag.MACH)
 all_events = result.events
 
-# Unprojected chronological stream, when the distinction matters.
-raw_records = result.records
+# Deterministic schedule table, e.g. to compare two engines row-for-row.
+schedule = result.samples
 ```
+
+!!! warning "`HitResult.trajectory` is deprecated"
+    Before this release's `records`/`samples`/`events` split, `trajectory`
+    was the only view, and it had `samples`' semantics (event flags folded
+    onto the nearest scheduled row). `HitResult.trajectory` is now a
+    deprecated alias for `records` — kept so old code still runs, but with
+    `records`' row count/order, not the old `trajectory`'s. Code that
+    indexed `.trajectory` assuming a fixed RANGE/TIME-schedule cardinality
+    should switch to `.samples`; code that just wanted every point should
+    switch to `.records` (or drop the attribute and iterate the
+    `HitResult` directly).
 
 The compatibility constructor spelling `HitResult(..., trajectory=rows)` is
 still accepted; its rows are interpreted as `records` before these views are
