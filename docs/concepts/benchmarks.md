@@ -77,23 +77,33 @@ SciPy is something of a black box: one cannot be certain exactly how it will pro
 
 `cythonized_ck_engine` is not (yet) part of the `BenchmarkEngines.ipynb` study above; the
 numbers here come from `scripts/benchmark.py` (`Trajectory`/`Zero` cases, same 2000m G7 shot
-profile: 0.22 BC, 10g/7.62mm, 800 m/s, ICAO atmosphere) run head-to-head against
-`cythonized_rk4_engine` in the same process (500 repeats, 50 warmup):
+profile: 0.22 BC, 10g/7.62mm, 800 m/s, ICAO atmosphere), each engine run separately (500
+repeats, 50 warmup for the two Cython engines; the pure-Python `rk4_engine` used fewer repeats
+since it's much slower per call — see the "mean-ms" caveat below):
 
 | Case | Engine | Mean (ms) |
 |---|---|---|
-| Trajectory | `cythonized_rk4_engine` | 0.59 |
-| Trajectory | `cythonized_ck_engine` | 0.28 (2.1x faster) |
-| Zero | `cythonized_rk4_engine` | 1.72 |
-| Zero | `cythonized_ck_engine` | 0.12 (14.3x faster) |
+| Trajectory | `rk4_engine` (pure Python) | 86.52 |
+| Trajectory | `cythonized_rk4_engine` | 0.75 |
+| Trajectory | `cythonized_ck_engine` | 0.31 (2.4x faster than `cythonized_rk4_engine`) |
+| Zero | `rk4_engine` (pure Python) | 376.13 |
+| Zero | `cythonized_rk4_engine` | 1.86 |
+| Zero | `cythonized_ck_engine` | 0.13 (14.3x faster than `cythonized_rk4_engine`) |
+
+These are mean wall-clock milliseconds per call on one particular machine, not a portable
+constant — re-running this script elsewhere reproduces the *relative* Cython-vs-Cython ratios
+(2.4x / 14.3x) far more reliably than any ratio involving the pure-Python row, because
+interpreter overhead varies a lot more across hardware than compiled-code throughput does. Use
+the raw ms figures (or run the script yourself) if you need a ratio for your own machine rather
+than trusting the ones quoted here or in the [engines](engines.md#summary) table.
 
 Like SciPy's adaptive solvers, Cash-Karp dynamically adjusts its internal step size to meet an
 error tolerance (`relative_tolerance`, default `1e-6`) rather than taking a fixed number of
 steps — see [Adaptive integration (Cash-Karp)](engines.md#adaptive-integration-cash-karp) for
-how that tolerance was chosen and what had to be fixed elsewhere in the engine (event/row
-interpolation) to make sparse adaptive sampling produce correct output. `Zero`'s much larger
-speedup than `Trajectory`'s reflects `set_weapon_zero` integrating repeatedly — once per
-damped-Newton iteration — so a per-call reduction in accepted steps compounds across iterations.
+how that tolerance was chosen, what had to be fixed elsewhere in the engine (event/row
+interpolation) to make sparse adaptive sampling produce correct output, and why `Zero`'s speedup
+over `Trajectory`'s is so much larger even when comparing the same two Cython engines directly
+(it isn't just "iterations compound" — it's where the Python/C++ call boundary falls).
 
 [BenchmarkEngines.ipynb]:
 https://github.com/o-murphy/py_ballisticcalc/blob/master/examples/BenchmarkEngines.ipynb

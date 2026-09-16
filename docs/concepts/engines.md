@@ -12,10 +12,10 @@ py-ballisticcalc provides various calculation engines with identical public sema
 | [`cythonized_rk4_engine`][py_ballisticcalc_exts.CythonizedRK4IntegrationEngine]     | :material-arrow-up:   112x / 200x (faster)    | [`[exts]`](#cython-engines) | Compiled Runge-Kutta 4th-order          |
 | [`cythonized_euler_engine`][py_ballisticcalc_exts.CythonizedEulerIntegrationEngine] | :material-arrow-up:    47x / 65x (faster)     | [`[exts]`](#cython-engines) | Compiled Euler integration              |
 | [`cythonized_verlet_engine`][py_ballisticcalc_exts.CythonizedVelocityVerletIntegrationEngine] | :material-arrow-up:   157x / 100x (faster)    | [`[exts]`](#cython-engines) | Compiled Verlet 2nd-order symplectic    |
-| [`cythonized_ck_engine`][py_ballisticcalc_exts.CythonizedCashKarpIntegrationEngine][^ck] | :material-arrow-up:  much faster (see below)  | [`[exts]`](#cython-engines) | Compiled Cash-Karp adaptive RK45        |
+| [`cythonized_ck_engine`][py_ballisticcalc_exts.CythonizedCashKarpIntegrationEngine][^ck] | :material-arrow-up:  ~2900x / ~280x (faster)  | [`[exts]`](#cython-engines) | Compiled Cash-Karp adaptive RK45        |
 | [`scipy_engine`][py_ballisticcalc.engines.SciPyIntegrationEngine]                   | :material-arrow-up:   6.2x / 5.8x (faster)    |          `[scipy]`          | Advanced numerical methods              |
 
-[^ck]: Unlike the other rows, this one deliberately omits a number relative to the pure-Python `rk4_engine` baseline. That composition requires multiplying through `cythonized_rk4_engine`'s own baseline-relative figure above (from the separate `BenchmarkEngines.ipynb` study, different hardware/scenario), and pure-Python interpreter overhead varies enough across machines that the result doesn't reproduce — confirmed when a from-scratch re-run in this session (~271x Trajectory / ~2900x Find Zero) did not match an independent run on different hardware. What *is* directly measured and reproducible on more than one machine: `cythonized_ck_engine` vs. `cythonized_rk4_engine` is 2.1x (Trajectory) / 14.3x (Find Zero) faster (`scripts/benchmark.py`, 500 repeats, 50 warmup — see [benchmarks](benchmarks.md#cash-karp-engine)). See [Adaptive integration (Cash-Karp)](#adaptive-integration-cash-karp) below for why those two numbers differ so much even though both compare the same pair of engines.
+[^ck]: Measured directly against pure-Python `rk4_engine` with `scripts/benchmark.py` (not composed through `cythonized_rk4_engine`'s own baseline-relative figure above, which is from a separate study/hardware). Like every multiplier in this table, treat it as a rough, hardware-dependent order of magnitude rather than a portable constant: pure-Python interpreter overhead varies a lot across machines, so the exact multiple you'll see depends heavily on your CPU. The [benchmarks](benchmarks.md#cash-karp-engine) page lists the raw mean-ms figures (including for `rk4_engine`) this is derived from, so you can recompute the ratio that matters for your own hardware. See [Adaptive integration (Cash-Karp)](#adaptive-integration-cash-karp) below for why Find Zero and Trajectory differ so much even when comparing just the two Cython engines directly.
 
 * This project will default to the [`rk4_engine`][py_ballisticcalc.engines.RK4IntegrationEngine].
 * For higher speed and precision use the [`scipy_engine`][py_ballisticcalc.engines.SciPyIntegrationEngine].
@@ -56,7 +56,7 @@ exceeds `relative_tolerance` (default `1e-6`, configurable per instance). This n
 accepted steps than fixed-step RK4 for comparable accuracy.
 
 That step-count reduction alone doesn't explain why `set_weapon_zero`'s speedup (14.3x vs.
-`cythonized_rk4_engine`) is so much larger than a single `fire()` call's (2.1x): both compare the
+`cythonized_rk4_engine`) is so much larger than a single `fire()` call's (2.4x): both compare the
 same pair of engines on the same 2000m shot. The difference is where the Python/C++ call
 boundary falls. `fire()` crosses that boundary once per call, but still pays a roughly fixed
 per-call cost (unit conversions, building `HitResult`/`TrajectoryData` rows) on top of the raw
