@@ -93,3 +93,30 @@ class TestHitResult:
         # so records must be strictly longer than the schedule-only samples table.
         assert len(self.shot_result.records) > len(self.shot_result.samples)
         assert len(self.shot_result.records) == len(self.shot_result.samples) + len(self.shot_result.events)
+
+    def test_samples_do_not_glue_distant_events_onto_nearest_sample(self):
+        """A coarse schedule (only launch/terminal samples) must not smear every event onto one row.
+
+        Regression test: with trajectory_range == trajectory_step, only the launch and terminal
+        samples exist. ZERO_UP/APEX/ZERO_DOWN all occur well before the terminal sample, so the
+        old "annotate whichever sample is nearest" logic glued all three onto the launch sample
+        (t=0), producing a nonsensical combined flag that misrepresented the launch state as
+        every event's. None of these events are actually close (in time) to either sample, so
+        none should be annotated in `.samples` -- they remain exact and findable via `.events`.
+        """
+        coarse = self.calc.fire(self.shot, trajectory_range=Distance.Yard(1000),
+                                trajectory_step=Distance.Yard(1000), flags=TrajFlag.ALL)
+        assert len(coarse.samples) == 2, "Only the launch and terminal samples are requested"
+
+        event_flags = TrajFlag.ZERO | TrajFlag.MACH | TrajFlag.APEX
+        for sample in coarse.samples:
+            assert not (sample.flag & event_flags), (
+                f"sample at t={sample.time} unexpectedly carries event flag "
+                f"{TrajFlag.name(sample.flag & event_flags)}"
+            )
+
+        # The events themselves stay exact, unaffected by not being annotated in `.samples`.
+        assert coarse.flag(TrajFlag.ZERO_UP) is not None
+        assert coarse.flag(TrajFlag.APEX) is not None
+        assert coarse.flag(TrajFlag.ZERO_DOWN) is not None
+        assert coarse.flag(TrajFlag.MACH) is not None

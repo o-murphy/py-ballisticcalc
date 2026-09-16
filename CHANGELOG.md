@@ -83,6 +83,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   release's `records`/`samples`/`events` split).
 
 ### Fixed
+- `py_ballisticcalc/trajectory_data.py`: `HitResult.samples` annotated the *nearest* scheduled
+  sample with every event's flag unconditionally, with no check that the two were actually
+  close. With a coarse schedule (e.g. `trajectory_step == trajectory_range`, leaving only the
+  launch and terminal samples) and `flags=TrajFlag.ALL`, every event in between — APEX, ZERO,
+  MACH — landed on whichever endpoint bisection preferred, producing one row with a nonsensical
+  combined flag (e.g. `ZERO_DOWN|RANGE|APEX`) that misrepresented that endpoint's own state as
+  every event's. `samples` now annotates a sample only when `math.isclose()` (using the new
+  `_SAME_INSTANT_REL_TOL`/`_SAME_INSTANT_ABS_TOL` constants) judges the sample and the event to
+  be the same instant to floating-point precision — the genuine case this exists for (e.g. a
+  RANGE sample requested at the same distance a zero was set for, reached by two different
+  numerical paths that agree to solver residual) — rather than merely the closest of however
+  many samples happen to exist. A relative tolerance (not the engines' own tolerance knobs,
+  which use incompatible units — feet for `cZeroFindingAccuracy`, a state-error rtol for
+  `relative_tolerance`, a step-size multiplier for `cStepMultiplier`, none of them a time
+  tolerance) keeps the check independent of flight-time scale and any specific engine's
+  precision, while staying far tighter than the gap between any two physically distinct
+  trajectory events. `samples`' cardinality is unaffected either way (it always equals the
+  requested RANGE/TIME schedule's), so cross-engine/tolerance comparisons relying on that (see
+  `test_cashkarp_tolerance_controls_adaptive_step_count`) still hold.
 - `py_ballisticcalc/trajectory_data.py`: `HitResult.interpolate()`, `index_at_distance()`,
   `get_at_distance()`, and `get_at_time()` searched `self.trajectory` — the presentation table
   that projects events onto nearby scheduled samples — instead of `self.records`, the exact

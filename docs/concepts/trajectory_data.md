@@ -17,7 +17,7 @@ time-tolerance merge between a scheduled row and a physical event.
 | View | Contents | Use it for |
 | --- | --- | --- |
 | `records` | The complete, exact chronological output stream: every scheduled sample and every physical event, each its own row. | `len(result)`, iteration, indexing, `dataframe()`, `plot()` — anything that wants full fidelity. |
-| `samples` | Deterministic scheduled RANGE/TIME samples. Nearby event flags are annotated on the closest sample. | Comparing output across engines or solver tolerances, where accepted-step timing differs but the requested schedule does not (its cardinality tracks the schedule, not the integrator's internal steps). |
+| `samples` | Deterministic scheduled RANGE/TIME samples. A sample is annotated with an event's flag only when the two are the same instant to floating-point precision — never merely the nearest one. | Comparing output across engines or solver tolerances, where accepted-step timing differs but the requested schedule does not (its cardinality tracks the schedule, not the integrator's internal steps). |
 | `events` | Exact interpolated physical events: ZERO, MACH, APEX, and MRT. | The physical time, position, velocity, or other state at an event. |
 
 `records` backs the everyday container protocol, so `len(result)`,
@@ -29,6 +29,18 @@ table whose row count doesn't change with solver internals (e.g.
 compare a tight- and loose-tolerance run row-for-row). A `samples` row
 annotated with an event flag is still a scheduled sample; its data must not
 be treated as the exact event root — use `events` for that.
+
+`samples` never annotates a sample just because it's the *closest* one —
+only when the sample and the event are, in effect, the same instant (an
+`HitResult.samples`-level `math.isclose()` check, independent of any
+engine's own tolerance settings, which use incompatible units — feet,
+state-error rtol, step multiplier — none of them a time tolerance). With a
+coarse schedule this matters: `trajectory_range == trajectory_step` leaves
+only the launch and terminal samples, so an APEX or ZERO in between is not
+genuinely close to either one — it stays unannotated in `samples` (visible
+only in `events`) rather than getting glued onto whichever endpoint
+bisection happens to prefer, which would otherwise misrepresent that
+endpoint's own state as the event's.
 
 ```python
 result = calc.fire(shot, trajectory_range=Distance.Yard(1_000), flags=TrajFlag.ALL)

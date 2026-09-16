@@ -844,6 +844,17 @@ class DangerSpace(NamedTuple):
             raise ImportError("Use `pip install py_ballisticcalc[charts]` to get results as a plot") from err
 
 
+# "Same instant" tolerance for HitResult.samples' event-to-sample annotation (see there).
+# Engines expose no unified precision knob to derive this from -- cZeroFindingAccuracy is in
+# feet, relative_tolerance is a state-error rtol, cStepMultiplier scales step size, and none of
+# them is a time tolerance -- so this is a fixed, deliberately generous pair of constants
+# instead: comfortably larger than any engine's numerical residual in a solved crossing time,
+# yet far below the gap between any two physically distinct trajectory events at ballistic
+# timescales.
+_SAME_INSTANT_REL_TOL: Final[float] = 1e-3
+_SAME_INSTANT_ABS_TOL: Final[float] = 1e-6
+
+
 # pylint: disable=import-outside-toplevel
 @dataclass(frozen=True, init=False)
 class HitResult:
@@ -915,12 +926,20 @@ class HitResult:
         """Return the deterministic scheduled-sample table.
 
         Physical events remain exact in :attr:`events`; this presentation view
-        annotates the closest scheduled sample with each event flag.  Thus its
-        cardinality is determined by the sampling schedule rather than the
-        integrator's accepted-step boundaries or event proximity — use this
-        (rather than :attr:`records`) when comparing output across engines or
-        solver tolerances, where accepted-step timing differs but the
-        requested RANGE/TIME schedule does not.
+        annotates a scheduled sample with an event's flag only when the two
+        are, to floating-point precision, the *same instant* (see
+        :func:`math.isclose`'s use below) — e.g. a RANGE sample requested at
+        the same distance a zero was set for, which the integrator reaches by
+        two different numerical paths that agree to solver residual. It never
+        annotates merely the *nearest* sample when no sample is actually
+        that close: with a coarse schedule (e.g. ``trajectory_step ==
+        trajectory_range``, leaving only the launch and terminal samples) an
+        APEX or ZERO in between is not close to either endpoint, so it would
+        otherwise get glued onto whichever endpoint bisection happens to
+        prefer — misrepresenting that endpoint's own state as the event's.
+        Cardinality always equals the sampling schedule's, regardless of
+        whether any annotation occurs, so it is stable across engines and
+        solver tolerances even though *which* samples get annotated is not.
         """
         event_flags = TrajFlag.ZERO | TrajFlag.MACH | TrajFlag.APEX | TrajFlag.MRT
         samples = [
@@ -945,8 +964,11 @@ class HitResult:
                 left = right - 1
                 # For an exact tie use the later scheduled row, consistently.
                 index = left if event.time - sample_times[left] < sample_times[right] - event.time else right
-            sample = projected[index]
-            projected[index] = sample._replace(flag=sample.flag | event.flag)
+            if math.isclose(
+                sample_times[index], event.time, rel_tol=_SAME_INSTANT_REL_TOL, abs_tol=_SAME_INSTANT_ABS_TOL
+            ):
+                sample = projected[index]
+                projected[index] = sample._replace(flag=sample.flag | event.flag)
         return projected
 
     @property
