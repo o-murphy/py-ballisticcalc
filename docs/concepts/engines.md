@@ -12,14 +12,14 @@ py-ballisticcalc provides various calculation engines with identical public sema
 | [`cythonized_rk4_engine`][py_ballisticcalc_exts.CythonizedRK4IntegrationEngine]     | :material-arrow-up:   112x / 200x (faster)    | [`[exts]`](#cython-engines) | Compiled Runge-Kutta 4th-order          |
 | [`cythonized_euler_engine`][py_ballisticcalc_exts.CythonizedEulerIntegrationEngine] | :material-arrow-up:    47x / 65x (faster)     | [`[exts]`](#cython-engines) | Compiled Euler integration              |
 | [`cythonized_verlet_engine`][py_ballisticcalc_exts.CythonizedVelocityVerletIntegrationEngine] | :material-arrow-up:   157x / 100x (faster)    | [`[exts]`](#cython-engines) | Compiled Verlet 2nd-order symplectic    |
-| `cythonized_ck_engine`[^ck]                                                         | :material-arrow-up:  ~235x / ~2860x (faster)  | [`[exts]`](#cython-engines) | Compiled Cash-Karp adaptive RK45        |
+| [`cythonized_ck_engine`][py_ballisticcalc_exts.CythonizedCashKarpIntegrationEngine][^ck] | :material-arrow-up:  ~235x / ~2860x (faster)  | [`[exts]`](#cython-engines) | Compiled Cash-Karp adaptive RK45        |
 | [`scipy_engine`][py_ballisticcalc.engines.SciPyIntegrationEngine]                   | :material-arrow-up:   6.2x / 5.8x (faster)    |          `[scipy]`          | Advanced numerical methods              |
 
 [^ck]: Measured directly against `cythonized_rk4_engine` (2.1x / 14.3x on the same benchmark run) and composed onto this table's `rk4_engine`-relative convention using its existing 112x/200x figures — not independently re-measured against the pure-Python baseline, so treat the absolute figures as approximate. The large `Zero` speedup is not a fluke: `set_weapon_zero` integrates repeatedly (once per damped-Newton iteration), so a per-call reduction in accepted steps compounds across iterations. See [Adaptive integration (Cash-Karp)](#adaptive-integration-cash-karp) below.
 
 * This project will default to the [`rk4_engine`][py_ballisticcalc.engines.RK4IntegrationEngine].
 * For higher speed and precision use the [`scipy_engine`][py_ballisticcalc.engines.SciPyIntegrationEngine].
-* For maximum speed use the [`cythonized_rk4_engine`][py_ballisticcalc_exts.CythonizedRK4IntegrationEngine] (or `cythonized_ck_engine` for repeated/zero-finding-heavy workloads — see below).
+* For maximum speed use the [`cythonized_rk4_engine`][py_ballisticcalc_exts.CythonizedRK4IntegrationEngine] (or [`cythonized_ck_engine`][py_ballisticcalc_exts.CythonizedCashKarpIntegrationEngine] for repeated/zero-finding-heavy workloads — see below).
 
 To select a specific engine when creating a [`Calculator`][py_ballisticcalc.interface.Calculator], use the optional `engine` argument:
 

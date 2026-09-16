@@ -41,3 +41,13 @@
     options:
         group_by_category: false
         members:
+
+::: py_ballisticcalc_exts.CythonizedVelocityVerletIntegrationEngine
+    options:
+        group_by_category: false
+        members:
+
+::: py_ballisticcalc_exts.CythonizedCashKarpIntegrationEngine
+    options:
+        group_by_category: false
+        members:
