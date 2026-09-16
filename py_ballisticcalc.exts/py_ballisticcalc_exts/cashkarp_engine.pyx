@@ -31,8 +31,16 @@ cdef class CythonizedCashKarpIntegrationEngine(CythonizedBaseIntegrationEngine):
         """Configure Cash-Karp with standard engine options and ``relative_tolerance``.
 
         ``relative_tolerance`` is Cash-Karp-specific and defaults to ``1e-6``.
-        It controls the embedded local-error estimate; lower values generally
-        produce more accepted steps and a more accurate trajectory.
+        It controls the embedded local-error estimate. Lower values always
+        require more accepted/attempted steps, but do NOT reliably improve
+        accuracy: measured against a 5x-finer fixed-step RK4 reference,
+        1e-6 gave both the fewest total steps and the best event-root
+        (ZERO/MACH/APEX) accuracy of 1e-6/1e-7/1e-8/1e-9 -- tightening
+        further was a pure loss on that data. Don't tighten this default
+        without re-measuring first; see `BCLIBC_cashKarpSetRelativeTolerance`'s
+        own doc comment in bclibc/cash_karp.hpp for the numbers, and
+        tests/test_cashkarp.py::test_cashkarp_accuracy_across_tolerances for
+        the harness (project issue #350).
         """
         base_config = config
         tolerance = 1e-6

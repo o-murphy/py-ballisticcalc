@@ -94,3 +94,50 @@ class TestCashKarp:
             abs(event.distance.raw_value - reference_events[event.flag].distance.raw_value) < 0.5
             for event in result.events
         )
+
+    @pytest.mark.parametrize("rtol", (1e-6, 1e-7, 1e-8, 1e-9))
+    def test_cashkarp_accuracy_across_tolerances(self, rtol):
+        """Every adaptive tolerance in Cash-Karp's real operating range must stay
+        within the same conservative-RK4-reference bounds.
+
+        Deliberately excludes 1e-4/1e-5: those sit in a *different* regime
+        (already covered by test_cashkarp_tolerance_controls_adaptive_step_count)
+        where growth is capped by the max-step limit rather than by the error
+        estimate, so tightening tolerance there has no effect at all -- not a
+        useful data point for "does the tolerance knob track accuracy".
+
+        Bounds are deliberately not tightened per-tolerance: height/velocity
+        accuracy plateaus once tolerance is tight enough to leave the capped
+        regime (~0.04-0.05 ft / ~0.014-0.016 fps for every rtol tested here,
+        measured), but event-root accuracy (ZERO/MACH/APEX distance) does
+        *not* improve monotonically with tolerance -- it depends on where the
+        accepted-step boundaries around that specific event happen to fall,
+        not on the global error tolerance directly (observed range 0.26-1.82 ft
+        across 1e-6..1e-9, non-monotonic and reproducible, not measurement
+        noise). A single bound wide enough for the worst observed case is the
+        honest way to assert this, rather than implying a tighter-is-always-
+        better relationship that the data doesn't actually show.
+        """
+        shot = _shot()
+        reference_engine = self.exts.CythonizedRK4IntegrationEngine({"cStepMultiplier": 0.1})
+        reference = _integrate(reference_engine, shot)
+
+        cash_karp = self.exts.CythonizedCashKarpIntegrationEngine({"relative_tolerance": rtol})
+        result = _integrate(cash_karp, shot)
+
+        assert len(result.trajectory) == len(reference.trajectory)
+        assert max(
+            abs(actual.height.raw_value - expected.height.raw_value)
+            for actual, expected in zip(result.trajectory, reference.trajectory)
+        ) < 0.1
+        assert max(
+            abs(actual.velocity.raw_value - expected.velocity.raw_value)
+            for actual, expected in zip(result.trajectory, reference.trajectory)
+        ) < 0.05
+
+        reference_events = {event.flag: event for event in reference.events}
+        assert {event.flag for event in result.events} == set(reference_events)
+        assert all(
+            abs(event.distance.raw_value - reference_events[event.flag].distance.raw_value) < 2.5
+            for event in result.events
+        )
