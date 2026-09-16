@@ -1009,8 +1009,9 @@ class HitResult:
         Raises:
             AttributeError: If TrajectoryData doesn't have the specified attribute.
             KeyError: If the key_attribute is 'flag'.
-            ValueError: If interpolation is required and len(self.trajectory) < 3.
-            ArithmeticError: If trajectory doesn't reach the requested value.
+            ArithmeticError: If the trajectory doesn't reach the requested value, including when
+                fewer than 2 of self.records bracket it (3 are needed for PCHIP; with exactly 2
+                bracketing points a linear fallback is used instead of raising).
 
         Notes:
             * Not all attributes are monotonic: Height typically goes up and then down.

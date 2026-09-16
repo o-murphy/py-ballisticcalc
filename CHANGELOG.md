@@ -65,6 +65,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   bclibc's C++ `BCLIBC_TrajectoryDataFilter::handle_step` (project issue #350).
 
 ### Fixed
+- `py_ballisticcalc/trajectory_data.py`: `HitResult.interpolate()`, `index_at_distance()`,
+  `get_at_distance()`, and `get_at_time()` searched `self.trajectory` — the presentation table
+  that projects events onto nearby scheduled samples — instead of `self.records`, the exact
+  chronological stream. Since `trajectory` can omit an event-only row (folding its flag onto a
+  neighboring sample instead), these lookups could silently miss or misattribute the point a
+  caller asked for. Also: `interpolate()` raised `ValueError` for fewer than 3 bracketing
+  points; it now raises `ArithmeticError` for consistency with its other failure paths, and
+  additionally falls back to linear interpolation when exactly 2 points bracket the target
+  (previously an unconditional raise).
 - `py_ballisticcalc/trajectory_data.py`: `TrajectoryStep.at_x()` now assigns the exact queried
   downrange target to the result's `position.x` instead of re-deriving it from the
   bisection-converged Hermite sample (`TrajectoryStep.at_value`, which `record_step`'s
