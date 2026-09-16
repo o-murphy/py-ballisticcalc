@@ -1025,7 +1025,12 @@ class HitResult:
         if key_attribute == "flag":
             raise KeyError("Cannot interpolate based on 'flag' attribute")
 
-        traj = self.trajectory
+        # ``trajectory`` is a presentation table of scheduled samples.  It may
+        # coalesce physical events onto nearby RANGE rows, so it must not be
+        # the fallback source for a numerical query.  ``base_data`` above is
+        # preferred because it supplies the integrator's local interpolant;
+        # without it, retain the exact record stream instead.
+        traj = self.records
         n = len(traj)
         key_value = value.raw_value if isinstance(value, GenericDimension) else value
 
@@ -1034,7 +1039,11 @@ class HitResult:
             val = getattr(td, key_attribute)
             return val.raw_value if hasattr(val, "raw_value") else val
 
-        if self.base_data:
+        # Some extension engines expose raw base points rather than
+        # ``TrajectoryStep`` objects.  Only the latter support the local
+        # Hermite interpolation API; raw points correctly use ``records``
+        # below.
+        if self.base_data and isinstance(self.base_data[0], TrajectoryStep):
 
             def step_key(data: BaseTrajData) -> float:
                 return get_key_val(TrajectoryData.from_base_data(self.props, data))
@@ -1056,12 +1065,21 @@ class HitResult:
                     return TrajectoryData.from_base_data(self.props, data)
             raise ArithmeticError(f"Trajectory does not reach {key_attribute} = {value}")
 
-        if n < 3:  # We won't interpolate on less than 3 points, but check for an exact match in the existing rows.
+        if n < 3:
             if abs(get_key_val(traj[0]) - key_value) < epsilon:
                 return traj[0]
             if n > 1 and abs(get_key_val(traj[1]) - key_value) < epsilon:
                 return traj[1]
-            raise ValueError("Interpolation requires at least 3 TrajectoryData points.")
+            if n == 2:
+                first_value = get_key_val(traj[0])
+                second_value = get_key_val(traj[1])
+                if (first_value < key_value < second_value) or (second_value < key_value < first_value):
+                    # ``TrajectoryData.interpolate(..., method='linear')``
+                    # selects its first segment below the middle point; repeating
+                    # the second point therefore supplies a two-point fallback
+                    # without inventing a third sample for PCHIP.
+                    return TrajectoryData.interpolate(key_attribute, value, traj[0], traj[1], traj[1], method="linear")
+            raise ArithmeticError(f"Trajectory does not reach {key_attribute} = {value}")
 
         # Find the starting index based on start_from_time
         start_idx = 0
@@ -1149,7 +1167,7 @@ class HitResult:
         """
         epsilon = 1e-1  # small value to avoid floating point issues
         return next(
-            (i for i in range(len(self.trajectory)) if self.trajectory[i].distance.raw_value >= d.raw_value - epsilon),
+            (i for i in range(len(self.records)) if self.records[i].distance.raw_value >= d.raw_value - epsilon),
             -1,
         )
 
@@ -1168,7 +1186,7 @@ class HitResult:
         """
         if (i := self.index_at_distance(d)) < 0:
             raise ArithmeticError(f"Calculated trajectory doesn't reach requested distance {d}")
-        return self.trajectory[i]
+        return self.records[i]
 
     @deprecated(reason="Use get_at('time', t)")
     def get_at_time(self, t: float) -> TrajectoryData:
@@ -1184,10 +1202,10 @@ class HitResult:
             ArithmeticError: If trajectory doesn't reach requested time.
         """
         epsilon = 1e-6  # small value to avoid floating point issues
-        idx = next((i for i in range(len(self.trajectory)) if self.trajectory[i].time >= t - epsilon), -1)
+        idx = next((i for i in range(len(self.records)) if self.records[i].time >= t - epsilon), -1)
         if idx < 0:
             raise ArithmeticError(f"Calculated trajectory doesn't reach requested time {t}")
-        return self.trajectory[idx]
+        return self.records[idx]
 
     def danger_space(
         self,

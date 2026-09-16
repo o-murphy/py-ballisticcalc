@@ -927,6 +927,7 @@ class SciPyIntegrationEngine(BaseIntegrationEngine):
             logger.error("No solution found by SciPy integration.")
             raise RuntimeError(f"No solution found by SciPy integration: {sol.message}")
 
+        self.integration_step_count = sol.nfev
         logger.debug(f"SciPy integration via {self._config.integration_method} done with {sol.nfev} function calls.")
         termination_reason = None
         if sol.status == 1 and sol.t_events and len(sol.t_events) > 0:  # A termination event occurred
