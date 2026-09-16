@@ -156,7 +156,7 @@ class VelocityVerletIntegrationEngine(BaseIntegrationEngine):
             math.cos(props.barrel_elevation_rad) * math.cos(props.barrel_azimuth_rad),
             math.sin(props.barrel_elevation_rad),
             math.cos(props.barrel_elevation_rad) * math.sin(props.barrel_azimuth_rad),
-        ).mul_by_const(relative_speed)  # type: ignore
+        ).mul_by_const(relative_speed)
         _cMaximumDrop += min(0, range_vector.y)  # Adjust max drop downward if above muzzle height
         # Acceleration:
         density_ratio, mach = props.get_density_and_mach_for_altitude(range_vector.y)
@@ -164,7 +164,7 @@ class VelocityVerletIntegrationEngine(BaseIntegrationEngine):
         relative_speed = relative_velocity.magnitude()
         drag = density_ratio * relative_speed * props.drag_by_mach(relative_speed / mach)
         coriolis_term = coriolis_fn(velocity_vector) if coriolis_fn else ZERO_VECTOR
-        acceleration_vector = self.gravity_vector + coriolis_term - drag * relative_velocity  # type: ignore[operator]
+        acceleration_vector = self.gravity_vector + coriolis_term - drag * relative_velocity
         # endregion
 
         data_filter = TrajectoryDataFilter(
@@ -198,18 +198,15 @@ class VelocityVerletIntegrationEngine(BaseIntegrationEngine):
 
             # region Verlet integration
             # 1. Update position using acceleration from the current step
-            range_vector += (  # type: ignore[operator]
-                velocity_vector * delta_time  # type: ignore[operator]
-                + acceleration_vector * delta_time * delta_time * 0.5  # type: ignore[operator]
-            )  # type: ignore[operator]
-            predicted_velocity = velocity_vector + acceleration_vector * delta_time  # type: ignore[operator]
+            range_vector += velocity_vector * delta_time + acceleration_vector * delta_time * delta_time * 0.5
+            predicted_velocity = velocity_vector + acceleration_vector * delta_time
             new_relative_velocity = predicted_velocity - wind_vector
             new_relative_speed = new_relative_velocity.magnitude()
             drag = density_ratio * new_relative_speed * props.drag_by_mach(new_relative_speed / mach)
             coriolis_next = coriolis_fn(predicted_velocity) if coriolis_fn else ZERO_VECTOR
-            new_acceleration_vector = self.gravity_vector + coriolis_next - drag * new_relative_velocity  # type: ignore[operator]
+            new_acceleration_vector = self.gravity_vector + coriolis_next - drag * new_relative_velocity
             # 2. Update velocity using the average of the old a(t) and new a(t+Δt) accelerations
-            velocity_vector += (acceleration_vector + new_acceleration_vector) * 0.5 * delta_time  # type: ignore
+            velocity_vector += (acceleration_vector + new_acceleration_vector) * 0.5 * delta_time
             acceleration_vector = new_acceleration_vector
             velocity = velocity_vector.magnitude()  # Velocity relative to ground
             time += delta_time

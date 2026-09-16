@@ -169,7 +169,7 @@ class RK4IntegrationEngine(BaseIntegrationEngine):
             math.cos(props.barrel_elevation_rad) * math.cos(props.barrel_azimuth_rad),
             math.sin(props.barrel_elevation_rad),
             math.cos(props.barrel_elevation_rad) * math.sin(props.barrel_azimuth_rad),
-        ).mul_by_const(velocity)  # type: ignore
+        ).mul_by_const(velocity)
         _cMaximumDrop += min(0, range_vector.y)  # Adjust max drop downward if above muzzle height
         # endregion
 
@@ -209,27 +209,27 @@ class RK4IntegrationEngine(BaseIntegrationEngine):
             def acceleration(rel_vel: Vector, ground_vel: Vector, k_m: float = k_m) -> Vector:
                 """Acceleration is net effect of gravity, drag, and Coriolis forces."""
                 coriolis_term = coriolis_fn(ground_vel) if coriolis_fn else ZERO_VECTOR
-                return self.gravity_vector + coriolis_term - k_m * rel_vel * rel_vel.magnitude()  # type: ignore[operator]
+                return self.gravity_vector + coriolis_term - k_m * rel_vel * rel_vel.magnitude()
 
             # region RK4 integration
             v1 = velocity_vector
             rel1 = v1 - wind_vector
             a1 = acceleration(rel1, v1)
 
-            v2 = velocity_vector + 0.5 * delta_time * a1  # type: ignore[operator]
+            v2 = velocity_vector + 0.5 * delta_time * a1
             rel2 = v2 - wind_vector
             a2 = acceleration(rel2, v2)
 
-            v3 = velocity_vector + 0.5 * delta_time * a2  # type: ignore[operator]
+            v3 = velocity_vector + 0.5 * delta_time * a2
             rel3 = v3 - wind_vector
             a3 = acceleration(rel3, v3)
 
-            v4 = velocity_vector + delta_time * a3  # type: ignore[operator]
+            v4 = velocity_vector + delta_time * a3
             rel4 = v4 - wind_vector
             a4 = acceleration(rel4, v4)
 
-            velocity_vector += (a1 + 2 * a2 + 2 * a3 + a4) * (delta_time / 6.0)  # type: ignore[operator]
-            range_vector += (v1 + 2 * v2 + 2 * v3 + v4) * (delta_time / 6.0)  # type: ignore[operator]
+            velocity_vector += (a1 + 2 * a2 + 2 * a3 + a4) * (delta_time / 6.0)
+            range_vector += (v1 + 2 * v2 + 2 * v3 + v4) * (delta_time / 6.0)
             # endregion RK4 integration
 
             # region for Reference: Euler integration

@@ -180,7 +180,7 @@ class EulerIntegrationEngine(BaseIntegrationEngine):
             math.cos(props.barrel_elevation_rad) * math.cos(props.barrel_azimuth_rad),
             math.sin(props.barrel_elevation_rad),
             math.cos(props.barrel_elevation_rad) * math.sin(props.barrel_azimuth_rad),
-        ).mul_by_const(velocity)  # type: ignore
+        ).mul_by_const(velocity)
         _cMaximumDrop += min(0, range_vector.y)  # Adjust max drop downward if above muzzle height
         # endregion
 
@@ -220,12 +220,12 @@ class EulerIntegrationEngine(BaseIntegrationEngine):
             drag = density_ratio * relative_speed * props.drag_by_mach(relative_speed / mach)
             # Bullet velocity changes due to drag, gravity, and Coriolis (if enabled)
             coriolis_term = coriolis_fn(velocity_vector) if coriolis_fn else ZERO_VECTOR
-            acceleration = self.gravity_vector + coriolis_term - relative_velocity * drag  # type: ignore[operator]
-            velocity_vector += acceleration * delta_time  # type: ignore[operator]
+            acceleration = self.gravity_vector + coriolis_term - relative_velocity * drag
+            velocity_vector += acceleration * delta_time
             # Bullet position changes by velocity time_deltas the time step
             delta_range_vector = velocity_vector * delta_time
             # Update the bullet position
-            range_vector += delta_range_vector  # type: ignore[operator]
+            range_vector += delta_range_vector
             velocity = velocity_vector.magnitude()  # Velocity relative to ground
             time += delta_time
             _, mach = props.get_density_and_mach_for_altitude(range_vector.y)

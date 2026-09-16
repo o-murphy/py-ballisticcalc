@@ -342,23 +342,23 @@ class TrajectoryStep:
         h01 = -2.0 * u3 + 3.0 * u2
         h11 = u3 - u2
         position = (
-            self.start.position * h00  # type: ignore[operator]
-            + self.start.velocity * (h * h10)  # type: ignore[operator]
-            + self.end.position * h01  # type: ignore[operator]
-            + self.end.velocity * (h * h11)  # type: ignore[operator]
+            self.start.position * h00
+            + self.start.velocity * (h * h10)
+            + self.end.position * h01
+            + self.end.velocity * (h * h11)
         )
         dh00 = (6.0 * u2 - 6.0 * u) / h
         dh10 = 3.0 * u2 - 4.0 * u + 1.0
         dh01 = (-6.0 * u2 + 6.0 * u) / h
         dh11 = 3.0 * u2 - 2.0 * u
         velocity = (
-            self.start.position * dh00  # type: ignore[operator]
-            + self.start.velocity * dh10  # type: ignore[operator]
-            + self.end.position * dh01  # type: ignore[operator]
-            + self.end.velocity * dh11  # type: ignore[operator]
+            self.start.position * dh00
+            + self.start.velocity * dh10
+            + self.end.position * dh01
+            + self.end.velocity * dh11
         )
         mach = self.start.mach + (self.end.mach - self.start.mach) * u
-        return BaseTrajData(time, position, velocity, mach)  # type: ignore[arg-type]
+        return BaseTrajData(time, position, velocity, mach)
 
     def solve_time(
         self, value_at_time: Callable[[BaseTrajData], float], target: float, *, iterations: int = 48
