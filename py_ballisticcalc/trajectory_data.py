@@ -52,8 +52,10 @@ See Also:
 from __future__ import annotations
 
 import math
+from bisect import bisect_left
 from collections.abc import Callable
 from dataclasses import dataclass, field
+from functools import cached_property
 from typing import TYPE_CHECKING, Any, Final, Literal, NamedTuple, TypeAlias
 
 from deprecated import deprecated
@@ -127,10 +129,10 @@ class TrajFlag(int):
         hit_result = calc.fire(shot, 1000, filter_flags=TrajFlag.ZERO | TrajFlag.APEX)
 
         # Find all zero crossing points
-        zeros = [p for p in hit_result.trajectory if p.flag & TrajFlag.ZERO]
+        zeros = [p for p in hit_result.events if p.flag & TrajFlag.ZERO]
 
         # Find apex point
-        apex = next((p for p in hit_result.trajectory if p.flag & TrajFlag.APEX), None)
+        apex = next((p for p in hit_result.events if p.flag & TrajFlag.APEX), None)
         ```
     """
 
@@ -828,13 +830,15 @@ class DangerSpace(NamedTuple):
 
 
 # pylint: disable=import-outside-toplevel
-@dataclass(frozen=True)
+@dataclass(frozen=True, init=False)
 class HitResult:
     """Computed trajectory data of the shot.
 
     Attributes:
         shot: The parameters of the shot calculation.
-        trajectory: Computed TrajectoryData points.
+        records: Exact, chronological output records produced by the integrator.
+        trajectory: Scheduled sample table with nearby event flags annotated.
+        events: Exact physical event records (ZERO, MACH, APEX, and MRT).
         base_data: Continuous accepted trajectory steps for interpolation.
         extra: [DEPRECATED] Whether extra_data was requested.
         error: RangeError, if any.
@@ -845,10 +849,81 @@ class HitResult:
     """
 
     props: ShotProps
-    trajectory: list[TrajectoryData] = field(repr=False)
+    records: list[TrajectoryData] = field(repr=False)
     base_data: list[TrajectoryStep] | None = field(repr=False)
     extra: bool = False
     error: RangeError | None = None
+
+    def __init__(
+        self,
+        props: ShotProps,
+        records: list[TrajectoryData] | None = None,
+        base_data: list[TrajectoryStep] | None = None,
+        extra: bool = False,
+        error: RangeError | None = None,
+        *,
+        trajectory: list[TrajectoryData] | None = None,
+    ):
+        """Create a result from exact records.
+
+        ``trajectory=`` remains accepted for source compatibility with the
+        former public dataclass constructor.  It is interpreted as the exact
+        record stream, before the :attr:`trajectory` presentation projection.
+        """
+        if records is None:
+            if trajectory is None:
+                raise TypeError("HitResult requires records")
+            records = trajectory
+        elif trajectory is not None:
+            raise TypeError("Pass either records or trajectory, not both")
+
+        object.__setattr__(self, "props", props)
+        object.__setattr__(self, "records", records)
+        object.__setattr__(self, "base_data", base_data)
+        object.__setattr__(self, "extra", extra)
+        object.__setattr__(self, "error", error)
+
+    @cached_property
+    def events(self) -> list[TrajectoryData]:
+        """Return exact physical event records without output-table coalescing."""
+        event_flags = TrajFlag.ZERO | TrajFlag.MACH | TrajFlag.APEX | TrajFlag.MRT
+        return [row for row in self.records if row.flag & event_flags]
+
+    @cached_property
+    def trajectory(self) -> list[TrajectoryData]:
+        """Return the deterministic scheduled-sample table.
+
+        Physical events remain exact in :attr:`events`; this presentation view
+        annotates the closest scheduled sample with each event flag.  Thus its
+        cardinality is determined by the sampling schedule rather than the
+        integrator's accepted-step boundaries or event proximity.
+        """
+        event_flags = TrajFlag.ZERO | TrajFlag.MACH | TrajFlag.APEX | TrajFlag.MRT
+        samples = [
+            row
+            for row in self.records
+            # RANGE identifies an explicit sample.  A terminal NONE row is
+            # also a sample so incomplete trajectories retain their endpoint.
+            if row.flag & TrajFlag.RANGE or not row.flag & event_flags
+        ]
+        if not samples:
+            return []
+
+        projected = samples.copy()
+        sample_times = [row.time for row in samples]
+        for event in self.events:
+            right = bisect_left(sample_times, event.time)
+            if right == 0:
+                index = 0
+            elif right == len(samples):
+                index = len(samples) - 1
+            else:
+                left = right - 1
+                # For an exact tie use the later scheduled row, consistently.
+                index = left if event.time - sample_times[left] < sample_times[right] - event.time else right
+            sample = projected[index]
+            projected[index] = sample._replace(flag=sample.flag | event.flag)
+        return projected
 
     def __len__(self) -> int:
         return len(self.trajectory)
@@ -886,7 +961,9 @@ class HitResult:
             AttributeError: If flag was not requested.
         """
         self._check_flag(flag)
-        for row in self.trajectory:
+        event_flags = TrajFlag.ZERO | TrajFlag.MACH | TrajFlag.APEX | TrajFlag.MRT
+        rows = self.events if flag & event_flags else self.trajectory
+        for row in rows:
             if row.flag & flag:
                 return row
         return None
@@ -1040,7 +1117,7 @@ class HitResult:
             ArithmeticError: If zero crossing points are not found.
         """
         self._check_flag(TrajFlag.ZERO)
-        data = [row for row in self.trajectory if row.flag & TrajFlag.ZERO]
+        data = [row for row in self.events if row.flag & TrajFlag.ZERO]
         if len(data) < 1:
             raise ArithmeticError("Can't find zero crossing points")
         return data

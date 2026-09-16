@@ -178,7 +178,7 @@ class TestTrajectoryDataFilter:
         shot.weapon = Weapon(sight_height=Distance.Inch(2), zero_elevation=Angular.MOA(3.0))
         res = calc.fire(shot, trajectory_range=Distance.Yard(400), trajectory_step=Distance.Yard(10),
                         flags=TrajFlag.ZERO)
-        flags = [td.flag for td in res.trajectory if td.flag & TrajFlag.ZERO]
+        flags = [td.flag for td in res.events if td.flag & TrajFlag.ZERO]
         # If zero crossings exist, the first should include ZERO_UP, and later one ZERO_DOWN
         if flags:
             # ZERO combines UP/DOWN, but during first crossing it should include UP before DOWN appears
@@ -229,7 +229,7 @@ class TestTrajectoryDataFilter:
         shot.weapon.zero_elevation = Angular.Degree(5.0)
         res = calc.fire(shot, trajectory_range=Distance.Yard(800), trajectory_step=Distance.Yard(25),
                         flags=TrajFlag.APEX)
-        apex_rows = [td for td in res.trajectory if td.flag & TrajFlag.APEX]
+        apex_rows = [td for td in res.events if td.flag & TrajFlag.APEX]
         assert len(apex_rows) == 1
 
 
@@ -241,23 +241,40 @@ class TestTrajectoryDataFilter:
         res = calc.fire(shot, trajectory_range=Distance.Yard(1200), trajectory_step=Distance.Yard(100),
                         flags=TrajFlag.ZERO | TrajFlag.MACH)
         assert res.flag(TrajFlag.MACH) is not None
-        zero_rows = [td for td in res.trajectory if td.flag & TrajFlag.ZERO]
+        zero_rows = [td for td in res.events if td.flag & TrajFlag.ZERO]
         assert len(zero_rows) >= 1
 
 
-    def test_nearby_sample_and_event_rows_remain_distinct(self, loaded_engine_instance):
-        """Physical events must not be rewritten onto a nearby scheduled sample."""
+    def test_records_preserve_events_while_trajectory_annotates_samples(self, loaded_engine_instance):
+        """Exact records and stable trajectory presentation serve distinct purposes."""
         calc = Calculator(engine=loaded_engine_instance)
         shot = self._mk_shot(2750.0)
         calc.set_weapon_zero(shot, Distance.Yard(200))
         res = calc.fire(shot, trajectory_range=Distance.Yard(600), trajectory_step=Distance.Yard(200),
                         flags=TrajFlag.ZERO)
-        event_rows = [td for td in res.trajectory if td.flag & TrajFlag.ZERO]
-        sample_rows = [td for td in res.trajectory if td.flag == TrajFlag.RANGE]
+        event_rows = [td for td in res.events if td.flag & TrajFlag.ZERO]
+        sample_rows = [td for td in res.trajectory if td.flag & TrajFlag.RANGE]
         assert event_rows
         assert sample_rows
         assert all(not (td.flag & TrajFlag.RANGE) for td in event_rows)
         assert 0.0 < min(abs(event.time - sample.time) for event in event_rows for sample in sample_rows) < 1e-5
+        assert any(td.flag & TrajFlag.ZERO for td in res.trajectory)
+        assert len(res.records) == len(res.trajectory) + len(res.events)
+        for event in event_rows:
+            closest_time = min((sample.time for sample in sample_rows), key=lambda time: abs(time - event.time))
+            assert any(
+                sample.time == closest_time and sample.flag & event.flag
+                for sample in res.trajectory
+            )
+        compatible = HitResult(
+            res.props,
+            trajectory=res.records,
+            base_data=res.base_data,
+            extra=res.extra,
+            error=res.error,
+        )
+        assert compatible.records is res.records
+        assert compatible.trajectory == res.trajectory
 
 
     def test_zero_event_and_range_sample_have_independent_rows(self, loaded_engine_instance):
@@ -268,8 +285,8 @@ class TestTrajectoryDataFilter:
         calc.set_weapon_zero(shot, Distance.Yard(200))
         res = calc.fire(shot, trajectory_range=Distance.Yard(600), trajectory_step=Distance.Yard(200),
                         flags=TrajFlag.ZERO)
-        zero_rows = [td for td in res.trajectory if td.flag & TrajFlag.ZERO]
-        range_rows = [td for td in res.trajectory if td.flag == TrajFlag.RANGE]
+        zero_rows = [td for td in res.events if td.flag & TrajFlag.ZERO]
+        range_rows = [td for td in res.trajectory if td.flag & TrajFlag.RANGE]
         assert zero_rows
         assert range_rows
         assert all(not (td.flag & TrajFlag.RANGE) for td in zero_rows)
