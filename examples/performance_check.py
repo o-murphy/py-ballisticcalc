@@ -183,6 +183,7 @@ engines = {
     "cythonized_euler": "cythonized_euler_engine", 
     "cythonized_rk4": "cythonized_rk4_engine",
     "scipy": "scipy_engine",
+    "cash_karp": "py_ballisticcalc_exts:CythonizedCashKarpIntegrationEngine",
     "all": "all", 
 }
 
@@ -209,6 +210,7 @@ def main():
             "cythonized_euler", 
             "cythonized_rk4",
             "scipy",
+            "cash_karp",
             "all", 
         ], 
         default="rk4"
