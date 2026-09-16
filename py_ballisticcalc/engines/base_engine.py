@@ -312,7 +312,7 @@ class TrajectoryDataFilter:
                     self.range_step = -1
                     break
                 if distance >= step.start.position.x - self.EPSILON:
-                    add(step.at_value(lambda data: data.position.x, distance), TrajFlag.RANGE)
+                    add(step.at_x(distance), TrajFlag.RANGE)
                 self.next_record_distance = distance
 
         if self.time_step > 0:

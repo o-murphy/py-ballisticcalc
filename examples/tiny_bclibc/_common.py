@@ -7,17 +7,16 @@ Not meant to be used directly — import `TinyBclibcSingleIntegrationEngine` fro
 Both engines call `tiny_bclibc_integrate_stream`: tiny_bclibc does the range-step/APEX/MACH/ZERO
 filtering AND derived-field computation (density_ratio, drag, spin drift, Coriolis-adjusted
 range, slant_height, angles, energy, ogw) in C, and only calls back into Python at the handful
-of points actually requested -- not once per raw RK4 step. Two gaps against
+of points actually requested -- not once per raw Cash-Karp step. Two gaps against
 `BaseIntegrationEngine`'s Python engines are closed here in Python rather than in tiny_bclibc
 itself, to keep that library's C surface minimal (it targets bare-metal/MCU embedding, where
 code size is a real constraint and neither of these is needed by tiny_bclibc's own native
-consumers) -- see `_coalesce_rows`/`_maybe_finalize` below, cross-checked against bclibc's C++
+consumers) -- see `_sort_rows`/`_maybe_finalize` below, cross-checked against bclibc's C++
 `BCLIBC_TrajectoryDataFilter` (src/traj_filter.cpp) as the reference implementation:
 
-1. Row coalescing: tiny_bclibc_integrate_stream emits one row per event with no merging, so a
-   ZERO crossing landing on the same instant as a RANGE-sampled row comes back as two adjacent
-   (or, since events aren't always emitted in strict time order -- see `_coalesce_rows` --
-   not even adjacent) rows instead of one row carrying both flags.
+1. Row ordering: tiny_bclibc_integrate_stream emits rows in the order its internal checks run
+   within one accepted interval, not always in strict chronological order across the whole
+   stream -- see `_sort_rows`.
 2. Finalize: whenever a trajectory ends other than by reaching the requested range,
    tiny_bclibc_integrate_stream's optional out_final_raw parameter exposes the exact terminal
    raw state (regardless of whether the C-side filter emitted a row for it); this is turned
@@ -28,7 +27,6 @@ filtered/interpolated rows, never raw per-step BaseTrajData, so there is nothing
 HitResult.base_data with.
 """
 
-import bisect
 import ctypes
 import math
 import os
@@ -65,10 +63,6 @@ _TERM_REASON_MAP = {
 }
 
 _TINY_BCLIBC_OK = 0
-
-# Matches BaseIntegrationEngine.SEPARATE_ROW_TIME_DELTA -- how close (in seconds) two events
-# must be to land on the same output row instead of two adjacent ones.
-_SEPARATE_ROW_TIME_DELTA = 1e-5
 
 
 # ctypes.c_float for a TINY_BCLIBC_SINGLE_PRECISION build, ctypes.c_double otherwise. Typed
@@ -360,33 +354,28 @@ def _to_trajectory_data(pt) -> TrajectoryData:
     )
 
 
-def _coalesce_rows(records: list[TrajectoryData]) -> list[TrajectoryData]:
-    """Sorted-insert-or-merge rows within _SEPARATE_ROW_TIME_DELTA of each other (OR flags).
+def _sort_rows(records: list[TrajectoryData]) -> list[TrajectoryData]:
+    """Restore strict chronological order without merging same-instant rows.
 
-    tiny_bclibc_integrate_stream emits rows in the order its internal checks run -- all
-    RANGE-step rows for one raw RK4 step first, then APEX/MACH/ZERO for that same step -- not
-    strictly by interpolated time: a MACH/ZERO crossing interpolated to *before* several
-    already-emitted RANGE rows (e.g. a shot that starts already supersonic and past zero, all
-    within the first couple of raw steps) can arrive after them. So merging must find each
-    row's correct chronological position (by bisecting on time) rather than only checking
-    whichever row was emitted immediately before it. This mirrors bclibc's C++
-    BCLIBC_TrajectoryDataFilter::merge_sorted_record (std::lower_bound + check both
-    neighbors) and Python's TrajectoryDataFilter.add_row/bisect_left, which handle the same
-    out-of-order-interpolation case in their own record()/on_step() rather than here.
+    tiny_bclibc_integrate_stream emits rows in the order its internal checks run within one
+    accepted (Cash-Karp) interval -- all RANGE-step rows first, then APEX/MACH/ZERO for that
+    same interval -- not strictly by interpolated time: a MACH/ZERO crossing interpolated to
+    *before* an already-emitted RANGE row in the same wide interval can arrive after it in
+    emission order. A stable sort by time restores global chronological order across the whole
+    stream.
+
+    A scheduled sample and a physical event are DELIBERATELY kept as independent rows here,
+    even when their interpolated times coincide almost exactly -- merging them into one row
+    with combined flags was the historical behavior,
+    but it is no longer correct: `HitResult.trajectory`'s own cached_property already performs
+    the "annotate the closest scheduled sample with each event's flag" projection generically
+    from independent records, so pre-merging here just duplicates (and can conflict with) that
+    step. This mirrors `TrajectoryDataFilter.record_step` in `py_ballisticcalc/engines/base_engine.py`
+    ("Rows are intentionally not merged by a time tolerance") and bclibc's C++
+    `BCLIBC_TrajectoryDataFilter::handle_step`, which both stopped merging for the same reason
+    (project issue #350's row-coalescing fix).
     """
-    merged: list[TrajectoryData] = []
-    times: list[float] = []
-    for row in records:
-        idx = bisect.bisect_left(times, row.time)
-        if idx < len(times) and abs(times[idx] - row.time) < _SEPARATE_ROW_TIME_DELTA:
-            merged[idx] = merged[idx]._replace(flag=merged[idx].flag | row.flag)
-            continue
-        if idx > 0 and abs(times[idx - 1] - row.time) < _SEPARATE_ROW_TIME_DELTA:
-            merged[idx - 1] = merged[idx - 1]._replace(flag=merged[idx - 1].flag | row.flag)
-            continue
-        merged.insert(idx, row)
-        times.insert(idx, row.time)
-    return merged
+    return sorted(records, key=lambda row: row.time)
 
 
 def _maybe_finalize(
@@ -597,7 +586,7 @@ class TinyBclibcIntegrationEngineBase(BaseIntegrationEngine):
                 f"{self._lib.tiny_bclibc_last_error().decode('utf-8', 'replace')}"
             )
 
-        records = _coalesce_rows(records)
+        records = _sort_rows(records)
         records = _maybe_finalize(props, records, out_reason.value, out_final_raw)
 
         termination_reason = _TERM_REASON_MAP.get(out_reason.value)

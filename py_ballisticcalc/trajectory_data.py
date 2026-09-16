@@ -393,6 +393,21 @@ class TrajectoryStep:
         """Evaluate at a bracketed scalar crossing in this step."""
         return self.at_time(self.solve_time(value_at_time, target))
 
+    def at_x(self, target_x: float) -> BaseTrajData:
+        """Evaluate at the point in this step whose downrange position equals target_x.
+
+        Assigns `target_x` to the result's position.x directly rather than trusting the
+        Hermite polynomial's re-evaluation at the (bisection-)converged time: solve_time only
+        guarantees the *time* has converged, so re-deriving position.x from it carries the
+        interpolant's own rounding on top of the bisection residual. Free to do, and at double
+        precision the two agree to solver residual anyway -- but the same pattern in
+        tiny_bclibc's C port measurably missed an exact RANGE-step target once run in single
+        precision (project issue #350), so this keeps all three implementations consistent
+        rather than relying on double precision to hide it here too.
+        """
+        data = self.at_value(lambda d: d.position.x, target_x)
+        return data._replace(position=data.position._replace(x=target_x))
+
 
 TrajectoryDataAttribute: TypeAlias = Literal[
     "time",
