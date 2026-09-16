@@ -39,7 +39,7 @@ from py_ballisticcalc.engines.base_engine import (
 from py_ballisticcalc.exceptions import RangeError
 from py_ballisticcalc.logger import logger
 from py_ballisticcalc.shot import ShotProps
-from py_ballisticcalc.trajectory_data import BaseTrajData, HitResult, TrajectoryData, TrajFlag
+from py_ballisticcalc.trajectory_data import BaseTrajData, HitResult, TrajectoryData, TrajectoryStep, TrajFlag
 from py_ballisticcalc.vector import ZERO_VECTOR, Vector
 
 __all__ = ("VelocityVerletIntegrationEngine",)
@@ -136,7 +136,7 @@ class VelocityVerletIntegrationEngine(BaseIntegrationEngine):
         _cMinimumAltitude = self._config.cMinimumAltitude
 
         ranges: list[TrajectoryData] = []  # Record of TrajectoryData points to return
-        step_data: list[BaseTrajData] = []  # Data for interpolation (if dense_output is enabled)
+        step_data: list[TrajectoryStep] = []  # Continuous data for interpolation (if dense_output is enabled)
         time: float = 0.0
         drag: float = 0.0
         mach: float = 0.0
@@ -174,6 +174,8 @@ class VelocityVerletIntegrationEngine(BaseIntegrationEngine):
             range_step=range_step_ft,
             time_step=time_step,
         )
+        data = BaseTrajData(time=time, position=range_vector, velocity=velocity_vector, mach=mach)
+        data_filter.record_initial(data)
 
         # region Trajectory Loop
         warnings.simplefilter("once")  # used to avoid multiple warnings in a loop
@@ -189,13 +191,6 @@ class VelocityVerletIntegrationEngine(BaseIntegrationEngine):
 
             # Update air density at current point in trajectory
             density_ratio, mach = props.get_density_and_mach_for_altitude(range_vector.y)
-
-            # region Record current step
-            data = BaseTrajData(time=time, position=range_vector, velocity=velocity_vector, mach=mach)
-            data_filter.record(data)
-            if dense_output:
-                step_data.append(data)
-            # endregion
 
             # region Ballistic calculation step (point-mass)
             # Use the acceleration carried over from the prior iteration and advance with a fixed time step.
@@ -218,6 +213,13 @@ class VelocityVerletIntegrationEngine(BaseIntegrationEngine):
             acceleration_vector = new_acceleration_vector
             velocity = velocity_vector.magnitude()  # Velocity relative to ground
             time += delta_time
+            _, mach = props.get_density_and_mach_for_altitude(range_vector.y)
+            next_data = BaseTrajData(time=time, position=range_vector, velocity=velocity_vector, mach=mach)
+            step = TrajectoryStep(data, next_data)
+            data_filter.record_step(step)
+            if dense_output:
+                step_data.append(step)
+            data = next_data
             # endregion Verlet integration
             # endregion ballistic calculation step
 
@@ -234,10 +236,6 @@ class VelocityVerletIntegrationEngine(BaseIntegrationEngine):
                     termination_reason = RangeError.MinimumAltitudeReached
                 break
         # endregion
-        data = BaseTrajData(time=time, position=range_vector, velocity=velocity_vector, mach=mach)
-        data_filter.record(data)
-        if dense_output:
-            step_data.append(data)
         # Ensure that we have at least two data points in trajectory,
         # ... as well as last point if we had an incomplete trajectory
         if termination_reason:

@@ -52,6 +52,7 @@ See Also:
 from __future__ import annotations
 
 import math
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any, Final, Literal, NamedTuple, TypeAlias
 
@@ -78,6 +79,7 @@ __all__ = (
     "HitResult",
     "TrajFlag",
     "TrajectoryData",
+    "TrajectoryStep",
 )
 
 
@@ -307,6 +309,87 @@ class BaseTrajData(NamedTuple):
         mach = _interp_scalar(p0.mach, p1.mach, p2.mach) if key_attribute != "mach" else key_value
 
         return BaseTrajData(time=time, position=position, velocity=velocity, mach=mach)
+
+
+@dataclass(frozen=True, slots=True)
+class TrajectoryStep:
+    """One accepted integration interval with a local cubic-Hermite model.
+
+    The endpoints are the integrator's authoritative states.  Queries are
+    therefore local to this interval; they never borrow a point from the
+    preceding or following integration step.
+    """
+
+    start: BaseTrajData
+    end: BaseTrajData
+
+    def __post_init__(self) -> None:
+        if self.end.time <= self.start.time:
+            raise ValueError("TrajectoryStep end time must be after start time")
+
+    @property
+    def duration(self) -> float:
+        return self.end.time - self.start.time
+
+    def at_time(self, time: float) -> BaseTrajData:
+        """Evaluate the endpoint-Hermite interpolant at *time*."""
+        h = self.duration
+        u = (time - self.start.time) / h
+        u2 = u * u
+        u3 = u2 * u
+        h00 = 2.0 * u3 - 3.0 * u2 + 1.0
+        h10 = u3 - 2.0 * u2 + u
+        h01 = -2.0 * u3 + 3.0 * u2
+        h11 = u3 - u2
+        position = (
+            self.start.position * h00  # type: ignore[operator]
+            + self.start.velocity * (h * h10)  # type: ignore[operator]
+            + self.end.position * h01  # type: ignore[operator]
+            + self.end.velocity * (h * h11)  # type: ignore[operator]
+        )
+        dh00 = (6.0 * u2 - 6.0 * u) / h
+        dh10 = 3.0 * u2 - 4.0 * u + 1.0
+        dh01 = (-6.0 * u2 + 6.0 * u) / h
+        dh11 = 3.0 * u2 - 2.0 * u
+        velocity = (
+            self.start.position * dh00  # type: ignore[operator]
+            + self.start.velocity * dh10  # type: ignore[operator]
+            + self.end.position * dh01  # type: ignore[operator]
+            + self.end.velocity * dh11  # type: ignore[operator]
+        )
+        mach = self.start.mach + (self.end.mach - self.start.mach) * u
+        return BaseTrajData(time, position, velocity, mach)  # type: ignore[arg-type]
+
+    def solve_time(
+        self, value_at_time: Callable[[BaseTrajData], float], target: float, *, iterations: int = 48
+    ) -> float:
+        """Find a bracketed scalar crossing in this step by bisection."""
+        lo = self.start.time
+        hi = self.end.time
+        flo = value_at_time(self.start) - target
+        fhi = value_at_time(self.end) - target
+        if flo == 0.0:
+            return lo
+        if fhi == 0.0:
+            return hi
+        if flo * fhi > 0.0:
+            raise ValueError("target is not bracketed by TrajectoryStep")
+        for _ in range(iterations):
+            mid = (lo + hi) * 0.5
+            fmid = value_at_time(self.at_time(mid)) - target
+            if fmid == 0.0:
+                return mid
+            if flo * fmid <= 0.0:
+                hi = mid
+                fhi = fmid
+            else:
+                lo = mid
+                flo = fmid
+        return (lo + hi) * 0.5
+
+    def at_value(self, value_at_time: Callable[[BaseTrajData], float], target: float) -> BaseTrajData:
+        """Evaluate at a bracketed scalar crossing in this step."""
+        return self.at_time(self.solve_time(value_at_time, target))
 
 
 TrajectoryDataAttribute: TypeAlias = Literal[
@@ -752,20 +835,18 @@ class HitResult:
     Attributes:
         shot: The parameters of the shot calculation.
         trajectory: Computed TrajectoryData points.
-        base_data: Base trajectory data points for interpolation.
+        base_data: Continuous accepted trajectory steps for interpolation.
         extra: [DEPRECATED] Whether extra_data was requested.
         error: RangeError, if any.
     """
 
     """
-    TODO:
-    * Implement dense_output in cythonized engines to populate base_data
-    * Use base_data for interpolation if present
+    TODO: Implement dense_output in cythonized engines to populate base_data.
     """
 
     props: ShotProps
     trajectory: list[TrajectoryData] = field(repr=False)
-    base_data: list[BaseTrajData] | None = field(repr=False)
+    base_data: list[TrajectoryStep] | None = field(repr=False)
     extra: bool = False
     error: RangeError | None = None
 
@@ -860,6 +941,28 @@ class HitResult:
             """Helper to get the raw value of the key attribute from a TrajectoryData point."""
             val = getattr(td, key_attribute)
             return val.raw_value if hasattr(val, "raw_value") else val
+
+        if self.base_data:
+
+            def step_key(data: BaseTrajData) -> float:
+                return get_key_val(TrajectoryData.from_base_data(self.props, data))
+
+            for step in self.base_data:
+                if step.end.time < start_from_time:
+                    continue
+                start_value = step_key(step.start)
+                end_value = step_key(step.end)
+                if abs(start_value - key_value) < epsilon:
+                    return TrajectoryData.from_base_data(self.props, step.start)
+                if abs(end_value - key_value) < epsilon:
+                    return TrajectoryData.from_base_data(self.props, step.end)
+                if (start_value < key_value < end_value) or (end_value < key_value < start_value):
+                    if key_attribute == "time":
+                        data = step.at_time(key_value)
+                    else:
+                        data = step.at_value(step_key, key_value)
+                    return TrajectoryData.from_base_data(self.props, data)
+            raise ArithmeticError(f"Trajectory does not reach {key_attribute} = {value}")
 
         if n < 3:  # We won't interpolate on less than 3 points, but check for an exact match in the existing rows.
             if abs(get_key_val(traj[0]) - key_value) < epsilon:

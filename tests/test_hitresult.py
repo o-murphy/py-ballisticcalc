@@ -75,7 +75,5 @@ class TestHitResult:
         shot = Shot(ammo=Ammo(dm, mv=Velocity.FPS(mach)))
         result = self.calc.fire(shot, trajectory_range=Distance.Meter(1),
                             trajectory_step=Distance.Meter(0.2), flags=TrajFlag.ALL)
-        assert len(result) == 6, "Result should have 6 TrajectoryData rows"
-        expected_flags = TrajFlag.RANGE | TrajFlag.ZERO_DOWN | TrajFlag.MACH
-        assert (result[0].flag & expected_flags) == expected_flags, \
-            "First row should have RANGE, ZERO_DOWN, and MACH flags"
+        assert len(result) == 6, "Result should contain the requested six range samples"
+        assert result[0].flag == TrajFlag.RANGE

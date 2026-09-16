@@ -44,7 +44,7 @@ from py_ballisticcalc.engines.base_engine import (
 from py_ballisticcalc.exceptions import RangeError
 from py_ballisticcalc.logger import logger
 from py_ballisticcalc.shot import ShotProps
-from py_ballisticcalc.trajectory_data import BaseTrajData, HitResult, TrajFlag
+from py_ballisticcalc.trajectory_data import BaseTrajData, HitResult, TrajectoryStep, TrajFlag
 from py_ballisticcalc.vector import ZERO_VECTOR, Vector
 
 __all__ = ("EulerIntegrationEngine",)
@@ -161,7 +161,7 @@ class EulerIntegrationEngine(BaseIntegrationEngine):
         _cMinimumAltitude = self._config.cMinimumAltitude
         coriolis_fn = props.coriolis.coriolis_acceleration_local if props.coriolis and props.coriolis.full_3d else None
 
-        step_data: list[BaseTrajData] = []  # Data for interpolation (if dense_output is enabled)
+        step_data: list[TrajectoryStep] = []  # Continuous data for interpolation (if dense_output is enabled)
         time: float = 0.0
         drag: float = 0.0
         mach: float = 0.0
@@ -191,6 +191,9 @@ class EulerIntegrationEngine(BaseIntegrationEngine):
             range_step=range_step_ft,
             time_step=time_step,
         )
+        _, mach = props.get_density_and_mach_for_altitude(range_vector.y)
+        data = BaseTrajData(time=time, position=range_vector, velocity=velocity_vector, mach=mach)
+        data_filter.record_initial(data)
 
         # region Trajectory Loop
         warnings.simplefilter("once")  # used to avoid multiple warnings in a loop
@@ -206,13 +209,6 @@ class EulerIntegrationEngine(BaseIntegrationEngine):
 
             # Update air density at current point in trajectory
             density_ratio, mach = props.get_density_and_mach_for_altitude(range_vector.y)
-
-            # region Record current step
-            data = BaseTrajData(time=time, position=range_vector, velocity=velocity_vector, mach=mach)
-            data_filter.record(data)
-            if dense_output:
-                step_data.append(data)
-            # endregion
 
             # region Ballistic calculation step (point-mass)
             # Air resistance seen by bullet is ground velocity minus wind velocity relative to ground
@@ -232,6 +228,13 @@ class EulerIntegrationEngine(BaseIntegrationEngine):
             range_vector += delta_range_vector  # type: ignore[operator]
             velocity = velocity_vector.magnitude()  # Velocity relative to ground
             time += delta_time
+            _, mach = props.get_density_and_mach_for_altitude(range_vector.y)
+            next_data = BaseTrajData(time=time, position=range_vector, velocity=velocity_vector, mach=mach)
+            step = TrajectoryStep(data, next_data)
+            data_filter.record_step(step)
+            if dense_output:
+                step_data.append(step)
+            data = next_data
             # endregion
 
             if (
@@ -247,10 +250,6 @@ class EulerIntegrationEngine(BaseIntegrationEngine):
                     termination_reason = RangeError.MinimumAltitudeReached
                 break
         # endregion Trajectory Loop
-        data = BaseTrajData(time=time, position=range_vector, velocity=velocity_vector, mach=mach)
-        data_filter.record(data)
-        if dense_output:
-            step_data.append(data)
         # Ensure that we have at least two data points in trajectory,
         # ... as well as last point if we had an incomplete trajectory
         data_filter.finalize(termination_reason)

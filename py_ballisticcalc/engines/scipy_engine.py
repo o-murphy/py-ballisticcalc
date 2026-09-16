@@ -57,7 +57,7 @@ from __future__ import annotations
 # Standard library imports
 import math
 import warnings
-from bisect import bisect_left, bisect_right
+from bisect import bisect_right
 from collections.abc import Callable, Sequence
 from dataclasses import asdict, dataclass
 from typing import TYPE_CHECKING, Any, Literal
@@ -1022,7 +1022,7 @@ class SciPyIntegrationEngine(BaseIntegrationEngine):
                 if time_step > 0.0:
                     time_of_last_record = 0.0
                     for next_record in range(1, len(ranges)):
-                        while ranges[next_record].time - time_of_last_record > time_step + self.SEPARATE_ROW_TIME_DELTA:
+                        while ranges[next_record].time - time_of_last_record > time_step:
                             time_of_last_record += time_step
                             ranges.append(make_row(time_of_last_record, sol.sol(time_of_last_record), TrajFlag.RANGE))
                         time_of_last_record = ranges[next_record].time
@@ -1032,22 +1032,11 @@ class SciPyIntegrationEngine(BaseIntegrationEngine):
             if filter_flags:
 
                 def add_row(time, state, flag):
-                    """Add a row to ranges, keeping it sorted by time.
-                    If a row with (approximately) this time already exists then add this flag to it.
-                    """
-                    idx = bisect_left(ranges, time, key=lambda r: r.time)
-                    if idx < len(ranges):
-                        # If we match existing row's time then just add this flag to the row
-                        if abs(ranges[idx].time - time) < self.SEPARATE_ROW_TIME_DELTA:
-                            ranges[idx] = make_row(time, state, ranges[idx].flag | flag)
-                            return
-                        if idx > 0 and abs(ranges[idx - 1].time - time) < self.SEPARATE_ROW_TIME_DELTA:
-                            ranges[idx - 1] = make_row(time, state, ranges[idx - 1].flag | flag)
-                            return
-                    ranges.insert(idx, make_row(time, state, flag))  # Insert at sorted position
+                    """Append an independent event row; callers sort once afterwards."""
+                    ranges.append(make_row(time, state, flag))
 
                 # Make sure ranges are sorted by time before this check:
-                if filter_flags & TrajFlag.MACH and ranges[0].mach >= 1.0 and ranges[-1].mach < 1.0:
+                if filter_flags & TrajFlag.MACH:
 
                     def mach_minus_one(t):
                         """Return the Mach number at time t minus 1."""
@@ -1062,9 +1051,12 @@ class SciPyIntegrationEngine(BaseIntegrationEngine):
 
                     try:
                         t_vals = sol.t
-                        res = root_scalar(mach_minus_one, bracket=(t_vals[0], t_vals[-1]))
-                        if res.converged:
-                            add_row(res.root, sol.sol(res.root), TrajFlag.MACH)
+                        initial_mach_error = mach_minus_one(t_vals[0])
+                        final_mach_error = mach_minus_one(t_vals[-1])
+                        if initial_mach_error > 0.0 > final_mach_error:
+                            res = root_scalar(mach_minus_one, bracket=(t_vals[0], t_vals[-1]))
+                            if res.converged:
+                                add_row(res.root, sol.sol(res.root), TrajFlag.MACH)
                     except ValueError:
                         logger.debug("No Mach crossing found")
 
@@ -1075,6 +1067,8 @@ class SciPyIntegrationEngine(BaseIntegrationEngine):
                     and sol.t_events[-1].size > 0
                 ):
                     for t_cross in sol.t_events[-1]:
+                        if t_cross == sol.t[0]:
+                            continue
                         state = sol.sol(t_cross)
                         # To determine crossing direction, sample after the crossing
                         dt = 1e-8  # Small time offset
@@ -1094,9 +1088,10 @@ class SciPyIntegrationEngine(BaseIntegrationEngine):
 
                     try:
                         t_vals = sol.t
-                        res = root_scalar(vy, bracket=(t_vals[0], t_vals[-1]))
-                        if res.converged:
-                            add_row(res.root, sol.sol(res.root), TrajFlag.APEX)
+                        if vy(t_vals[0]) > 0.0 > vy(t_vals[-1]):
+                            res = root_scalar(vy, bracket=(t_vals[0], t_vals[-1]))
+                            if res.converged:
+                                add_row(res.root, sol.sol(res.root), TrajFlag.APEX)
                     except ValueError:
                         logger.debug("No apex found for trajectory")
 

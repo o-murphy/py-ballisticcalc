@@ -245,30 +245,34 @@ class TestTrajectoryDataFilter:
         assert len(zero_rows) >= 1
 
 
-    def test_no_rows_closer_than_merge_threshold(self, loaded_engine_instance):
-        """Ensure coalescing merges events so no two rows are within the merge time threshold."""
+    def test_nearby_sample_and_event_rows_remain_distinct(self, loaded_engine_instance):
+        """Physical events must not be rewritten onto a nearby scheduled sample."""
         calc = Calculator(engine=loaded_engine_instance)
-        shot = self._mk_shot(2800.0)
-        # Request multiple flags and dense-ish sampling to provoke close-by events
-        res = calc.fire(shot, trajectory_range=Distance.Yard(500), trajectory_step=Distance.Yard(50),
-                        time_step=0.001, flags=TrajFlag.ALL, raise_range_error=False)
-        dt_thresh = BaseIntegrationEngine.SEPARATE_ROW_TIME_DELTA
-        times = [td.time for td in res.trajectory]
-        diffs = [t2 - t1 for t1, t2 in zip(times, times[1:])]
-        assert all(abs(d) >= dt_thresh for d in diffs)
+        shot = self._mk_shot(2750.0)
+        calc.set_weapon_zero(shot, Distance.Yard(200))
+        res = calc.fire(shot, trajectory_range=Distance.Yard(600), trajectory_step=Distance.Yard(200),
+                        flags=TrajFlag.ZERO)
+        event_rows = [td for td in res.trajectory if td.flag & TrajFlag.ZERO]
+        sample_rows = [td for td in res.trajectory if td.flag == TrajFlag.RANGE]
+        assert event_rows
+        assert sample_rows
+        assert all(not (td.flag & TrajFlag.RANGE) for td in event_rows)
+        assert 0.0 < min(abs(event.time - sample.time) for event in event_rows for sample in sample_rows) < 1e-5
 
 
-    def test_zero_event_coalesces_onto_range_row(self, loaded_engine_instance):
-        """A ZERO crossing should appear on a RANGE-sampled row when timestamps align closely (coalesced flags)."""
+    def test_zero_event_and_range_sample_have_independent_rows(self, loaded_engine_instance):
+        """Zeroing and trajectory sampling are separate numerical queries."""
         calc = Calculator(engine=loaded_engine_instance)
         shot = self._mk_shot(2750.0)
         # Set zero at 200 yd, then sample RANGE at 200 yd so ZERO and RANGE align
         calc.set_weapon_zero(shot, Distance.Yard(200))
         res = calc.fire(shot, trajectory_range=Distance.Yard(600), trajectory_step=Distance.Yard(200),
                         flags=TrajFlag.ZERO)
-        # Find any ZERO row that also includes RANGE flag (coalesced)
-        coalesced = [td for td in res.trajectory if (td.flag & TrajFlag.ZERO) and (td.flag & TrajFlag.RANGE)]
-        assert len(coalesced) >= 1
+        zero_rows = [td for td in res.trajectory if td.flag & TrajFlag.ZERO]
+        range_rows = [td for td in res.trajectory if td.flag == TrajFlag.RANGE]
+        assert zero_rows
+        assert range_rows
+        assert all(not (td.flag & TrajFlag.RANGE) for td in zero_rows)
 
 
     def test_combined_flags(self, loaded_engine_instance):
@@ -281,4 +285,4 @@ class TestTrajectoryDataFilter:
                                trajectory_step=Distance.Meter(100), flags=TrajFlag.ALL)
         td = hit_result.flag(TrajFlag.ZERO_DOWN)
         assert td is not None, 'Expected to find a ZERO_DOWN flag in trajectory'
-        assert td.flag == TrajFlag.ZERO_DOWN | TrajFlag.RANGE, 'ZERO_DOWN should occur on a RANGE row'
+        assert td.flag == TrajFlag.ZERO_DOWN, 'ZERO_DOWN must retain its own interpolated state'
