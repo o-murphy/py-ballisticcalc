@@ -12,10 +12,10 @@ py-ballisticcalc provides various calculation engines with identical public sema
 | [`cythonized_rk4_engine`][py_ballisticcalc_exts.CythonizedRK4IntegrationEngine]     | :material-arrow-up:   112x / 200x (faster)    | [`[exts]`](#cython-engines) | Compiled Runge-Kutta 4th-order          |
 | [`cythonized_euler_engine`][py_ballisticcalc_exts.CythonizedEulerIntegrationEngine] | :material-arrow-up:    47x / 65x (faster)     | [`[exts]`](#cython-engines) | Compiled Euler integration              |
 | [`cythonized_verlet_engine`][py_ballisticcalc_exts.CythonizedVelocityVerletIntegrationEngine] | :material-arrow-up:   157x / 100x (faster)    | [`[exts]`](#cython-engines) | Compiled Verlet 2nd-order symplectic    |
-| [`cythonized_ck_engine`][py_ballisticcalc_exts.CythonizedCashKarpIntegrationEngine][^ck] | :material-arrow-up:  ~2900x / ~270x (faster)  | [`[exts]`](#cython-engines) | Compiled Cash-Karp adaptive RK45        |
+| [`cythonized_ck_engine`][py_ballisticcalc_exts.CythonizedCashKarpIntegrationEngine][^ck] | :material-arrow-up:  much faster (see below)  | [`[exts]`](#cython-engines) | Compiled Cash-Karp adaptive RK45        |
 | [`scipy_engine`][py_ballisticcalc.engines.SciPyIntegrationEngine]                   | :material-arrow-up:   6.2x / 5.8x (faster)    |          `[scipy]`          | Advanced numerical methods              |
 
-[^ck]: Measured directly against pure-Python `rk4_engine` with `scripts/benchmark.py`, same 2000m G7 shot as the [benchmarks](benchmarks.md#cash-karp-engine) page, rather than composed through `cythonized_rk4_engine`'s own baseline-relative figure above (that figure comes from the separate `BenchmarkEngines.ipynb` study, on hardware and a scenario this doc can't reproduce, so it isn't safe to multiply through). Re-run in this environment: `cythonized_ck_engine` vs. `cythonized_rk4_engine` reproduced 2.1x (Trajectory) / 14.3x (Find Zero), matching the [benchmarks](benchmarks.md#cash-karp-engine) page; `cythonized_rk4_engine` vs. pure-Python `rk4_engine` measured ~129x (Trajectory) / ~202x (Find Zero) (150 repeats, 15 warmup — fewer than the 500/50 above since the pure-Python `Find Zero` case is slow). Chaining same-case factors gives `cythonized_ck_engine`'s speedup over pure Python directly: ~271x (Trajectory), ~2900x (Find Zero), rounded to the figures in the table. The large `Find Zero` speedup is not a fluke: `set_weapon_zero` integrates repeatedly (once per damped-Newton iteration), so a per-call reduction in accepted steps compounds across iterations. See [Adaptive integration (Cash-Karp)](#adaptive-integration-cash-karp) below.
+[^ck]: Unlike the other rows, this one deliberately omits a number relative to the pure-Python `rk4_engine` baseline. That composition requires multiplying through `cythonized_rk4_engine`'s own baseline-relative figure above (from the separate `BenchmarkEngines.ipynb` study, different hardware/scenario), and pure-Python interpreter overhead varies enough across machines that the result doesn't reproduce — confirmed when a from-scratch re-run in this session (~271x Trajectory / ~2900x Find Zero) did not match an independent run on different hardware. What *is* directly measured and reproducible on more than one machine: `cythonized_ck_engine` vs. `cythonized_rk4_engine` is 2.1x (Trajectory) / 14.3x (Find Zero) faster (`scripts/benchmark.py`, 500 repeats, 50 warmup — see [benchmarks](benchmarks.md#cash-karp-engine)). See [Adaptive integration (Cash-Karp)](#adaptive-integration-cash-karp) below for why those two numbers differ so much even though both compare the same pair of engines.
 
 * This project will default to the [`rk4_engine`][py_ballisticcalc.engines.RK4IntegrationEngine].
 * For higher speed and precision use the [`scipy_engine`][py_ballisticcalc.engines.SciPyIntegrationEngine].
@@ -53,9 +53,23 @@ its internal step size is not fixed by `cStepMultiplier`: it grows the step up t
 configured base step during smooth flight, and shrinks it (down to 1/64 of the base step,
 retrying the attempted step rather than accepting it) whenever its own embedded error estimate
 exceeds `relative_tolerance` (default `1e-6`, configurable per instance). This needs far fewer
-accepted steps than fixed-step RK4 for comparable accuracy, which is why `set_weapon_zero`
-(repeated integration per damped-Newton iteration) sees a much larger speedup than a single
-trajectory call — see the [benchmarks](benchmarks.md) page.
+accepted steps than fixed-step RK4 for comparable accuracy.
+
+That step-count reduction alone doesn't explain why `set_weapon_zero`'s speedup (14.3x vs.
+`cythonized_rk4_engine`) is so much larger than a single `fire()` call's (2.1x): both compare the
+same pair of engines on the same 2000m shot. The difference is where the Python/C++ call
+boundary falls. `fire()` crosses that boundary once per call, but still pays a roughly fixed
+per-call cost (unit conversions, building `HitResult`/`TrajectoryData` rows) on top of the raw
+integration — a cost that's a small fraction of `cythonized_rk4_engine`'s comparatively slow raw
+integration, but a much larger fraction of `cythonized_ck_engine`'s (already tiny) raw
+integration, so it dilutes CK's apparent advantage. `set_weapon_zero`, by contrast, crosses that
+boundary once for the *entire* damped-Newton search (confirmed by measurement: 4 iterations for
+this shot, each internally calling the integrator with no per-iteration Python round-trip), so
+the fixed per-call cost is paid once instead of once per iteration, and the ratio that comes
+through is much closer to the engines' raw, undiluted integration speeds. Neither number is
+wrong; they answer different questions ("how much faster is a typical Python-facing call" vs.
+"how much faster is the raw integration"). See the [benchmarks](benchmarks.md) page for the
+measurements.
 
 ```python
 from py_ballisticcalc import Calculator
