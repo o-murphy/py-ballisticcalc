@@ -871,7 +871,8 @@ class HitResult:
         events: Exact physical event records (ZERO, MACH, APEX, and MRT).
         trajectory: [DEPRECATED] Alias for `records`. Use `records` (exact stream) or
             `samples` (deterministic scheduled table) instead.
-        base_data: Continuous accepted trajectory steps for interpolation.
+        base_data: Flat sequence of accepted-step points (dense_output engines only), for
+            local interpolation between adjacent pairs.
         extra: [DEPRECATED] Whether extra_data was requested.
         error: RangeError, if any.
     """
@@ -882,33 +883,18 @@ class HitResult:
 
     props: ShotProps
     records: list[TrajectoryData] = field(repr=False)
-    base_data: list[TrajectoryStep] | None = field(repr=False)
+    base_data: list[BaseTrajData] | None = field(repr=False)
     extra: bool = False
     error: RangeError | None = None
 
     def __init__(
         self,
         props: ShotProps,
-        records: list[TrajectoryData] | None = None,
-        base_data: list[TrajectoryStep] | None = None,
+        records: list[TrajectoryData],
+        base_data: list[BaseTrajData] | None = None,
         extra: bool = False,
         error: RangeError | None = None,
-        *,
-        trajectory: list[TrajectoryData] | None = None,
     ):
-        """Create a result from exact records.
-
-        ``trajectory=`` remains accepted for source compatibility with the
-        former public dataclass constructor.  It is interpreted as the exact
-        record stream, before the :attr:`samples` presentation projection.
-        """
-        if records is None:
-            if trajectory is None:
-                raise TypeError("HitResult requires records")
-            records = trajectory
-        elif trajectory is not None:
-            raise TypeError("Pass either records or trajectory, not both")
-
         object.__setattr__(self, "props", props)
         object.__setattr__(self, "records", records)
         object.__setattr__(self, "base_data", base_data)
@@ -1080,24 +1066,27 @@ class HitResult:
             val = getattr(td, key_attribute)
             return val.raw_value if hasattr(val, "raw_value") else val
 
-        # Some extension engines expose raw base points rather than
-        # ``TrajectoryStep`` objects.  Only the latter support the local
-        # Hermite interpolation API; raw points correctly use ``records``
-        # below.
-        if self.base_data and isinstance(self.base_data[0], TrajectoryStep):
+        # Some extension engines expose a different sequence type (e.g. a
+        # Cython CythonizedBaseTrajSeq with its own get_at()) rather than a
+        # flat list of BaseTrajData; only the latter supports the local
+        # Hermite interpolation below, built on demand from each adjacent
+        # pair via TrajectoryStep -- base_data itself stays a flat, honest
+        # point sequence rather than pre-materialising overlapping pairs.
+        if self.base_data and isinstance(self.base_data[0], BaseTrajData):
 
             def step_key(data: BaseTrajData) -> float:
                 return get_key_val(TrajectoryData.from_base_data(self.props, data))
 
-            for step in self.base_data:
-                if step.end.time < start_from_time:
+            for start, end in zip(self.base_data, self.base_data[1:]):
+                if end.time < start_from_time:
                     continue
-                start_value = step_key(step.start)
-                end_value = step_key(step.end)
+                step = TrajectoryStep(start, end)
+                start_value = step_key(start)
+                end_value = step_key(end)
                 if abs(start_value - key_value) < epsilon:
-                    return TrajectoryData.from_base_data(self.props, step.start)
+                    return TrajectoryData.from_base_data(self.props, start)
                 if abs(end_value - key_value) < epsilon:
-                    return TrajectoryData.from_base_data(self.props, step.end)
+                    return TrajectoryData.from_base_data(self.props, end)
                 if (start_value < key_value < end_value) or (end_value < key_value < start_value):
                     if key_attribute == "time":
                         data = step.at_time(key_value)

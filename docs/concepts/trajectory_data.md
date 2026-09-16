@@ -69,6 +69,7 @@ schedule = result.samples
     switch to `.records` (or drop the attribute and iterate the
     `HitResult` directly).
 
-The compatibility constructor spelling `HitResult(..., trajectory=rows)` is
-still accepted; its rows are interpreted as `records` before these views are
-derived.
+    This deprecation applies only to the `.trajectory` *property* on an
+    existing `HitResult`. The constructor itself takes `records` as an
+    ordinary parameter — there is no `trajectory=` constructor spelling —
+    since `HitResult` is built internally by the engines, not by user code.

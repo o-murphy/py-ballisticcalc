@@ -120,3 +120,30 @@ class TestHitResult:
         assert coarse.flag(TrajFlag.APEX) is not None
         assert coarse.flag(TrajFlag.ZERO_DOWN) is not None
         assert coarse.flag(TrajFlag.MACH) is not None
+
+    def test_dense_output_base_data_is_flat_and_interpolates(self):
+        """`base_data` is a flat list[BaseTrajData] (matching the integrator's own accepted-step
+        stream); get_at() builds a TrajectoryStep on demand from each adjacent pair rather than
+        requiring pre-materialized step objects in base_data itself.
+
+        Only pure-Python engines populate base_data this way; Cython engines expose their own
+        CythonizedBaseTrajSeq (a different type, with its own get_at()) instead, so this test
+        skips there."""
+        dense_result = self.calc.fire(self.shot, trajectory_range=Distance.Yard(1000),
+                                      trajectory_step=Distance.Yard(100), dense_output=True)
+        if not isinstance(dense_result.base_data, list):
+            pytest.skip("base_data is a Cython CythonizedBaseTrajSeq for this engine, not a flat list")
+        assert dense_result.base_data is not None
+        assert len(dense_result.base_data) > 2
+        assert all(isinstance(point, BaseTrajData) for point in dense_result.base_data)
+
+        target = Distance.Yard(423)
+        dense_point = dense_result.get_at("distance", target)
+        assert pytest.approx(dense_point.distance >> Distance.Yard, abs=1e-6) == 423.0
+
+        # Without dense_output, get_at() falls back to 3-point PCHIP over `.records`;
+        # both must agree closely since they describe the same physical trajectory.
+        sparse_result = self.calc.fire(self.shot, trajectory_range=Distance.Yard(1000),
+                                       trajectory_step=Distance.Yard(100))
+        sparse_point = sparse_result.get_at("distance", target)
+        assert pytest.approx(dense_point.height >> Distance.Foot, abs=0.05) == (sparse_point.height >> Distance.Foot)

@@ -268,7 +268,7 @@ class TestTrajectoryDataFilter:
             )
         compatible = HitResult(
             res.props,
-            trajectory=res.records,
+            records=res.records,
             base_data=res.base_data,
             extra=res.extra,
             error=res.error,

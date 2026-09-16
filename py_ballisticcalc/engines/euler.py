@@ -44,7 +44,7 @@ from py_ballisticcalc.engines.base_engine import (
 from py_ballisticcalc.exceptions import RangeError
 from py_ballisticcalc.logger import logger
 from py_ballisticcalc.shot import ShotProps
-from py_ballisticcalc.trajectory_data import BaseTrajData, HitResult, TrajectoryStep, TrajFlag
+from py_ballisticcalc.trajectory_data import BaseTrajData, HitResult, TrajFlag
 from py_ballisticcalc.vector import ZERO_VECTOR, Vector
 
 __all__ = ("EulerIntegrationEngine",)
@@ -161,7 +161,7 @@ class EulerIntegrationEngine(BaseIntegrationEngine):
         _cMinimumAltitude = self._config.cMinimumAltitude
         coriolis_fn = props.coriolis.coriolis_acceleration_local if props.coriolis and props.coriolis.full_3d else None
 
-        step_data: list[TrajectoryStep] = []  # Continuous data for interpolation (if dense_output is enabled)
+        step_data: list[BaseTrajData] = []  # Flat accepted-step points for interpolation (if dense_output is enabled)
         time: float = 0.0
         drag: float = 0.0
         mach: float = 0.0
@@ -194,6 +194,8 @@ class EulerIntegrationEngine(BaseIntegrationEngine):
         _, mach = props.get_density_and_mach_for_altitude(range_vector.y)
         data = BaseTrajData(time=time, position=range_vector, velocity=velocity_vector, mach=mach)
         data_filter.record_initial(data)
+        if dense_output:
+            step_data.append(data)
 
         # region Trajectory Loop
         warnings.simplefilter("once")  # used to avoid multiple warnings in a loop
@@ -230,10 +232,9 @@ class EulerIntegrationEngine(BaseIntegrationEngine):
             time += delta_time
             _, mach = props.get_density_and_mach_for_altitude(range_vector.y)
             next_data = BaseTrajData(time=time, position=range_vector, velocity=velocity_vector, mach=mach)
-            step = TrajectoryStep(data, next_data)
-            data_filter.record_step(step)
+            data_filter.record_step(data, next_data)
             if dense_output:
-                step_data.append(step)
+                step_data.append(next_data)
             data = next_data
             # endregion
 

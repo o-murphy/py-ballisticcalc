@@ -293,61 +293,62 @@ class TrajectoryDataFilter:
                 )
             )
 
-    def record_step(self, step: TrajectoryStep) -> None:
-        """Emit all scheduled samples and one-shot events inside *step*."""
+    def record_step(self, start: BaseTrajData, end: BaseTrajData) -> None:
+        """Emit all scheduled samples and one-shot events between *start* and *end*."""
         if self.prev_data is None:
-            self.record_initial(step.start)
-        elif step.start != self.prev_data:
+            self.record_initial(start)
+        elif start != self.prev_data:
             raise ValueError("Trajectory steps must be contiguous")
 
+        step = TrajectoryStep(start, end)
         rows: list[tuple[BaseTrajData, TrajFlag | int]] = []
 
         def add(data: BaseTrajData, flag: TrajFlag | int) -> None:
             rows.append((data, flag))
 
         if self.range_step > 0:
-            while self.next_record_distance + self.range_step <= step.end.position.x:
+            while self.next_record_distance + self.range_step <= end.position.x:
                 distance = self.next_record_distance + self.range_step
                 if distance > self.range_limit + self.EPSILON:
                     self.range_step = -1
                     break
-                if distance >= step.start.position.x - self.EPSILON:
+                if distance >= start.position.x - self.EPSILON:
                     add(step.at_x(distance), TrajFlag.RANGE)
                 self.next_record_distance = distance
 
         if self.time_step > 0:
-            while self.time_of_last_record + self.time_step <= step.end.time:
+            while self.time_of_last_record + self.time_step <= end.time:
                 self.time_of_last_record += self.time_step
-                if self.time_of_last_record >= step.start.time:
+                if self.time_of_last_record >= start.time:
                     add(step.at_time(self.time_of_last_record), TrajFlag.RANGE)
 
-        if self.filter & TrajFlag.APEX and step.start.velocity.y > 0.0 >= step.end.velocity.y:
+        if self.filter & TrajFlag.APEX and start.velocity.y > 0.0 >= end.velocity.y:
             add(step.at_value(lambda data: data.velocity.y, 0.0), TrajFlag.APEX)
             self.filter &= ~TrajFlag.APEX
 
         mach_ratio = lambda data: data.velocity.magnitude() / data.mach
-        if self.filter & TrajFlag.MACH and mach_ratio(step.start) > 1.0 > mach_ratio(step.end):
+        if self.filter & TrajFlag.MACH and mach_ratio(start) > 1.0 > mach_ratio(end):
             add(step.at_value(mach_ratio, 1.0), TrajFlag.MACH)
             self.filter &= ~TrajFlag.MACH
 
         sight_height = lambda data: data.position.y - data.position.x * self.look_angle_tangent
-        if self.filter & TrajFlag.ZERO_UP and sight_height(step.start) < 0.0 < sight_height(step.end):
+        if self.filter & TrajFlag.ZERO_UP and sight_height(start) < 0.0 < sight_height(end):
             add(step.at_value(sight_height, 0.0), TrajFlag.ZERO_UP)
             self.filter &= ~TrajFlag.ZERO_UP
-        elif self.filter & TrajFlag.ZERO_DOWN and sight_height(step.start) > 0.0 > sight_height(step.end):
+        elif self.filter & TrajFlag.ZERO_DOWN and sight_height(start) > 0.0 > sight_height(end):
             add(step.at_value(sight_height, 0.0), TrajFlag.ZERO_DOWN)
             self.filter &= ~TrajFlag.ZERO_DOWN
 
         for data, flag in sorted(rows, key=lambda row: row[0].time):
             self._append(data, flag)
-        self.prev_data = step.end
+        self.prev_data = end
 
     def record(self, data: BaseTrajData) -> None:
         """Compatibility adapter for callers that still provide endpoints."""
         if self.prev_data is None:
             self.record_initial(data)
         else:
-            self.record_step(TrajectoryStep(self.prev_data, data))
+            self.record_step(self.prev_data, data)
 
 
 class _WindSock:

@@ -76,6 +76,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   different row count/order than before if event flags were requested; code that indexed
   `.trajectory` assuming the fixed RANGE/TIME schedule should switch to `.samples`.
 
+- `HitResult.base_data` (pure-Python engines: `euler`/`rk4`/`velocity_verlet`) is a flat
+  `list[BaseTrajData]` again — one entry per accepted-step point, matching both the
+  pre-`records`/`samples`/`events` shape and bclibc's own `BCLIBC_BaseTrajSeq` (also a flat
+  buffer of points). It had briefly become `list[TrajectoryStep]` (each step's `start`/`end`
+  pair materialized up front) during this same unreleased work — `TrajectoryStep` is a
+  computational helper for one interval, not a storage shape, and pre-pairing every entry
+  duplicated each interior point across its neighboring pairs for no benefit over building a
+  `TrajectoryStep` on demand from `zip(base_data, base_data[1:])` at query time, which
+  `HitResult.interpolate()`/`get_at()` now do. `TrajectoryDataFilter.record_step()` similarly
+  takes `(start, end)` directly instead of a pre-built `TrajectoryStep`, constructing one
+  internally; callers (the three pure-Python engines) no longer need to import `TrajectoryStep`
+  at all. Cython/`dense_output` engines are unaffected — they already exposed their own
+  `CythonizedBaseTrajSeq` (a flat buffer with its own `get_at()`), never `TrajectoryStep`.
+- `HitResult.__init__` drops the `trajectory=` keyword-only compatibility spelling introduced
+  earlier in this same unreleased work: `records` is now an ordinary, required positional
+  parameter. `HitResult` is built internally by the engines (always positionally) and is not
+  meant to be constructed directly by user code, so a back-compat spelling for a former public
+  dataclass constructor had no real caller to protect.
+
 ### Deprecated
 - `HitResult.trajectory`: alias for `HitResult.records` retained for source compatibility
   (emits `DeprecationWarning`). Use `.records` for the exact chronological stream, or `.samples`
