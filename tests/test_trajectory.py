@@ -3,6 +3,9 @@ from math import fabs
 import pytest
 
 from py_ballisticcalc import *
+from py_ballisticcalc.engines.base_engine import TrajectoryDataFilter
+from py_ballisticcalc.shot import ShotProps
+from py_ballisticcalc.vector import Vector
 
 pytestmark = pytest.mark.engine
 
@@ -136,6 +139,22 @@ class TestTrajectoryDataFilter:
     def _mk_shot(mv_fps=2600.0):
         dm = DragModel(bc=0.243, drag_table=TableG7)
         return Shot(ammo=Ammo(dm, mv=Velocity.FPS(mv_fps)), weapon=Weapon(), atmo=Atmo.icao())
+
+    def test_range_sample_resets_time_sample_clock(self):
+        """A RANGE row is the last record for the subsequent TIME schedule."""
+        props = ShotProps.from_shot(self._mk_shot())
+        data_filter = TrajectoryDataFilter(
+            props, TrajFlag.NONE, range_limit=100.0, range_step=10.0, time_step=0.1
+        )
+        start = BaseTrajData(0.0, Vector(0.0, 0.0, 0.0), Vector(100.0, 0.0, 0.0), 1100.0)
+        end = BaseTrajData(0.15, Vector(15.0, 0.0, 0.0), Vector(100.0, 0.0, 0.0), 1100.0)
+
+        data_filter.record_initial(start)
+        data_filter.record_step(start, end)
+
+        # The RANGE point lands at t=0.1.  Starting TIME from it means no
+        # separate t=0.1 TIME row is emitted from this interval.
+        assert [row.time for row in data_filter.records] == pytest.approx([0.0, 0.1])
 
     def test_range_interpolation_with_sparse_history(self,loaded_engine_instance):
         """Ensure RANGE rows are interpolated when exact hits not on step grid and only minimal history exists.

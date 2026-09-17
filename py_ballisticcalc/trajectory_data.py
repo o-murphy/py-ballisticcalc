@@ -1083,7 +1083,7 @@ class HitResult:
                 step = TrajectoryStep(start, end)
                 start_value = step_key(start)
                 end_value = step_key(end)
-                if abs(start_value - key_value) < epsilon:
+                if start.time >= start_from_time and abs(start_value - key_value) < epsilon:
                     return TrajectoryData.from_base_data(self.props, start)
                 if abs(end_value - key_value) < epsilon:
                     return TrajectoryData.from_base_data(self.props, end)
@@ -1092,7 +1092,8 @@ class HitResult:
                         data = step.at_time(key_value)
                     else:
                         data = step.at_value(step_key, key_value)
-                    return TrajectoryData.from_base_data(self.props, data)
+                    if data.time >= start_from_time:
+                        return TrajectoryData.from_base_data(self.props, data)
             raise ArithmeticError(f"Trajectory does not reach {key_attribute} = {value}")
 
         if n < 3:

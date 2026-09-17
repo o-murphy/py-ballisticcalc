@@ -147,3 +147,20 @@ class TestHitResult:
                                        trajectory_step=Distance.Yard(100))
         sparse_point = sparse_result.get_at("distance", target)
         assert pytest.approx(dense_point.height >> Distance.Foot, abs=0.05) == (sparse_point.height >> Distance.Foot)
+
+    def test_dense_get_at_respects_start_from_time_within_interval(self):
+        """Dense interpolation must not return a root before the search origin."""
+        start = BaseTrajData(0.0, Vector(0.0, 0.0, 0.0), Vector(1.0, 1.0, 0.0), 1100.0)
+        end = BaseTrajData(2.0, Vector(2.0, 2.0, 0.0), Vector(1.0, 1.0, 0.0), 1100.0)
+        result = HitResult(
+            self.shot_result.props,
+            [
+                TrajectoryData.from_base_data(self.shot_result.props, start),
+                TrajectoryData.from_base_data(self.shot_result.props, end),
+            ],
+            [start, end],
+        )
+
+        # Height reaches one foot at t=1, before the requested search origin.
+        with pytest.raises(ArithmeticError):
+            result.get_at("height", Distance.Foot(1), start_from_time=1.5)

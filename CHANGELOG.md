@@ -113,6 +113,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   release's `records`/`samples`/`events` split).
 
 ### Fixed
+- fix: pure python `start_from_time` regression
 - `py_ballisticcalc/trajectory_data.py`: `HitResult.samples` annotated the *nearest* scheduled
   sample with every event's flag unconditionally, with no check that the two were actually
   close. With a coarse schedule (e.g. `trajectory_step == trajectory_range`, leaving only the

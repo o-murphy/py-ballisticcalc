@@ -313,7 +313,12 @@ class TrajectoryDataFilter:
                     self.range_step = -1
                     break
                 if distance >= start.position.x - self.EPSILON:
-                    add(step.at_x(distance), TrajFlag.RANGE)
+                    sample = step.at_x(distance)
+                    add(sample, TrajFlag.RANGE)
+                    # RANGE and TIME samples share one "last record" clock:
+                    # a time schedule starts from the most recently emitted
+                    # RANGE row, matching the long-standing filter contract.
+                    self.time_of_last_record = sample.time
                 self.next_record_distance = distance
 
         if self.time_step > 0:
