@@ -41,7 +41,7 @@ from py_ballisticcalc.engines.base_engine import (
 )
 from py_ballisticcalc.exceptions import RangeError, SolverRuntimeError
 from py_ballisticcalc.logger import logger
-from py_ballisticcalc.shot import ShotProps
+from py_ballisticcalc.shot import Shot, ShotProps
 from py_ballisticcalc.trajectory_data import HitResult, TrajectoryData, TrajFlag
 from py_ballisticcalc.unit import Angular, Distance, Pressure, Temperature, Velocity
 from py_ballisticcalc.vector import Vector
@@ -83,6 +83,7 @@ class _Bindings(NamedTuple):
     BaseTrajData: type[ctypes.Structure]
     TrajectoryRequest: type[ctypes.Structure]
     TrajResult: type[ctypes.Structure]
+    ZeroPointResult: type[ctypes.Structure]
     StreamCb: Any  # ctypes.CFUNCTYPE prototype
 
 
@@ -251,6 +252,11 @@ def _make_ctypes_bindings(real_t: _RealT) -> _Bindings:
             ("flag", ctypes.c_int32),
         )
 
+    class TbZeroPointResult(ctypes.Structure):
+        """Mirrors TINY_BCLIBC_ZeroPointResult."""
+
+        _fields_ = (("angle_rad", real_t), ("point", TbTrajResult))
+
     stream_cb = ctypes.CFUNCTYPE(ctypes.c_int32, ctypes.POINTER(TbTrajResult), ctypes.c_void_p)
 
     return _Bindings(
@@ -263,6 +269,7 @@ def _make_ctypes_bindings(real_t: _RealT) -> _Bindings:
         BaseTrajData=TbBaseTrajData,
         TrajectoryRequest=TbTrajectoryRequest,
         TrajResult=TbTrajResult,
+        ZeroPointResult=TbZeroPointResult,
         StreamCb=stream_cb,
     )
 
@@ -326,6 +333,13 @@ def _load_library(env_var: str, precision_flag: str, real_t: _RealT) -> ctypes.C
         ctypes.POINTER(b.BaseTrajData),
     )
     lib.tiny_bclibc_integrate_stream.restype = ctypes.c_int32
+
+    lib.tiny_bclibc_find_zero_point.argtypes = (
+        ctypes.POINTER(b.ShotProps),
+        b.real_t,
+        ctypes.POINTER(b.ZeroPointResult),
+    )
+    lib.tiny_bclibc_find_zero_point.restype = ctypes.c_int32
 
     lib.tiny_bclibc_last_error.argtypes = ()
     lib.tiny_bclibc_last_error.restype = ctypes.c_char_p
@@ -509,6 +523,50 @@ class TinyBclibcIntegrationEngineBase(BaseIntegrationEngine):
         )
         # Keep the backing arrays alive alongside the struct that points into them.
         return shot, (mach_arr, cd_arr, wind_arr)
+
+    def _native_zero_point(self, props: ShotProps, distance: Distance) -> tuple[Angular, TrajectoryData]:
+        """Run tiny_bclibc's native zero solver for initialized shot properties."""
+        b = self._b
+        tb_shot, _keepalive = self._build_tiny_shot(props)
+        curve_buf = (b.CurvePoint * tb_shot.drag_table_size)()
+        tb_props = b.ShotProps()
+        rc = self._lib.tiny_bclibc_build_shot_props(
+            ctypes.byref(tb_shot), curve_buf, ctypes.byref(tb_props)
+        )
+        if rc != _TINY_BCLIBC_OK:
+            raise SolverRuntimeError(
+                f"tiny_bclibc_build_shot_props failed: "
+                f"{self._lib.tiny_bclibc_last_error().decode('utf-8', 'replace')}"
+            )
+
+        result = b.ZeroPointResult()
+        rc = self._lib.tiny_bclibc_find_zero_point(
+            ctypes.byref(tb_props), b.real_t(distance >> Distance.Foot), ctypes.byref(result)
+        )
+        if rc != _TINY_BCLIBC_OK:
+            raise SolverRuntimeError(
+                f"tiny_bclibc_find_zero_point failed: "
+                f"{self._lib.tiny_bclibc_last_error().decode('utf-8', 'replace')}"
+            )
+        return Angular.Radian(result.angle_rad), _to_trajectory_data(result.point)
+
+    @override
+    def zero_angle(self, shot_info: Shot, distance: Distance) -> Angular:
+        """Find the barrel elevation with the native solver when its domain permits it.
+
+        tiny_bclibc's compact zero solver intentionally has no special cases for a vertical
+        shot or a zero at/near the muzzle. Preserve BaseIntegrationEngine's established
+        behaviour for those inputs.
+        """
+        try:
+            return self._native_zero_point(self._init_trajectory(shot_info), distance)[0]
+        except SolverRuntimeError:
+            return super().zero_angle(shot_info, distance)
+
+    @override
+    def zero_point(self, shot_info: Shot, distance: Distance) -> tuple[Angular, TrajectoryData]:
+        """Use tiny_bclibc's native zero solver and retain its terminal trajectory point."""
+        return self._native_zero_point(self._init_trajectory(shot_info), distance)
 
     @override
     def _integrate(

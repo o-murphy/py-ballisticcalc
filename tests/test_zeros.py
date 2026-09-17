@@ -162,15 +162,6 @@ def test_zero_point_reuses_the_successful_zero_iteration(loaded_engine_instance)
         return method(engine), calls
 
     reference_engine = calc._engine_instance
-    reference_method = (
-        (lambda engine: engine.zero_angle(shot, target_distance))
-        if type(reference_engine).zero_point is BaseIntegrationEngine.zero_point
-        else (lambda engine: engine.find_zero_angle(shot, target_distance))
-    )
-    _, reference_calls = call_count(
-        calc._engine_instance,
-        reference_method,
-    )
     (angle, point), zero_point_calls = call_count(
         calc._engine_instance,
         lambda engine: engine.zero_point(shot, target_distance),
@@ -180,7 +171,16 @@ def test_zero_point_reuses_the_successful_zero_iteration(loaded_engine_instance)
     assert point.flag == TrajFlag.RANGE
     assert point.slant_distance.raw_value == pytest.approx(target_distance.raw_value, abs=1e-2)
     assert point.slant_height.raw_value == pytest.approx(0.0, abs=1e-1)
-    assert zero_point_calls == reference_calls
+    if type(reference_engine).zero_point is BaseIntegrationEngine.zero_point:
+        _, reference_calls = call_count(
+            calc._engine_instance,
+            lambda engine: engine.zero_angle(shot, target_distance),
+        )
+        assert zero_point_calls == reference_calls
+    else:
+        # Native solvers retain the terminal point internally, so no Python `_integrate`
+        # call is needed to expose it.
+        assert zero_point_calls == 0
 
 
 def test_find_zero_point_matches_find_zero_angle(loaded_engine_instance):

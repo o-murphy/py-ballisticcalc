@@ -126,11 +126,16 @@ class TestHitResult:
         stream); get_at() builds a TrajectoryStep on demand from each adjacent pair rather than
         requiring pre-materialized step objects in base_data itself.
 
-        Only pure-Python engines populate base_data this way; Cython engines expose their own
-        CythonizedBaseTrajSeq (a different type, with its own get_at()) instead, so this test
-        skips there."""
-        dense_result = self.calc.fire(self.shot, trajectory_range=Distance.Yard(1000),
-                                      trajectory_step=Distance.Yard(100), dense_output=True)
+        Only engines that expose accepted-step data support this. Cython engines expose their
+        own CythonizedBaseTrajSeq (a different type, with its own get_at()); streamed native
+        engines may reject dense output altogether, so this test skips both cases."""
+        try:
+            dense_result = self.calc.fire(
+                self.shot, trajectory_range=Distance.Yard(1000), trajectory_step=Distance.Yard(100),
+                dense_output=True,
+            )
+        except NotImplementedError:
+            pytest.skip("dense_output is not supported by this engine")
         if not isinstance(dense_result.base_data, list):
             pytest.skip("base_data is a Cython CythonizedBaseTrajSeq for this engine, not a flat list")
         assert dense_result.base_data is not None
