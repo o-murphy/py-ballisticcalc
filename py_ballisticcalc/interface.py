@@ -278,9 +278,7 @@ class Calculator:
         total_elevation = self._engine_instance.zero_angle(shot, target_distance)
         return Angular.Radian((total_elevation >> Angular.Radian) - (shot.look_angle >> Angular.Radian))
 
-    def aiming_solution_for_target(
-        self, shot: Shot, target_distance: float | Distance
-    ) -> tuple[Angular, Angular, TrajectoryData]:
+    def aim(self, shot: Shot, target_distance: float | Distance) -> tuple[Angular, Angular, TrajectoryData]:
         """Calculate a target's zero solution and retain its trajectory point.
 
         Args:
@@ -311,6 +309,21 @@ class Calculator:
             (target_zero_elevation >> Angular.Radian) - (shot.weapon.zero_elevation >> Angular.Radian)
         )
         return vertical_hold, point.windage_angle, point
+
+    def aiming_solution_for_target(
+        self, shot: Shot, target_distance: float | Distance
+    ) -> tuple[Angular, Angular, TrajectoryData]:
+        """Return :meth:`aim`'s solution for callers using the descriptive API name.
+
+        Args:
+            shot: Shot instance to solve.
+            target_distance: Look-distance to the target.
+
+        Returns:
+            The vertical hold relative to the weapon's zero, windage angle,
+            and terminal trajectory point.
+        """
+        return self.aim(shot, target_distance)
 
     def set_weapon_zero(self, shot: Shot, zero_distance: float | Distance) -> Angular:
         """Set shot.weapon.zero_elevation so that it hits a target at zero_distance.

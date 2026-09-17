@@ -149,8 +149,8 @@ def test_find_zero_point_matches_find_zero_angle(loaded_engine_instance):
     target_distance = Distance.Yard(200)
     shot = create_5_56_mm_shot()
     calc = Calculator(engine=loaded_engine_instance)
-    if not isinstance(calc._engine_instance, BaseIntegrationEngine):
-        pytest.skip("find_zero_point is currently implemented only by pure-Python engines")
+    if not hasattr(calc._engine_instance, "find_zero_point"):
+        pytest.skip("engine does not implement find_zero_point")
 
     angle, point = calc._engine_instance.find_zero_point(shot, target_distance, lofted=False)
     expected = calc._engine_instance.find_zero_angle(shot, target_distance, lofted=False)
@@ -160,18 +160,18 @@ def test_find_zero_point_matches_find_zero_angle(loaded_engine_instance):
     assert point.slant_distance.raw_value == pytest.approx(target_distance.raw_value, abs=1e-2)
 
 
-def test_aiming_solution_is_relative_to_weapon_zero(loaded_engine_instance):
+def test_aim_is_relative_to_weapon_zero(loaded_engine_instance):
     """The high-level API returns the vertical correction from the sight's zero."""
     target_distance = Distance.Yard(200)
     zero_distance = Distance.Yard(100)
     shot = create_5_56_mm_shot()
     shot.look_angle = Angular.Degree(5)
     calc = Calculator(engine=loaded_engine_instance)
-    if not isinstance(calc._engine_instance, BaseIntegrationEngine):
-        pytest.skip("zero_point is currently implemented only by pure-Python engines")
+    if not hasattr(calc._engine_instance, "zero_point"):
+        pytest.skip("engine does not implement zero_point")
 
     calc.set_weapon_zero(shot, zero_distance)
-    vertical_hold, windage, point = calc.aiming_solution_for_target(shot, target_distance)
+    vertical_hold, windage, point = calc.aim(shot, target_distance)
     target_zero_elevation = calc.barrel_elevation_for_target(shot, target_distance)
     expected = Angular.Radian(
         (target_zero_elevation >> Angular.Radian) - (shot.weapon.zero_elevation >> Angular.Radian)

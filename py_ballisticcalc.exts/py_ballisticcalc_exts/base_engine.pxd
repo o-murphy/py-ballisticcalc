@@ -50,6 +50,11 @@ cdef extern from "include/bclibc/engine.hpp" namespace "bclibc" nogil:
         double max_range_ft
         double angle_at_max_rad
 
+    cdef cppclass BCLIBC_ZeroPointResult:
+        double angle_rad
+        BCLIBC_TrajectoryData point
+        bint has_point
+
     # Forward declaration
     cdef cppclass BCLIBC_BaseEngine
 
@@ -121,6 +126,17 @@ cdef extern from "include/bclibc/engine.hpp" namespace "bclibc" nogil:
             double ALLOWED_ZERO_ERROR_FEET) except +raise_solver_exception
 
         double find_zero_angle(
+            double distance,
+            int lofted,
+            double APEX_IS_MAX_RANGE_RADIANS,
+            double ALLOWED_ZERO_ERROR_FEET) except +raise_solver_exception
+
+        BCLIBC_ZeroPointResult zero_point_with_fallback(
+            double distance,
+            double APEX_IS_MAX_RANGE_RADIANS,
+            double ALLOWED_ZERO_ERROR_FEET) except +raise_solver_exception
+
+        BCLIBC_ZeroPointResult find_zero_point(
             double distance,
             int lofted,
             double APEX_IS_MAX_RANGE_RADIANS,

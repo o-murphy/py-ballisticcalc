@@ -37,7 +37,7 @@ from py_ballisticcalc_exts.bind cimport (
 from py_ballisticcalc.shot import ShotProps
 from py_ballisticcalc.engines.base_engine import create_base_engine_config
 from py_ballisticcalc.engines.base_engine import BaseIntegrationEngine as _PyBaseIntegrationEngine
-from py_ballisticcalc.exceptions import RangeError
+from py_ballisticcalc.exceptions import RangeError, SolverRuntimeError
 from py_ballisticcalc.trajectory_data import HitResult, TrajectoryData
 from py_ballisticcalc.unit import Angular
 
@@ -153,6 +153,37 @@ cdef class CythonizedBaseIntegrationEngine:
         cdef double zero_angle = self._find_zero_angle(shot_info, distance._feet, lofted)
         return rad_from_c(zero_angle)
 
+    def find_zero_point(self, object shot_info, object distance, bint lofted = False):
+        """Find a zero trajectory and return its solved angle and terminal point.
+
+        The returned point is the terminal ``RANGE`` point evaluated by the
+        successful zero-finding iteration. No final trajectory integration is
+        performed after the angle is found.
+
+        Args:
+            shot_info: The shot information.
+            distance: Slant distance to the target.
+            lofted: If True, find the higher trajectory that hits the zero point.
+
+        Returns:
+            The solved barrel elevation and the terminal RANGE point from the
+            successful zero-finding iteration.
+
+        Raises:
+            SolverRuntimeError: If a zero-angle fast path did not integrate a
+                trajectory and therefore has no trajectory point to return.
+        """
+        self._init_trajectory(shot_info)
+        cdef BCLIBC_ZeroPointResult result = self._this.find_zero_point(
+            distance._feet,
+            lofted,
+            _APEX_IS_MAX_RANGE_RADIANS,
+            _ALLOWED_ZERO_ERROR_FEET,
+        )
+        if not result.has_point:
+            raise SolverRuntimeError("Zero-angle fast path did not evaluate a trajectory point")
+        return rad_from_c(result.angle_rad), TrajectoryData_from_cpp(result.point)
+
     def find_apex(self, object shot_info) -> TrajectoryData:
         """
         Finds the apex of the trajectory, where apex is defined as the point
@@ -192,6 +223,36 @@ cdef class CythonizedBaseIntegrationEngine:
             _ALLOWED_ZERO_ERROR_FEET,
         )
         return rad_from_c(result)
+
+    def zero_point(self, object shot_info, object distance):
+        """Return the zero angle and the trajectory point used to determine it.
+
+        This is the terminal ``RANGE`` point from the successful zero-finding
+        iteration. It performs no final re-integration after finding the
+        angle, so callers receive both the zero geometry and its ballistic
+        state from one solve.
+
+        Args:
+            shot_info: The shot information.
+            distance: Slant distance to the zero point.
+
+        Returns:
+            A pair of the lower-arc barrel elevation and the trajectory point
+            from the successful zero-finding iteration.
+
+        Raises:
+            SolverRuntimeError: If a zero-angle fast path did not integrate a
+                trajectory and therefore has no trajectory point to return.
+        """
+        self._init_trajectory(shot_info)
+        cdef BCLIBC_ZeroPointResult result = self._this.zero_point_with_fallback(
+            distance._feet,
+            _APEX_IS_MAX_RANGE_RADIANS,
+            _ALLOWED_ZERO_ERROR_FEET,
+        )
+        if not result.has_point:
+            raise SolverRuntimeError("Zero-angle fast path did not evaluate a trajectory point")
+        return rad_from_c(result.angle_rad), TrajectoryData_from_cpp(result.point)
 
     def integrate(
         CythonizedBaseIntegrationEngine self,
