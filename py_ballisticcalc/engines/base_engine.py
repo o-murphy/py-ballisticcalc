@@ -693,13 +693,43 @@ class BaseIntegrationEngine(ABC, EngineProtocol):
             Barrel elevation needed to hit the zero point.
         """
         props = self._init_trajectory(shot_info)
-        return self._find_zero_angle(props, distance, lofted)
+        return self._find_zero_ridder(props, distance, lofted)[0]
+
+    def find_zero_point(
+        self, shot_info: Shot, distance: Distance, lofted: bool = False
+    ) -> tuple[Angular, TrajectoryData]:
+        """Find a zero trajectory and return its solved angle and terminal point.
+
+        Args:
+            shot_info: The shot information.
+            distance: Slant distance to the target.
+            lofted: If True, find the higher trajectory that hits the zero point.
+
+        Returns:
+            The solved barrel elevation and the terminal RANGE point from the
+            successful zero-finding iteration.
+
+        Raises:
+            SolverRuntimeError: If a zero-angle fast path did not integrate a
+                trajectory and therefore has no trajectory point to return.
+        """
+        props = self._init_trajectory(shot_info)
+        angle, point = self._find_zero_ridder(props, distance, lofted)
+        if point is None:
+            raise SolverRuntimeError("Zero-angle fast path did not evaluate a trajectory point")
+        return angle, point
 
     @with_no_minimum_velocity
-    def _find_zero_angle(self, props: ShotProps, distance: Distance, lofted: bool = False) -> Angular:
+    def _find_zero_ridder(
+        self,
+        props: ShotProps,
+        distance: Distance,
+        lofted: bool = False,
+    ) -> tuple[Angular, TrajectoryData | None]:
         """Find barrel elevation needed to hit sight line at a specific distance.
 
-        This method must use an algorithm that is guaranteed to succeed if a solution exists (e.g., ITP).
+        This method uses Ridder's bracketed root-finding algorithm, which is
+        guaranteed to converge when a root is bracketed.
 
         Args:
             props: The shot information.
@@ -707,13 +737,14 @@ class BaseIntegrationEngine(ABC, EngineProtocol):
             lofted: If True, find the higher angle that hits the zero point.
 
         Returns:
-            Barrel elevation needed to hit the zero point.
+            The solved barrel elevation and, when the solver evaluated one,
+            the corresponding terminal trajectory point.
         """
         status, look_angle_rad, slant_range_ft, target_x_ft, target_y_ft, start_height_ft = self._init_zero_calculation(
             props, distance
         )
         if status is _ZeroCalcStatus.DONE:
-            return Angular.Radian(look_angle_rad)
+            return Angular.Radian(look_angle_rad), None
 
         # Make the type checker happy
         assert start_height_ft is not None
@@ -734,15 +765,19 @@ class BaseIntegrationEngine(ABC, EngineProtocol):
         if slant_range_ft > max_range_ft:
             raise OutOfRangeError(distance, max_range, Angular.Radian(look_angle_rad))
         if abs(slant_range_ft - max_range_ft) < self.ALLOWED_ZERO_ERROR_FEET:
-            return angle_at_max
+            return angle_at_max, None
+
+        last_point: TrajectoryData | None = None
 
         def error_at_distance(angle_rad: float) -> float:
             """Target miss (in feet) for given launch angle."""
+            nonlocal last_point
             props.barrel_elevation_rad = angle_rad
             _res = self._integrate(props, target_x_ft, target_x_ft, filter_flags=TrajFlag.NONE)
             if _res.error is not None:
                 logger.warning(f"Integrator error in error_at_distance({angle_rad}): {_res.error}")
             t = _res.records[-1]
+            last_point = t
             if t.time == 0.0:
                 logger.warning("Integrator returned initial point. Consider removing constraints.")
                 return 9e9
@@ -777,7 +812,8 @@ class BaseIntegrationEngine(ABC, EngineProtocol):
             mid_angle = (low_angle + high_angle) / 2.0
             f_mid = error_at_distance(mid_angle)
             if abs(f_mid) < self._config.cZeroFindingAccuracy:
-                return Angular.Radian(mid_angle)
+                assert last_point is not None
+                return Angular.Radian(mid_angle), last_point
 
             # s is the updated point using the root of the linear function through (low_angle, f_low) and (high_angle, f_high)
             # and the quadratic function that passes through those points and (mid_angle, f_mid)
@@ -788,10 +824,12 @@ class BaseIntegrationEngine(ABC, EngineProtocol):
             next_angle = mid_angle + (mid_angle - low_angle) * (math.copysign(1, f_low - f_high) * f_mid / s)
             f_next = error_at_distance(next_angle)
             if abs(f_next) < self._config.cZeroFindingAccuracy:
-                return Angular.Radian(next_angle)
+                assert last_point is not None
+                return Angular.Radian(next_angle), last_point
 
             if abs(next_angle - mid_angle) < angle_tol:
-                return Angular.Radian(next_angle)
+                assert last_point is not None
+                return Angular.Radian(next_angle), last_point
 
             # Update the bracket
             if f_mid * f_next < 0:
@@ -805,7 +843,11 @@ class BaseIntegrationEngine(ABC, EngineProtocol):
                 break  # If we are here, something is wrong, the root is not bracketed anymore
 
             if abs(high_angle - low_angle) < angle_tol:
-                return Angular.Radian((low_angle + high_angle) / 2)
+                # ``last_point`` is the already-integrated ``next_angle``
+                # candidate.  It avoids a final, redundant shot while keeping
+                # the angle and point from the same trajectory evaluation.
+                assert last_point is not None
+                return Angular.Radian(next_angle), last_point
 
         raise ZeroFindingError(
             target_y_ft,
@@ -817,38 +859,72 @@ class BaseIntegrationEngine(ABC, EngineProtocol):
     def zero_angle(self, shot_info: Shot, distance: Distance) -> Angular:
         """Find the barrel elevation needed to hit sight line at a specific distance.
 
-        First tries iterative approach; if that fails then falls back on `_find_zero_angle`.
+        First tries the damped Newton solver; if that fails then falls back on
+        `_find_zero_ridder`.
 
         Args:
             shot_info: The shot information.
             distance: The distance to the target.
 
         Returns:
-            Barrel elevation to hit height zero at zero distance along sight line
+            Barrel elevation to hit height zero at zero distance along sight line.
         """
         props = self._init_trajectory(shot_info)
         try:
-            return self._zero_angle(props, distance)
+            return self._find_zero_newton(props, distance)[0]
         except ZeroFindingError as e:
             logger.warning(f"Failed to find zero angle using base iterative method: {e}")
             # Fallback to guaranteed method
-            return self._find_zero_angle(props, distance)
+            return self._find_zero_ridder(props, distance)[0]
 
-    def _zero_angle(self, props: ShotProps, distance: Distance) -> Angular:
-        """Find barrel elevation needed for a particular zero.
+    def zero_point(self, shot_info: Shot, distance: Distance) -> tuple[Angular, TrajectoryData]:
+        """Return the zero angle and the trajectory point used to determine it.
+
+        This is the terminal RANGE point from the successful zero-finding
+        iteration.  It performs no final re-integration after finding the
+        angle, so it is useful to callers that need both the zero geometry and
+        its ballistic state.
+
+        Args:
+            shot_info: The shot information.
+            distance: Slant distance to the zero point.
+
+        Returns:
+            A pair of the lower-arc barrel elevation and the trajectory point
+            from the successful zero-finding iteration.
+
+        Raises:
+            SolverRuntimeError: If a zero-angle fast path did not integrate a
+                trajectory and therefore has no trajectory point to return.
+        """
+        props = self._init_trajectory(shot_info)
+        try:
+            # Bypass optional-engine overrides while this API is limited to
+            # the pure-Python solver path.
+            angle, point = BaseIntegrationEngine._find_zero_newton(self, props, distance)
+        except ZeroFindingError as error:
+            logger.warning(f"Failed to find zero point using base iterative method: {error}")
+            angle, point = BaseIntegrationEngine._find_zero_ridder(self, props, distance, False)
+        if point is None:
+            raise SolverRuntimeError("Zero-angle fast path did not evaluate a trajectory point")
+        return angle, point
+
+    def _find_zero_newton(self, props: ShotProps, distance: Distance) -> tuple[Angular, TrajectoryData | None]:
+        """Find barrel elevation with the damped Newton-style zero solver.
 
         Args:
             props: Shot parameters
             distance: Sight distance to zero (i.e., along Shot.look_angle), a.k.a. slant range to target.
 
         Returns:
-            Barrel elevation to hit height zero at zero distance along sight line
+            The solved barrel elevation and, when the solver evaluated one,
+            the corresponding terminal trajectory point.
         """
         status, look_angle_rad, slant_range_ft, target_x_ft, target_y_ft, _start_height_ft = (
             self._init_zero_calculation(props, distance)
         )
         if status is _ZeroCalcStatus.DONE:
-            return Angular.Radian(look_angle_rad)
+            return Angular.Radian(look_angle_rad), None
 
         assert target_x_ft is not None  # Make the type checker happy
         assert target_y_ft is not None  # Make the type checker happy
@@ -876,10 +952,12 @@ class BaseIntegrationEngine(ABC, EngineProtocol):
         damping_rate = 0.7  # Damping rate for correction
         last_correction = 0.0
         height_error_ft = _cZeroFindingAccuracy * 2  # Absolute value of error from sight line in feet at zero distance
+        point: TrajectoryData | None = None
 
         while iterations_count < _cMaxIterations:
             # Check height of trajectory at the zero distance (using current props.barrel_elevation)
             t = self._integrate(props, target_x_ft, target_x_ft, filter_flags=TrajFlag.NONE)[-1]
+            point = t
             if t.time == 0.0:
                 logger.warning("Integrator returned initial point. Consider removing constraints.")
                 break
@@ -959,7 +1037,8 @@ class BaseIntegrationEngine(ABC, EngineProtocol):
         if height_error_ft > _cZeroFindingAccuracy or range_error_ft > self.ALLOWED_ZERO_ERROR_FEET:
             # ZeroFindingError contains an instance of last barrel elevation; so caller can check how close zero is
             raise ZeroFindingError(height_error_ft, iterations_count, result)
-        return result
+        assert point is not None
+        return result, point
 
     def integrate(
         self,

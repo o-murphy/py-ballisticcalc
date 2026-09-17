@@ -100,9 +100,9 @@ from py_ballisticcalc.engines.base_engine import (
     _ZeroCalcStatus,
     with_no_minimum_velocity,
 )
-from py_ballisticcalc.exceptions import OutOfRangeError, RangeError, ZeroFindingError
+from py_ballisticcalc.exceptions import OutOfRangeError, RangeError, SolverRuntimeError, ZeroFindingError
 from py_ballisticcalc.logger import logger
-from py_ballisticcalc.shot import ShotProps
+from py_ballisticcalc.shot import Shot, ShotProps
 from py_ballisticcalc.trajectory_data import HitResult, TrajectoryData, TrajFlag
 from py_ballisticcalc.unit import Angular, Distance
 from py_ballisticcalc.vector import Vector
@@ -678,9 +678,10 @@ class SciPyIntegrationEngine(BaseIntegrationEngine):
         max_range_ft = -res.fun  # Negate because we minimized the negative range
         return Distance.Feet(max_range_ft), Angular.Radian(angle_at_max_rad)
 
-    @override
     @with_no_minimum_velocity
-    def _find_zero_angle(self, props: ShotProps, distance: Distance, lofted: bool = False) -> Angular:
+    def _find_zero_brentq(
+        self, props: ShotProps, distance: Distance, lofted: bool = False
+    ) -> tuple[Angular, TrajectoryData | None]:
         """Find the barrel elevation needed to hit sight line at a specific distance, using SciPy's `root_scalar`.
 
         Args:
@@ -689,7 +690,8 @@ class SciPyIntegrationEngine(BaseIntegrationEngine):
             lofted: If True, find the higher angle that hits the zero point.  Default is False.
 
         Returns:
-            Barrel elevation needed to hit the zero point.
+            The solved barrel elevation and, when the solver evaluated one,
+            the corresponding terminal trajectory point.
 
         Raises:
             ImportError: If SciPy is not installed.
@@ -701,7 +703,7 @@ class SciPyIntegrationEngine(BaseIntegrationEngine):
             props, distance
         )
         if status is _ZeroCalcStatus.DONE:
-            return Angular.Radian(look_angle_rad)
+            return Angular.Radian(look_angle_rad), None
 
         # region Make the type checker happy
         assert start_height_ft is not None
@@ -718,13 +720,19 @@ class SciPyIntegrationEngine(BaseIntegrationEngine):
         if slant_range_ft > max_range_ft:
             raise OutOfRangeError(distance, max_range, Angular.Radian(look_angle_rad))
         if abs(slant_range_ft - max_range_ft) < self.ALLOWED_ZERO_ERROR_FEET:
-            return angle_at_max
+            return angle_at_max, None
+
+        point: TrajectoryData | None = None
+        point_angle_rad: float | None = None
 
         def error_at_distance(angle_rad: float) -> float:
             """Target miss (in feet) for given launch angle."""
+            nonlocal point, point_angle_rad
             props.barrel_elevation_rad = angle_rad
             # Integrate to find the projectile's state at the target's horizontal distance.
             t = self._integrate(props, target_x_ft, target_x_ft, filter_flags=TrajFlag.NONE)[-1]
+            point = t
+            point_angle_rad = angle_rad
             if t.time == 0.0:
                 logger.warning("Integrator returned initial point. Consider removing constraints.")
                 return -1e6  # Large negative error to discourage this angle.
@@ -758,28 +766,48 @@ class SciPyIntegrationEngine(BaseIntegrationEngine):
                 Angular.Radian(props.barrel_elevation_rad),
                 reason=f"Root-finder failed to converge: {sol.flag} with {sol}",
             )
-        return Angular.Radian(sol.root)
+        assert point_angle_rad is not None
+        return Angular.Radian(point_angle_rad), point
 
     @override
-    def _zero_angle(self, props: ShotProps, distance: Distance) -> Angular:
-        """Find barrel elevation needed for a particular zero.
+    def find_zero_angle(self, shot_info: Shot, distance: Distance, lofted: bool = False) -> Angular:
+        """Find a zero angle with SciPy's ``brentq`` root solver."""
+        props = self._init_trajectory(shot_info)
+        return self._find_zero_brentq(props, distance, lofted)[0]
 
-        Falls back on ._find_zero_angle().
+    @override
+    def find_zero_point(
+        self, shot_info: Shot, distance: Distance, lofted: bool = False
+    ) -> tuple[Angular, TrajectoryData]:
+        """Find a zero point with SciPy's ``brentq`` root solver."""
+        props = self._init_trajectory(shot_info)
+        angle, point = self._find_zero_brentq(props, distance, lofted)
+        if point is None:
+            raise SolverRuntimeError("Zero-angle fast path did not evaluate a trajectory point")
+        return angle, point
 
-        Args:
-            props: Shot parameters
-            distance: Sight distance to zero (i.e., along Shot.look_angle),
-                                 a.k.a. slant range to target.
-
-        Returns:
-            Angular: Barrel elevation to hit height zero at zero distance
-        """
+    @override
+    def zero_angle(self, shot_info: Shot, distance: Distance) -> Angular:
+        """Find the lower zero angle, falling back from Newton to ``brentq``."""
+        props = self._init_trajectory(shot_info)
         try:
-            return super()._zero_angle(props, distance)
-        except ZeroFindingError as e:
-            logger.warning(f"Failed to find zero angle using base iterative method: {e}")
-            # Fallback to SciPy's root_scalar method
-            return self._find_zero_angle(props, distance)
+            return self._find_zero_newton(props, distance)[0]
+        except ZeroFindingError as error:
+            logger.warning(f"Failed to find zero angle using Newton method: {error}")
+            return self._find_zero_brentq(props, distance)[0]
+
+    @override
+    def zero_point(self, shot_info: Shot, distance: Distance) -> tuple[Angular, TrajectoryData]:
+        """Return SciPy's zero solution and its already-evaluated terminal point.
+
+        Unlike the base implementation, this directly uses the ``root_scalar``
+        solver implemented by :meth:`_find_zero_brentq`.
+        """
+        props = self._init_trajectory(shot_info)
+        angle, point = self._find_zero_brentq(props, distance)
+        if point is None:
+            raise SolverRuntimeError("Zero-angle fast path did not evaluate a trajectory point")
+        return angle, point
 
     @override
     def _integrate(

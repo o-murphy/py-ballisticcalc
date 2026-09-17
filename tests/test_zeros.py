@@ -9,6 +9,7 @@ from py_ballisticcalc.unit import *
 from py_ballisticcalc import (
     Calculator,
     BaseEngineConfigDict,
+    BaseIntegrationEngine,
     RK4IntegrationEngine,
     VelocityVerletIntegrationEngine
 )
@@ -99,6 +100,86 @@ def test_zero_with_look_angle(loaded_engine_instance):
     zero_down = hit_result.flag(TrajFlag.ZERO_DOWN)
     assert zero_down is not None, "ZERO_DOWN flag not found in hit_result"
     assert abs(zero_down.slant_distance.raw_value - target_distance.raw_value) < 1e+1
+
+
+def test_zero_point_reuses_the_successful_zero_iteration(loaded_engine_instance):
+    """zero_point exposes the point already evaluated by the lower-arc solver."""
+    target_distance = Distance.Yard(200)
+    shot = create_5_56_mm_shot()
+    calc = Calculator(engine=loaded_engine_instance)
+    if not isinstance(calc._engine_instance, BaseIntegrationEngine):
+        pytest.skip("zero_point is currently implemented only by pure-Python engines")
+
+    def call_count(engine, method):
+        calls = 0
+        integrate = engine._integrate
+
+        def counted_integrate(*args, **kwargs):
+            nonlocal calls
+            calls += 1
+            return integrate(*args, **kwargs)
+
+        engine._integrate = counted_integrate
+        return method(engine), calls
+
+    reference_engine = calc._engine_instance
+    reference_method = (
+        (lambda engine: engine.zero_angle(shot, target_distance))
+        if type(reference_engine).zero_point is BaseIntegrationEngine.zero_point
+        else (lambda engine: engine.find_zero_angle(shot, target_distance))
+    )
+    _, reference_calls = call_count(
+        calc._engine_instance,
+        reference_method,
+    )
+    (angle, point), zero_point_calls = call_count(
+        calc._engine_instance,
+        lambda engine: engine.zero_point(shot, target_distance),
+    )
+
+    assert isinstance(angle, Angular)
+    assert point.flag == TrajFlag.RANGE
+    assert point.slant_distance.raw_value == pytest.approx(target_distance.raw_value, abs=1e-2)
+    assert point.slant_height.raw_value == pytest.approx(0.0, abs=1e-1)
+    assert zero_point_calls == reference_calls
+
+
+def test_find_zero_point_matches_find_zero_angle(loaded_engine_instance):
+    """find_zero_point has the same lower-arc solution as find_zero_angle."""
+    target_distance = Distance.Yard(200)
+    shot = create_5_56_mm_shot()
+    calc = Calculator(engine=loaded_engine_instance)
+    if not isinstance(calc._engine_instance, BaseIntegrationEngine):
+        pytest.skip("find_zero_point is currently implemented only by pure-Python engines")
+
+    angle, point = calc._engine_instance.find_zero_point(shot, target_distance, lofted=False)
+    expected = calc._engine_instance.find_zero_angle(shot, target_distance, lofted=False)
+
+    assert angle.raw_value == pytest.approx(expected.raw_value)
+    assert point.flag == TrajFlag.RANGE
+    assert point.slant_distance.raw_value == pytest.approx(target_distance.raw_value, abs=1e-2)
+
+
+def test_aiming_solution_is_relative_to_weapon_zero(loaded_engine_instance):
+    """The high-level API returns the vertical correction from the sight's zero."""
+    target_distance = Distance.Yard(200)
+    zero_distance = Distance.Yard(100)
+    shot = create_5_56_mm_shot()
+    shot.look_angle = Angular.Degree(5)
+    calc = Calculator(engine=loaded_engine_instance)
+    if not isinstance(calc._engine_instance, BaseIntegrationEngine):
+        pytest.skip("zero_point is currently implemented only by pure-Python engines")
+
+    calc.set_weapon_zero(shot, zero_distance)
+    vertical_hold, windage, point = calc.aiming_solution_for_target(shot, target_distance)
+    target_zero_elevation = calc.barrel_elevation_for_target(shot, target_distance)
+    expected = Angular.Radian(
+        (target_zero_elevation >> Angular.Radian) - (shot.weapon.zero_elevation >> Angular.Radian)
+    )
+
+    assert vertical_hold.raw_value == pytest.approx(expected.raw_value)
+    assert windage == point.windage_angle
+    assert point.slant_distance.raw_value == pytest.approx(target_distance.raw_value, abs=1e-2)
 
 def test_vertical_shot_zero(loaded_engine_instance):
     """Test zero finding for a vertical shot."""
