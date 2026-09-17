@@ -296,12 +296,7 @@ class Calculator:
             NotImplementedError: If the selected engine has no ``zero_point`` API.
         """
         target_distance = PreferredUnits.distance(target_distance)
-        engine = self._engine_instance
-        try:
-            zero_point = engine.zero_point  # type: ignore
-        except AttributeError as error:
-            raise NotImplementedError("The selected engine does not implement zero_point") from error
-        total_elevation, point = zero_point(shot, target_distance)
+        total_elevation, point = self._engine_instance.zero_point(shot, target_distance)
         target_zero_elevation = Angular.Radian(
             (total_elevation >> Angular.Radian) - (shot.look_angle >> Angular.Radian)
         )
