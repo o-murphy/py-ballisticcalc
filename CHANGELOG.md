@@ -170,6 +170,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `uv lock --upgrade` (both `uv.lock` and `py_ballisticcalc.exts/uv.lock`) — routine dependency bump surfaced by `pre-commit`'s `uv-lock`/`uv-lock-exts` hooks once the `bclibc` submodule was initialized locally (cython, ruff, scipy, scipy-stubs, filelock, dependency-groups, pymdown-extensions, pyzmq, vcs-versioning, appnope)
 
 ## [2.3.1] - 2026-07-06
+[:simple-github: GitHub release][2.3.1]
 
 ### Added
 - Native `py_ballisticcalc.exts` wheels for Android (`cp313-android_*`/`cp314-android_*`, `arm64_v8a`+`x86_64`) via a new `cibuildwheel[android]`-driven CI job — `.github/workflows/pypi-publish.yml`, `[tool.cibuildwheel.android]` in `py_ballisticcalc.exts/pyproject.toml` ([#339])
