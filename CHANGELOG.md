@@ -7,10 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Added
-- `cythonized_dopri_engine`, a compiled Dormand--Prince 5(4) adaptive engine.
-  Its component scaling and controller factors follow SciPy RK45, while
-  `cythonized_ck_engine` deliberately retains its historical controller.
+## [3.0.0-beta.1] - 2026-09-16
+[:simple-github: Diff since v2.3.1][3.0.0-beta.1]
 
 ### Changed
 - `cythonized_ck_engine`: Cash-Karp's adaptive error controller now has
@@ -20,10 +18,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `atol + rtol * max(abs(y), abs(y_new))`, and the controller accepts/rejects steps using the
   RMS of those six scaled errors. `relative_tolerance` remains scalar and defaults to `1e-6`.
 
-## [3.0.0-beta.1] - 2026-09-16
-[:simple-github: Diff since v2.3.1][3.0.0-beta.1]
-
 ### Added
+- `cythonized_dopri_engine`, a compiled Dormand--Prince 5(4) adaptive engine.
+  Its component scaling and controller factors follow SciPy RK45, while
+  `cythonized_ck_engine` deliberately retains its historical controller.
 - `cythonized_ck_engine` (`py_ballisticcalc_exts.CythonizedCashKarpIntegrationEngine`): a
   Cython engine wrapping [bclibc](https://github.com/ballistics-lab/bclibc)'s new Cash-Karp
   adaptive RK45 integrator (Numerical Recipes' `rkck`, embedded 4th/5th-order error estimate).
