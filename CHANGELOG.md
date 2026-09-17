@@ -11,6 +11,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [:simple-github: Diff since v2.3.1][3.0.0-beta.1]
 
 ### Changed
+- Pin `bclibc` to `v2.0.0-beta.6`, including the zero-point result API and
+  its corrected WASM export metadata.
 - `cythonized_ck_engine`: Cash-Karp's adaptive error controller now has
   `scipy.integrate.solve_ivp` semantics. `absolute_tolerance` is a single scalar (default
   `1e-6`) used independently for all six position/velocity state components; it replaces the
