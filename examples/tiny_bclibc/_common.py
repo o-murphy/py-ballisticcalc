@@ -569,6 +569,26 @@ class TinyBclibcIntegrationEngineBase(BaseIntegrationEngine):
         return self._native_zero_point(self._init_trajectory(shot_info), distance)
 
     @override
+    def find_zero_angle(self, shot_info: Shot, distance: Distance, lofted: bool = False) -> Angular:
+        """Native zero-angle: use the same C solver as zero_point/find_zero_point.
+
+        This engine's native solver is the same regardless of the lofted flag or which
+        entry point is called; the distinction between zero_angle (Newton primary) and
+        find_zero_angle (Ridder's guaranteed) in the C++ original is not exposed here
+        because both paths in this binding route through the same native entry point.
+        Overriding here is required so that find_zero_angle and find_zero_point agree
+        (test_find_zero_point_matches_find_zero_angle), instead of find_zero_angle
+        falling back to BaseIntegrationEngine's Python golden-section + Ridder's
+        implementation, which would compute a measurably different angle.
+        """
+        return self._native_zero_point(self._init_trajectory(shot_info), distance)[0]
+
+    @override
+    def find_zero_point(self, shot_info: Shot, distance: Distance, lofted: bool = False) -> tuple[Angular, TrajectoryData]:
+        """Native zero-point: same as zero_point, exposes the terminal point."""
+        return self._native_zero_point(self._init_trajectory(shot_info), distance)
+
+    @override
     def _integrate(
         self,
         props: ShotProps,
