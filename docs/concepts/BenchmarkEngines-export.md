@@ -22,7 +22,7 @@ PreferredUnits.distance = Distance.Meter
 ```
 
     
-    Available engines: ['cythonized_ck_engine', 'cythonized_euler_engine', 'cythonized_rk4_engine', 'cythonized_verlet_engine', 'euler_engine', 'rk4_engine', 'scipy_engine', 'verlet_engine']
+    Available engines: ['cythonized_rkck_engine', 'cythonized_euler_engine', 'cythonized_rk4_engine', 'cythonized_verlet_engine', 'euler_engine', 'rk4_engine', 'scipy_engine', 'verlet_engine']
 
 
 ## Reference Calculator
@@ -1787,7 +1787,7 @@ Cash-Karp is an adaptive compiled RK45 engine.  `cStepMultiplier` supplies its b
 step = 5.0
 multiplier = 1.0 / step**2
 while multiplier <= 1000.0:
-    err, count, speed = chk_engine('cythonized_ck_engine', timeit=True, step_multiplier=multiplier)
+    err, count, speed = chk_engine('cythonized_rkck_engine', timeit=True, step_multiplier=multiplier)
     summary.append(('Cash-Karp Cython', multiplier, err, count, speed))
     multiplier *= step
 df = pd.DataFrame(summary, columns=['Engine', 'Multiplier', 'Error (m)', 'Integration Steps', 'Speed (s)'])

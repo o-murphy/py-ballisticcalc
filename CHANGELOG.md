@@ -13,7 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - Pin `bclibc` to `v2.0.0-beta.7`, including the zero-point result API and
   its corrected WASM export metadata.
-- `cythonized_ck_engine`: Cash-Karp's adaptive error controller now has
+- `cythonized_rkck_engine`: Cash-Karp's adaptive error controller now has
   `scipy.integrate.solve_ivp` semantics. `absolute_tolerance` is a single scalar (default
   `1e-6`) used independently for all six position/velocity state components; it replaces the
   former hidden, unequal position and velocity floors. Each component uses
@@ -23,8 +23,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - `cythonized_dopri_engine`, a compiled Dormand--Prince 5(4) adaptive engine.
   Its component scaling and controller factors follow SciPy RK45, while
-  `cythonized_ck_engine` deliberately retains its historical controller.
-- `cythonized_ck_engine` (`py_ballisticcalc_exts.CythonizedCashKarpIntegrationEngine`): a
+  `cythonized_rkck_engine` deliberately retains its historical controller.
+- `cythonized_rkck_engine` (`py_ballisticcalc_exts.CythonizedCashKarpIntegrationEngine`): a
   Cython engine wrapping [bclibc](https://github.com/ballistics-lab/bclibc)'s new Cash-Karp
   adaptive RK45 integrator (Numerical Recipes' `rkck`, embedded 4th/5th-order error estimate).
   Grows its internal step up to 64x the configured base step during smooth flight and shrinks

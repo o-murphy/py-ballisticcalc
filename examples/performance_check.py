@@ -183,7 +183,7 @@ engines = {
     "cythonized_euler": "cythonized_euler_engine", 
     "cythonized_rk4": "cythonized_rk4_engine",
     "cythonized_verlet": "cythonized_verlet_engine",
-    "cythonized_ck": "cythonized_ck_engine",
+    "cythonized_ck": "cythonized_rkck_engine",
     "cythonized_dopri": "cythonized_dopri_engine",
     "scipy": "scipy_engine",
     "all": "all", 

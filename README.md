@@ -113,16 +113,19 @@ Work in your preferred terms with easy conversions for the following dimensions 
 
 Choose between different calculation engines, or build your own.  Included engines:
 
-| Engine Name                                                                                   | Speed (Find Zero / Trajectory)                |        Dependencies         | Description                             |
-| :-------------------------------------------------------------------------------------------- | :-------------------------------------------- | :-------------------------: | :-------------------------------------- |
-| **[`rk4_engine`][py_ballisticcalc.engines.RK4IntegrationEngine]**                             | Baseline (1x)                                 |        None; default        | Runge-Kutta 4th-order integration       |
-| [`euler_engine`][py_ballisticcalc.engines.EulerIntegrationEngine]                             | :material-arrow-down:    0.5x / 0.5x (slower) |            None             | Euler 1st-order integration             |
-| [`verlet_engine`][py_ballisticcalc.engines.VelocityVerletIntegrationEngine]                   | :material-arrow-down:   0.8x / 0.8x (slower)  |            None             | Verlet 2nd-order symplectic integration |
-| [`cythonized_rk4_engine`][py_ballisticcalc_exts.CythonizedRK4IntegrationEngine]               | :material-arrow-up:   112x / 200x (faster)    | [`[exts]`](#cython-engines) | Compiled Runge-Kutta 4th-order          |
-| [`cythonized_euler_engine`][py_ballisticcalc_exts.CythonizedEulerIntegrationEngine]           | :material-arrow-up:    47x / 65x (faster)     | [`[exts]`](#cython-engines) | Compiled Euler integration              |
-| [`cythonized_verlet_engine`][py_ballisticcalc_exts.CythonizedVelocityVerletIntegrationEngine] | :material-arrow-up:   157x / 100x (faster)    | [`[exts]`](#cython-engines) | Compiled Verlet 2nd-order symplectic    |
-| [`scipy_engine`][py_ballisticcalc.engines.SciPyIntegrationEngine]                             | :material-arrow-up:   6.2x / 5.8x (faster)    |          `[scipy]`          | Advanced numerical methods              |
+| Engine Name                                                                                            | Speed (Find Zero / Trajectory)                |        Dependencies         | Description                                       |
+| :----------------------------------------------------------------------------------------------------- | :-------------------------------------------- | :-------------------------: | :------------------------------------------------ |
+| **[`rk4_engine`][py_ballisticcalc.engines.RK4IntegrationEngine]**                                      | Baseline (1x)                                 |        None; default        | Runge-Kutta 4th-order integration                 |
+| [`euler_engine`][py_ballisticcalc.engines.EulerIntegrationEngine]                                      | :material-arrow-down:    0.5x / 0.5x (slower) |            None             | Euler 1st-order integration                       |
+| [`verlet_engine`][py_ballisticcalc.engines.VelocityVerletIntegrationEngine]                            | :material-arrow-down:   0.8x / 0.8x (slower)  |            None             | Verlet 2nd-order symplectic integration           |
+| [`cythonized_rk4_engine`][py_ballisticcalc_exts.CythonizedRK4IntegrationEngine]                        | :material-arrow-up:   205x / 144x (faster)    | [`[exts]`](#cython-engines) | Compiled Runge-Kutta 4th-order                    |
+| [`cythonized_euler_engine`][py_ballisticcalc_exts.CythonizedEulerIntegrationEngine]                    | :material-arrow-up:    54x / 52x (faster)     | [`[exts]`](#cython-engines) | Compiled Euler integration                        |
+| [`cythonized_verlet_engine`][py_ballisticcalc_exts.CythonizedVelocityVerletIntegrationEngine]          | :material-arrow-up:   130x / 99x (faster)     | [`[exts]`](#cython-engines) | Compiled Verlet 2nd-order symplectic              |
+| [`cythonized_rkck_engine`][py_ballisticcalc_exts.CythonizedCashKarpIntegrationEngine][^adaptive]       | :material-arrow-up: ~3370x / ~335x (faster)   | [`[exts]`](#cython-engines) | Compiled Cash-Karp adaptive RK45                  |
+| [`cythonized_dopri_engine`][py_ballisticcalc_exts.CythonizedDormandPrinceIntegrationEngine][^adaptive] | :material-arrow-up: ~3370x / ~335x (faster)   | [`[exts]`](#cython-engines) | Dormand--Prince 5(4), SciPy RK45-style controller |
+| [`scipy_engine`][py_ballisticcalc.engines.SciPyIntegrationEngine]                                      | :material-arrow-up:  4.6x / 8.3x (faster)     |          `[scipy]`          | Advanced numerical methods                        |
 
+[^adaptive]: Adaptive RK45; actual speed depends on the configured tolerances.
 
 ## About project
 
