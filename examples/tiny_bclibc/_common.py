@@ -7,17 +7,16 @@ Not meant to be used directly — import `TinyBclibcSingleIntegrationEngine` fro
 Both engines call `tiny_bclibc_integrate_stream`: tiny_bclibc does the range-step/APEX/MACH/ZERO
 filtering AND derived-field computation (density_ratio, drag, spin drift, Coriolis-adjusted
 range, slant_height, angles, energy, ogw) in C, and only calls back into Python at the handful
-of points actually requested -- not once per raw RK4 step. Two gaps against
+of points actually requested -- not once per raw Cash-Karp step. Two gaps against
 `BaseIntegrationEngine`'s Python engines are closed here in Python rather than in tiny_bclibc
 itself, to keep that library's C surface minimal (it targets bare-metal/MCU embedding, where
 code size is a real constraint and neither of these is needed by tiny_bclibc's own native
-consumers) -- see `_coalesce_rows`/`_maybe_finalize` below, cross-checked against bclibc's C++
+consumers) -- see `_sort_rows`/`_maybe_finalize` below, cross-checked against bclibc's C++
 `BCLIBC_TrajectoryDataFilter` (src/traj_filter.cpp) as the reference implementation:
 
-1. Row coalescing: tiny_bclibc_integrate_stream emits one row per event with no merging, so a
-   ZERO crossing landing on the same instant as a RANGE-sampled row comes back as two adjacent
-   (or, since events aren't always emitted in strict time order -- see `_coalesce_rows` --
-   not even adjacent) rows instead of one row carrying both flags.
+1. Row ordering: tiny_bclibc_integrate_stream emits rows in the order its internal checks run
+   within one accepted interval, not always in strict chronological order across the whole
+   stream -- see `_sort_rows`.
 2. Finalize: whenever a trajectory ends other than by reaching the requested range,
    tiny_bclibc_integrate_stream's optional out_final_raw parameter exposes the exact terminal
    raw state (regardless of whether the C-side filter emitted a row for it); this is turned
@@ -28,7 +27,6 @@ filtered/interpolated rows, never raw per-step BaseTrajData, so there is nothing
 HitResult.base_data with.
 """
 
-import bisect
 import ctypes
 import math
 import os
@@ -43,7 +41,7 @@ from py_ballisticcalc.engines.base_engine import (
 )
 from py_ballisticcalc.exceptions import RangeError, SolverRuntimeError
 from py_ballisticcalc.logger import logger
-from py_ballisticcalc.shot import ShotProps
+from py_ballisticcalc.shot import Shot, ShotProps
 from py_ballisticcalc.trajectory_data import HitResult, TrajectoryData, TrajFlag
 from py_ballisticcalc.unit import Angular, Distance, Pressure, Temperature, Velocity
 from py_ballisticcalc.vector import Vector
@@ -66,10 +64,6 @@ _TERM_REASON_MAP = {
 
 _TINY_BCLIBC_OK = 0
 
-# Matches BaseIntegrationEngine.SEPARATE_ROW_TIME_DELTA -- how close (in seconds) two events
-# must be to land on the same output row instead of two adjacent ones.
-_SEPARATE_ROW_TIME_DELTA = 1e-5
-
 
 # ctypes.c_float for a TINY_BCLIBC_SINGLE_PRECISION build, ctypes.c_double otherwise. Typed
 # explicitly (as are _Bindings' fields) so type checkers resolve ctypes.POINTER(...) calls to its
@@ -89,6 +83,7 @@ class _Bindings(NamedTuple):
     BaseTrajData: type[ctypes.Structure]
     TrajectoryRequest: type[ctypes.Structure]
     TrajResult: type[ctypes.Structure]
+    ZeroPointResult: type[ctypes.Structure]
     StreamCb: Any  # ctypes.CFUNCTYPE prototype
 
 
@@ -257,6 +252,11 @@ def _make_ctypes_bindings(real_t: _RealT) -> _Bindings:
             ("flag", ctypes.c_int32),
         )
 
+    class TbZeroPointResult(ctypes.Structure):
+        """Mirrors TINY_BCLIBC_ZeroPointResult."""
+
+        _fields_ = (("angle_rad", real_t), ("point", TbTrajResult))
+
     stream_cb = ctypes.CFUNCTYPE(ctypes.c_int32, ctypes.POINTER(TbTrajResult), ctypes.c_void_p)
 
     return _Bindings(
@@ -269,6 +269,7 @@ def _make_ctypes_bindings(real_t: _RealT) -> _Bindings:
         BaseTrajData=TbBaseTrajData,
         TrajectoryRequest=TbTrajectoryRequest,
         TrajResult=TbTrajResult,
+        ZeroPointResult=TbZeroPointResult,
         StreamCb=stream_cb,
     )
 
@@ -333,6 +334,13 @@ def _load_library(env_var: str, precision_flag: str, real_t: _RealT) -> ctypes.C
     )
     lib.tiny_bclibc_integrate_stream.restype = ctypes.c_int32
 
+    lib.tiny_bclibc_find_zero_point.argtypes = (
+        ctypes.POINTER(b.ShotProps),
+        b.real_t,
+        ctypes.POINTER(b.ZeroPointResult),
+    )
+    lib.tiny_bclibc_find_zero_point.restype = ctypes.c_int32
+
     lib.tiny_bclibc_last_error.argtypes = ()
     lib.tiny_bclibc_last_error.restype = ctypes.c_char_p
 
@@ -360,33 +368,28 @@ def _to_trajectory_data(pt) -> TrajectoryData:
     )
 
 
-def _coalesce_rows(records: list[TrajectoryData]) -> list[TrajectoryData]:
-    """Sorted-insert-or-merge rows within _SEPARATE_ROW_TIME_DELTA of each other (OR flags).
+def _sort_rows(records: list[TrajectoryData]) -> list[TrajectoryData]:
+    """Restore strict chronological order without merging same-instant rows.
 
-    tiny_bclibc_integrate_stream emits rows in the order its internal checks run -- all
-    RANGE-step rows for one raw RK4 step first, then APEX/MACH/ZERO for that same step -- not
-    strictly by interpolated time: a MACH/ZERO crossing interpolated to *before* several
-    already-emitted RANGE rows (e.g. a shot that starts already supersonic and past zero, all
-    within the first couple of raw steps) can arrive after them. So merging must find each
-    row's correct chronological position (by bisecting on time) rather than only checking
-    whichever row was emitted immediately before it. This mirrors bclibc's C++
-    BCLIBC_TrajectoryDataFilter::merge_sorted_record (std::lower_bound + check both
-    neighbors) and Python's TrajectoryDataFilter.add_row/bisect_left, which handle the same
-    out-of-order-interpolation case in their own record()/on_step() rather than here.
+    tiny_bclibc_integrate_stream emits rows in the order its internal checks run within one
+    accepted (Cash-Karp) interval -- all RANGE-step rows first, then APEX/MACH/ZERO for that
+    same interval -- not strictly by interpolated time: a MACH/ZERO crossing interpolated to
+    *before* an already-emitted RANGE row in the same wide interval can arrive after it in
+    emission order. A stable sort by time restores global chronological order across the whole
+    stream.
+
+    A scheduled sample and a physical event are DELIBERATELY kept as independent rows here,
+    even when their interpolated times coincide almost exactly -- merging them into one row
+    with combined flags was the historical behavior,
+    but it is no longer correct: `HitResult.trajectory`'s own cached_property already performs
+    the "annotate the closest scheduled sample with each event's flag" projection generically
+    from independent records, so pre-merging here just duplicates (and can conflict with) that
+    step. This mirrors `TrajectoryDataFilter.record_step` in `py_ballisticcalc/engines/base_engine.py`
+    ("Rows are intentionally not merged by a time tolerance") and bclibc's C++
+    `BCLIBC_TrajectoryDataFilter::handle_step`, which both stopped merging for the same reason
+    (project issue #350's row-coalescing fix).
     """
-    merged: list[TrajectoryData] = []
-    times: list[float] = []
-    for row in records:
-        idx = bisect.bisect_left(times, row.time)
-        if idx < len(times) and abs(times[idx] - row.time) < _SEPARATE_ROW_TIME_DELTA:
-            merged[idx] = merged[idx]._replace(flag=merged[idx].flag | row.flag)
-            continue
-        if idx > 0 and abs(times[idx - 1] - row.time) < _SEPARATE_ROW_TIME_DELTA:
-            merged[idx - 1] = merged[idx - 1]._replace(flag=merged[idx - 1].flag | row.flag)
-            continue
-        merged.insert(idx, row)
-        times.insert(idx, row.time)
-    return merged
+    return sorted(records, key=lambda row: row.time)
 
 
 def _maybe_finalize(
@@ -521,6 +524,70 @@ class TinyBclibcIntegrationEngineBase(BaseIntegrationEngine):
         # Keep the backing arrays alive alongside the struct that points into them.
         return shot, (mach_arr, cd_arr, wind_arr)
 
+    def _native_zero_point(self, props: ShotProps, distance: Distance) -> tuple[Angular, TrajectoryData]:
+        """Run tiny_bclibc's native zero solver for initialized shot properties."""
+        b = self._b
+        tb_shot, _keepalive = self._build_tiny_shot(props)
+        curve_buf = (b.CurvePoint * tb_shot.drag_table_size)()
+        tb_props = b.ShotProps()
+        rc = self._lib.tiny_bclibc_build_shot_props(
+            ctypes.byref(tb_shot), curve_buf, ctypes.byref(tb_props)
+        )
+        if rc != _TINY_BCLIBC_OK:
+            raise SolverRuntimeError(
+                f"tiny_bclibc_build_shot_props failed: "
+                f"{self._lib.tiny_bclibc_last_error().decode('utf-8', 'replace')}"
+            )
+
+        result = b.ZeroPointResult()
+        rc = self._lib.tiny_bclibc_find_zero_point(
+            ctypes.byref(tb_props), b.real_t(distance >> Distance.Foot), ctypes.byref(result)
+        )
+        if rc != _TINY_BCLIBC_OK:
+            raise SolverRuntimeError(
+                f"tiny_bclibc_find_zero_point failed: "
+                f"{self._lib.tiny_bclibc_last_error().decode('utf-8', 'replace')}"
+            )
+        return Angular.Radian(result.angle_rad), _to_trajectory_data(result.point)
+
+    @override
+    def zero_angle(self, shot_info: Shot, distance: Distance) -> Angular:
+        """Find the barrel elevation with the native solver when its domain permits it.
+
+        tiny_bclibc's compact zero solver intentionally has no special cases for a vertical
+        shot or a zero at/near the muzzle. Preserve BaseIntegrationEngine's established
+        behaviour for those inputs.
+        """
+        try:
+            return self._native_zero_point(self._init_trajectory(shot_info), distance)[0]
+        except SolverRuntimeError:
+            return super().zero_angle(shot_info, distance)
+
+    @override
+    def zero_point(self, shot_info: Shot, distance: Distance) -> tuple[Angular, TrajectoryData]:
+        """Use tiny_bclibc's native zero solver and retain its terminal trajectory point."""
+        return self._native_zero_point(self._init_trajectory(shot_info), distance)
+
+    @override
+    def find_zero_angle(self, shot_info: Shot, distance: Distance, lofted: bool = False) -> Angular:
+        """Native zero-angle: use the same C solver as zero_point/find_zero_point.
+
+        This engine's native solver is the same regardless of the lofted flag or which
+        entry point is called; the distinction between zero_angle (Newton primary) and
+        find_zero_angle (Ridder's guaranteed) in the C++ original is not exposed here
+        because both paths in this binding route through the same native entry point.
+        Overriding here is required so that find_zero_angle and find_zero_point agree
+        (test_find_zero_point_matches_find_zero_angle), instead of find_zero_angle
+        falling back to BaseIntegrationEngine's Python golden-section + Ridder's
+        implementation, which would compute a measurably different angle.
+        """
+        return self._native_zero_point(self._init_trajectory(shot_info), distance)[0]
+
+    @override
+    def find_zero_point(self, shot_info: Shot, distance: Distance, lofted: bool = False) -> tuple[Angular, TrajectoryData]:
+        """Native zero-point: same as zero_point, exposes the terminal point."""
+        return self._native_zero_point(self._init_trajectory(shot_info), distance)
+
     @override
     def _integrate(
         self,
@@ -597,7 +664,7 @@ class TinyBclibcIntegrationEngineBase(BaseIntegrationEngine):
                 f"{self._lib.tiny_bclibc_last_error().decode('utf-8', 'replace')}"
             )
 
-        records = _coalesce_rows(records)
+        records = _sort_rows(records)
         records = _maybe_finalize(props, records, out_reason.value, out_final_raw)
 
         termination_reason = _TERM_REASON_MAP.get(out_reason.value)

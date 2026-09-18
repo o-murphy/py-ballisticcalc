@@ -6,13 +6,13 @@ from py_ballisticcalc import (HitResult, Distance, BaseEngineConfigDict, Calcula
 
 def print_out_trajectory_compact(hit_result: HitResult, label="", distance_unit = Distance.Meter,
                                  top_k: int = 5):
-    trajectory_length = len(hit_result.trajectory)
+    trajectory_length = len(hit_result.records)
     if label:
         print(f'{label}: Length of trajectory: { trajectory_length=}')
     else:
         print(f'Length of trajectory: { trajectory_length=}')
 
-    trajectory = hit_result.trajectory
+    trajectory = hit_result.records
     if top_k < trajectory_length:
         end_start_top_k = top_k
         start_end_top_k = trajectory_length - top_k - 1

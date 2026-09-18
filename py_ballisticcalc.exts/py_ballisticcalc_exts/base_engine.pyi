@@ -19,7 +19,7 @@ class InterceptionError(SolverRuntimeError):
     @property
     def last_data(self) -> tuple[CythonizedBaseTrajData, TrajectoryData]: ...
 
-class CythonizedBaseIntegrationEngine(EngineProtocol[BaseEngineConfigDict]):
+class CythonizedBaseIntegrationEngine(EngineProtocol):
     """Base Cython wrapper for C/С++ based binary engine. Implements EngineProtocol"""
 
     # Class constants
@@ -95,6 +95,29 @@ class CythonizedBaseIntegrationEngine(EngineProtocol[BaseEngineConfigDict]):
             Angular: The required barrel elevation angle.
         """
 
+    def find_zero_point(
+        self, shot_info: Shot, distance: Distance, lofted: bool = False
+    ) -> tuple[Angular, TrajectoryData]:
+        """Find a zero trajectory and return its solved angle and terminal point.
+
+        The returned point is the terminal ``RANGE`` point evaluated by the
+        successful zero-finding iteration. No final trajectory integration is
+        performed after the angle is found.
+
+        Args:
+            shot_info: The shot information.
+            distance: Slant distance to the target.
+            lofted: If True, find the higher trajectory that hits the zero point.
+
+        Returns:
+            The solved barrel elevation and the terminal RANGE point from the
+            successful zero-finding iteration.
+
+        Raises:
+            SolverRuntimeError: If a zero-angle fast path did not integrate a
+                trajectory and therefore has no trajectory point to return.
+        """
+
     def find_apex(self, shot_info: Shot) -> TrajectoryData:
         """
         Finds the apex of the trajectory, where apex is defined as the point
@@ -118,6 +141,27 @@ class CythonizedBaseIntegrationEngine(EngineProtocol[BaseEngineConfigDict]):
 
         Returns:
             Angular: Barrel elevation to hit height zero at zero distance along sight line
+        """
+
+    def zero_point(self, shot_info: Shot, distance: Distance) -> tuple[Angular, TrajectoryData]:
+        """Return the zero angle and the trajectory point used to determine it.
+
+        This is the terminal ``RANGE`` point from the successful zero-finding
+        iteration. It performs no final re-integration after finding the
+        angle, so callers receive both the zero geometry and its ballistic
+        state from one solve.
+
+        Args:
+            shot_info: The shot information.
+            distance: Slant distance to the zero point.
+
+        Returns:
+            A pair of the lower-arc barrel elevation and the trajectory point
+            from the successful zero-finding iteration.
+
+        Raises:
+            SolverRuntimeError: If a zero-angle fast path did not integrate a
+                trajectory and therefore has no trajectory point to return.
         """
 
     def integrate(

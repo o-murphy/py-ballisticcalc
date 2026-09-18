@@ -17,15 +17,16 @@ Type Variables:
     ConfigT: Configuration type for the engine (covariant)
 
 Note:
-    All engine implementations must provide both integrate() and zero_angle()
-    methods with the exact signatures specified in this protocol to ensure
-    compatibility with the Calculator interface and other library components.
+    All engine implementations must provide integrate(), zero-angle, and
+    zero-point methods with the exact signatures specified in this protocol
+    to ensure compatibility with the Calculator interface and other library
+    components.
 """
 
 from typing import Any, Protocol, TypeVar, runtime_checkable
 
 from py_ballisticcalc.shot import Shot
-from py_ballisticcalc.trajectory_data import HitResult, TrajFlag
+from py_ballisticcalc.trajectory_data import HitResult, TrajectoryData, TrajFlag
 from py_ballisticcalc.unit import Angular, Distance
 
 __all__ = ["ConfigT", "EngineProtocol"]
@@ -49,7 +50,9 @@ class EngineProtocol(Protocol):
 
     Required Methods:
         - integrate: Perform ballistic trajectory calculation.
-        - zero_angle: Calculate zero angle for given distance.
+        - zero_angle / find_zero_angle: Calculate a zero angle.
+        - zero_point / find_zero_point: Calculate a zero angle and retain its
+          terminal trajectory point.
 
     Examples:
         ```python
@@ -64,6 +67,18 @@ class EngineProtocol(Protocol):
                 pass
 
             def zero_angle(self, shot_info, distance):
+                # Implementation here
+                pass
+
+            def zero_point(self, shot_info, distance):
+                # Implementation here
+                pass
+
+            def find_zero_angle(self, shot_info, distance, lofted=False):
+                # Implementation here
+                pass
+
+            def find_zero_point(self, shot_info, distance, lofted=False):
                 # Implementation here
                 pass
 
@@ -194,6 +209,66 @@ class EngineProtocol(Protocol):
             6. Adjust angle estimate based on convergence strategy
             7. Continue until convergence tolerance is met
             8. Return final angle estimate
+        """
+        ...
+
+    def zero_point(self, shot_info: Shot, distance: Distance) -> tuple[Angular, TrajectoryData]:
+        """Calculate the lower zero and return its angle and terminal point.
+
+        The returned point is the terminal ``RANGE`` point evaluated by the
+        successful zero-finding iteration; implementations must not perform a
+        separate final trajectory integration to obtain it.
+
+        Args:
+            shot_info: Complete shot configuration used for the zero solve.
+            distance: Slant distance from the sight to the requested zero point.
+
+        Returns:
+            A pair of the lower-arc barrel elevation and the corresponding
+            terminal trajectory point.
+
+        Raises:
+            SolverRuntimeError: If a zero-angle fast path did not evaluate a
+                trajectory point.
+        """
+        ...
+
+    def find_zero_angle(self, shot_info: Shot, distance: Distance, lofted: bool = False) -> Angular:
+        """Calculate the lower or lofted zero angle at a specific distance.
+
+        Args:
+            shot_info: Complete shot configuration used for the zero solve.
+            distance: Slant distance from the sight to the requested zero point.
+            lofted: If True, select the higher trajectory that reaches the
+                zero point; otherwise select the lower trajectory.
+
+        Returns:
+            Barrel elevation needed to hit the zero point.
+        """
+        ...
+
+    def find_zero_point(
+        self, shot_info: Shot, distance: Distance, lofted: bool = False
+    ) -> tuple[Angular, TrajectoryData]:
+        """Calculate the lower or lofted zero and return its angle and terminal point.
+
+        The returned point is the terminal ``RANGE`` point evaluated by the
+        successful zero-finding iteration; implementations must not perform a
+        separate final trajectory integration to obtain it.
+
+        Args:
+            shot_info: Complete shot configuration used for the zero solve.
+            distance: Slant distance from the sight to the requested zero point.
+            lofted: If True, select the higher trajectory that reaches the
+                zero point; otherwise select the lower trajectory.
+
+        Returns:
+            A pair of the selected barrel elevation and the corresponding
+            terminal trajectory point.
+
+        Raises:
+            SolverRuntimeError: If a zero-angle fast path did not evaluate a
+                trajectory point.
         """
         ...
 

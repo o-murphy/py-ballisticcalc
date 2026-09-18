@@ -37,7 +37,7 @@ from py_ballisticcalc_exts.bind cimport (
 from py_ballisticcalc.shot import ShotProps
 from py_ballisticcalc.engines.base_engine import create_base_engine_config
 from py_ballisticcalc.engines.base_engine import BaseIntegrationEngine as _PyBaseIntegrationEngine
-from py_ballisticcalc.exceptions import RangeError
+from py_ballisticcalc.exceptions import RangeError, SolverRuntimeError
 from py_ballisticcalc.trajectory_data import HitResult, TrajectoryData
 from py_ballisticcalc.unit import Angular
 
@@ -153,6 +153,40 @@ cdef class CythonizedBaseIntegrationEngine:
         cdef double zero_angle = self._find_zero_angle(shot_info, distance._feet, lofted)
         return rad_from_c(zero_angle)
 
+    def find_zero_point(self, object shot_info, object distance, bint lofted = False):
+        """Find a zero trajectory and return its solved angle and terminal point.
+
+        The returned point is the terminal ``RANGE`` point evaluated by the
+        successful zero-finding iteration. No final trajectory integration is
+        performed after the angle is found.
+
+        Args:
+            shot_info: The shot information.
+            distance: Slant distance to the target.
+            lofted: If True, find the higher trajectory that hits the zero point.
+
+        Returns:
+            The solved barrel elevation and the terminal RANGE point from the
+            successful zero-finding iteration.
+
+        Raises:
+            SolverRuntimeError: If a zero-angle fast path did not integrate a
+                trajectory and therefore has no trajectory point to return.
+        """
+        self._init_trajectory(shot_info)
+        cdef BCLIBC_ZeroPointResult result
+        cdef double feet = distance._feet
+        with nogil:
+            result = self._this.find_zero_point(
+                feet,
+                lofted,
+                _APEX_IS_MAX_RANGE_RADIANS,
+                _ALLOWED_ZERO_ERROR_FEET,
+            )
+        if not result.has_point:
+            raise SolverRuntimeError("Zero-angle fast path did not evaluate a trajectory point")
+        return rad_from_c(result.angle_rad), TrajectoryData_from_cpp(result.point)
+
     def find_apex(self, object shot_info) -> TrajectoryData:
         """
         Finds the apex of the trajectory, where apex is defined as the point
@@ -186,12 +220,47 @@ cdef class CythonizedBaseIntegrationEngine:
         self._init_trajectory(shot_info)
         cdef:
             double result
-        result = self._this.zero_angle_with_fallback(
-            distance._feet,
-            _APEX_IS_MAX_RANGE_RADIANS,
-            _ALLOWED_ZERO_ERROR_FEET,
-        )
+            double feet = distance._feet
+        with nogil:
+            result = self._this.zero_angle_with_fallback(
+                feet,
+                _APEX_IS_MAX_RANGE_RADIANS,
+                _ALLOWED_ZERO_ERROR_FEET,
+            )
         return rad_from_c(result)
+
+    def zero_point(self, object shot_info, object distance):
+        """Return the zero angle and the trajectory point used to determine it.
+
+        This is the terminal ``RANGE`` point from the successful zero-finding
+        iteration. It performs no final re-integration after finding the
+        angle, so callers receive both the zero geometry and its ballistic
+        state from one solve.
+
+        Args:
+            shot_info: The shot information.
+            distance: Slant distance to the zero point.
+
+        Returns:
+            A pair of the lower-arc barrel elevation and the trajectory point
+            from the successful zero-finding iteration.
+
+        Raises:
+            SolverRuntimeError: If a zero-angle fast path did not integrate a
+                trajectory and therefore has no trajectory point to return.
+        """
+        self._init_trajectory(shot_info)
+        cdef BCLIBC_ZeroPointResult result
+        cdef double feet = distance._feet
+        with nogil:
+            result = self._this.zero_point_with_fallback(
+                feet,
+                _APEX_IS_MAX_RANGE_RADIANS,
+                _ALLOWED_ZERO_ERROR_FEET,
+            )
+        if not result.has_point:
+            raise SolverRuntimeError("Zero-angle fast path did not evaluate a trajectory point")
+        return rad_from_c(result.angle_rad), TrajectoryData_from_cpp(result.point)
 
     def integrate(
         CythonizedBaseIntegrationEngine self,
@@ -237,15 +306,16 @@ cdef class CythonizedBaseIntegrationEngine:
 
         self._init_trajectory(shot_info)
 
-        self._this.integrate_filtered(
-            range_limit_ft,
-            range_step_ft,
-            time_step,
-            <BCLIBC_TrajFlag>filter_flags,
-            filtered_records,
-            reason,
-            &dense_trajectory._this if dense_output else NULL,
-        )
+        with nogil:
+            self._this.integrate_filtered(
+                range_limit_ft,
+                range_step_ft,
+                time_step,
+                <BCLIBC_TrajFlag>filter_flags,
+                filtered_records,
+                reason,
+                &dense_trajectory._this if dense_output else NULL,
+            )
 
         trajectory = TrajectoryData_list_from_cpp(filtered_records)
 
@@ -327,11 +397,12 @@ cdef class CythonizedBaseIntegrationEngine:
         Returns:
             double: The miss distance in feet (positive if overshot, negative if undershot).
         """
-        return self._this.error_at_distance(
-            angle_rad,
-            target_x_ft,
-            target_y_ft,
-        )
+        with nogil:
+            return self._this.error_at_distance(
+                angle_rad,
+                target_x_ft,
+                target_y_ft,
+            )
 
     cdef BCLIBC_ShotProps* _init_trajectory(
         CythonizedBaseIntegrationEngine self,
@@ -374,12 +445,13 @@ cdef class CythonizedBaseIntegrationEngine:
             tuple: (status, look_angle_rad, slant_range_ft, target_x_ft, target_y_ft, start_height_ft)
             where status is: 0 = CONTINUE, 1 = DONE (early return with look_angle_rad)
         """
-        self._this.init_zero_calculation(
-            distance,
-            _APEX_IS_MAX_RANGE_RADIANS,
-            _ALLOWED_ZERO_ERROR_FEET,
-            out,
-        )
+        with nogil:
+            self._this.init_zero_calculation(
+                distance,
+                _APEX_IS_MAX_RANGE_RADIANS,
+                _ALLOWED_ZERO_ERROR_FEET,
+                out,
+            )
 
     cdef double _find_zero_angle(
         CythonizedBaseIntegrationEngine self,
@@ -398,12 +470,13 @@ cdef class CythonizedBaseIntegrationEngine:
             double: The calculated zero angle in radians.
         """
         self._init_trajectory(shot_info)
-        return self._this.find_zero_angle(
-            distance,
-            lofted,
-            _APEX_IS_MAX_RANGE_RADIANS,
-            _ALLOWED_ZERO_ERROR_FEET,
-        )
+        with nogil:
+            return self._this.find_zero_angle(
+                distance,
+                lofted,
+                _APEX_IS_MAX_RANGE_RADIANS,
+                _ALLOWED_ZERO_ERROR_FEET,
+            )
 
     cdef BCLIBC_MaxRangeResult _find_max_range(
         CythonizedBaseIntegrationEngine self,
@@ -423,11 +496,12 @@ cdef class CythonizedBaseIntegrationEngine:
             Tuple[Distance, Angular]: The maximum slant range and the launch angle to reach it.
         """
         self._init_trajectory(shot_info)
-        return self._this.find_max_range(
-            low_angle_deg,
-            high_angle_deg,
-            _APEX_IS_MAX_RANGE_RADIANS,
-        )
+        with nogil:
+            return self._this.find_max_range(
+                low_angle_deg,
+                high_angle_deg,
+                _APEX_IS_MAX_RANGE_RADIANS,
+            )
 
     cdef BCLIBC_TrajectoryData _find_apex(
         CythonizedBaseIntegrationEngine self,
@@ -441,12 +515,13 @@ cdef class CythonizedBaseIntegrationEngine:
         """
         self._init_trajectory(shot_info)
         cdef BCLIBC_BaseTrajData apex = BCLIBC_BaseTrajData()
-        self._this.find_apex(apex)
-        return BCLIBC_TrajectoryData(
-            self._this.shot,
-            apex,
-            BCLIBC_TrajFlag.BCLIBC_TRAJ_FLAG_APEX
-        )
+        with nogil:
+            self._this.find_apex(apex)
+            return BCLIBC_TrajectoryData(
+                self._this.shot,
+                apex,
+                BCLIBC_TrajFlag.BCLIBC_TRAJ_FLAG_APEX
+            )
 
     cdef double _zero_angle(
         CythonizedBaseIntegrationEngine self,
@@ -465,11 +540,12 @@ cdef class CythonizedBaseIntegrationEngine:
             Angular: Barrel elevation to hit height zero at zero distance along sight line
         """
         self._init_trajectory(shot_info)
-        return self._this.zero_angle(
-            distance,
-            _APEX_IS_MAX_RANGE_RADIANS,
-            _ALLOWED_ZERO_ERROR_FEET,
-        )
+        with nogil:
+            return self._this.zero_angle(
+                distance,
+                _APEX_IS_MAX_RANGE_RADIANS,
+                _ALLOWED_ZERO_ERROR_FEET,
+            )
 
     cdef void _integrate_raw_at(
         CythonizedBaseIntegrationEngine self,
@@ -501,12 +577,13 @@ cdef class CythonizedBaseIntegrationEngine:
             SolverRuntimeError: If some other internal error occured
         """
         self._init_trajectory(shot_info)
-        self._this.integrate_at(
-            key,
-            target_value,
-            raw_data,
-            full_data,
-        )
+        with nogil:
+            self._this.integrate_at(
+                key,
+                target_value,
+                raw_data,
+                full_data,
+            )
 
     cdef void _integrate(
         CythonizedBaseIntegrationEngine self,
@@ -529,4 +606,5 @@ cdef class CythonizedBaseIntegrationEngine:
                 BCLIBC_TerminationReason: Termination reason if applicable.
         """
         self._init_trajectory(shot_info)
-        self._this.integrate(range_limit_ft, handler, reason)
+        with nogil:
+            self._this.integrate(range_limit_ft, handler, reason)

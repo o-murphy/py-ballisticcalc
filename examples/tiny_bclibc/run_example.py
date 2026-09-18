@@ -31,8 +31,14 @@ def main() -> None:
         calc = Calculator(engine=engine)
         shot = Shot(ammo=ammo, weapon=weapon)
         calc.set_weapon_zero(shot, Unit.Meter(100))
+        hold, windage, aim_point = calc.aim(shot, Unit.Meter(300))
         hit = calc.fire(shot, trajectory_range=Unit.Meter(300), trajectory_step=Unit.Meter(50))
         print(f"\n{label}:")
+        print(
+            f"  aim @ 300 m: hold={hold >> Unit.MOA:+.3f} moa  "
+            f"windage={windage >> Unit.MOA:+.3f} moa  "
+            f"velocity={aim_point.velocity >> Unit.FPS:.2f} fps"
+        )
         for row in hit.trajectory:
             print(
                 f"  {row.distance >> Unit.Meter:6.1f} m  "

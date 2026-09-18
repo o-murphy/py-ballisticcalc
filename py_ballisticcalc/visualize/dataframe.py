@@ -53,7 +53,7 @@ def hit_result_as_dataframe(hit_result: HitResult, formatted: bool = False) -> D
 
     Args:
         hit_result: HitResult object containing trajectory calculation results.
-                    Must contain valid HitResult.trajectory data points for conversion.
+                    Must contain valid HitResult.records data points for conversion.
         formatted: Data format mode selector.
                   - False: Return raw numerical values as floats in default units
                   - True: Return formatted string values in preferred units

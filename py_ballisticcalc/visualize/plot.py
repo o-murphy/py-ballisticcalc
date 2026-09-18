@@ -330,7 +330,7 @@ def trajectory_as_plot(hit_result: HitResult, look_angle: Angular | None = None)
     x_bbl = [0, max_range]
     y_bbl = [
         -(hit_result.props.shot.weapon.sight_height >> PreferredUnits.drop),
-        max_range_in_drop_units * math.tan(hit_result.trajectory[0].angle >> Angular.Radian)
+        max_range_in_drop_units * math.tan(hit_result.records[0].angle >> Angular.Radian)
         - (hit_result.props.shot.weapon.sight_height >> PreferredUnits.drop),
     ]
     ax.plot(x_bbl, y_bbl, linestyle=":", color=PLOT_COLORS["barrel"])
@@ -391,7 +391,7 @@ def hit_result_as_plot(hit_result, look_angle: Angular | None = None, show_time_
     max_range = df.distance.max()
     backward_bending_trajectory = (hit_result[-1].distance >> PreferredUnits.distance) != max_range
 
-    for p in hit_result.trajectory:
+    for p in hit_result.events:
         if TrajFlag(p.flag) & TrajFlag.ZERO:
             ax.plot(
                 [p.distance >> PreferredUnits.distance, p.distance >> PreferredUnits.distance],

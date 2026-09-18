@@ -31,9 +31,9 @@ class TestComputer:
         canted = copy.copy(self.baseline_shot)
         canted.cant_angle = Angular.Degree(90)
         t = self.calc.fire(canted, trajectory_range=self.range, trajectory_step=self.step)
-        assert pytest.approx(t.trajectory[5].height.raw_value - self.weapon.sight_height.raw_value) == \
+        assert pytest.approx(t.samples[5].height.raw_value - self.weapon.sight_height.raw_value) == \
                self.baseline_trajectory[5].height.raw_value
-        assert pytest.approx(t.trajectory[5].windage.raw_value + self.weapon.sight_height.raw_value) == \
+        assert pytest.approx(t.samples[5].windage.raw_value + self.weapon.sight_height.raw_value) == \
                self.baseline_trajectory[5].windage.raw_value
 
     def test_cant_positive_elevation(self):
@@ -43,10 +43,10 @@ class TestComputer:
         canted = Shot(weapon=Weapon(sight_height=self.weapon.sight_height, twist=0, zero_elevation=Angular.Mil(2)),
                       ammo=self.ammo, atmo=self.atmosphere, cant_angle=Angular.Degree(90))
         t = self.calc.fire(canted, trajectory_range=self.range, trajectory_step=self.step)
-        assert pytest.approx(t.trajectory[5].height.raw_value - self.weapon.sight_height.raw_value,
+        assert pytest.approx(t.samples[5].height.raw_value - self.weapon.sight_height.raw_value,
                              abs=1e-2) == pytest.approx(self.baseline_trajectory[5].height.raw_value, abs=1e-2)
-        assert pytest.approx(t.trajectory[0].windage.raw_value) == -self.weapon.sight_height.raw_value
-        assert t.trajectory[5].windage.raw_value > t.trajectory[3].windage.raw_value
+        assert pytest.approx(t.samples[0].windage.raw_value) == -self.weapon.sight_height.raw_value
+        assert t.samples[5].windage.raw_value > t.samples[3].windage.raw_value
 
     def test_cant_zero_sight_height(self):
         """Cant_angle = 90 degrees with sight_height=0 and barrel_elevation=0 should match baseline with:
@@ -55,9 +55,9 @@ class TestComputer:
         canted = Shot(weapon=Weapon(sight_height=0, twist=self.weapon.twist),
                       ammo=self.ammo, atmo=self.atmosphere, cant_angle=Angular.Degree(90))
         t = self.calc.fire(canted, trajectory_range=self.range, trajectory_step=self.step)
-        assert pytest.approx(t.trajectory[5].height.raw_value - self.weapon.sight_height.raw_value) == \
+        assert pytest.approx(t.samples[5].height.raw_value - self.weapon.sight_height.raw_value) == \
                self.baseline_trajectory[5].height.raw_value
-        assert pytest.approx(t.trajectory[5].windage.raw_value) == self.baseline_trajectory[5].windage.raw_value
+        assert pytest.approx(t.samples[5].windage.raw_value) == self.baseline_trajectory[5].windage.raw_value
     # endregion Cant
 
     # region Wind
@@ -66,28 +66,28 @@ class TestComputer:
         shot = Shot(weapon=self.weapon, ammo=self.ammo, atmo=self.atmosphere,
                     winds=[Wind(Velocity(5, Velocity.MPH), Angular(3, Angular.OClock))])
         t = self.calc.fire(shot, trajectory_range=self.range, trajectory_step=self.step)
-        assert t.trajectory[5].windage.raw_value > self.baseline_trajectory[5].windage.raw_value
+        assert t.samples[5].windage.raw_value > self.baseline_trajectory[5].windage.raw_value
 
     def test_wind_from_right(self):
         """Wind from right should decrease windage"""
         shot = Shot(weapon=self.weapon, ammo=self.ammo, atmo=self.atmosphere,
                     winds=[Wind(Velocity(5, Velocity.MPH), Angular(9, Angular.OClock))])
         t = self.calc.fire(shot, trajectory_range=self.range, trajectory_step=self.step)
-        assert t.trajectory[5].windage.raw_value < self.baseline_trajectory[5].windage.raw_value
+        assert t.samples[5].windage.raw_value < self.baseline_trajectory[5].windage.raw_value
 
     def test_wind_from_back(self):
         """Wind from behind should decrease drop"""
         shot = Shot(weapon=self.weapon, ammo=self.ammo, atmo=self.atmosphere,
                     winds=[Wind(Velocity(5, Velocity.MPH), Angular(0, Angular.OClock))])
         t = self.calc.fire(shot, trajectory_range=self.range, trajectory_step=self.step)
-        assert t.trajectory[5].height.raw_value > self.baseline_trajectory[5].height.raw_value
+        assert t.samples[5].height.raw_value > self.baseline_trajectory[5].height.raw_value
 
     def test_wind_from_front(self):
         """Wind from in front should increase drop"""
         shot = Shot(weapon=self.weapon, ammo=self.ammo, atmo=self.atmosphere,
                     winds=[Wind(Velocity(5, Velocity.MPH), Angular(6, Angular.OClock))])
         t = self.calc.fire(shot, trajectory_range=self.range, trajectory_step=self.step)
-        assert t.trajectory[5].height.raw_value < self.baseline_trajectory[5].height.raw_value
+        assert t.samples[5].height.raw_value < self.baseline_trajectory[5].height.raw_value
 
     def test_wind_lag_rule(self):
         """Lag rule: Windage due to crosswind v_w = t_lag * v_w"""
@@ -118,9 +118,9 @@ class TestComputer:
                                       Wind(Velocity.MPS(4), Angular.OClock(3))])
         t_multi_more = self.calc.fire(shot_multi_more, trajectory_range=self.range, trajectory_step=self.step)
         # Winds are the same to 500 yards:
-        assert pytest.approx(t_multi.trajectory[5].windage.raw_value) == t_right.trajectory[5].windage.raw_value
-        assert t_multi.trajectory[7].windage.raw_value > t_right.trajectory[7].windage.raw_value
-        assert t_multi_more.trajectory[9].windage.raw_value > t_multi.trajectory[9].windage.raw_value
+        assert pytest.approx(t_multi.samples[5].windage.raw_value) == t_right.samples[5].windage.raw_value
+        assert t_multi.samples[7].windage.raw_value > t_right.samples[7].windage.raw_value
+        assert t_multi_more.samples[9].windage.raw_value > t_multi.samples[9].windage.raw_value
 
     def test_no_winds(self):
         shot = Shot(weapon=self.weapon, ammo=self.ammo, atmo=self.atmosphere, winds=[])
@@ -141,7 +141,7 @@ class TestComputer:
         """Barrel with no twist should have no spin drift"""
         shot = Shot(weapon=Weapon(twist=0), ammo=self.ammo, atmo=self.atmosphere)
         t = self.calc.fire(shot, trajectory_range=self.range, trajectory_step=self.step)
-        assert pytest.approx(t.trajectory[5].windage.raw_value) == 0
+        assert pytest.approx(t.samples[5].windage.raw_value) == 0
 
     def test_twist(self):
         """Barrel with right-hand twist should have positive spin drift.
@@ -150,12 +150,12 @@ class TestComputer:
         """
         shot = Shot(weapon=Weapon(twist=12), ammo=self.ammo, atmo=self.atmosphere)
         twist_right = self.calc.fire(shot, trajectory_range=self.range, trajectory_step=self.step)
-        assert twist_right.trajectory[5].windage.raw_value > 0
+        assert twist_right.samples[5].windage.raw_value > 0
         shot = Shot(weapon=Weapon(twist=-8), ammo=self.ammo, atmo=self.atmosphere)
         twist_left = self.calc.fire(shot, trajectory_range=self.range, trajectory_step=self.step)
-        assert twist_left.trajectory[5].windage.raw_value < 0
+        assert twist_left.samples[5].windage.raw_value < 0
         # Faster twist should produce larger drift:
-        assert -twist_left.trajectory[5].windage.raw_value > twist_right.trajectory[5].windage.raw_value
+        assert -twist_left.samples[5].windage.raw_value > twist_right.samples[5].windage.raw_value
     # endregion Twist
 
     # region Atmo
@@ -164,28 +164,28 @@ class TestComputer:
         humid = Atmo(humidity=.9)  # 90% humidity
         shot = Shot(weapon=self.weapon, ammo=self.ammo, atmo=humid)
         t = self.calc.fire(shot=shot, trajectory_range=self.range, trajectory_step=self.step)
-        assert t.trajectory[5].height.raw_value > self.baseline_trajectory[5].height.raw_value
+        assert t.samples[5].height.raw_value > self.baseline_trajectory[5].height.raw_value
 
     def test_temp_atmo(self):
         """Dropping temperature should increase drop (due to increasing density)"""
         cold = Atmo(temperature=Temperature.Celsius(0))
         shot = Shot(weapon=self.weapon, ammo=self.ammo, atmo=cold)
         t = self.calc.fire(shot=shot, trajectory_range=self.range, trajectory_step=self.step)
-        assert t.trajectory[5].height.raw_value < self.baseline_trajectory[5].height.raw_value
+        assert t.samples[5].height.raw_value < self.baseline_trajectory[5].height.raw_value
 
     def test_altitude(self):
         """Increasing altitude should decrease drop (due to decreasing density)"""
         high = Atmo.icao(Distance.Foot(5000))
         shot = Shot(weapon=self.weapon, ammo=self.ammo, atmo=high)
         t = self.calc.fire(shot=shot, trajectory_range=self.range, trajectory_step=self.step)
-        assert t.trajectory[5].height.raw_value > self.baseline_trajectory[5].height.raw_value
+        assert t.samples[5].height.raw_value > self.baseline_trajectory[5].height.raw_value
 
     def test_pressure(self):
         """Decreasing pressure should decrease drop (due to decreasing density)"""
         thin = Atmo(pressure=Pressure.InHg(20.0))
         shot = Shot(weapon=self.weapon, ammo=self.ammo, atmo=thin)
         t = self.calc.fire(shot=shot, trajectory_range=self.range, trajectory_step=self.step)
-        assert t.trajectory[5].height.raw_value > self.baseline_trajectory[5].height.raw_value
+        assert t.samples[5].height.raw_value > self.baseline_trajectory[5].height.raw_value
     # endregion Atmo
 
     # region Ammo
@@ -195,7 +195,7 @@ class TestComputer:
         slick = Ammo(tdm, self.ammo.mv)
         shot = Shot(weapon=self.weapon, ammo=slick, atmo=self.atmosphere)
         t = self.calc.fire(shot=shot, trajectory_range=self.range, trajectory_step=self.step)
-        assert t.trajectory[5].height.raw_value > self.baseline_trajectory[5].height.raw_value
+        assert t.samples[5].height.raw_value > self.baseline_trajectory[5].height.raw_value
 
     def test_ammo_optional(self):
         """DragModel.weight and .diameter, and Ammo.length, are only relevant when computing
@@ -205,7 +205,7 @@ class TestComputer:
         tammo = Ammo(tdm, mv=self.ammo.mv)
         shot = Shot(weapon=self.weapon, ammo=tammo, atmo=self.atmosphere)
         t = self.calc.fire(shot=shot, trajectory_range=self.range, trajectory_step=self.step)
-        assert pytest.approx(t.trajectory[5].height.raw_value) == self.baseline_trajectory[5].height.raw_value
+        assert pytest.approx(t.samples[5].height.raw_value) == self.baseline_trajectory[5].height.raw_value
 
     def test_powder_sensitivity(self):
         """With _globalUsePowderSensitivity: Reducing temperature should reduce muzzle velocity"""
@@ -216,7 +216,7 @@ class TestComputer:
         cold_no_sens = Atmo(temperature=Temperature.Celsius(-5))
         shot_no_sens = Shot(weapon=self.weapon, ammo=self.ammo, atmo=cold_no_sens)
         t_no_sens = self.calc.fire(shot=shot_no_sens, trajectory_range=self.range, trajectory_step=self.step)
-        assert pytest.approx(t_no_sens.trajectory[0].velocity.raw_value) == self.baseline_trajectory[
+        assert pytest.approx(t_no_sens.samples[0].velocity.raw_value) == self.baseline_trajectory[
             0].velocity.raw_value
 
         # Test case 2: Powder temperature the same as atmosphere temperature
@@ -224,13 +224,13 @@ class TestComputer:
         cold_same_temp = Atmo(temperature=Temperature.Celsius(-5))
         shot_same_temp = Shot(weapon=self.weapon, ammo=self.ammo, atmo=cold_same_temp)
         t_same_temp = self.calc.fire(shot=shot_same_temp, trajectory_range=self.range, trajectory_step=self.step)
-        assert t_same_temp.trajectory[0].velocity.raw_value < self.baseline_trajectory[0].velocity.raw_value
+        assert t_same_temp.samples[0].velocity.raw_value < self.baseline_trajectory[0].velocity.raw_value
 
         # Test case 3: Different powder temperature
         cold_diff_temp = Atmo(powder_t=Temperature.Celsius(-5))
         shot_diff_temp = Shot(weapon=self.weapon, ammo=self.ammo, atmo=cold_diff_temp)
         t_diff_temp = self.calc.fire(shot=shot_diff_temp, trajectory_range=self.range, trajectory_step=self.step)
-        assert t_diff_temp.trajectory[0].velocity.raw_value < self.baseline_trajectory[0].velocity.raw_value
+        assert t_diff_temp.samples[0].velocity.raw_value < self.baseline_trajectory[0].velocity.raw_value
 
         self.ammo.use_powder_sensitivity = False
     # endregion Ammo
@@ -326,7 +326,7 @@ class TestComputer:
         """Ensure we always get at least two points in the trajectory"""
         shot = Shot(weapon=self.weapon, ammo=self.ammo, atmo=self.atmosphere, winds=[])
         hit_result = self.calc.fire(shot=shot, trajectory_range=Distance.Centimeter(5))
-        assert len(hit_result.trajectory) > 1
+        assert len(hit_result.samples) > 1
 
     def test_limit_start(self, loaded_engine_instance):
         """Ensure that a shot that violates config limits instantly still returns at least initial state"""
@@ -337,7 +337,7 @@ class TestComputer:
         shot = Shot(ammo=self.ammo)
         shot.relative_angle = Angular.Radian(-0.1)
         t = calc.fire(shot, trajectory_range=Distance.Meter(100), raise_range_error=False)
-        assert len(t.trajectory) >= 1
+        assert len(t.samples) >= 1
         assert isinstance(t.error, RangeError)
 
     def test_find_apex_uses_no_min_velocity_and_restores(self, loaded_engine_instance):
@@ -368,17 +368,17 @@ class TestComputer:
         calc = Calculator(config={'cMaximumDrop': 0}, engine=loaded_engine_instance)
         res = calc.fire(shot, trajectory_range=Distance.Meter(500), raise_range_error=False)
         assert res.error is not None and res.error.reason == RangeError.MaximumDropReached
-        assert pytest.approx(res.trajectory[0].height.raw_value) == -sight_height.raw_value
-        assert res.trajectory[-1].height.raw_value <= -sight_height.raw_value
-        assert res.trajectory[-1].time > 0.0
+        assert pytest.approx(res.samples[0].height.raw_value) == -sight_height.raw_value
+        assert res.samples[-1].height.raw_value <= -sight_height.raw_value
+        assert res.samples[-1].time > 0.0
 
         # cMaximumDrop should not be adjusted for positive start-height
         shot.weapon.sight_height = Distance.Inch(-3)
         res = calc.fire(shot, trajectory_range=Distance.Meter(500), raise_range_error=False)
         assert res.error is not None and res.error.reason == RangeError.MaximumDropReached
-        assert pytest.approx(res.trajectory[0].height.raw_value) == -shot.weapon.sight_height.raw_value
-        assert res.trajectory[-1].height.raw_value <= 0.0 + 1e-9
-        assert res.trajectory[-1].time > 0.0
+        assert pytest.approx(res.samples[0].height.raw_value) == -shot.weapon.sight_height.raw_value
+        assert res.samples[-1].height.raw_value <= 0.0 + 1e-9
+        assert res.samples[-1].time > 0.0
 
     def test_min_altitude_downward_only(self, loaded_engine_instance):
         """cMinimumAltitude should only apply once velocity is not positive."""
@@ -388,6 +388,6 @@ class TestComputer:
         calc = Calculator(config={'cMinimumAltitude': 1_000}, engine=loaded_engine_instance)
         res = calc.fire(shot, trajectory_range=Distance.Meter(500), raise_range_error=False)
         assert res.error is not None and res.error.reason == RangeError.MinimumAltitudeReached
-        assert res.trajectory[-1].angle.raw_value <= 0.0 + 1e-9
-        assert res.trajectory[-1].time > 0.0
+        assert res.samples[-1].angle.raw_value <= 0.0 + 1e-9
+        assert res.samples[-1].time > 0.0
     # endregion Errors and Limits

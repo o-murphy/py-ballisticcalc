@@ -24,12 +24,12 @@
   
 ### 5. Trajectory data and events
 - `py_ballisticcalc.trajectory_data.py` defines [`TrajFlag`][py_ballisticcalc.trajectory_data.TrajFlag], [`BaseTrajData`][py_ballisticcalc.trajectory_data.BaseTrajData], [`TrajectoryData`][py_ballisticcalc.trajectory_data.TrajectoryData], and [`HitResult`][py_ballisticcalc.trajectory_data.HitResult].
-- [`TrajFlag`][py_ballisticcalc.trajectory_data.TrajFlag] event flags include: `ZERO_UP`, `ZERO_DOWN`, `MACH`, `RANGE`, `APEX`, and they are recorded with union semantics when they occur within a small time window.
+- [`TrajFlag`][py_ballisticcalc.trajectory_data.TrajFlag] event flags include: `ZERO_UP`, `ZERO_DOWN`, `MACH`, `RANGE`, `APEX`. Scheduled samples and physical events are separate rows, even when their timestamps are close.
 - [py_ballisticcalc.engines.base_engine.TrajectoryDataFilter][]:
     - Converts raw step samples to recorded `TrajectoryData` rows.
     - Handles sampling by range/time.
     - Detects `TrajFlag` events and performs interpolation for precise event timestamps/values.
-    - Applies unioning of flags within `BaseIntegrationEngine.SEPARATE_ROW_TIME_DELTA`.
+    - Emits event and scheduled-sample rows independently from each accepted step.
 
 ### 6. Search helpers
 - The engine provides root-finding and search helpers implemented on top of the `integrate()` method:

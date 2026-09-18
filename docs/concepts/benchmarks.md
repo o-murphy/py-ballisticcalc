@@ -14,6 +14,7 @@ The engines covered here:
 4. **Cython RK4** (`cythonized_rk4_engine`): Same as the RK4 engine, but implemented in C++/Cython and compiled (instead of interpreting) for maximum compute speed.
 5. **Cython Euler** (`cythonized_euler_engine`): Same as the Euler engine, but implemented in C++/Cython and compiled (instead of interpreting) for maximum compute speed.
 6. **SciPy** (`scipy_engine`): The [SciPy](https://scipy.org) library contains the most sophisticated numerical methods with compiled backends.
+7. **Cython Cash-Karp** (`cythonized_rkck_engine`): An adaptive embedded RK45 method (see [Cash-Karp Engine](#cash-karp-engine) below), implemented in C++/Cython and compiled.
 
 ## Key Concepts
 
@@ -72,6 +73,38 @@ SciPy is something of a black box: one cannot be certain exactly how it will pro
 
 ![SciPy realized error vs. tolerance parameter for LSODA method](SciPy_Error_v_Tolerance.svg)
 
+### Cash-Karp Engine
+
+`cythonized_rkck_engine` is not (yet) part of the `BenchmarkEngines.ipynb` study above; the
+numbers here come from `scripts/benchmark.py` (`Trajectory`/`Zero` cases, same 2000m G7 shot
+profile: 0.22 BC, 10g/7.62mm, 800 m/s, ICAO atmosphere), each engine run separately with 100
+warm-up calls and 1000 timed repetitions:
+
+| Case       | Engine                     | Mean (ms)                                          |
+| ---------- | -------------------------- | -------------------------------------------------- |
+| Trajectory | `rk4_engine` (pure Python) | 55.271                                             |
+| Trajectory | `cythonized_rk4_engine`    | 0.384                                              |
+| Trajectory | `cythonized_rkck_engine`   | 0.165 (2.33x faster than `cythonized_rk4_engine`)  |
+| Zero       | `rk4_engine` (pure Python) | 242.586                                            |
+| Zero       | `cythonized_rk4_engine`    | 1.184                                              |
+| Zero       | `cythonized_rkck_engine`   | 0.072 (16.44x faster than `cythonized_rk4_engine`) |
+
+These are mean wall-clock milliseconds per call on one particular machine, not a portable
+constant.  In this run Cash-Karp is 335x faster for Trajectory and 3369x faster for Zero than
+pure-Python RK4; those much larger figures include both adaptive integration and compiled-vs-
+Python implementation effects.  The direct Cython-vs-Cython ratios above isolate the practical
+engine comparison better. `cythonized_rkck_engine`'s own mean is the noisiest figure in this table
+because its calls are sub-millisecond, so use the raw ms figures (or run the script yourself) if
+you need a ratio for your own machine rather than trusting the ones quoted here or in the
+[engines](engines.md#summary) table.
+
+Like SciPy's adaptive solvers, Cash-Karp dynamically adjusts its internal step size to meet
+scalar `absolute_tolerance` and `relative_tolerance` values (both default `1e-6`) rather than
+taking a fixed number of steps — see [Adaptive integration (Cash-Karp)](engines.md#adaptive-integration-cash-karp) for
+how that tolerance was chosen, what had to be fixed elsewhere in the engine (event/row
+interpolation) to make sparse adaptive sampling produce correct output, and why `Zero`'s speedup
+over `Trajectory`'s is so much larger even when comparing the same two Cython engines directly
+(it isn't just "iterations compound" — it's where the Python/C++ call boundary falls).
 
 [BenchmarkEngines.ipynb]:
 https://github.com/o-murphy/py_ballisticcalc/blob/master/examples/BenchmarkEngines.ipynb

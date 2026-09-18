@@ -75,7 +75,97 @@ class TestHitResult:
         shot = Shot(ammo=Ammo(dm, mv=Velocity.FPS(mach)))
         result = self.calc.fire(shot, trajectory_range=Distance.Meter(1),
                             trajectory_step=Distance.Meter(0.2), flags=TrajFlag.ALL)
-        assert len(result) == 6, "Result should have 6 TrajectoryData rows"
-        expected_flags = TrajFlag.RANGE | TrajFlag.ZERO_DOWN | TrajFlag.MACH
-        assert (result[0].flag & expected_flags) == expected_flags, \
-            "First row should have RANGE, ZERO_DOWN, and MACH flags"
+        assert len(result) == 6, "Result should contain the requested six range samples"
+        assert result[0].flag == TrajFlag.RANGE
+
+    def test_trajectory_is_deprecated_alias_for_records(self):
+        """`.trajectory` must keep returning `.records` (with a warning) for source compatibility."""
+        with pytest.deprecated_call():
+            legacy = self.shot_result.trajectory
+        assert legacy == self.shot_result.records
+        assert len(self.shot_result) == len(self.shot_result.records)
+        assert list(self.shot_result) == self.shot_result.records
+        assert self.shot_result[0] == self.shot_result.records[0]
+
+    def test_samples_annotate_schedule_while_records_stay_exact(self):
+        """`.samples` is the fixed-cardinality schedule table; `.records` keeps every exact row."""
+        # This shot's flags=TrajFlag.ALL triggers ZERO/APEX/MACH events (see test_flags above),
+        # so records must be strictly longer than the schedule-only samples table.
+        assert len(self.shot_result.records) > len(self.shot_result.samples)
+        assert len(self.shot_result.records) == len(self.shot_result.samples) + len(self.shot_result.events)
+
+    def test_samples_do_not_glue_distant_events_onto_nearest_sample(self):
+        """A coarse schedule (only launch/terminal samples) must not smear every event onto one row.
+
+        Regression test: with trajectory_range == trajectory_step, only the launch and terminal
+        samples exist. ZERO_UP/APEX/ZERO_DOWN all occur well before the terminal sample, so the
+        old "annotate whichever sample is nearest" logic glued all three onto the launch sample
+        (t=0), producing a nonsensical combined flag that misrepresented the launch state as
+        every event's. None of these events are actually close (in time) to either sample, so
+        none should be annotated in `.samples` -- they remain exact and findable via `.events`.
+        """
+        coarse = self.calc.fire(self.shot, trajectory_range=Distance.Yard(1000),
+                                trajectory_step=Distance.Yard(1000), flags=TrajFlag.ALL)
+        assert len(coarse.samples) == 2, "Only the launch and terminal samples are requested"
+
+        event_flags = TrajFlag.ZERO | TrajFlag.MACH | TrajFlag.APEX
+        for sample in coarse.samples:
+            assert not (sample.flag & event_flags), (
+                f"sample at t={sample.time} unexpectedly carries event flag "
+                f"{TrajFlag.name(sample.flag & event_flags)}"
+            )
+
+        # The events themselves stay exact, unaffected by not being annotated in `.samples`.
+        assert coarse.flag(TrajFlag.ZERO_UP) is not None
+        assert coarse.flag(TrajFlag.APEX) is not None
+        assert coarse.flag(TrajFlag.ZERO_DOWN) is not None
+        assert coarse.flag(TrajFlag.MACH) is not None
+
+    def test_dense_output_base_data_is_flat_and_interpolates(self):
+        """`base_data` is a flat list[BaseTrajData] (matching the integrator's own accepted-step
+        stream); get_at() builds a TrajectoryStep on demand from each adjacent pair rather than
+        requiring pre-materialized step objects in base_data itself.
+
+        Only engines that expose accepted-step data support this. Cython engines expose their
+        own CythonizedBaseTrajSeq (a different type, with its own get_at()); streamed native
+        engines may reject dense output altogether, so this test skips both cases."""
+        try:
+            dense_result = self.calc.fire(
+                self.shot, trajectory_range=Distance.Yard(1000), trajectory_step=Distance.Yard(100),
+                dense_output=True,
+            )
+        except NotImplementedError:
+            pytest.skip("dense_output is not supported by this engine")
+        if not isinstance(dense_result.base_data, list):
+            pytest.skip("base_data is a Cython CythonizedBaseTrajSeq for this engine, not a flat list")
+        assert dense_result.base_data is not None
+        assert len(dense_result.base_data) > 2
+        assert all(isinstance(point, BaseTrajData) for point in dense_result.base_data)
+
+        target = Distance.Yard(423)
+        dense_point = dense_result.get_at("distance", target)
+        assert pytest.approx(dense_point.distance >> Distance.Yard, abs=1e-6) == 423.0
+
+        # Without dense_output, get_at() falls back to 3-point PCHIP over `.records`;
+        # both must agree closely since they describe the same physical trajectory.
+        sparse_result = self.calc.fire(self.shot, trajectory_range=Distance.Yard(1000),
+                                       trajectory_step=Distance.Yard(100))
+        sparse_point = sparse_result.get_at("distance", target)
+        assert pytest.approx(dense_point.height >> Distance.Foot, abs=0.05) == (sparse_point.height >> Distance.Foot)
+
+    def test_dense_get_at_respects_start_from_time_within_interval(self):
+        """Dense interpolation must not return a root before the search origin."""
+        start = BaseTrajData(0.0, Vector(0.0, 0.0, 0.0), Vector(1.0, 1.0, 0.0), 1100.0)
+        end = BaseTrajData(2.0, Vector(2.0, 2.0, 0.0), Vector(1.0, 1.0, 0.0), 1100.0)
+        result = HitResult(
+            self.shot_result.props,
+            [
+                TrajectoryData.from_base_data(self.shot_result.props, start),
+                TrajectoryData.from_base_data(self.shot_result.props, end),
+            ],
+            [start, end],
+        )
+
+        # Height reaches one foot at t=1, before the requested search origin.
+        with pytest.raises(ArithmeticError):
+            result.get_at("height", Distance.Foot(1), start_from_time=1.5)

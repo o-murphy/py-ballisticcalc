@@ -23,7 +23,7 @@ from py_ballisticcalc.engines import RK4IntegrationEngine
 from py_ballisticcalc.generics.engine import EngineFactoryProtocol, EngineProtocol
 from py_ballisticcalc.logger import logger
 from py_ballisticcalc.shot import Shot
-from py_ballisticcalc.trajectory_data import HitResult, TrajFlag
+from py_ballisticcalc.trajectory_data import HitResult, TrajectoryData, TrajFlag
 from py_ballisticcalc.unit import Angular, Distance, PreferredUnits
 
 ConfigT = TypeVar("ConfigT")
@@ -277,6 +277,48 @@ class Calculator:
         target_distance = PreferredUnits.distance(target_distance)
         total_elevation = self._engine_instance.zero_angle(shot, target_distance)
         return Angular.Radian((total_elevation >> Angular.Radian) - (shot.look_angle >> Angular.Radian))
+
+    def aim(self, shot: Shot, target_distance: float | Distance) -> tuple[Angular, Angular, TrajectoryData]:
+        """Calculate a target's zero solution and retain its trajectory point.
+
+        Args:
+            shot: Shot instance to solve.
+            target_distance: Look-distance to the target.
+                This is the distance that a rangefinder would return with no ballistic adjustment.
+
+        Returns:
+            The vertical hold relative to the weapon's zero, the windage
+            angle, and the trajectory point evaluated by the successful
+            zero-finding iteration.  The windage angle uses the sign
+            convention of :attr:`TrajectoryData.windage_angle`.
+
+        Raises:
+            NotImplementedError: If the selected engine has no ``zero_point`` API.
+        """
+        target_distance = PreferredUnits.distance(target_distance)
+        total_elevation, point = self._engine_instance.zero_point(shot, target_distance)
+        target_zero_elevation = Angular.Radian(
+            (total_elevation >> Angular.Radian) - (shot.look_angle >> Angular.Radian)
+        )
+        vertical_hold = Angular.Radian(
+            (target_zero_elevation >> Angular.Radian) - (shot.weapon.zero_elevation >> Angular.Radian)
+        )
+        return vertical_hold, point.windage_angle, point
+
+    def aiming_solution_for_target(
+        self, shot: Shot, target_distance: float | Distance
+    ) -> tuple[Angular, Angular, TrajectoryData]:
+        """Return :meth:`aim`'s solution for callers using the descriptive API name.
+
+        Args:
+            shot: Shot instance to solve.
+            target_distance: Look-distance to the target.
+
+        Returns:
+            The vertical hold relative to the weapon's zero, windage angle,
+            and terminal trajectory point.
+        """
+        return self.aim(shot, target_distance)
 
     def set_weapon_zero(self, shot: Shot, zero_distance: float | Distance) -> Angular:
         """Set shot.weapon.zero_elevation so that it hits a target at zero_distance.

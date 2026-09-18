@@ -3,6 +3,9 @@ from math import fabs
 import pytest
 
 from py_ballisticcalc import *
+from py_ballisticcalc.engines.base_engine import TrajectoryDataFilter
+from py_ballisticcalc.shot import ShotProps
+from py_ballisticcalc.vector import Vector
 
 pytestmark = pytest.mark.engine
 
@@ -84,7 +87,7 @@ class TestTrajectory:
                          winds=[Wind(Velocity(5, Velocity.MPH), Angular(10.5, Angular.OClock))])
 
         calc = Calculator(engine=loaded_engine_instance)
-        data = calc.fire(shot_info, Distance.Yard(1000), Distance.Yard(100)).trajectory
+        data = calc.fire(shot_info, Distance.Yard(1000), Distance.Yard(100)).samples
         assert len(data) == 11, "Trajectory Row Count"
         self.validate_one(data_point(data), distance, velocity, mach, energy, path, hold, windage, wind_adjustment,
                           time, ogv, adjustment_unit)
@@ -107,7 +110,7 @@ class TestTrajectory:
         shot_info = Shot(weapon=weapon, ammo=ammo, winds=[Wind(Velocity(5, Velocity.MPH), Angular.Degree(-45))])
 
         calc = Calculator(engine=loaded_engine_instance)
-        data = calc.fire(shot_info, Distance.Yard(1000), Distance.Yard(100)).trajectory
+        data = calc.fire(shot_info, Distance.Yard(1000), Distance.Yard(100)).samples
         assert len(data) == 11, "Trajectory Row Count"
         self.validate_one(data_point(data), distance, velocity, mach, energy, path, hold, windage, wind_adjustment,
                           time, ogv, adjustment_unit)
@@ -137,6 +140,22 @@ class TestTrajectoryDataFilter:
         dm = DragModel(bc=0.243, drag_table=TableG7)
         return Shot(ammo=Ammo(dm, mv=Velocity.FPS(mv_fps)), weapon=Weapon(), atmo=Atmo.icao())
 
+    def test_range_sample_resets_time_sample_clock(self):
+        """A RANGE row is the last record for the subsequent TIME schedule."""
+        props = ShotProps.from_shot(self._mk_shot())
+        data_filter = TrajectoryDataFilter(
+            props, TrajFlag.NONE, range_limit=100.0, range_step=10.0, time_step=0.1
+        )
+        start = BaseTrajData(0.0, Vector(0.0, 0.0, 0.0), Vector(100.0, 0.0, 0.0), 1100.0)
+        end = BaseTrajData(0.15, Vector(15.0, 0.0, 0.0), Vector(100.0, 0.0, 0.0), 1100.0)
+
+        data_filter.record_initial(start)
+        data_filter.record_step(start, end)
+
+        # The RANGE point lands at t=0.1.  Starting TIME from it means no
+        # separate t=0.1 TIME row is emitted from this interval.
+        assert [row.time for row in data_filter.records] == pytest.approx([0.0, 0.1])
+
     def test_range_interpolation_with_sparse_history(self,loaded_engine_instance):
         """Ensure RANGE rows are interpolated when exact hits not on step grid and only minimal history exists.
 
@@ -148,7 +167,7 @@ class TestTrajectoryDataFilter:
         # Pick a trajectory range and a coarse step that likely doesn't align with integration steps
         res = calc.fire(shot, trajectory_range=Distance.Yard(350), trajectory_step=Distance.Yard(137))
         # We should have RANGE rows at 0 yd (initial), then ~137yd and ~274yd plus the end
-        ranges = [td for td in res.trajectory if td.flag & TrajFlag.RANGE]
+        ranges = [td for td in res.samples if td.flag & TrajFlag.RANGE]
         assert len(ranges) >= 2
         # Distances after the initial should be near multiples of 137 yd (within tolerance)
         yards = [td.distance >> Distance.Yard for td in ranges[:-1]]
@@ -165,9 +184,9 @@ class TestTrajectoryDataFilter:
         # No trajectory_step specified -> default equals trajectory_range, so RANGE would be at end only.
         res = calc.fire(shot, trajectory_range=Distance.Yard(300), time_step=0.02, raise_range_error=False)
         # Expect >2 rows due to time-based recording
-        assert len(res.trajectory) > 2
+        assert len(res.samples) > 2
         # And at least one has RANGE flag set via time-step sampling
-        assert any(td.flag & TrajFlag.RANGE for td in res.trajectory)
+        assert any(td.flag & TrajFlag.RANGE for td in res.samples)
 
 
     def test_zero_up_then_zero_down_ordering(self, loaded_engine_instance):
@@ -178,7 +197,7 @@ class TestTrajectoryDataFilter:
         shot.weapon = Weapon(sight_height=Distance.Inch(2), zero_elevation=Angular.MOA(3.0))
         res = calc.fire(shot, trajectory_range=Distance.Yard(400), trajectory_step=Distance.Yard(10),
                         flags=TrajFlag.ZERO)
-        flags = [td.flag for td in res.trajectory if td.flag & TrajFlag.ZERO]
+        flags = [td.flag for td in res.events if td.flag & TrajFlag.ZERO]
         # If zero crossings exist, the first should include ZERO_UP, and later one ZERO_DOWN
         if flags:
             # ZERO combines UP/DOWN, but during first crossing it should include UP before DOWN appears
@@ -216,7 +235,7 @@ class TestTrajectoryDataFilter:
         step = Distance.Yard(60)
         res = calc.fire(shot, trajectory_range=rng, trajectory_step=step)
         limit_yards = rng >> Distance.Yard
-        range_rows = [td for td in res.trajectory if td.flag & TrajFlag.RANGE]
+        range_rows = [td for td in res.samples if td.flag & TrajFlag.RANGE]
         assert len(range_rows) >= 2
         for row in range_rows:
             assert (row.distance >> Distance.Yard) <= limit_yards + 1e-6
@@ -229,7 +248,7 @@ class TestTrajectoryDataFilter:
         shot.weapon.zero_elevation = Angular.Degree(5.0)
         res = calc.fire(shot, trajectory_range=Distance.Yard(800), trajectory_step=Distance.Yard(25),
                         flags=TrajFlag.APEX)
-        apex_rows = [td for td in res.trajectory if td.flag & TrajFlag.APEX]
+        apex_rows = [td for td in res.events if td.flag & TrajFlag.APEX]
         assert len(apex_rows) == 1
 
 
@@ -241,34 +260,55 @@ class TestTrajectoryDataFilter:
         res = calc.fire(shot, trajectory_range=Distance.Yard(1200), trajectory_step=Distance.Yard(100),
                         flags=TrajFlag.ZERO | TrajFlag.MACH)
         assert res.flag(TrajFlag.MACH) is not None
-        zero_rows = [td for td in res.trajectory if td.flag & TrajFlag.ZERO]
+        zero_rows = [td for td in res.events if td.flag & TrajFlag.ZERO]
         assert len(zero_rows) >= 1
 
 
-    def test_no_rows_closer_than_merge_threshold(self, loaded_engine_instance):
-        """Ensure coalescing merges events so no two rows are within the merge time threshold."""
+    def test_records_preserve_events_while_samples_annotate_schedule(self, loaded_engine_instance):
+        """Exact records and the deterministic samples table serve distinct purposes."""
         calc = Calculator(engine=loaded_engine_instance)
-        shot = self._mk_shot(2800.0)
-        # Request multiple flags and dense-ish sampling to provoke close-by events
-        res = calc.fire(shot, trajectory_range=Distance.Yard(500), trajectory_step=Distance.Yard(50),
-                        time_step=0.001, flags=TrajFlag.ALL, raise_range_error=False)
-        dt_thresh = BaseIntegrationEngine.SEPARATE_ROW_TIME_DELTA
-        times = [td.time for td in res.trajectory]
-        diffs = [t2 - t1 for t1, t2 in zip(times, times[1:])]
-        assert all(abs(d) >= dt_thresh for d in diffs)
+        shot = self._mk_shot(2750.0)
+        calc.set_weapon_zero(shot, Distance.Yard(200))
+        res = calc.fire(shot, trajectory_range=Distance.Yard(600), trajectory_step=Distance.Yard(200),
+                        flags=TrajFlag.ZERO)
+        event_rows = [td for td in res.events if td.flag & TrajFlag.ZERO]
+        sample_rows = [td for td in res.samples if td.flag & TrajFlag.RANGE]
+        assert event_rows
+        assert sample_rows
+        assert all(not (td.flag & TrajFlag.RANGE) for td in event_rows)
+        assert 0.0 < min(abs(event.time - sample.time) for event in event_rows for sample in sample_rows) < 1e-5
+        assert any(td.flag & TrajFlag.ZERO for td in res.samples)
+        assert len(res.records) == len(res.samples) + len(res.events)
+        for event in event_rows:
+            closest_time = min((sample.time for sample in sample_rows), key=lambda time: abs(time - event.time))
+            assert any(
+                sample.time == closest_time and sample.flag & event.flag
+                for sample in res.samples
+            )
+        compatible = HitResult(
+            res.props,
+            records=res.records,
+            base_data=res.base_data,
+            extra=res.extra,
+            error=res.error,
+        )
+        assert compatible.records is res.records
+        assert compatible.samples == res.samples
 
 
-    def test_zero_event_coalesces_onto_range_row(self, loaded_engine_instance):
-        """A ZERO crossing should appear on a RANGE-sampled row when timestamps align closely (coalesced flags)."""
+    def test_zero_event_and_range_sample_have_independent_rows(self, loaded_engine_instance):
+        """Zeroing and trajectory sampling are separate numerical queries."""
         calc = Calculator(engine=loaded_engine_instance)
         shot = self._mk_shot(2750.0)
         # Set zero at 200 yd, then sample RANGE at 200 yd so ZERO and RANGE align
         calc.set_weapon_zero(shot, Distance.Yard(200))
         res = calc.fire(shot, trajectory_range=Distance.Yard(600), trajectory_step=Distance.Yard(200),
                         flags=TrajFlag.ZERO)
-        # Find any ZERO row that also includes RANGE flag (coalesced)
-        coalesced = [td for td in res.trajectory if (td.flag & TrajFlag.ZERO) and (td.flag & TrajFlag.RANGE)]
-        assert len(coalesced) >= 1
+        zero_rows = [td for td in res.events if td.flag & TrajFlag.ZERO]
+        range_rows = [td for td in res.samples if td.flag & TrajFlag.RANGE]
+        assert zero_rows
+        assert range_rows
+        assert all(not (td.flag & TrajFlag.RANGE) for td in zero_rows)
 
 
     def test_combined_flags(self, loaded_engine_instance):
@@ -281,4 +321,4 @@ class TestTrajectoryDataFilter:
                                trajectory_step=Distance.Meter(100), flags=TrajFlag.ALL)
         td = hit_result.flag(TrajFlag.ZERO_DOWN)
         assert td is not None, 'Expected to find a ZERO_DOWN flag in trajectory'
-        assert td.flag == TrajFlag.ZERO_DOWN | TrajFlag.RANGE, 'ZERO_DOWN should occur on a RANGE row'
+        assert td.flag == TrajFlag.ZERO_DOWN, 'ZERO_DOWN must retain its own interpolated state'

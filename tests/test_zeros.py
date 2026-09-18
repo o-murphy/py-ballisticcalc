@@ -1,19 +1,24 @@
 import math
+from copy import copy
+
 import pytest
+
+from py_ballisticcalc import (
+    BaseEngineConfigDict,
+    BaseIntegrationEngine,
+    Calculator,
+    RK4IntegrationEngine,
+    VelocityVerletIntegrationEngine,
+)
+from py_ballisticcalc.conditions import Atmo
 from py_ballisticcalc.drag_model import DragModel
-from py_ballisticcalc.drag_tables import TableG1
-from py_ballisticcalc.munition import Ammo
+from py_ballisticcalc.drag_tables import TableG1, TableG7
+from py_ballisticcalc.generics import EngineFactoryProtocol
+from py_ballisticcalc.munition import Ammo, Weapon
 from py_ballisticcalc.shot import Shot
 from py_ballisticcalc.trajectory_data import TrajFlag
 from py_ballisticcalc.unit import *
-from py_ballisticcalc import (
-    Calculator,
-    BaseEngineConfigDict,
-    RK4IntegrationEngine,
-    VelocityVerletIntegrationEngine
-)
-from py_ballisticcalc.generics import EngineFactoryProtocol
-from tests.fixtures_and_helpers import create_23_mm_shot, create_5_56_mm_shot
+from tests.fixtures_and_helpers import create_5_56_mm_shot, create_23_mm_shot
 
 pytestmark = pytest.mark.engine
 
@@ -47,6 +52,41 @@ def create_slow_shot():
     dm = DragModel(bc=0.1, drag_table=TableG1)
     return Shot(ammo=Ammo(dm, mv=Velocity.MPS(50)))
 
+
+def create_ukrop_338lm_shots() -> tuple[Shot, Shot]:
+    """Create the zero and current-condition shots from the ukrop .338 LM example."""
+    weapon = Weapon(sight_height=Unit.Centimeter(9), twist=10)
+    drag_model = DragModel(0.381, TableG7, 300, 0.338, Distance.Inch(1.7))
+    ammo = Ammo(
+        dm=drag_model,
+        mv=Velocity.MPS(815),
+        powder_temp=Temperature.Celsius(0),
+        temp_modifier=0.0123,
+        use_powder_sensitivity=True,
+    )
+    zero = Shot(
+        weapon=weapon,
+        ammo=ammo,
+        atmo=Atmo(
+            altitude=Unit.Meter(150),
+            pressure=Unit.MmHg(745),
+            temperature=Unit.Celsius(-1),
+            humidity=78,
+        ),
+    )
+    shot = Shot(
+        weapon=weapon,
+        ammo=ammo,
+        atmo=Atmo(
+            altitude=Unit.Meter(150),
+            pressure=Unit.hPa(992),
+            temperature=Unit.Celsius(23),
+            humidity=29,
+        ),
+    )
+    return zero, shot
+
+
 def test_find_max_range(loaded_engine_instance):
     """Test .find_max_range() on horizontal."""
     distance = Distance.Meter(194.1)  # Max horizontal range
@@ -59,7 +99,7 @@ def test_find_max_range(loaded_engine_instance):
     else:
         config = BaseEngineConfigDict(cMinimumVelocity=0)
     calc = Calculator(config=config, engine=loaded_engine_instance)
-    d, a = calc.find_max_range(shot)
+    d, _a = calc.find_max_range(shot)
     assert abs(d.raw_value - distance.raw_value) < 1e+1
 
 def test_zero_at_max_range(loaded_engine_instance):
@@ -99,6 +139,120 @@ def test_zero_with_look_angle(loaded_engine_instance):
     zero_down = hit_result.flag(TrajFlag.ZERO_DOWN)
     assert zero_down is not None, "ZERO_DOWN flag not found in hit_result"
     assert abs(zero_down.slant_distance.raw_value - target_distance.raw_value) < 1e+1
+
+
+def test_zero_point_reuses_the_successful_zero_iteration(loaded_engine_instance):
+    """zero_point exposes the point already evaluated by the lower-arc solver."""
+    target_distance = Distance.Yard(200)
+    shot = create_5_56_mm_shot()
+    calc = Calculator(engine=loaded_engine_instance)
+    if not isinstance(calc._engine_instance, BaseIntegrationEngine):
+        pytest.skip("zero_point is currently implemented only by pure-Python engines")
+
+    def call_count(engine, method):
+        calls = 0
+        integrate = engine._integrate
+
+        def counted_integrate(*args, **kwargs):
+            nonlocal calls
+            calls += 1
+            return integrate(*args, **kwargs)
+
+        engine._integrate = counted_integrate
+        return method(engine), calls
+
+    reference_engine = calc._engine_instance
+    (angle, point), zero_point_calls = call_count(
+        calc._engine_instance,
+        lambda engine: engine.zero_point(shot, target_distance),
+    )
+
+    assert isinstance(angle, Angular)
+    assert point.flag == TrajFlag.RANGE
+    assert point.slant_distance.raw_value == pytest.approx(target_distance.raw_value, abs=1e-2)
+    assert point.slant_height.raw_value == pytest.approx(0.0, abs=1e-1)
+    if type(reference_engine).zero_point is BaseIntegrationEngine.zero_point:
+        _, reference_calls = call_count(
+            calc._engine_instance,
+            lambda engine: engine.zero_angle(shot, target_distance),
+        )
+        assert zero_point_calls == reference_calls
+    else:
+        # Overriding engines retain their terminal point internally.  For a
+        # native solver both counts are zero; a Python override (e.g. SciPy)
+        # performs its own integrations, but must not add one merely to expose
+        # the point.
+        _, reference_calls = call_count(
+            calc._engine_instance,
+            lambda engine: engine.find_zero_point(shot, target_distance),
+        )
+        assert zero_point_calls == reference_calls
+
+
+def test_find_zero_point_matches_find_zero_angle(loaded_engine_instance):
+    """find_zero_point has the same lower-arc solution as find_zero_angle."""
+    target_distance = Distance.Yard(200)
+    shot = create_5_56_mm_shot()
+    calc = Calculator(engine=loaded_engine_instance)
+    if not hasattr(calc._engine_instance, "find_zero_point"):
+        pytest.skip("engine does not implement find_zero_point")
+
+    angle, point = calc._engine_instance.find_zero_point(shot, target_distance, lofted=False)
+    expected = calc._engine_instance.find_zero_angle(shot, target_distance, lofted=False)
+
+    assert angle.raw_value == pytest.approx(expected.raw_value)
+    assert point.flag == TrajFlag.RANGE
+    assert point.slant_distance.raw_value == pytest.approx(target_distance.raw_value, abs=1e-2)
+
+
+def test_aim_is_relative_to_weapon_zero(loaded_engine_instance):
+    """The high-level API returns the vertical correction from the sight's zero."""
+    target_distance = Distance.Yard(200)
+    zero_distance = Distance.Yard(100)
+    shot = create_5_56_mm_shot()
+    shot.look_angle = Angular.Degree(5)
+    calc = Calculator(engine=loaded_engine_instance)
+    if not hasattr(calc._engine_instance, "zero_point"):
+        pytest.skip("engine does not implement zero_point")
+
+    calc.set_weapon_zero(shot, zero_distance)
+    vertical_hold, windage, point = calc.aim(shot, target_distance)
+    target_zero_elevation = calc.barrel_elevation_for_target(shot, target_distance)
+    expected = Angular.Radian(
+        (target_zero_elevation >> Angular.Radian) - (shot.weapon.zero_elevation >> Angular.Radian)
+    )
+
+    assert vertical_hold.raw_value == pytest.approx(expected.raw_value)
+    assert windage == point.windage_angle
+    assert point.slant_distance.raw_value == pytest.approx(target_distance.raw_value, abs=1e-2)
+
+
+def test_aim_corrections_match_fired_trajectory_at_100m_steps(loaded_engine_instance):
+    """Validate ukrop .338 LM aim corrections from 100 m through 3 km.
+
+    The Cython engines use the native zero-point API.  Vertical hold is applied
+    to a copy of the shot and the resulting impact must be on the sight line;
+    windage is compared to the predicted horizontal displacement because Shot
+    has no independent horizontal-hold input.
+    """
+    calc = Calculator(engine=loaded_engine_instance)
+    engine_module = type(calc._engine_instance).__module__
+    if not engine_module.startswith("py_ballisticcalc_exts."):
+        pytest.skip("100 m to 3 km aim regression is exercised by Cython engines")
+
+    zero, shot = create_ukrop_338lm_shots()
+    calc.set_weapon_zero(zero, Distance.Meter(100))
+
+    for target_meters in range(100, 3001, 100):
+        target_distance = Distance.Meter(target_meters)
+        vertical_hold, windage, point = calc.aim(shot, target_distance)
+        corrected_shot = copy(shot)
+        corrected_shot.relative_angle = vertical_hold
+        impact = calc.fire(corrected_shot, target_distance)[-1]
+
+        assert point.slant_height.raw_value == pytest.approx(0.0, abs=1e-1)
+        assert impact.slant_height.raw_value == pytest.approx(0.0, abs=1e-1)
+        assert impact.windage_angle.raw_value == pytest.approx(windage.raw_value, abs=1e-5)
 
 def test_vertical_shot_zero(loaded_engine_instance):
     """Test zero finding for a vertical shot."""

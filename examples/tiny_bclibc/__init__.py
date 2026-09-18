@@ -25,9 +25,8 @@ Running both against the same pytest suite separates precision effects from logi
 failure that reproduces under *both* engines is a bug in this ctypes binding or the tiny_bclibc
 core itself — not single-precision accumulation error. A failure that appears only under the
 single-precision engine is (most likely) genuinely a float32-vs-float64 precision effect (see
-`TinyBclibcSingleIntegrationEngine`'s docstring for the specific, verified mechanisms behind
-its 11 known failures out of the full 375-test suite; `TinyBclibcDoubleIntegrationEngine`
-passes all 375).
+`TinyBclibcSingleIntegrationEngine`'s docstring for the verified limits; the exact count varies
+as the shared test suite evolves). The double-precision engine passes its applicable full suite.
 
 Architecture:
     Both the RK4 integration itself and its range-step/APEX/MACH/ZERO filtering and
@@ -40,10 +39,12 @@ Architecture:
     (`_coalesce_rows`, `_maybe_finalize`) rather than in tiny_bclibc itself, to keep that
     library's C surface minimal — it targets bare-metal/MCU embedding, where code size is a
     real constraint and neither gap is needed by tiny_bclibc's own native consumers. See
-    `_common.py`'s module docstring for what each closes and why. `zero_angle`/`find_apex`/
-    `find_max_range` themselves are still `BaseIntegrationEngine`'s own Python implementations,
-    unmodified — they just call `_integrate` (and therefore `tiny_bclibc_integrate_stream`)
-    repeatedly, exactly as
+    `_common.py`'s module docstring for what each closes and why. `zero_point` calls
+    `tiny_bclibc_find_zero_point` directly and returns the native solver's terminal point, so
+    `Calculator.aim()` does not repeat the Python zero-search loop. `zero_angle` uses the same
+    native solver, with the established Python solver as a fallback for its unsupported extreme
+    cases; `find_apex`/`find_max_range` remain `BaseIntegrationEngine` implementations and call
+    `_integrate` (and therefore `tiny_bclibc_integrate_stream`) repeatedly, exactly as
     [`EulerIntegrationEngine`][py_ballisticcalc.engines.euler.EulerIntegrationEngine] and
     [`RK4IntegrationEngine`][py_ballisticcalc.engines.rk4.RK4IntegrationEngine] do. Either
     engine can be run against the full py_ballisticcalc pytest suite like any other engine —
@@ -101,9 +102,8 @@ class TinyBclibcSingleIntegrationEngine(TinyBclibcIntegrationEngineBase):
     falls back to the ~10-50x more expensive guaranteed method (`_find_zero_angle`, which
     itself requires a `_find_max_range` golden-section search first).
 
-    Known precision limitation (11 of 375 tests in the full pytest suite, all with tolerances
-    tighter than float32's ~7 significant digits; `TinyBclibcDoubleIntegrationEngine` passes
-    all 375): `tiny_bclibc_integrate_stream`'s `TINY_BCLIBC_TrajectoryRequest.range_limit_ft` /
+    Known precision limitation: `tiny_bclibc_integrate_stream`'s
+    `TINY_BCLIBC_TrajectoryRequest.range_limit_ft` /
     `.range_step_ft` fields are `real_t`, so a requested target more precise than `real_t` can
     represent is already rounded at that C call boundary, before any physics or interpolation
     runs -- e.g. requesting an exact ~741 m range step is off by ~3e-5 m purely from that one

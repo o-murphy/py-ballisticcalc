@@ -136,7 +136,7 @@ class VelocityVerletIntegrationEngine(BaseIntegrationEngine):
         _cMinimumAltitude = self._config.cMinimumAltitude
 
         ranges: list[TrajectoryData] = []  # Record of TrajectoryData points to return
-        step_data: list[BaseTrajData] = []  # Data for interpolation (if dense_output is enabled)
+        step_data: list[BaseTrajData] = []  # Flat accepted-step points for interpolation (if dense_output is enabled)
         time: float = 0.0
         drag: float = 0.0
         mach: float = 0.0
@@ -156,7 +156,7 @@ class VelocityVerletIntegrationEngine(BaseIntegrationEngine):
             math.cos(props.barrel_elevation_rad) * math.cos(props.barrel_azimuth_rad),
             math.sin(props.barrel_elevation_rad),
             math.cos(props.barrel_elevation_rad) * math.sin(props.barrel_azimuth_rad),
-        ).mul_by_const(relative_speed)  # type: ignore
+        ).mul_by_const(relative_speed)
         _cMaximumDrop += min(0, range_vector.y)  # Adjust max drop downward if above muzzle height
         # Acceleration:
         density_ratio, mach = props.get_density_and_mach_for_altitude(range_vector.y)
@@ -164,7 +164,7 @@ class VelocityVerletIntegrationEngine(BaseIntegrationEngine):
         relative_speed = relative_velocity.magnitude()
         drag = density_ratio * relative_speed * props.drag_by_mach(relative_speed / mach)
         coriolis_term = coriolis_fn(velocity_vector) if coriolis_fn else ZERO_VECTOR
-        acceleration_vector = self.gravity_vector + coriolis_term - drag * relative_velocity  # type: ignore[operator]
+        acceleration_vector = self.gravity_vector + coriolis_term - drag * relative_velocity
         # endregion
 
         data_filter = TrajectoryDataFilter(
@@ -174,6 +174,10 @@ class VelocityVerletIntegrationEngine(BaseIntegrationEngine):
             range_step=range_step_ft,
             time_step=time_step,
         )
+        data = BaseTrajData(time=time, position=range_vector, velocity=velocity_vector, mach=mach)
+        data_filter.record_initial(data)
+        if dense_output:
+            step_data.append(data)
 
         # region Trajectory Loop
         warnings.simplefilter("once")  # used to avoid multiple warnings in a loop
@@ -190,34 +194,30 @@ class VelocityVerletIntegrationEngine(BaseIntegrationEngine):
             # Update air density at current point in trajectory
             density_ratio, mach = props.get_density_and_mach_for_altitude(range_vector.y)
 
-            # region Record current step
-            data = BaseTrajData(time=time, position=range_vector, velocity=velocity_vector, mach=mach)
-            data_filter.record(data)
-            if dense_output:
-                step_data.append(data)
-            # endregion
-
             # region Ballistic calculation step (point-mass)
             # Use the acceleration carried over from the prior iteration and advance with a fixed time step.
             delta_time = props.calc_step
 
             # region Verlet integration
             # 1. Update position using acceleration from the current step
-            range_vector += (  # type: ignore[operator]
-                velocity_vector * delta_time  # type: ignore[operator]
-                + acceleration_vector * delta_time * delta_time * 0.5  # type: ignore[operator]
-            )  # type: ignore[operator]
-            predicted_velocity = velocity_vector + acceleration_vector * delta_time  # type: ignore[operator]
+            range_vector += velocity_vector * delta_time + acceleration_vector * delta_time * delta_time * 0.5
+            predicted_velocity = velocity_vector + acceleration_vector * delta_time
             new_relative_velocity = predicted_velocity - wind_vector
             new_relative_speed = new_relative_velocity.magnitude()
             drag = density_ratio * new_relative_speed * props.drag_by_mach(new_relative_speed / mach)
             coriolis_next = coriolis_fn(predicted_velocity) if coriolis_fn else ZERO_VECTOR
-            new_acceleration_vector = self.gravity_vector + coriolis_next - drag * new_relative_velocity  # type: ignore[operator]
+            new_acceleration_vector = self.gravity_vector + coriolis_next - drag * new_relative_velocity
             # 2. Update velocity using the average of the old a(t) and new a(t+Δt) accelerations
-            velocity_vector += (acceleration_vector + new_acceleration_vector) * 0.5 * delta_time  # type: ignore
+            velocity_vector += (acceleration_vector + new_acceleration_vector) * 0.5 * delta_time
             acceleration_vector = new_acceleration_vector
             velocity = velocity_vector.magnitude()  # Velocity relative to ground
             time += delta_time
+            _, mach = props.get_density_and_mach_for_altitude(range_vector.y)
+            next_data = BaseTrajData(time=time, position=range_vector, velocity=velocity_vector, mach=mach)
+            data_filter.record_step(data, next_data)
+            if dense_output:
+                step_data.append(next_data)
+            data = next_data
             # endregion Verlet integration
             # endregion ballistic calculation step
 
@@ -234,10 +234,6 @@ class VelocityVerletIntegrationEngine(BaseIntegrationEngine):
                     termination_reason = RangeError.MinimumAltitudeReached
                 break
         # endregion
-        data = BaseTrajData(time=time, position=range_vector, velocity=velocity_vector, mach=mach)
-        data_filter.record(data)
-        if dense_output:
-            step_data.append(data)
         # Ensure that we have at least two data points in trajectory,
         # ... as well as last point if we had an incomplete trajectory
         if termination_reason:

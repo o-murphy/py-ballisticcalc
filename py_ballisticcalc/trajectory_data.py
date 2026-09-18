@@ -27,7 +27,7 @@ Typical Usage:
     hit_result = calc.fire(shot, trajectory_range=1000, flags=TrajFlag.ALL)
 
     # Access trajectory data
-    for point in hit_result.trajectory:
+    for point in hit_result.records:
         print(f"Time: {point.time:.3f}s, Distance: {point.distance}, "
               f"Height: {point.height}, Velocity: {point.velocity}")
 
@@ -52,7 +52,10 @@ See Also:
 from __future__ import annotations
 
 import math
+from bisect import bisect_left
+from collections.abc import Callable
 from dataclasses import dataclass, field
+from functools import cached_property
 from typing import TYPE_CHECKING, Any, Final, Literal, NamedTuple, TypeAlias
 
 from deprecated import deprecated
@@ -78,6 +81,7 @@ __all__ = (
     "HitResult",
     "TrajFlag",
     "TrajectoryData",
+    "TrajectoryStep",
 )
 
 
@@ -125,10 +129,10 @@ class TrajFlag(int):
         hit_result = calc.fire(shot, 1000, filter_flags=TrajFlag.ZERO | TrajFlag.APEX)
 
         # Find all zero crossing points
-        zeros = [p for p in hit_result.trajectory if p.flag & TrajFlag.ZERO]
+        zeros = [p for p in hit_result.events if p.flag & TrajFlag.ZERO]
 
         # Find apex point
-        apex = next((p for p in hit_result.trajectory if p.flag & TrajFlag.APEX), None)
+        apex = next((p for p in hit_result.events if p.flag & TrajFlag.APEX), None)
         ```
     """
 
@@ -307,6 +311,102 @@ class BaseTrajData(NamedTuple):
         mach = _interp_scalar(p0.mach, p1.mach, p2.mach) if key_attribute != "mach" else key_value
 
         return BaseTrajData(time=time, position=position, velocity=velocity, mach=mach)
+
+
+@dataclass(frozen=True, slots=True)
+class TrajectoryStep:
+    """One accepted integration interval with a local cubic-Hermite model.
+
+    The endpoints are the integrator's authoritative states.  Queries are
+    therefore local to this interval; they never borrow a point from the
+    preceding or following integration step.
+    """
+
+    start: BaseTrajData
+    end: BaseTrajData
+
+    def __post_init__(self) -> None:
+        if self.end.time <= self.start.time:
+            raise ValueError("TrajectoryStep end time must be after start time")
+
+    @property
+    def duration(self) -> float:
+        return self.end.time - self.start.time
+
+    def at_time(self, time: float) -> BaseTrajData:
+        """Evaluate the endpoint-Hermite interpolant at *time*."""
+        h = self.duration
+        u = (time - self.start.time) / h
+        u2 = u * u
+        u3 = u2 * u
+        h00 = 2.0 * u3 - 3.0 * u2 + 1.0
+        h10 = u3 - 2.0 * u2 + u
+        h01 = -2.0 * u3 + 3.0 * u2
+        h11 = u3 - u2
+        position = (
+            self.start.position * h00
+            + self.start.velocity * (h * h10)
+            + self.end.position * h01
+            + self.end.velocity * (h * h11)
+        )
+        dh00 = (6.0 * u2 - 6.0 * u) / h
+        dh10 = 3.0 * u2 - 4.0 * u + 1.0
+        dh01 = (-6.0 * u2 + 6.0 * u) / h
+        dh11 = 3.0 * u2 - 2.0 * u
+        velocity = (
+            self.start.position * dh00
+            + self.start.velocity * dh10
+            + self.end.position * dh01
+            + self.end.velocity * dh11
+        )
+        mach = self.start.mach + (self.end.mach - self.start.mach) * u
+        return BaseTrajData(time, position, velocity, mach)
+
+    def solve_time(
+        self, value_at_time: Callable[[BaseTrajData], float], target: float, *, iterations: int = 48
+    ) -> float:
+        """Find a bracketed scalar crossing in this step by bisection."""
+        lo = self.start.time
+        hi = self.end.time
+        flo = value_at_time(self.start) - target
+        fhi = value_at_time(self.end) - target
+        if flo == 0.0:
+            return lo
+        if fhi == 0.0:
+            return hi
+        if flo * fhi > 0.0:
+            raise ValueError("target is not bracketed by TrajectoryStep")
+        for _ in range(iterations):
+            mid = (lo + hi) * 0.5
+            fmid = value_at_time(self.at_time(mid)) - target
+            if fmid == 0.0:
+                return mid
+            if flo * fmid <= 0.0:
+                hi = mid
+                fhi = fmid
+            else:
+                lo = mid
+                flo = fmid
+        return (lo + hi) * 0.5
+
+    def at_value(self, value_at_time: Callable[[BaseTrajData], float], target: float) -> BaseTrajData:
+        """Evaluate at a bracketed scalar crossing in this step."""
+        return self.at_time(self.solve_time(value_at_time, target))
+
+    def at_x(self, target_x: float) -> BaseTrajData:
+        """Evaluate at the point in this step whose downrange position equals target_x.
+
+        Assigns `target_x` to the result's position.x directly rather than trusting the
+        Hermite polynomial's re-evaluation at the (bisection-)converged time: solve_time only
+        guarantees the *time* has converged, so re-deriving position.x from it carries the
+        interpolant's own rounding on top of the bisection residual. Free to do, and at double
+        precision the two agree to solver residual anyway -- but the same pattern in
+        tiny_bclibc's C port measurably missed an exact RANGE-step target once run in single
+        precision (project issue #350), so this keeps all three implementations consistent
+        rather than relying on double precision to hide it here too.
+        """
+        data = self.at_value(lambda d: d.position.x, target_x)
+        return data._replace(position=data.position._replace(x=target_x))
 
 
 TrajectoryDataAttribute: TypeAlias = Literal[
@@ -744,39 +844,136 @@ class DangerSpace(NamedTuple):
             raise ImportError("Use `pip install py_ballisticcalc[charts]` to get results as a plot") from err
 
 
+# "Same instant" tolerance for HitResult.samples' event-to-sample annotation (see there).
+# Engines expose no unified precision knob to derive this from -- cZeroFindingAccuracy is in
+# feet, relative_tolerance is a state-error rtol, cStepMultiplier scales step size, and none of
+# them is a time tolerance -- so this is a fixed, deliberately generous pair of constants
+# instead: comfortably larger than any engine's numerical residual in a solved crossing time,
+# yet far below the gap between any two physically distinct trajectory events at ballistic
+# timescales.
+_SAME_INSTANT_REL_TOL: Final[float] = 1e-3
+_SAME_INSTANT_ABS_TOL: Final[float] = 1e-6
+
+
 # pylint: disable=import-outside-toplevel
-@dataclass(frozen=True)
+@dataclass(frozen=True, init=False)
 class HitResult:
     """Computed trajectory data of the shot.
 
     Attributes:
         shot: The parameters of the shot calculation.
-        trajectory: Computed TrajectoryData points.
-        base_data: Base trajectory data points for interpolation.
+        records: Exact, chronological output records produced by the integrator. Default
+            source for `len()`, iteration, indexing, `dataframe()`, and `plot()`.
+        samples: Deterministic scheduled-sample table with nearby event flags annotated;
+            its cardinality tracks the requested RANGE/TIME schedule regardless of the
+            integrator's internal step choices, so it is the source to use when comparing
+            results across engines or tolerances.
+        events: Exact physical event records (ZERO, MACH, APEX, and MRT).
+        trajectory: [DEPRECATED] Alias for `records`. Use `records` (exact stream) or
+            `samples` (deterministic scheduled table) instead.
+        base_data: Flat sequence of accepted-step points (dense_output engines only), for
+            local interpolation between adjacent pairs.
         extra: [DEPRECATED] Whether extra_data was requested.
         error: RangeError, if any.
     """
 
     """
-    TODO:
-    * Implement dense_output in cythonized engines to populate base_data
-    * Use base_data for interpolation if present
+    TODO: Implement dense_output in cythonized engines to populate base_data.
     """
 
     props: ShotProps
-    trajectory: list[TrajectoryData] = field(repr=False)
+    records: list[TrajectoryData] = field(repr=False)
     base_data: list[BaseTrajData] | None = field(repr=False)
     extra: bool = False
     error: RangeError | None = None
 
+    def __init__(
+        self,
+        props: ShotProps,
+        records: list[TrajectoryData],
+        base_data: list[BaseTrajData] | None = None,
+        extra: bool = False,
+        error: RangeError | None = None,
+    ):
+        object.__setattr__(self, "props", props)
+        object.__setattr__(self, "records", records)
+        object.__setattr__(self, "base_data", base_data)
+        object.__setattr__(self, "extra", extra)
+        object.__setattr__(self, "error", error)
+
+    @cached_property
+    def events(self) -> list[TrajectoryData]:
+        """Return exact physical event records without output-table coalescing."""
+        event_flags = TrajFlag.ZERO | TrajFlag.MACH | TrajFlag.APEX | TrajFlag.MRT
+        return [row for row in self.records if row.flag & event_flags]
+
+    @cached_property
+    def samples(self) -> list[TrajectoryData]:
+        """Return the deterministic scheduled-sample table.
+
+        Physical events remain exact in :attr:`events`; this presentation view
+        annotates a scheduled sample with an event's flag only when the two
+        are, to floating-point precision, the *same instant* (see
+        :func:`math.isclose`'s use below) — e.g. a RANGE sample requested at
+        the same distance a zero was set for, which the integrator reaches by
+        two different numerical paths that agree to solver residual. It never
+        annotates merely the *nearest* sample when no sample is actually
+        that close: with a coarse schedule (e.g. ``trajectory_step ==
+        trajectory_range``, leaving only the launch and terminal samples) an
+        APEX or ZERO in between is not close to either endpoint, so it would
+        otherwise get glued onto whichever endpoint bisection happens to
+        prefer — misrepresenting that endpoint's own state as the event's.
+        Cardinality always equals the sampling schedule's, regardless of
+        whether any annotation occurs, so it is stable across engines and
+        solver tolerances even though *which* samples get annotated is not.
+        """
+        event_flags = TrajFlag.ZERO | TrajFlag.MACH | TrajFlag.APEX | TrajFlag.MRT
+        samples = [
+            row
+            for row in self.records
+            # RANGE identifies an explicit sample.  A terminal NONE row is
+            # also a sample so incomplete trajectories retain their endpoint.
+            if row.flag & TrajFlag.RANGE or not row.flag & event_flags
+        ]
+        if not samples:
+            return []
+
+        projected = samples.copy()
+        sample_times = [row.time for row in samples]
+        for event in self.events:
+            right = bisect_left(sample_times, event.time)
+            if right == 0:
+                index = 0
+            elif right == len(samples):
+                index = len(samples) - 1
+            else:
+                left = right - 1
+                # For an exact tie use the later scheduled row, consistently.
+                index = left if event.time - sample_times[left] < sample_times[right] - event.time else right
+            if math.isclose(
+                sample_times[index], event.time, rel_tol=_SAME_INSTANT_REL_TOL, abs_tol=_SAME_INSTANT_ABS_TOL
+            ):
+                sample = projected[index]
+                projected[index] = sample._replace(flag=sample.flag | event.flag)
+        return projected
+
+    @property
+    @deprecated(
+        reason="Use `.records` for the exact chronological stream (same rows/order this alias "
+        "returns today) or `.samples` for the deterministic scheduled-sample table."
+    )
+    def trajectory(self) -> list[TrajectoryData]:
+        """Deprecated alias for :attr:`records`."""
+        return self.records
+
     def __len__(self) -> int:
-        return len(self.trajectory)
+        return len(self.records)
 
     def __iter__(self):
-        yield from self.trajectory
+        yield from self.records
 
     def __getitem__(self, item):
-        return self.trajectory[item]
+        return self.records[item]
 
     def _check_extra(self):
         if not self.extra:
@@ -805,7 +1002,9 @@ class HitResult:
             AttributeError: If flag was not requested.
         """
         self._check_flag(flag)
-        for row in self.trajectory:
+        event_flags = TrajFlag.ZERO | TrajFlag.MACH | TrajFlag.APEX | TrajFlag.MRT
+        rows = self.events if flag & event_flags else self.records
+        for row in rows:
             if row.flag & flag:
                 return row
         return None
@@ -836,8 +1035,9 @@ class HitResult:
         Raises:
             AttributeError: If TrajectoryData doesn't have the specified attribute.
             KeyError: If the key_attribute is 'flag'.
-            ValueError: If interpolation is required and len(self.trajectory) < 3.
-            ArithmeticError: If trajectory doesn't reach the requested value.
+            ArithmeticError: If the trajectory doesn't reach the requested value, including when
+                fewer than 2 of self.records bracket it (3 are needed for PCHIP; with exactly 2
+                bracketing points a linear fallback is used instead of raising).
 
         Notes:
             * Not all attributes are monotonic: Height typically goes up and then down.
@@ -852,7 +1052,12 @@ class HitResult:
         if key_attribute == "flag":
             raise KeyError("Cannot interpolate based on 'flag' attribute")
 
-        traj = self.trajectory
+        # ``samples`` is a presentation table of scheduled samples.  It may
+        # coalesce physical events onto nearby RANGE rows, so it must not be
+        # the fallback source for a numerical query.  ``base_data`` above is
+        # preferred because it supplies the integrator's local interpolant;
+        # without it, retain the exact record stream instead.
+        traj = self.records
         n = len(traj)
         key_value = value.raw_value if isinstance(value, GenericDimension) else value
 
@@ -861,12 +1066,51 @@ class HitResult:
             val = getattr(td, key_attribute)
             return val.raw_value if hasattr(val, "raw_value") else val
 
-        if n < 3:  # We won't interpolate on less than 3 points, but check for an exact match in the existing rows.
+        # Some extension engines expose a different sequence type (e.g. a
+        # Cython CythonizedBaseTrajSeq with its own get_at()) rather than a
+        # flat list of BaseTrajData; only the latter supports the local
+        # Hermite interpolation below, built on demand from each adjacent
+        # pair via TrajectoryStep -- base_data itself stays a flat, honest
+        # point sequence rather than pre-materialising overlapping pairs.
+        if self.base_data and isinstance(self.base_data[0], BaseTrajData):
+
+            def step_key(data: BaseTrajData) -> float:
+                return get_key_val(TrajectoryData.from_base_data(self.props, data))
+
+            for start, end in zip(self.base_data, self.base_data[1:]):
+                if end.time < start_from_time:
+                    continue
+                step = TrajectoryStep(start, end)
+                start_value = step_key(start)
+                end_value = step_key(end)
+                if start.time >= start_from_time and abs(start_value - key_value) < epsilon:
+                    return TrajectoryData.from_base_data(self.props, start)
+                if abs(end_value - key_value) < epsilon:
+                    return TrajectoryData.from_base_data(self.props, end)
+                if (start_value < key_value < end_value) or (end_value < key_value < start_value):
+                    if key_attribute == "time":
+                        data = step.at_time(key_value)
+                    else:
+                        data = step.at_value(step_key, key_value)
+                    if data.time >= start_from_time:
+                        return TrajectoryData.from_base_data(self.props, data)
+            raise ArithmeticError(f"Trajectory does not reach {key_attribute} = {value}")
+
+        if n < 3:
             if abs(get_key_val(traj[0]) - key_value) < epsilon:
                 return traj[0]
             if n > 1 and abs(get_key_val(traj[1]) - key_value) < epsilon:
                 return traj[1]
-            raise ValueError("Interpolation requires at least 3 TrajectoryData points.")
+            if n == 2:
+                first_value = get_key_val(traj[0])
+                second_value = get_key_val(traj[1])
+                if (first_value < key_value < second_value) or (second_value < key_value < first_value):
+                    # ``TrajectoryData.interpolate(..., method='linear')``
+                    # selects its first segment below the middle point; repeating
+                    # the second point therefore supplies a two-point fallback
+                    # without inventing a third sample for PCHIP.
+                    return TrajectoryData.interpolate(key_attribute, value, traj[0], traj[1], traj[1], method="linear")
+            raise ArithmeticError(f"Trajectory does not reach {key_attribute} = {value}")
 
         # Find the starting index based on start_from_time
         start_idx = 0
@@ -937,7 +1181,7 @@ class HitResult:
             ArithmeticError: If zero crossing points are not found.
         """
         self._check_flag(TrajFlag.ZERO)
-        data = [row for row in self.trajectory if row.flag & TrajFlag.ZERO]
+        data = [row for row in self.events if row.flag & TrajFlag.ZERO]
         if len(data) < 1:
             raise ArithmeticError("Can't find zero crossing points")
         return data
@@ -954,7 +1198,7 @@ class HitResult:
         """
         epsilon = 1e-1  # small value to avoid floating point issues
         return next(
-            (i for i in range(len(self.trajectory)) if self.trajectory[i].distance.raw_value >= d.raw_value - epsilon),
+            (i for i in range(len(self.records)) if self.records[i].distance.raw_value >= d.raw_value - epsilon),
             -1,
         )
 
@@ -973,7 +1217,7 @@ class HitResult:
         """
         if (i := self.index_at_distance(d)) < 0:
             raise ArithmeticError(f"Calculated trajectory doesn't reach requested distance {d}")
-        return self.trajectory[i]
+        return self.records[i]
 
     @deprecated(reason="Use get_at('time', t)")
     def get_at_time(self, t: float) -> TrajectoryData:
@@ -989,10 +1233,10 @@ class HitResult:
             ArithmeticError: If trajectory doesn't reach requested time.
         """
         epsilon = 1e-6  # small value to avoid floating point issues
-        idx = next((i for i in range(len(self.trajectory)) if self.trajectory[i].time >= t - epsilon), -1)
+        idx = next((i for i in range(len(self.records)) if self.records[i].time >= t - epsilon), -1)
         if idx < 0:
             raise ArithmeticError(f"Calculated trajectory doesn't reach requested time {t}")
-        return self.trajectory[idx]
+        return self.records[idx]
 
     def danger_space(
         self,
@@ -1028,11 +1272,11 @@ class HitResult:
         try:
             begin_row = self.get_at("slant_height", slant_height_begin, start_from_time=target_row.time)
         except ArithmeticError:
-            begin_row = self.trajectory[0]
+            begin_row = self.records[0]
         try:
             end_row = self.get_at("slant_height", slant_height_end, start_from_time=target_row.time)
         except ArithmeticError:
-            end_row = self.trajectory[-1]
+            end_row = self.records[-1]
 
         return DangerSpace(target_row, target_height, begin_row, end_row, Angular.Radian(self.props.look_angle_rad))
 
