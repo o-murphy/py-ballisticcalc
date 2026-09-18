@@ -1,6 +1,5 @@
 name: Pytest Tiny Engine
 run-name: >
-  ${{ github.event_name == 'pull_request' && 'Full Matrix — PR' || 'Minimal Matrix — Push' }}
   ${{ github.event.pull_request.number || github.ref_name }}
 
 on:
@@ -91,8 +90,8 @@ jobs:
 
       - name: Run main tests with ${{ matrix.engine }}
         env:
-          PYBALLISTICCALC_TINY_BCLIBC_LIB: $(pwd)/examples/tiny_bclibc/build/single/libtiny_bclibc.so
-          PYBALLISTICCALC_TINY_BCLIBC_DP_LIB: $(pwd)/examples/tiny_bclibc/build/single/libtiny_bclibc.so
+          PYBALLISTICCALC_TINY_BCLIBC_LIB: ${{ github.workspace }}/examples/tiny_bclibc/build/single/libtiny_bclibc.so
+          PYBALLISTICCALC_TINY_BCLIBC_DP_LIB: ${{ github.workspace }}/examples/tiny_bclibc/build/single/libtiny_bclibc.so
           PYTHONPATH: examples
         run: .github/scripts/ci-helpers.sh test tests ${{ matrix.engine }}
         shell: bash
