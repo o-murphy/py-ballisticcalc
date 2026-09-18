@@ -1,0 +1,98 @@
+name: Pytest Tiny Engine
+run-name: >
+  ${{ github.event_name == 'pull_request' && 'Full Matrix — PR' || 'Minimal Matrix — Push' }}
+  ${{ github.event.pull_request.number || github.ref_name }}
+
+on:
+  pull_request:
+    branches:
+      - "*"
+    paths:
+      - "pyproject.toml"
+      - "py_ballisticcalc/**"
+      - "tests/**"
+      - "py_ballisticcalc.exts/**"
+      - ".gitmodules"
+      - ".github/workflows/pytest-cythonized-tiny-engine.yml"
+      - ".github/workflows/pytest-reusable.yml"
+
+  push:
+    branches:
+      - "*"
+    paths:
+      - "pyproject.toml"
+      - "py_ballisticcalc/**"
+      - "tests/**"
+      - "py_ballisticcalc.exts/**"
+      - ".gitmodules"
+      - ".github/workflows/pytest-cythonized-ck-engine.yml"
+      - ".github/workflows/pytest-reusable.yml"
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # Job for minimal matrix, runs ONLY on push events
+  test:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest]
+        python-version: ["3.11"]
+        engine-alias: ["tiny_bclibc"]
+        engine: ["tiny_bclibc:TinyBclibcDoubleIntegrationEngine"]
+
+    name: Python ${{ matrix.python-version }} on ${{ matrix.os }} with ${{ matrix.engine-alias }}
+    runs-on: ${{ matrix.os }} # The runner's OS is provided by the 'os' input
+
+    steps:
+      - uses: actions/checkout@v7
+        name: Checkout Repository Code # A clear name for this foundational step
+        with:
+          fetch-depth: 0 # Required for setuptools-scm
+          submodules: recursive
+
+      - name: Install uv and set the python version
+        uses: astral-sh/setup-uv@bec219d24cd3e171d82865faccec33120bb574f4
+        with:
+          python-version: ${{ matrix.python-version }} # Use the Python version passed via inputs
+          activate-environment: "true"
+          github-token: ${{ github.token }}
+          enable-cache: true
+          # Default glob only tracks uv.lock/pyproject.toml; widen it so the cache
+          # key also reflects the exts source tree, so a build is skipped (cache
+          # hit) whenever this exact (os, python-version, exts source) combo was
+          # already built — e.g. across cythonized_euler_engine/cythonized_rk4_engine
+          # legs on the same runner, which compile the identical wheel.
+          cache-dependency-glob: |
+            **/uv.lock
+            **/pyproject.toml
+            py_ballisticcalc.exts/**
+            .gitmodules
+
+      - name: Ensure CI helper scripts executable
+        run: chmod +x .github/scripts/ci-helpers.sh
+        shell: bash
+
+      - name: Install system dependencies
+        run: .github/scripts/ci-helpers.sh install-system-deps ${{ matrix.python-version }} ${{ runner.os }}
+        shell: bash
+
+      - name: Install project dependencies
+        run: .github/scripts/ci-helpers.sh install-project ${{ matrix.python-version }} ${{ matrix.engine }}
+        shell: bash
+
+      - name: Build ${{ matrix.engine-alias }}
+        run: |
+          cmake -B examples/tiny_bclibc/build -S examples/tiny_bclibc
+          cmake --build examples/tiny_bclibc/build
+        shell: bash
+
+      - name: Run main tests with ${{ matrix.engine }}
+        env:
+          PYBALLISTICCALC_TINY_BCLIBC_LIB: $(pwd)/examples/tiny_bclibc/build/single/libtiny_bclibc.so
+          PYBALLISTICCALC_TINY_BCLIBC_DP_LIB: $(pwd)/examples/tiny_bclibc/build/single/libtiny_bclibc.so
+          PYTHONPATH: examples
+        run: .github/scripts/ci-helpers.sh test tests ${{ matrix.engine }}
+        shell: bash
