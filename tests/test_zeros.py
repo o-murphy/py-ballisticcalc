@@ -178,9 +178,15 @@ def test_zero_point_reuses_the_successful_zero_iteration(loaded_engine_instance)
         )
         assert zero_point_calls == reference_calls
     else:
-        # Native solvers retain the terminal point internally, so no Python `_integrate`
-        # call is needed to expose it.
-        assert zero_point_calls == 0
+        # Overriding engines retain their terminal point internally.  For a
+        # native solver both counts are zero; a Python override (e.g. SciPy)
+        # performs its own integrations, but must not add one merely to expose
+        # the point.
+        _, reference_calls = call_count(
+            calc._engine_instance,
+            lambda engine: engine.find_zero_point(shot, target_distance),
+        )
+        assert zero_point_calls == reference_calls
 
 
 def test_find_zero_point_matches_find_zero_angle(loaded_engine_instance):
