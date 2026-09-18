@@ -1,6 +1,7 @@
 name: Pytest Tiny Engine
 run-name: >
-  Tiny Engine ${{ github.event.pull_request.number || github.ref_name }}
+  ${{ github.event_name == 'pull_request' && 'PR' || 'Push' }}
+  ${{ github.event.pull_request.number || github.ref_name }}
 
 on:
   pull_request:
