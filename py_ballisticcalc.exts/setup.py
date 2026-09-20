@@ -148,6 +148,7 @@ SOURCE_PATHS = {
     "rk4": BCLIBC_SRC_DIR / "rk4.cpp",
     "cash_karp": BCLIBC_SRC_DIR / "cash_karp.cpp",
     "dormand_prince": BCLIBC_SRC_DIR / "dormand_prince.cpp",
+    "tsitouras": BCLIBC_SRC_DIR / "tsitouras.cpp",
     "velocity_verlet": BCLIBC_SRC_DIR / "velocity_verlet.cpp",
     # Local Python-binding source (not in submodule):
     "bind": SRC_DIR_PATH / "py_bind.cpp",
@@ -167,6 +168,7 @@ _EULER_DEPS = {*_ENGINE_DEPS, "euler"}
 _CASH_KARP_DEPS = {*_ENGINE_DEPS, "cash_karp"}
 # The generic adaptive core is independent of both public method wrappers.
 _DORMAND_PRINCE_DEPS = {*_ENGINE_DEPS, "dormand_prince"}
+_TSITOURAS_DEPS = {*_ENGINE_DEPS, "tsitouras"}
 _VELOCITY_VERLET_DEPS = {*_ENGINE_DEPS, "velocity_verlet"}
 _TEST_DEPS = {*_ENGINE_DEPS, *_RK4_DEPS, *_EULER_DEPS, *_VELOCITY_VERLET_DEPS}
 
@@ -182,6 +184,7 @@ CPP_EXTENSION_DEPS = {
     "euler_engine": _EULER_DEPS,
     "cashkarp_engine": _CASH_KARP_DEPS,
     "dopri_engine": _DORMAND_PRINCE_DEPS,
+    "tsitouras_engine": _TSITOURAS_DEPS,
     "velocity_verlet_engine": _VELOCITY_VERLET_DEPS,
     # Test modules (expose internal C++ functions for tests only)
     "_test_helpers": _TEST_DEPS,
