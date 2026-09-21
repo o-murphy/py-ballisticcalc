@@ -920,8 +920,10 @@ class SciPyIntegrationEngine(BaseIntegrationEngine):
         gravity_y = self.gravity_vector.y
 
         def diff_eq(t, s):
-            x, y, _ = s[:3]
-            vx, vy, vz = s[3:]
+            # Direct scalar indexing (not s[:3]/s[3:] slicing) avoids allocating
+            # two throwaway array views on every one of the ~500-1500 calls per trajectory.
+            x, y = s[0], s[1]
+            vx, vy, vz = s[3], s[4], s[5]
 
             wind = wind_sock.wind_at_distance(x)
             if wind is None:
