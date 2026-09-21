@@ -15,6 +15,7 @@ The engines covered here:
 5. **Cython Euler** (`cythonized_euler_engine`): Same as the Euler engine, but implemented in C++/Cython and compiled (instead of interpreting) for maximum compute speed.
 6. **SciPy** (`scipy_engine`): The [SciPy](https://scipy.org) library contains the most sophisticated numerical methods with compiled backends.
 7. **Cython Cash-Karp** (`cythonized_rkck_engine`): An adaptive embedded RK45 method (see [Cash-Karp Engine](#cash-karp-engine) below), implemented in C++/Cython and compiled.
+8. **Cython Dormand-Prince / Tsitouras** (`cythonized_dopri_engine` / `cythonized_tsitouras_engine`): Two structurally-identical 7-stage FSAL adaptive RK45(4) methods with a SciPy-RK45-style controller (see [Dormand-Prince and Tsitouras Engines](#dormand-prince-and-tsitouras-engines) below), implemented in C++/Cython and compiled.
 
 ## Key Concepts
 
@@ -100,11 +101,41 @@ you need a ratio for your own machine rather than trusting the ones quoted here 
 
 Like SciPy's adaptive solvers, Cash-Karp dynamically adjusts its internal step size to meet
 scalar `absolute_tolerance` and `relative_tolerance` values (both default `1e-6`) rather than
-taking a fixed number of steps — see [Adaptive integration (Cash-Karp)](engines.md#adaptive-integration-cash-karp) for
+taking a fixed number of steps — see [Adaptive integration](engines.md#adaptive-integration) for
 how that tolerance was chosen, what had to be fixed elsewhere in the engine (event/row
 interpolation) to make sparse adaptive sampling produce correct output, and why `Zero`'s speedup
 over `Trajectory`'s is so much larger even when comparing the same two Cython engines directly
 (it isn't just "iterations compound" — it's where the Python/C++ call boundary falls).
+
+### Dormand-Prince and Tsitouras Engines
+
+`cythonized_dopri_engine` and `cythonized_tsitouras_engine` are two structurally-identical
+7-stage FSAL 5(4) engines (same SciPy RK45-style controller; see
+[Adaptive integration](engines.md#adaptive-integration)), benchmarked here against
+`cythonized_rkck_engine` and `cythonized_rk4_engine` on the same shot profile and machine as the
+Cash-Karp table above, `scripts/benchmark.py -w 30 -r 300`:
+
+| Case       | Engine                        | Mean (ms) |
+| ---------- | ------------------------------ | --------- |
+| Trajectory | `cythonized_rk4_engine`        | 0.87      |
+| Trajectory | `cythonized_rkck_engine`       | 0.46 (1.89x faster than `cythonized_rk4_engine`) |
+| Trajectory | `cythonized_dopri_engine`      | 0.45 (1.93x faster than `cythonized_rk4_engine`) |
+| Trajectory | `cythonized_tsitouras_engine`  | 0.42 (2.07x faster than `cythonized_rk4_engine`) |
+| Zero       | `cythonized_rk4_engine`        | 2.10      |
+| Zero       | `cythonized_rkck_engine`       | 0.19 (11.1x faster than `cythonized_rk4_engine`) |
+| Zero       | `cythonized_dopri_engine`      | 0.20 (10.5x faster than `cythonized_rk4_engine`) |
+| Zero       | `cythonized_tsitouras_engine`  | 0.20 (10.5x faster than `cythonized_rk4_engine`) |
+
+**Read this as "all three adaptive engines are in the same performance class," not as a ranking.**
+All three calls are sub-millisecond, and the spread between them (0.42-0.46 ms Trajectory,
+0.19-0.20 ms Zero) is within a standard deviation of run-to-run noise measured on this same
+machine. Tsitouras' theoretically smaller leading truncation-error coefficient does not translate
+into a measurable wall-clock or accepted-step-count advantage over Cash-Karp or Dormand-Prince
+for this smooth, well-conditioned shot profile — confirmed directly via each engine's
+`get_step_stats()` (accepted+rejected steps typically within 1-2 of each other across a sweep of
+shot profiles), not just wall-clock noise. Pick whichever of the three suits your compatibility
+needs (Cash-Karp's controller, or the SciPy-RK45-style controller Dormand-Prince and Tsitouras
+share) rather than expecting a speed difference.
 
 [BenchmarkEngines.ipynb]:
 https://github.com/o-murphy/py_ballisticcalc/blob/master/examples/BenchmarkEngines.ipynb

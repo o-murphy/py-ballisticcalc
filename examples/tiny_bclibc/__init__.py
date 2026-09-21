@@ -26,7 +26,10 @@ failure that reproduces under *both* engines is a bug in this ctypes binding or 
 core itself — not single-precision accumulation error. A failure that appears only under the
 single-precision engine is (most likely) genuinely a float32-vs-float64 precision effect (see
 `TinyBclibcSingleIntegrationEngine`'s docstring for the verified limits; the exact count varies
-as the shared test suite evolves). The double-precision engine passes its applicable full suite.
+as the shared test suite evolves). The double-precision engine passes its applicable full suite
+with one known exception (`test_hitresult.py::test_flags` -- see
+`TinyBclibcDoubleIntegrationEngine`'s docstring), a cross-implementation FSAL rounding
+difference against bclibc's C++ Tsitouras engine, not a logic bug.
 
 Architecture:
     Both the RK4 integration itself and its range-step/APEX/MACH/ZERO filtering and
@@ -84,7 +87,7 @@ __all__ = ("TinyBclibcSingleIntegrationEngine", "TinyBclibcDoubleIntegrationEngi
 
 
 class TinyBclibcSingleIntegrationEngine(TinyBclibcIntegrationEngineBase):
-    """RK4 integration engine whose per-step physics run inside single-precision tiny_bclibc.
+    """Tsitouras 5(4) adaptive integration engine whose per-step physics run inside single-precision tiny_bclibc.
 
     Built from a tiny_bclibc compiled with `TINY_BCLIBC_SINGLE_PRECISION` (`real_t = float`).
     See `TinyBclibcDoubleIntegrationEngine` for the double-precision counterpart used to
@@ -109,11 +112,21 @@ class TinyBclibcSingleIntegrationEngine(TinyBclibcIntegrationEngineBase):
     runs -- e.g. requesting an exact ~741 m range step is off by ~3e-5 m purely from that one
     rounding (confirmed empirically; see bclibc's tiny_bclibc CHANGELOG). This is inherent to
     driving tiny_bclibc's filtering/range-step API end-to-end in single precision, not a logic
-    bug, and is why `test_issues.py::TestIssue144` (written for double-precision engines, `abs
-    =1e-6` on a ~740 m distance) fails only here. The two other failures
-    (`test_wind_lag_rule`, `test_full_coriolis_by_latitude`) compare values near float32's
-    precision floor directly; `test_vertical_shot` accumulates float32's rounding of 90°=π/2
-    over ~18000 RK4 steps into a ~0.01 ft position error.
+    bug, and is why `test_issues.py::TestIssue144`'s 8 parametrizations (written for
+    double-precision engines, `abs=1e-6` on a ~740 m distance) fail only here.
+    `test_full_coriolis_by_latitude`, `test_hitresult.py::test_tiny_step`, and
+    `test_mbc.py::test_mbc1`/`test_mbc2` compare values right at float32's precision floor
+    (self-consistency checks between two independently-run single-precision trajectories, not
+    against a fixed reference); `test_vertical_shot` accumulates float32's rounding of 90°=π/2
+    over many adaptive steps into a ~0.01 ft position error. These predate the Tsitouras switch
+    below (they fail identically under the previous Cash-Karp build) and are independent of
+    which adaptive core `tiny_bclibc` runs.
+
+    Additional single-precision-only failures since the Cash-Karp-\>Tsitouras switch (same
+    root cause as the double-precision note below, just crossing tighter single-precision
+    self-consistency tolerances that Cash-Karp's build happened to stay inside):
+    `test_computer.py::test_cant_zero_elevation`/`test_cant_zero_sight_height`, and
+    `test_mbc.py::test_mbc3`.
 
     Examples:
         >>> from py_ballisticcalc.engines.base_engine import BaseEngineConfigDict
@@ -128,17 +141,27 @@ class TinyBclibcSingleIntegrationEngine(TinyBclibcIntegrationEngineBase):
 
 
 class TinyBclibcDoubleIntegrationEngine(TinyBclibcIntegrationEngineBase):
-    """RK4 integration engine whose per-step physics run inside double-precision tiny_bclibc.
+    """Tsitouras 5(4) adaptive integration engine whose per-step physics run inside double-precision tiny_bclibc.
 
     Built from a tiny_bclibc compiled *without* `TINY_BCLIBC_SINGLE_PRECISION` (`real_t =
     double`). Run this alongside `TinyBclibcSingleIntegrationEngine` against the same test
     suite to tell apart genuine single-precision accumulation error from logic bugs shared by
-    both (this ctypes binding, the raw-streaming addition to tiny_bclibc, or the RK4 core
-    itself): a failure only the single-precision engine hits is (most likely) precision; a
+    both (this ctypes binding, the raw-streaming addition to tiny_bclibc, or the Tsitouras
+    core itself): a failure only the single-precision engine hits is (most likely) precision; a
     failure both hit is a bug.
 
     Requires the `PYBALLISTICCALC_TINY_BCLIBC_DP_LIB` environment variable to point at the
     compiled `libtiny_bclibc.so` (`.dylib`/`.dll`) — see `CMakeLists.txt` in this directory.
+
+    Known issue: `test_hitresult.py::test_flags` fails here (but not under any Cython engine)
+    because `tiny_bclibc`'s hand-written C Tsitouras port and bclibc's C++
+    `BCLIBC_integrateTsitouras` are not bit-identical -- both individually correct, but the
+    FSAL shortcut sums per-stage contributions in a different order than the C++ core's
+    generic weighted-sum, and adaptive step-acceptance decisions are sensitive to that. For
+    this specific shot (wind + calculated powder sensitivity) the MACH crossing lands about
+    0.67 yd off out of 963 yd (0.07%), just outside that test's ±0.5 yd tolerance. Not a
+    missed event and not a coefficient error -- see bclibc's CHANGELOG ("Known issues") for
+    the full explanation.
 
     Examples:
         >>> from py_ballisticcalc.engines.base_engine import BaseEngineConfigDict

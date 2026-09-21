@@ -14,6 +14,7 @@ py-ballisticcalc provides various calculation engines with identical public sema
 | [`cythonized_verlet_engine`][py_ballisticcalc_exts.CythonizedVelocityVerletIntegrationEngine]          | :material-arrow-up:   130x / 99x (faster)     | [`[exts]`](#cython-engines) | Compiled Verlet 2nd-order symplectic              |
 | [`cythonized_rkck_engine`][py_ballisticcalc_exts.CythonizedCashKarpIntegrationEngine][^adaptive]       | :material-arrow-up: ~3370x / ~335x (faster)   | [`[exts]`](#cython-engines) | Compiled Cash-Karp adaptive RK45                  |
 | [`cythonized_dopri_engine`][py_ballisticcalc_exts.CythonizedDormandPrinceIntegrationEngine][^adaptive] | :material-arrow-up: ~3370x / ~335x (faster)   | [`[exts]`](#cython-engines) | Dormand--Prince 5(4), SciPy RK45-style controller |
+| [`cythonized_tsitouras_engine`][py_ballisticcalc_exts.CythonizedTsitourasIntegrationEngine][^adaptive] | :material-arrow-up: ~3370x / ~335x (faster)   | [`[exts]`](#cython-engines) | Tsitouras 5(4), SciPy RK45-style controller       |
 | [`scipy_engine`][py_ballisticcalc.engines.SciPyIntegrationEngine]                                      | :material-arrow-up:  4.6x / 8.3x (faster)     |          `[scipy]`          | Advanced numerical methods                        |
 
 The current rows for `rk4_engine`, Cython RK4/Euler/Cash-Karp, and SciPy were measured with
@@ -22,16 +23,20 @@ cell are **Find Zero / Trajectory**, calculated directly from that run's pure-Py
 `rk4_engine` means (242.586 ms / 55.271 ms).  Treat them as hardware- and workload-dependent
 measurements, not portable constants.  The remaining historical rows should be remeasured
 before comparing them numerically with this snapshot.  Raw Cash-Karp figures are in
-[benchmarks](benchmarks.md#cash-karp-engine).
+[benchmarks](benchmarks.md#cash-karp-engine); Dormand-Prince and Tsitouras figures (measured
+directly against each other and `cythonized_rk4_engine`, not against pure-Python `rk4_engine`)
+are in [benchmarks](benchmarks.md#dormand-prince-and-tsitouras-engines) — read that section
+before trusting the identical-looking multiplier in `cythonized_tsitouras_engine`'s row above:
+all three adaptive engines measure in the same performance class, not a ranking.
 
 [^adaptive]: Measured directly against pure-Python `rk4_engine`, not composed through
-`cythonized_rk4_engine`'s own row above. See [Adaptive integration
-(Cash-Karp)](#adaptive-integration-cash-karp) below for why Find Zero and Trajectory differ so
-much for `cythonized_rkck_engine` even when comparing just the two Cython engines directly.
+`cythonized_rk4_engine`'s own row above. See [Adaptive integration](#adaptive-integration) below
+for why Find Zero and Trajectory differ so much for the adaptive engines even when comparing
+just the Cython engines directly.
 
 * This project will default to the [`rk4_engine`][py_ballisticcalc.engines.RK4IntegrationEngine].
 * For higher speed and precision use the [`scipy_engine`][py_ballisticcalc.engines.SciPyIntegrationEngine].
-* For maximum speed use the [`cythonized_rk4_engine`][py_ballisticcalc_exts.CythonizedRK4IntegrationEngine] (or [`cythonized_rkck_engine`][py_ballisticcalc_exts.CythonizedCashKarpIntegrationEngine] for repeated/zero-finding-heavy workloads — see below).
+* For maximum speed use the [`cythonized_rk4_engine`][py_ballisticcalc_exts.CythonizedRK4IntegrationEngine] (or one of the adaptive engines — [`cythonized_rkck_engine`][py_ballisticcalc_exts.CythonizedCashKarpIntegrationEngine], [`cythonized_dopri_engine`][py_ballisticcalc_exts.CythonizedDormandPrinceIntegrationEngine], [`cythonized_tsitouras_engine`][py_ballisticcalc_exts.CythonizedTsitourasIntegrationEngine] — for repeated/zero-finding-heavy workloads; they measure in the same performance class as each other, so pick by compatibility/controller preference, not expected speed — see below).
 
 To select a specific engine when creating a [`Calculator`][py_ballisticcalc.interface.Calculator], use the optional `engine` argument:
 
@@ -56,12 +61,19 @@ Cythonized engines are compiled for maximum performance.  Include the `[exts]` o
     uv add py-ballisticcalc[exts]
     ```
 
-## Adaptive integration (Cash-Karp, Dormand-Prince)
+## Adaptive integration
 
-`cythonized_dopri_engine` is a companion Dormand--Prince 5(4) engine. It uses
-scalar `relative_tolerance` and `absolute_tolerance` (both default to `1e-6`),
-SciPy RK45 component scaling, safety `0.9`, and factors in `[0.2, 10]`.
-Cash-Karp intentionally keeps its existing controller for compatibility.
+`cythonized_dopri_engine` and `cythonized_tsitouras_engine` are two structurally-identical
+7-stage FSAL (First-Same-As-Last) Runge-Kutta 5(4) pairs — Dormand-Prince ("DOPRI5", the same
+tableau `scipy.integrate`'s `RK45` uses) and Tsitouras ("Tsit5"; Tsitouras, 2011, coefficients
+verified against `ARKODE_TSITOURAS_7_4_5` in SUNDIALS/ARKODE). Both use scalar
+`relative_tolerance` and `absolute_tolerance` (both default to `1e-6`), SciPy RK45 component
+scaling, safety `0.9`, and factors in `[0.2, 10]`. Tsitouras has a smaller leading
+truncation-error coefficient at each order than Dormand-Prince, but this does not translate into
+fewer accepted steps or faster wall-clock time for typical ballistic trajectories — see
+[benchmarks](benchmarks.md#dormand-prince-and-tsitouras-engines) for the measurement. Pick
+between them by compatibility preference (e.g. matching another tool's `Tsit5`/`DOP853` choice),
+not expected speed. Cash-Karp intentionally keeps its existing controller for compatibility.
 
 `cythonized_rkck_engine` (`py_ballisticcalc_exts.CythonizedCashKarpIntegrationEngine`) wraps
 [bclibc](https://github.com/ballistics-lab/bclibc)'s Cash-Karp adaptive RK45 integrator
@@ -98,6 +110,19 @@ calc = Calculator(engine="cythonized_rkck_engine")
 # or, to tune the error tolerance:
 from py_ballisticcalc_exts import CythonizedCashKarpIntegrationEngine
 calc = Calculator(engine=CythonizedCashKarpIntegrationEngine(
+    {"relative_tolerance": 1e-6, "absolute_tolerance": 1e-6}
+))
+```
+
+`cythonized_dopri_engine` and `cythonized_tsitouras_engine` take the same
+`relative_tolerance`/`absolute_tolerance` config shape:
+
+```python
+from py_ballisticcalc import Calculator
+calc = Calculator(engine="cythonized_tsitouras_engine")
+# or:
+from py_ballisticcalc_exts import CythonizedTsitourasIntegrationEngine
+calc = Calculator(engine=CythonizedTsitourasIntegrationEngine(
     {"relative_tolerance": 1e-6, "absolute_tolerance": 1e-6}
 ))
 ```

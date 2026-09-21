@@ -11,6 +11,14 @@ is installed. `relative_tolerance` and `absolute_tolerance` default to `1e-6`;
 `get_step_stats()` returns accepted and rejected steps. Its controller follows
 SciPy RK45 semantics, unlike compatibility-preserving Cash--Karp.
 
+`cythonized_tsitouras_engine` selects `CythonizedTsitourasIntegrationEngine` the
+same way. It is structurally identical to `CythonizedDormandPrinceIntegrationEngine`
+(same 7-stage FSAL shape, same SciPy-RK45-style controller, same `relative_tolerance`/
+`absolute_tolerance` config) but uses the Tsitouras 5(4) tableau instead of
+Dormand-Prince's — measured to be in the same performance class as Dormand-Prince and
+Cash--Karp, not consistently faster, despite its smaller leading truncation-error
+coefficient; see [benchmarks](../../concepts/benchmarks.md#dormand-prince-and-tsitouras-engines).
+
 ::: py_ballisticcalc.engines.RK4IntegrationEngine
     options:
         group_by_category: false
@@ -59,6 +67,11 @@ SciPy RK45 semantics, unlike compatibility-preserving Cash--Karp.
         members:
 
 ::: py_ballisticcalc_exts.CythonizedDormandPrinceIntegrationEngine
+    options:
+        group_by_category: false
+        members:
+
+::: py_ballisticcalc_exts.CythonizedTsitourasIntegrationEngine
     options:
         group_by_category: false
         members:

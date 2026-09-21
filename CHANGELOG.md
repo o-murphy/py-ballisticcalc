@@ -7,6 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- `cythonized_tsitouras_engine` (`py_ballisticcalc_exts.CythonizedTsitourasIntegrationEngine`):
+  a compiled Tsitouras 5(4) ("Tsit5") adaptive engine, wrapping
+  [bclibc](https://github.com/ballistics-lab/bclibc)'s new `BCLIBC_integrateTsitouras`.
+  Structurally identical to `cythonized_dopri_engine` (same 7-stage FSAL shape, same SciPy
+  RK45-style component scaling and controller); coefficients verified against
+  `ARKODE_TSITOURAS_7_4_5` in SUNDIALS/ARKODE. Measured against `cythonized_rkck_engine` and
+  `cythonized_dopri_engine` across a sweep of shot profiles: accepted+rejected step counts come
+  out within 1-2 steps of each other for smooth, well-conditioned trajectories at
+  `rtol=atol=1e-6` — no consistent win, despite Tsitouras' smaller leading truncation-error
+  coefficient.
+
+### Changed
+- Bumped the `bclibc` submodule to pick up its own new `BCLIBC_integrateTsitouras`, an FFI
+  unknown-method-fallback fix (unrecognized/out-of-range method now falls back to RK4, not
+  Euler), and `tiny_bclibc`'s internal switch from Cash-Karp to Tsitouras as its baked-in
+  adaptive core (`examples/tiny_bclibc`'s two engines pick this up automatically). See
+  [bclibc's CHANGELOG](https://github.com/ballistics-lab/bclibc/blob/main/CHANGELOG.md) for
+  details.
+
 ## [3.0.0-beta.1] - 2026-09-17
 [:simple-github: Diff since v2.3.1][3.0.0-beta.1]
 
