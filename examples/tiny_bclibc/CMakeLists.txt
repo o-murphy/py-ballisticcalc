@@ -40,7 +40,7 @@ if(NOT _raw_api_line)
         "predates tiny_bclibc_integrate_raw() (the raw-streaming API the example engines call). "
         "Update the submodule to a commit that has it, e.g. from the repo root:\n"
         "  cd py_ballisticcalc.exts/py_ballisticcalc_exts/external/bclibc\n"
-        "  git fetch origin claude/tiny-bclibc-single-precision-9mvkk6\n"
+        "  git fetch origin main\n"
         "  git checkout FETCH_HEAD\n"
         "  cd -\n"
         "  git add py_ballisticcalc.exts/py_ballisticcalc_exts/external/bclibc")

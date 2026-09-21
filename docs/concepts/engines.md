@@ -15,25 +15,28 @@ py-ballisticcalc provides various calculation engines with identical public sema
 | Engine Name                                                                                            | Speed (Find Zero / Trajectory)                |        Dependencies         | Description                                       |
 | :----------------------------------------------------------------------------------------------------- | :-------------------------------------------- | :-------------------------: | :------------------------------------------------ |
 | **[`python+rk4`][py_ballisticcalc.engines.RK4IntegrationEngine]**                                      | Baseline (1x)                                 |        None; default        | Runge-Kutta 4th-order integration                 |
-| [`python+euler`][py_ballisticcalc.engines.EulerIntegrationEngine]                                      | :material-arrow-down:    0.5x / 0.5x (slower) |            None             | Euler 1st-order integration                       |
-| [`python+verlet`][py_ballisticcalc.engines.VelocityVerletIntegrationEngine]                            | :material-arrow-down:   0.8x / 0.8x (slower)  |            None             | Verlet 2nd-order symplectic integration           |
-| [`cython+rk4`][py_ballisticcalc_exts.CythonizedRK4IntegrationEngine]                        | :material-arrow-up:   205x / 144x (faster)    | [`[exts]`](#cython-engines) | Compiled Runge-Kutta 4th-order                    |
-| [`cython+euler`][py_ballisticcalc_exts.CythonizedEulerIntegrationEngine]                    | :material-arrow-up:    54x / 52x (faster)     | [`[exts]`](#cython-engines) | Compiled Euler integration                        |
+| [`python+euler`][py_ballisticcalc.engines.EulerIntegrationEngine]                                      | :material-arrow-down: 0.6x / 0.6x (slower)    |            None             | Euler 1st-order integration                       |
+| [`python+verlet`][py_ballisticcalc.engines.VelocityVerletIntegrationEngine]                            | :material-arrow-down: 0.8x / 0.8x (slower)    |            None             | Verlet 2nd-order symplectic integration           |
+| [`cython+rk4`][py_ballisticcalc_exts.CythonizedRK4IntegrationEngine]                        | :material-arrow-up: 205x / 129x (faster)      | [`[exts]`](#cython-engines) | Compiled Runge-Kutta 4th-order                    |
+| [`cython+euler`][py_ballisticcalc_exts.CythonizedEulerIntegrationEngine]                    | :material-arrow-up: 54x / 44x (faster)        | [`[exts]`](#cython-engines) | Compiled Euler integration                        |
 | [`cython+verlet`][py_ballisticcalc_exts.CythonizedVelocityVerletIntegrationEngine]          | :material-arrow-up:   130x / 99x (faster)     | [`[exts]`](#cython-engines) | Compiled Verlet 2nd-order symplectic              |
-| [`cython+rkck`][py_ballisticcalc_exts.CythonizedCashKarpIntegrationEngine][^adaptive]       | :material-arrow-up: ~3370x / ~335x (faster)   | [`[exts]`](#cython-engines) | Compiled Cash-Karp adaptive RK45                  |
-| [`cython+dopri`][py_ballisticcalc_exts.CythonizedDormandPrinceIntegrationEngine][^adaptive] | :material-arrow-up: ~3370x / ~335x (faster)   | [`[exts]`](#cython-engines) | Dormand--Prince 5(4), SciPy RK45-style controller |
-| [`cython+tsitouras`][py_ballisticcalc_exts.CythonizedTsitourasIntegrationEngine][^adaptive] | :material-arrow-up: ~3370x / ~335x (faster)   | [`[exts]`](#cython-engines) | Tsitouras 5(4), SciPy RK45-style controller       |
-| [`scipy+rk23`][py_ballisticcalc.engines.SciPyIntegrationEngineFactory] | — (not measured)|          `[scipy]`          | SciPy `solve_ivp`, Explicit Runge-Kutta 3(2) |
-| [`scipy+rk45`][py_ballisticcalc.engines.SciPyIntegrationEngineFactory] | :material-arrow-up:  4.6x / 8.3x (faster)     |          `[scipy]`          | SciPy `solve_ivp`, Explicit Runge-Kutta 5(4) |
-| [`scipy+dop853`][py_ballisticcalc.engines.SciPyIntegrationEngineFactory] | — (not measured)|          `[scipy]`          | SciPy `solve_ivp`, Explicit Runge-Kutta 8(5,3) |
-| [`scipy+radau`][py_ballisticcalc.engines.SciPyIntegrationEngineFactory] | — (not measured)|          `[scipy]`          | SciPy `solve_ivp`, Implicit Radau IIA 5th-order (stiff) |
-| [`scipy+bdf`][py_ballisticcalc.engines.SciPyIntegrationEngineFactory] | — (not measured)|          `[scipy]`          | SciPy `solve_ivp`, Implicit multistep variable-order (stiff) |
-| [`scipy+lsoda`][py_ballisticcalc.engines.SciPyIntegrationEngineFactory] | :material-arrow-up:  3.1x / 4.6x (faster)     |          `[scipy]`          | SciPy `solve_ivp`, Adams/BDF with automatic stiffness detection |
+| [`cython+rkck`][py_ballisticcalc_exts.CythonizedCashKarpIntegrationEngine][^adaptive]       | :material-arrow-up: 2567x / 326x (faster)     | [`[exts]`](#cython-engines) | Compiled Cash-Karp adaptive RK45                  |
+| [`cython+dopri`][py_ballisticcalc_exts.CythonizedDormandPrinceIntegrationEngine][^adaptive] | :material-arrow-up: 2567x / 326x (faster)     | [`[exts]`](#cython-engines) | Dormand--Prince 5(4), SciPy RK45-style controller |
+| [`cython+tsitouras`][py_ballisticcalc_exts.CythonizedTsitourasIntegrationEngine][^adaptive] | :material-arrow-up: 2567x / 326x (faster)     | [`[exts]`](#cython-engines) | Tsitouras 5(4), SciPy RK45-style controller       |
+| [`scipy+rk23`][py_ballisticcalc.engines.SciPyIntegrationEngineFactory] | :material-arrow-up: 3.4x / 3.2x (faster) |          `[scipy]`          | SciPy `solve_ivp` RK23 — Bogacki–Shampine 3(2), lowest order: cheap steps, loose accuracy |
+| [`scipy+rk45`][py_ballisticcalc.engines.SciPyIntegrationEngineFactory] | :material-arrow-up: 5.4x / 9.8x (faster)      |          `[scipy]`          | SciPy `solve_ivp` RK45 — Dormand–Prince 5(4), SciPy default: general-purpose |
+| [`scipy+dop853`][py_ballisticcalc.engines.SciPyIntegrationEngineFactory] | :material-arrow-up: 1.8x / 4.8x (faster) |          `[scipy]`          | SciPy `solve_ivp` DOP853 — Dormand–Prince 8(5,3), high order: for tight tolerances |
+| [`scipy+radau`][py_ballisticcalc.engines.SciPyIntegrationEngineFactory] | :material-arrow-up: 1.5x / 1.5x (faster) |          `[scipy]`          | SciPy `solve_ivp` Radau — implicit Radau IIA 5th-order, for stiff problems |
+| [`scipy+bdf`][py_ballisticcalc.engines.SciPyIntegrationEngineFactory] | :material-swap-horizontal: 0.8x / 1.5x (mixed) |          `[scipy]`          | SciPy `solve_ivp` BDF — implicit variable-order (1–5) multistep, for stiff problems |
+| [`scipy+lsoda`][py_ballisticcalc.engines.SciPyIntegrationEngineFactory] | :material-arrow-up: 2.9x / 4.3x (faster)      |          `[scipy]`          | SciPy `solve_ivp` LSODA — Adams/BDF (ODEPACK), switches automatically between non-stiff and stiff |
 
-The current rows for `python+rk4`, Cython RK4/Euler/Cash-Karp, and SciPy were measured with
-`scripts/benchmark.py -w 100 -r 1000` on one machine and one revision.  The two figures in each
+All `scipy+…` engines call SciPy's `solve_ivp` and differ only in the integration method (`SciPyIntegrationEngineFactory(method)`).
+`scipy+bdf` is slower than `python+rk4` on `Zero` but faster on `Trajectory`, hence "mixed".
+
+The current rows (except `cython+verlet`) were measured with
+`scripts/benchmark.py` on one machine and one revision (see [Bench](bench.md) for the per-engine repeats and raw means).  The two figures in each
 cell are **Find Zero / Trajectory**, calculated directly from that run's pure-Python
-`python+rk4` means (242.586 ms / 55.271 ms).  Treat them as hardware- and workload-dependent
+`python+rk4` means (241.340 ms / 55.455 ms).  Treat them as hardware- and workload-dependent
 measurements, not portable constants.  The remaining historical rows should be remeasured
 before comparing them numerically with this snapshot.  Raw Cash-Karp figures are in
 [benchmarks](benchmarks.md#cash-karp-engine); Dormand-Prince and Tsitouras figures (measured
