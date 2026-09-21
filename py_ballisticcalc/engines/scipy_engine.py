@@ -60,6 +60,7 @@ import warnings
 from bisect import bisect_right
 from collections.abc import Callable, Sequence
 from dataclasses import asdict, dataclass
+from functools import wraps
 from typing import TYPE_CHECKING, Any, Literal
 
 from typing_extensions import override
@@ -109,9 +110,16 @@ from py_ballisticcalc.vector import Vector
 
 __all__ = (
     "DEFAULT_SCIPY_ENGINE_CONFIG",
+    "SciPyBDFIntegrationEngine",
+    "SciPyDOP853IntegrationEngine",
     "SciPyEngineConfig",
     "SciPyEngineConfigDict",
     "SciPyIntegrationEngine",
+    "SciPyIntegrationEngineFactory",
+    "SciPyLSODAIntegrationEngine",
+    "SciPyRK23IntegrationEngine",
+    "SciPyRK45IntegrationEngine",
+    "SciPyRadauIntegrationEngine",
     "ScipyWindSock",
     "create_scipy_engine_config",
 )
@@ -1131,3 +1139,32 @@ class SciPyIntegrationEngine(BaseIntegrationEngine):
         if termination_reason is not None and termination_reason is not self.HitZero:
             error = RangeError(termination_reason, ranges)
         return HitResult(props, ranges, None, filter_flags > 0, error)
+
+
+def SciPyIntegrationEngineFactory(
+    method: INTEGRATION_METHOD,
+) -> Callable[[SciPyEngineConfigDict | None], SciPyIntegrationEngine]:
+    """Make an engine factory with the SciPy `solve_ivp` integration method preset.
+
+    The returned callable matches `EngineFactoryProtocol`; `integration_method` from the
+    passed config is overridden by `method`.
+
+    Examples:
+        >>> calc = Calculator(engine=SciPyIntegrationEngineFactory("DOP853"))
+    """
+
+    @wraps(SciPyIntegrationEngine, updated=())  # keep __doc__/__module__/__wrapped__ (signature) of the engine
+    def factory(config: SciPyEngineConfigDict | None = None) -> SciPyIntegrationEngine:
+        return SciPyIntegrationEngine({**(config or {}), "integration_method": method})  # type: ignore[typeddict-item]
+
+    factory.__name__ = factory.__qualname__ = f"SciPyIntegrationEngine[{method}]"
+    return factory
+
+
+# Ready-made factories per method (referenced by the "py_ballisticcalc.engines.scipy" entry points)
+SciPyRK23IntegrationEngine = SciPyIntegrationEngineFactory("RK23")
+SciPyRK45IntegrationEngine = SciPyIntegrationEngineFactory("RK45")
+SciPyDOP853IntegrationEngine = SciPyIntegrationEngineFactory("DOP853")
+SciPyRadauIntegrationEngine = SciPyIntegrationEngineFactory("Radau")
+SciPyBDFIntegrationEngine = SciPyIntegrationEngineFactory("BDF")
+SciPyLSODAIntegrationEngine = SciPyIntegrationEngineFactory("LSODA")

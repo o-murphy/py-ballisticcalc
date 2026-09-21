@@ -248,7 +248,8 @@ def get_parser() -> argparse.ArgumentParser:
 
 
 def iter_engine_names() -> list[str]:
-    return [ep.name for ep in Calculator.iter_engines()]
+    from py_ballisticcalc.interface import _EngineLoader
+    return [_EngineLoader.engine_id(ep) for ep in Calculator.iter_engines()]
 
 
 def main(argv: Sequence[str] | None = None) -> int:

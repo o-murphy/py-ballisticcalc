@@ -145,93 +145,51 @@ def run_check(calc_: Calculator, number: int):
     print()
 
 
+SKIP_ENGINES = {"python+verlet"}  # skip slow pure-python ones
+
+
 def check_all(number = 120):
-    [print(f"Detected: {e}") for e in _EngineLoader.iter_engines()]
+    [print(f"Detected: {_EngineLoader.engine_id(e)} ({e.value})") for e in _EngineLoader.iter_engines()]
     print()
 
     for ep in _EngineLoader.iter_engines():
-        config = {}
+        engine_id = _EngineLoader.engine_id(ep)
+        if engine_id in SKIP_ENGINES:
+            continue
 
-        if ep.name in {"verlet_engine"}:
-        # if ep.name in {"euler_engine", "rk4_engine"}:
-            continue  # skip pure ones
-        elif ep.name in {"cythonized_euler_engine", "cythonized_rk4_engine"}:
-            ...
-        # elif ep.name in {"scipy"}:
-        #     config: SciPyEngineConfigDict = {
-        #         "relative_tolerance": 1e-6,
-        #         "absolute_tolerance": 1e-5,
-        #     }
-
-        engine = ep.load()
         print("Engine: %s" % ep.value)
-        # if ep.name.startswith("scipy"):
-        #     config: SciPyEngineConfigDict = {
-        #         "relative_tolerance": 1e-4,
-        #         "absolute_tolerance": 1e-3,
-        #         "integration_method": "LSODA"
-        #     }
-        calc = Calculator(config=config, engine=engine)
+        calc = Calculator(engine=ep.load())
         run_check(calc, number)
         print()
 
 
-engines = {
-    "euler": "euler_engine", 
-    "rk4": "euler_engine", 
-    "verlet": "verlet_engine", 
-    "cythonized_euler": "cythonized_euler_engine", 
-    "cythonized_rk4": "cythonized_rk4_engine",
-    "cythonized_verlet": "cythonized_verlet_engine",
-    "cythonized_ck": "cythonized_rkck_engine",
-    "cythonized_dopri": "cythonized_dopri_engine",
-    "scipy": "scipy_engine",
-    "all": "all", 
-}
-
-
-def check_one(en, m, number = 120):
-    config = {}
-    if en == "scipy":
-        config["integration_method"] = m
-
-    calc = Calculator(config=config, engine=en)
+def check_one(en, number = 120):
+    calc = Calculator(engine=en)
     run_check(calc, number)
 
 
 def main():
     import argparse
     parser = argparse.ArgumentParser()
+    available = [_EngineLoader.engine_id(ep) for ep in _EngineLoader.iter_engines()]
     parser.add_argument(
         "-e",
-        help="engine", 
-        choices=[
-            "euler", 
-            "rk4", 
-            "verlet", 
-            "cythonized_euler", 
-            "cythonized_rk4",
-            "cythonized_verlet",
-            "cythonized_ck",
-            "cythonized_dopri",
-            "scipy",
-            "all", 
-        ], 
-        default="rk4"
+        help="engine: '<engine>+<method>' (e.g. cython+rk4, scipy+dop853), '<module>:<factory>' or 'all'. "
+             "Detected: " + ", ".join(available),
+        default="python+rk4"
     )
-    parser.add_argument("-m", help="SciPy method", choices=["RK23", "RK45", "DOP853", "Radau", "BDF", "LSODA"], default="RK45")
     parser.add_argument("-n", help="number", type=int, default=120)
 
     args = parser.parse_args()
     print(args)
 
     if args.e == "all":
-        check_all()
+        check_all(args.n)
     else:
-        en = engines.get(args.e)
-        if not en:
-            parser.error("Unknown engine")
-        check_one(en, args.m, args.n)
+        try:
+            check_one(args.e, args.n)
+        except ValueError as e:
+            parser.error(str(e))
 
 if __name__ == "__main__":
     main()

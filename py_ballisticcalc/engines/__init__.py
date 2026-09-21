@@ -62,6 +62,7 @@ __all__ = (
     'RK4IntegrationEngine',
     'VelocityVerletIntegrationEngine',
     'SciPyIntegrationEngine',
+    'SciPyIntegrationEngineFactory',
     
     # SciPy engine configuration
     'SciPyEngineConfig',
