@@ -7,7 +7,7 @@ from py_ballisticcalc_exts.base_engine import CythonizedBaseIntegrationEngine
 
 from py_ballisticcalc.engines.base_engine import BaseEngineConfigDict
 
-__all__ = ["TsitourasEngineConfig", "CythonizedTsitourasIntegrationEngine"]
+__all__ = ["CythonizedTsitourasIntegrationEngine", "TsitourasEngineConfig"]
 
 class TsitourasEngineConfig(BaseEngineConfigDict, total=False):
     """Configuration accepted by :class:`CythonizedTsitourasIntegrationEngine`.

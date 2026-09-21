@@ -12,10 +12,10 @@ Available Engines:
     - SciPyIntegrationEngine: Advanced SciPy solvers (high accuracy, requires scipy)
 
 Engine Selection Guidelines:
-    - Default: RK4IntegrationEngine (rk4_engine) - Good balance of speed and accuracy
-    - Research: SciPyIntegrationEngine (scipy_engine) - Requires scipy installation
-    - Educational: EulerIntegrationEngine (euler_engine) - Simple to understand
-    - Speed: cythonized_rk4_engine - requires py_ballisticcalc[exts])
+    - Default: RK4IntegrationEngine (python+rk4) - Good balance of speed and accuracy
+    - Research: SciPyIntegrationEngine (scipy+rk45, scipy+dop853, ...) - Requires scipy installation
+    - Educational: EulerIntegrationEngine (python+euler) - Simple to understand
+    - Speed: cython+rk4 - requires py_ballisticcalc[exts])
 
 Configuration:
     - All engines accept BaseEngineConfigDict for configuration.
@@ -28,7 +28,7 @@ Examples:
     
     >>> # Using with Calculator
     >>> from py_ballisticcalc import Calculator
-    >>> calc = Calculator(engine="scipy_engine")  # By name
+    >>> calc = Calculator(engine="scipy+dop853")  # By name: "<engine>+<method>"
     >>> calc = Calculator(config=custom_config, engine=RK4IntegrationEngine)  # By class
 
 See Also:

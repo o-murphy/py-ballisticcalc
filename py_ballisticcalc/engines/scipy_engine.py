@@ -45,7 +45,7 @@ Examples:
 
     >>> # Using with Calculator
     >>> from py_ballisticcalc import Calculator
-    >>> calc = Calculator(engine='scipy_engine')
+    >>> calc = Calculator(engine='scipy+dop853')
 
 Note:
     This engine requires scipy and numpy to be installed. Install with:
@@ -557,7 +557,7 @@ class SciPyIntegrationEngine(BaseIntegrationEngine):
         >>>
         >>> # Using with Calculator
         >>> from py_ballisticcalc import Calculator
-        >>> calc = Calculator(engine='scipy_engine')
+        >>> calc = Calculator(engine='scipy+dop853')
 
     Note:
         Requires scipy and numpy packages. Install with:

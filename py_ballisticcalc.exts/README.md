@@ -1,6 +1,6 @@
 # BallisticCalculator
 
-The compiled extensions include `cythonized_dopri_engine`, a Dormand--Prince
+The compiled extensions include `cython+dopri`, a Dormand--Prince
 5(4) adaptive engine with SciPy RK45-style controller semantics. The existing
 Cash--Karp engine remains available with its compatibility controller.
 
@@ -128,12 +128,12 @@ Choose between different calculation engines, or build your own.  Included engin
 
 | Engine Name               |   Speed        | Dependencies    | Description                    |
 |:--------------------------|:--------------:|:---------------:|:-------------------------------|
-| `rk4_engine`              | Baseline (1x)  | None, default   | Runge-Kutta 4th-order integration  |
-| `euler_engine`            |  0.5x (slower) | None            | Euler 1st-order integration |
-| `verlet_engine`           |  0.7x (slower) | None            | Verlet 2nd-order integration |
-| `cythonized_rk4_engine`   | 50x (faster)   | `[exts]`        | Compiled Runge-Kutta 4th-order |
-| `cythonized_euler_engine` | 40x (faster)   | `[exts]`        | Compiled Euler integration |
-| `scipy_engine`            | 10x (faster)   | `scipy`         | Advanced numerical methods |
+| `python+rk4`              | Baseline (1x)  | None, default   | Runge-Kutta 4th-order integration  |
+| `python+euler`            |  0.5x (slower) | None            | Euler 1st-order integration |
+| `python+verlet`           |  0.7x (slower) | None            | Verlet 2nd-order integration |
+| `cython+rk4`   | 50x (faster)   | `[exts]`        | Compiled Runge-Kutta 4th-order |
+| `cython+euler` | 40x (faster)   | `[exts]`        | Compiled Euler integration |
+| `scipy+rk45` (also `scipy+rk23`, `scipy+dop853`, `scipy+radau`, `scipy+bdf`, `scipy+lsoda`) | 10x (faster)   | `scipy`         | Advanced numerical methods |
 
 
 # About project

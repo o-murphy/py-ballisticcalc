@@ -5,6 +5,11 @@ for ballistic trajectory calculations. It implements a plugin-based architecture
 that can dynamically load different integration engines through Python entry points.
 The module relies on the EngineProtocol to ensure that engines offer the necessary methods.
 
+Engines are selected by name as ``"<engine>+<method>"`` or ``"<engine>.<method>"`` (e.g.
+``"python+rk4"``, ``"cython.rk4"``, ``"scipy+dop853"``), where the entry points are registered in
+the ``py_ballisticcalc.engines.<engine>`` groups, or directly by a ``"<module>:<factory>"`` path.
+The legacy flat names (``rk4_engine``, ``cythonized_rk4_engine``, ...) are deprecated.
+
 Key Classes:
     - Calculator: Main ballistics calculator with pluggable engine support
     - _EngineLoader: Internal utility for discovering and loading engine plugins
@@ -114,7 +119,7 @@ class _EngineLoader:
             factory: EngineFactoryProtocolType = cls._resolve(ep)
             if not isinstance(factory, EngineFactoryProtocol):
                 raise TypeError(f"Unsupported engine {ep.value} does not implement EngineFactoryProtocol")
-            logger.info(f"Loaded calculator from: {ep.value} (Class: {factory})")
+            logger.info(f"Loaded calculator from: {ep.value} (Factory: {factory})")
             return factory  # type: ignore
         except ImportError as e:
             logger.error(f"Error loading engine from {ep.value}: {e}")
@@ -154,7 +159,7 @@ class _EngineLoader:
         # Direct "<module>:<factory>" path
         ep = EntryPoint(name, name, cls._entry_point_group)
         if factory := cls._load_from_entry(ep):
-            logger.info(f"Loaded calculator from: {ep.value} (Class: {factory})")
+            logger.info(f"Loaded calculator from: {ep.value} (Factory: {factory})")
             return factory
         return None
 

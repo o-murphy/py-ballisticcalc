@@ -7,7 +7,7 @@ from py_ballisticcalc_exts.base_engine import CythonizedBaseIntegrationEngine
 
 from py_ballisticcalc.engines.base_engine import BaseEngineConfigDict
 
-__all__ = ["DormandPrinceEngineConfig", "CythonizedDormandPrinceIntegrationEngine"]
+__all__ = ["CythonizedDormandPrinceIntegrationEngine", "DormandPrinceEngineConfig"]
 
 class DormandPrinceEngineConfig(BaseEngineConfigDict, total=False):
     """Configuration accepted by :class:`CythonizedDormandPrinceIntegrationEngine`.

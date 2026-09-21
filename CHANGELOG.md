@@ -7,6 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- New entry point model: engines are registered in groups `py_ballisticcalc.engines.<engine>`
+  (`python`, `cython`, `scipy`) with the integration method as the entry point name, and are
+  selected with `<engine>+<method>` or `<engine>.<method>` (e.g. `Calculator(engine="cython+rk4")`,
+  `"scipy+dop853"`). The direct `<module>:<factory>` path is still supported, including the
+  call form `"py_ballisticcalc:SciPyIntegrationEngineFactory(method=DOP853)"`.
+- `SciPyIntegrationEngineFactory(method)` and ready-made `SciPy<Method>IntegrationEngine` factories
+  (RK23, RK45, DOP853, Radau, BDF, LSODA) in `py_ballisticcalc.engines`.
+- Typed configs `DormandPrinceEngineConfig` and `TsitourasEngineConfig` (type stubs) alongside
+  `CashKarpEngineConfig`; all three adaptive Cython engines now expose the same stub API.
+
+### Changed
+- `_EngineLoader.iter_engines()` deduplicates entries by target; new `_EngineLoader.engine_id(ep)`.
+- `scripts/benchmark.py`, `examples/performance_check.py`, tests and CI use the new engine names.
+
+### Deprecated
+- The legacy flat entry point group `py_ballisticcalc` (`euler_engine`, `rk4_engine`, `scipy_engine`,
+  `cythonized_*_engine`, ...). Loading an engine by these names emits a `DeprecationWarning`.
+
 ## [3.0.0-beta.2] - 2026-09-21
 
 ### Added

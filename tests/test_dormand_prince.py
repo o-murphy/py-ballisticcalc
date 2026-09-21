@@ -1,6 +1,6 @@
 """Dormand--Prince public API and adaptive-regression tests.
 
-Run explicitly with ``--engine=cythonized_dopri_engine``.  Keeping these
+Run explicitly with ``--engine=cython+dopri``.  Keeping these
 separate from Cash--Karp tests prevents controller-specific expectations from
 silently skipping the new engine.
 """
@@ -29,7 +29,7 @@ class TestDormandPrince:
     def _require_dopri(self, loaded_engine_instance):
         if (loaded_engine_instance.__module__ != "py_ballisticcalc_exts.dopri_engine"
                 or loaded_engine_instance.__name__ != "CythonizedDormandPrinceIntegrationEngine"):
-            pytest.skip("DOPRI-specific test; run with --engine=cythonized_dopri_engine")
+            pytest.skip("DOPRI-specific test; run with --engine=cython+dopri")
         import py_ballisticcalc_exts as exts
         self.exts = exts
 

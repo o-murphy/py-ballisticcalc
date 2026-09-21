@@ -1,6 +1,6 @@
 """Tsitouras 5(4) public API and adaptive-regression tests.
 
-Run explicitly with ``--engine=cythonized_tsitouras_engine``.  Keeping these
+Run explicitly with ``--engine=cython+tsitouras``.  Keeping these
 separate from Cash-Karp/Dormand-Prince tests prevents controller-specific
 expectations from silently skipping the new engine.
 """
@@ -29,7 +29,7 @@ class TestTsitouras:
     def _require_tsitouras(self, loaded_engine_instance):
         if (loaded_engine_instance.__module__ != "py_ballisticcalc_exts.tsitouras_engine"
                 or loaded_engine_instance.__name__ != "CythonizedTsitourasIntegrationEngine"):
-            pytest.skip("Tsitouras-specific test; run with --engine=cythonized_tsitouras_engine")
+            pytest.skip("Tsitouras-specific test; run with --engine=cython+tsitouras")
         import py_ballisticcalc_exts as exts
         self.exts = exts
 

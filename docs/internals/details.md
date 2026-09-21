@@ -14,7 +14,7 @@ This page is for contributors who want to modify algorithms, add engines, or ext
 
     # activate & test
     source .venv/bin/activate
-    pytest --engine="rk4_engine"
+    pytest --engine="python+rk4"
     ```
 
 === "Windows"
@@ -27,7 +27,7 @@ This page is for contributors who want to modify algorithms, add engines, or ext
 
     # activate & test
     .\.venv\Scripts\activate
-    pytest --engine="rk4_engine"
+    pytest --engine="python+rk4"
     ```
 
 **Notes:**
@@ -77,7 +77,7 @@ Public call flow (simplified):
 uv run scripts/benchmark.py --all
 
 # Run benchmarks on specific engine:
-uv run scripts/benchmark.py --engine="rk4_engine"
+uv run scripts/benchmark.py --engine="python+rk4"
 ```
 
 ### Understanding benchmark results

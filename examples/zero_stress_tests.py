@@ -1,4 +1,4 @@
-"""Extreme tests of zero-finding logic in scipy_engine."""
+"""Extreme tests of zero-finding logic in the SciPy engine."""
 import datetime
 import math
 import random
@@ -92,7 +92,7 @@ def check_one_shot(calc, shot, point_x, point_y, expect_zero_finding_exception: 
 
 if __name__=="__main__":
     attempt_count = 10  # Number of random shots to test
-    engine_name = "scipy_engine"
+    engine_name = "py_ballisticcalc:SciPyIntegrationEngine"
     method = 'RK45'
 
     calc = create_zero_velocity_zero_min_altitude_calc(engine_name, method)

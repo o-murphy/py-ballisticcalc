@@ -24,7 +24,7 @@ def main() -> None:
     weapon = Weapon(sight_height=Unit.Inch(1.5))
 
     for engine, label in (
-        ("rk4_engine", "rk4_engine (Python, double)"),
+        ("python.rk4", "python.rk4 (Python, double)"),
         (TinyBclibcDoubleIntegrationEngine, "tiny_bclibc (double)"),
         (TinyBclibcSingleIntegrationEngine, "tiny_bclibc (single)"),
     ):
