@@ -426,9 +426,7 @@ class ScipyWindSock:
         return len(self.winds) if self.winds else 0
 
 
-def _find_t_for_x(
-    dense_output: Callable[[float], Any], t_lo: float, t_hi: float, x_target: float
-) -> float | None:
+def _find_t_for_x(dense_output: Callable[[float], Any], t_lo: float, t_hi: float, x_target: float) -> float | None:
     """Find t in [t_lo, t_hi] where dense_output(t)[0] == x_target.
 
     x(t) is known to be bracketed (x(t_lo) <= x_target <= x(t_hi) or vice versa) and, unlike a
