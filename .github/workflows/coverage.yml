@@ -52,8 +52,8 @@ jobs:
         run: |
           engines=$(uv run python -c "
           import json
-          from py_ballisticcalc import Calculator
-          print(json.dumps(sorted(ep.name for ep in Calculator.iter_engines())))
+          from py_ballisticcalc import Calculator, _EngineLoader
+          print(json.dumps(sorted(_EngineLoader.engine_id(ep) for ep in Calculator.iter_engines())))
           ")
           echo "engines=$engines" >> "$GITHUB_OUTPUT"
         shell: bash
@@ -81,7 +81,7 @@ jobs:
 
       - name: Install the project
         run: |
-          if [[ "${{ matrix.engine }}" == cythonized_* ]]; then
+          if [[ "${{ matrix.engine }}" == cython[+.]* ]]; then
             uv sync --dev --extra scipy --extra exts
           else
             uv sync --dev --extra scipy

@@ -26,7 +26,7 @@ def loaded_engine_instance(request):
     engine_name = request.config.getoption("--engine", None)
     # be sure to use the default cythonized engine
     if engine_name is None:
-        engine_name = "cythonized_rk4_engine"
+        engine_name = "cython+rk4"
     logger.info(f"Attempting to load engine: '{engine_name}'")
     try:
         engine = _EngineLoader.load(engine_name)

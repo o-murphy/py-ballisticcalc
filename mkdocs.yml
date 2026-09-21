@@ -34,6 +34,7 @@ nav:
       - Calculation Engines:
           - "⚙️ Engines": concepts/engines.md
           - "📊 Benchmarks": concepts/benchmarks.md
+          # - "⏱️ Bench": concepts/bench.md
       - Conditions:
           - "🌡️ Atmo": concepts/conditions/atmo.md
           - "💨 Wind": concepts/conditions/wind.md

@@ -37,7 +37,7 @@ zero = Shot(weapon=weapon, ammo=ammo, atmo=zero_atmo)
 zero_distance = Distance.Meter(100)
 
 config: BaseEngineConfigDict = {}
-calc = Calculator(config=config, engine="cythonized_dopri_engine")
+calc = Calculator(config=config, engine="cython+dopri")
 calc.set_weapon_zero(zero, zero_distance)
 
 current_atmo = Atmo(

@@ -8,14 +8,14 @@ The core of any ballistics calculator is a numerical integration engine (an ODE 
 
 The engines covered here:
 
-1. **Euler** (`euler_engine`): The most elementary, first-order integration method.  
-2. **RK4** (`rk4_engine`): Runge-Kutta fourth-order integration.  
-3. **Verlet** (`verlet_engine`): Velocity-Verlet, which is a second-order symplectic method.
-4. **Cython RK4** (`cythonized_rk4_engine`): Same as the RK4 engine, but implemented in C++/Cython and compiled (instead of interpreting) for maximum compute speed.
-5. **Cython Euler** (`cythonized_euler_engine`): Same as the Euler engine, but implemented in C++/Cython and compiled (instead of interpreting) for maximum compute speed.
-6. **SciPy** (`scipy_engine`): The [SciPy](https://scipy.org) library contains the most sophisticated numerical methods with compiled backends.
-7. **Cython Cash-Karp** (`cythonized_rkck_engine`): An adaptive embedded RK45 method (see [Cash-Karp Engine](#cash-karp-engine) below), implemented in C++/Cython and compiled.
-8. **Cython Dormand-Prince / Tsitouras** (`cythonized_dopri_engine` / `cythonized_tsitouras_engine`): Two structurally-identical 7-stage FSAL adaptive RK45(4) methods with a SciPy-RK45-style controller (see [Dormand-Prince and Tsitouras Engines](#dormand-prince-and-tsitouras-engines) below), implemented in C++/Cython and compiled.
+1. **Euler** (`python+euler`): The most elementary, first-order integration method.  
+2. **RK4** (`python+rk4`): Runge-Kutta fourth-order integration.  
+3. **Verlet** (`python+verlet`): Velocity-Verlet, which is a second-order symplectic method.
+4. **Cython RK4** (`cython+rk4`): Same as the RK4 engine, but implemented in C++/Cython and compiled (instead of interpreting) for maximum compute speed.
+5. **Cython Euler** (`cython+euler`): Same as the Euler engine, but implemented in C++/Cython and compiled (instead of interpreting) for maximum compute speed.
+6. **SciPy** (`scipy+rk45`): The [SciPy](https://scipy.org) library contains the most sophisticated numerical methods with compiled backends.
+7. **Cython Cash-Karp** (`cython+rkck`): An adaptive embedded RK45 method (see [Cash-Karp Engine](#cash-karp-engine) below), implemented in C++/Cython and compiled.
+8. **Cython Dormand-Prince / Tsitouras** (`cython+dopri` / `cython+tsitouras`): Two structurally-identical 7-stage FSAL adaptive RK45(4) methods with a SciPy-RK45-style controller (see [Dormand-Prince and Tsitouras Engines](#dormand-prince-and-tsitouras-engines) below), implemented in C++/Cython and compiled.
 
 ## Key Concepts
 
@@ -28,7 +28,7 @@ The engines covered here:
 
 To provide a fair comparison, a standardized testing methodology was established:
 
-1.  **Reference Trajectory**: A highly accurate "ground truth" trajectory is computed using the `scipy_engine` with the `LSODA` method, configured with extremely low error tolerances (`1e-12`). This serves as the baseline against which all other calculations are measured.
+1.  **Reference Trajectory**: A highly accurate "ground truth" trajectory is computed using the `scipy+lsoda` engine, configured with extremely low error tolerances (`1e-12`). This serves as the baseline against which all other calculations are measured.
 
 2.  **Test Scenario**: The trajectory of a common long-range rifle shot is computed out to 2km for all tests:
     *   **Ammunition**: A 7.62mm, 10-gram bullet (G7 BC of 0.22).
@@ -45,8 +45,8 @@ To provide a fair comparison, a standardized testing methodology was established
 
 ## Summary Results
 
-1.  **Highest Precision: `scipy_engine`**. The adaptive SciPy engine can deliver the most accurate results, and do so with an order of magnitude less compute than the (pure) Python engines.
-2.  **Highest Speed: `cythonized_rk4_engine`.** The compiled RK4 engine is an order of magnitude faster than the SciPy engine.  It can't achieve the same micron-level precision when pushed to its limit, but it easily delivers results with error measured in millimeters at a distance of 2km, which is more than adequate for practical purposes.
+1.  **Highest Precision: `scipy+…`**. The adaptive SciPy engine can deliver the most accurate results, and do so with an order of magnitude less compute than the (pure) Python engines.
+2.  **Highest Speed: `cython+rk4`.** The compiled RK4 engine is an order of magnitude faster than the SciPy engine.  It can't achieve the same micron-level precision when pushed to its limit, but it easily delivers results with error measured in millimeters at a distance of 2km, which is more than adequate for practical purposes.
 
 This chart shows the range of performance and speed observed for each engine.  Smaller values are better.  For each engine we can see that if we give it more calculation time we get results with smaller error.
 
@@ -58,13 +58,13 @@ This chart shows the range of performance and speed observed for each engine.  S
 
 These engines are implemented from scratch in pure Python, and make it easy to see and understand exactly how the calculator works.  Their integration step size can be adjusted with the [`cStepMultiplier`][py_ballisticcalc.engines.base_engine.BaseEngineConfigDict] configuration parameter.
 
-* **`rk4_engine`:**  The RK4 algorithm is the most frequently used for ballistic calculators, and we continue to recommend it.  This is the default `py_ballisticcalc` engine.
-* **`euler_engine`:**  Euler's method is the most simple integration algorithm, which will be recognizable to any calculus student.  However, it is a first-order method with well known limitations and therefore recommended only for study.
-* **`verlet_engine`**: The velocity Verlet algorithm is a second-order integrator with the distinctive property of being _symplectic_, which makes it an excellent choice for modelling physical systems that should conserve energy.  It excels in a vacuum scenario ([`examples/BenchmarkVacuumTraj.ipynb`][BenchmarkVacuumTraj.ipynb]), but otherwise its performance is similar to the simpler Euler method: A ballistic trajectory with air resistance is a _dissipative system_ because energy is lost to drag. The Verlet method's strengths are in non-dissipative, time-reversible systems.
+* **`python+rk4`:**  The RK4 algorithm is the most frequently used for ballistic calculators, and we continue to recommend it.  This is the default `py_ballisticcalc` engine.
+* **`python+euler`:**  Euler's method is the most simple integration algorithm, which will be recognizable to any calculus student.  However, it is a first-order method with well known limitations and therefore recommended only for study.
+* **`python+verlet`**: The velocity Verlet algorithm is a second-order integrator with the distinctive property of being _symplectic_, which makes it an excellent choice for modelling physical systems that should conserve energy.  It excels in a vacuum scenario ([`examples/BenchmarkVacuumTraj.ipynb`][BenchmarkVacuumTraj.ipynb]), but otherwise its performance is similar to the simpler Euler method: A ballistic trajectory with air resistance is a _dissipative system_ because energy is lost to drag. The Verlet method's strengths are in non-dissipative, time-reversible systems.
 
 ### SciPy Engine
 
-The `scipy_engine` employs the state-of-the-art numerical methods provided by the SciPy library.
+The `scipy+…` engines (one per SciPy `solve_ivp` method, e.g. `scipy+rk45`, `scipy+dop853`) employ the state-of-the-art numerical methods provided by the SciPy library.
 
 *   **Integration Methods**: It supports a variety of methods. Among those recommended for this purpose are `LSODA`, `RK45`, `DOP853`, and `BDF`. We have found `LSODA` and `RK45` to be most effective in our testing, so those are the ones analyzed here.
 *   **Adaptive Step Size**: These solvers use adaptive step sizes, dynamically adjusting their internal timestep to meet the user-specified `absolute_tolerance` and `relative_tolerance`.
@@ -76,25 +76,25 @@ SciPy is something of a black box: one cannot be certain exactly how it will pro
 
 ### Cash-Karp Engine
 
-`cythonized_rkck_engine` is not (yet) part of the `BenchmarkEngines.ipynb` study above; the
+`cython+rkck` is not (yet) part of the `BenchmarkEngines.ipynb` study above; the
 numbers here come from `scripts/benchmark.py` (`Trajectory`/`Zero` cases, same 2000m G7 shot
 profile: 0.22 BC, 10g/7.62mm, 800 m/s, ICAO atmosphere), each engine run separately with 100
 warm-up calls and 1000 timed repetitions:
 
 | Case       | Engine                     | Mean (ms)                                          |
 | ---------- | -------------------------- | -------------------------------------------------- |
-| Trajectory | `rk4_engine` (pure Python) | 55.271                                             |
-| Trajectory | `cythonized_rk4_engine`    | 0.384                                              |
-| Trajectory | `cythonized_rkck_engine`   | 0.165 (2.33x faster than `cythonized_rk4_engine`)  |
-| Zero       | `rk4_engine` (pure Python) | 242.586                                            |
-| Zero       | `cythonized_rk4_engine`    | 1.184                                              |
-| Zero       | `cythonized_rkck_engine`   | 0.072 (16.44x faster than `cythonized_rk4_engine`) |
+| Trajectory | `python+rk4` (pure Python) | 55.271                                             |
+| Trajectory | `cython+rk4`    | 0.384                                              |
+| Trajectory | `cython+rkck`   | 0.165 (2.33x faster than `cython+rk4`)  |
+| Zero       | `python+rk4` (pure Python) | 242.586                                            |
+| Zero       | `cython+rk4`    | 1.184                                              |
+| Zero       | `cython+rkck`   | 0.072 (16.44x faster than `cython+rk4`) |
 
 These are mean wall-clock milliseconds per call on one particular machine, not a portable
 constant.  In this run Cash-Karp is 335x faster for Trajectory and 3369x faster for Zero than
 pure-Python RK4; those much larger figures include both adaptive integration and compiled-vs-
 Python implementation effects.  The direct Cython-vs-Cython ratios above isolate the practical
-engine comparison better. `cythonized_rkck_engine`'s own mean is the noisiest figure in this table
+engine comparison better. `cython+rkck`'s own mean is the noisiest figure in this table
 because its calls are sub-millisecond, so use the raw ms figures (or run the script yourself) if
 you need a ratio for your own machine rather than trusting the ones quoted here or in the
 [engines](engines.md#summary) table.
@@ -109,22 +109,22 @@ over `Trajectory`'s is so much larger even when comparing the same two Cython en
 
 ### Dormand-Prince and Tsitouras Engines
 
-`cythonized_dopri_engine` and `cythonized_tsitouras_engine` are two structurally-identical
+`cython+dopri` and `cython+tsitouras` are two structurally-identical
 7-stage FSAL 5(4) engines (same SciPy RK45-style controller; see
 [Adaptive integration](engines.md#adaptive-integration)), benchmarked here against
-`cythonized_rkck_engine` and `cythonized_rk4_engine` on the same shot profile and machine as the
+`cython+rkck` and `cython+rk4` on the same shot profile and machine as the
 Cash-Karp table above, `scripts/benchmark.py -w 30 -r 300`:
 
 | Case       | Engine                        | Mean (ms) |
 | ---------- | ------------------------------ | --------- |
-| Trajectory | `cythonized_rk4_engine`        | 0.87      |
-| Trajectory | `cythonized_rkck_engine`       | 0.46 (1.89x faster than `cythonized_rk4_engine`) |
-| Trajectory | `cythonized_dopri_engine`      | 0.45 (1.93x faster than `cythonized_rk4_engine`) |
-| Trajectory | `cythonized_tsitouras_engine`  | 0.42 (2.07x faster than `cythonized_rk4_engine`) |
-| Zero       | `cythonized_rk4_engine`        | 2.10      |
-| Zero       | `cythonized_rkck_engine`       | 0.19 (11.1x faster than `cythonized_rk4_engine`) |
-| Zero       | `cythonized_dopri_engine`      | 0.20 (10.5x faster than `cythonized_rk4_engine`) |
-| Zero       | `cythonized_tsitouras_engine`  | 0.20 (10.5x faster than `cythonized_rk4_engine`) |
+| Trajectory | `cython+rk4`        | 0.87      |
+| Trajectory | `cython+rkck`       | 0.46 (1.89x faster than `cython+rk4`) |
+| Trajectory | `cython+dopri`      | 0.45 (1.93x faster than `cython+rk4`) |
+| Trajectory | `cython+tsitouras`  | 0.42 (2.07x faster than `cython+rk4`) |
+| Zero       | `cython+rk4`        | 2.10      |
+| Zero       | `cython+rkck`       | 0.19 (11.1x faster than `cython+rk4`) |
+| Zero       | `cython+dopri`      | 0.20 (10.5x faster than `cython+rk4`) |
+| Zero       | `cython+tsitouras`  | 0.20 (10.5x faster than `cython+rk4`) |
 
 **Read this as "all three adaptive engines are in the same performance class," not as a ranking.**
 All three calls are sub-millisecond, and the spread between them (0.42-0.46 ms Trajectory,

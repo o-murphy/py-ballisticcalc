@@ -17,7 +17,7 @@ PreferredUnits.distance = Distance.Meter
 PreferredUnits.sight_height = Distance.Centimeter
 PreferredUnits.drop = Distance.Centimeter
 
-ENGINE = "cythonized_rk4_engine"
+ENGINE = "cython+rk4"
 TRAJECTORY_STEP = Unit.Meter(10.0)
 
 TRAJECTORY_LINEWIDTH = 2

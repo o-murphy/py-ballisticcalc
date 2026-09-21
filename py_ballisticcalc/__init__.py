@@ -143,7 +143,8 @@ from .drag_tables import (TableG1, TableG7, TableG2, TableG5, TableG6, TableG8,
                          TableGI, TableGS, TableRA4, get_drag_tables_names)
 from .engines import (create_base_engine_config, BaseEngineConfig, BaseEngineConfigDict, 
                      BaseIntegrationEngine, EulerIntegrationEngine, RK4IntegrationEngine,
-                     SciPyIntegrationEngine, VelocityVerletIntegrationEngine, SciPyEngineConfigDict)
+                     SciPyIntegrationEngine, SciPyIntegrationEngineFactory,
+                     VelocityVerletIntegrationEngine, SciPyEngineConfigDict)
 from .exceptions import (UnitTypeError, UnitConversionError, UnitAliasError, 
                         SolverRuntimeError, OutOfRangeError, ZeroFindingError, RangeError, InterceptionError)
 from .interface import Calculator, _EngineLoader

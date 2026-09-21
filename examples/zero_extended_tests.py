@@ -56,7 +56,7 @@ def create_zero_velocity_zero_min_altitude_calc(engine_name, method, max_iterati
 
 @pytest.fixture(scope="session")
 def scipy_calc():
-    return create_zero_velocity_zero_min_altitude_calc("scipy_engine", "RK45")
+    return create_zero_velocity_zero_min_altitude_calc("py_ballisticcalc:SciPyIntegrationEngine", "RK45")
 
 def create_23_mm_shot():
     drag_model = DragModel(

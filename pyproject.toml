@@ -45,11 +45,25 @@ dependencies = [
 #   optional-dependencies: will be calculated with before-build hook
 dynamic = ["version", "optional-dependencies"]
 
+# Legacy flat group (temporary, kept for backward compatibility)
 [project.entry-points.py_ballisticcalc]
 euler_engine = "py_ballisticcalc:EulerIntegrationEngine"
 rk4_engine = "py_ballisticcalc:RK4IntegrationEngine"
 scipy_engine = "py_ballisticcalc:SciPyIntegrationEngine"
 verlet_engine = "py_ballisticcalc:VelocityVerletIntegrationEngine"
+
+[project.entry-points."py_ballisticcalc.engines.python"]
+euler = "py_ballisticcalc:EulerIntegrationEngine"
+rk4 = "py_ballisticcalc:RK4IntegrationEngine"
+verlet = "py_ballisticcalc:VelocityVerletIntegrationEngine"
+
+[project.entry-points."py_ballisticcalc.engines.scipy"]
+rk23 = "py_ballisticcalc.engines:SciPyRK23IntegrationEngine"
+rk45 = "py_ballisticcalc.engines:SciPyRK45IntegrationEngine"
+dop853 = "py_ballisticcalc.engines:SciPyDOP853IntegrationEngine"
+radau = "py_ballisticcalc.engines:SciPyRadauIntegrationEngine"
+bdf = "py_ballisticcalc.engines:SciPyBDFIntegrationEngine"
+lsoda = "py_ballisticcalc.engines:SciPyLSODAIntegrationEngine"
 
 [project.urls]
 "Homepage" = "https://github.com/o-murphy/py-ballisticcalc"

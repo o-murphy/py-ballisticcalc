@@ -5,13 +5,13 @@
 
 ::: py_ballisticcalc.engines.base_engine.BaseEngineConfigDict
 
-`cythonized_dopri_engine` selects
+`cython+dopri` selects
 `CythonizedDormandPrinceIntegrationEngine` when the optional compiled package
 is installed. `relative_tolerance` and `absolute_tolerance` default to `1e-6`;
 `get_step_stats()` returns accepted and rejected steps. Its controller follows
 SciPy RK45 semantics, unlike compatibility-preserving Cash--Karp.
 
-`cythonized_tsitouras_engine` selects `CythonizedTsitourasIntegrationEngine` the
+`cython+tsitouras` selects `CythonizedTsitourasIntegrationEngine` the
 same way. It is structurally identical to `CythonizedDormandPrinceIntegrationEngine`
 (same 7-stage FSAL shape, same SciPy-RK45-style controller, same `relative_tolerance`/
 `absolute_tolerance` config) but uses the Tsitouras 5(4) tableau instead of
@@ -40,6 +40,8 @@ coefficient; see [benchmarks](../../concepts/benchmarks.md#dormand-prince-and-ts
         members:
 
 ::: py_ballisticcalc.engines.scipy_engine.SciPyEngineConfigDict
+
+::: py_ballisticcalc.engines.scipy_engine.SciPyIntegrationEngineFactory
 
 ::: py_ballisticcalc_exts.CythonizedBaseIntegrationEngine
     options:

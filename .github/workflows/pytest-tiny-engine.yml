@@ -63,7 +63,7 @@ jobs:
           # Default glob only tracks uv.lock/pyproject.toml; widen it so the cache
           # key also reflects the exts source tree, so a build is skipped (cache
           # hit) whenever this exact (os, python-version, exts source) combo was
-          # already built — e.g. across cythonized_euler_engine/cythonized_rk4_engine
+          # already built — e.g. across cython+euler/cython+rk4
           # legs on the same runner, which compile the identical wheel.
           cache-dependency-glob: |
             **/uv.lock

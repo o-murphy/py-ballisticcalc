@@ -50,7 +50,7 @@ jobs:
           - macos-26-intel
           - macos-26
         python-version: ["3.11", "3.14", "3.14t"]
-        engine: ["cythonized_rk4_engine"]
+        engine: ["cython+rk4"]
 
     uses: ./.github/workflows/pytest-reusable.yml
     with:
@@ -68,7 +68,7 @@ jobs:
       matrix:
         os: [ubuntu-latest]
         python-version: ["3.11"]
-        engine: ["cythonized_rk4_engine"]
+        engine: ["cython+rk4"]
 
     uses: ./.github/workflows/pytest-reusable.yml
     with:

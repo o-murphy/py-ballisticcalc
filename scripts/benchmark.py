@@ -3,8 +3,8 @@
 Implements two fixed benchmark cases (Trajectory, Zero) and records results.
 
 Usage examples:
-    uv run python scripts/benchmark.py --engine rk4_engine
-    uv run python scripts/benchmark.py --engine="rk4_engine"  # same as pytest style
+    uv run python scripts/benchmark.py --engine python+rk4
+    uv run python scripts/benchmark.py --engine="python+rk4"  # same as pytest style
     uv run python scripts/benchmark.py --all
 
 Outputs:
@@ -237,7 +237,7 @@ def get_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser("py_ballisticcalc benchmark", description="Benchmark py_ballisticcalc engines (fixed scenarios)")
     engine_group = p.add_mutually_exclusive_group(required=True)
     engine_group.add_argument("-e", "--engine", nargs="+", dest="engine",
-                              help="Single engine entry point (e.g. rk4_engine)")
+                              help="Single engine entry point (e.g. python+rk4, cython.rk4)")
     engine_group.add_argument("-A", "--all", action="store_true", help="Benchmark all discovered engines")
     p.add_argument("-r", "--repeats", type=int, default=100, help="Timed repetitions (default 100)")
     p.add_argument("-w", "--warmup", type=int, default=10, help="Warmup iterations (default 10)")
@@ -248,7 +248,8 @@ def get_parser() -> argparse.ArgumentParser:
 
 
 def iter_engine_names() -> list[str]:
-    return [ep.name for ep in Calculator.iter_engines()]
+    from py_ballisticcalc.interface import _EngineLoader
+    return [_EngineLoader.engine_id(ep) for ep in Calculator.iter_engines()]
 
 
 def main(argv: Sequence[str] | None = None) -> int:

@@ -62,13 +62,13 @@ clean:
 # Pure Python tests. Only syncs dev env — no Cython build needed.
 test-dev: sync-dev
 	@echo "--- Testing pure Python engine ---"
-	uv run pytest --engine="rk4_engine"
+	uv run pytest --engine="python.rk4"
 
 # Cythonized tests. Always does a full clean rebuild first.
 test-exts: build-exts
 	@echo "--- Testing Cythonized engine ---"
-	uv run pytest py_ballisticcalc.exts --engine="cythonized_rk4_engine"
-	uv run pytest --engine="cythonized_rk4_engine"
+	uv run pytest py_ballisticcalc.exts --engine="cython.rk4"
+	uv run pytest --engine="cython.rk4"
 
 # Memory leak tests with valgrind (stress suite).
 test-leaks: build-exts
@@ -83,8 +83,8 @@ test-leaks: build-exts
 
 bench-dev: sync-dev
 	@echo "--- Benchmarking pure Python engine ---"
-	uv run python scripts/benchmark.py --engine="rk4_engine" -w 100 -r 1000
+	uv run python scripts/benchmark.py --engine="python.rk4" -w 100 -r 1000
 
 bench-exts: build-exts
 	@echo "--- Benchmarking Cythonized engine ---"
-	uv run python scripts/benchmark.py --engine="cythonized_rk4_engine" -w 100 -r 1000
+	uv run python scripts/benchmark.py --engine="cython.rk4" -w 100 -r 1000

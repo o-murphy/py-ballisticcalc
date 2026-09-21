@@ -72,12 +72,12 @@ install_project() {
     log_info "Installing base dependencies..."
     uv sync -p "$python_version" --no-dev --group test
 
-    if [[ "$engine_name" == scipy_* ]]; then
+    if [[ "$engine_name" == scipy[+.]* ]]; then
         log_info "Installing scipy extra..."
         uv sync -p "$python_version" --no-dev --group test --extra scipy
     fi
 
-    if [[ "$engine_name" == cythonized_* ]]; then
+    if [[ "$engine_name" == cython[+.]* ]]; then
         log_info "Building Cython extensions..."
         uv sync -p "$python_version" --no-dev --group test --extra exts
     fi
@@ -144,10 +144,10 @@ case "${1:-}" in
         install_system_deps "${2:-3.11}" "${3:-Linux}"
         ;;
     install-project)
-        install_project "${2:-3.11}" "${3:-euler_engine}"
+        install_project "${2:-3.11}" "${3:-python+euler}"
         ;;
     test)
-        run_tests "${2:-tests}" "${3:-euler_engine}"
+        run_tests "${2:-tests}" "${3:-python+euler}"
         ;;
     stress)
         run_stress_tests

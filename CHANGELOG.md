@@ -7,6 +7,42 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.0.0-beta.3] - 2026-09-21
+
+### Added
+- New entry point model: engines are registered in groups `py_ballisticcalc.engines.<engine>`
+  (`python`, `cython`, `scipy`) with the integration method as the entry point name, and are
+  selected with `<engine>+<method>` or `<engine>.<method>` (e.g. `Calculator(engine="cython+rk4")`,
+  `"scipy+dop853"`). The direct `<module>:<factory>` path is still supported, including the
+  call form `"py_ballisticcalc:SciPyIntegrationEngineFactory(method=DOP853)"`.
+- `SciPyIntegrationEngineFactory(method)` and ready-made `SciPy<Method>IntegrationEngine` factories
+  (RK23, RK45, DOP853, Radau, BDF, LSODA) in `py_ballisticcalc.engines`.
+- Typed configs `DormandPrinceEngineConfig` and `TsitourasEngineConfig` (type stubs) alongside
+  `CashKarpEngineConfig`; all three adaptive Cython engines now expose the same stub API.
+- `scripts/bench_report.py`: builds the benchmark page from `benchmarks/benchmarks.csv` — grouped
+  log-scale bar charts of mean time and of speedup vs `python.rk4` (`docs/concepts/bench.svg`,
+  `docs/concepts/bench_speedup.svg`) plus a results table (`docs/concepts/bench.md`, added to the docs nav).
+- Benchmarks for all `scipy+…` methods (RK23, RK45, DOP853, Radau, BDF, LSODA), `python+euler` and `python+verlet`.
+
+### Changed
+- `_EngineLoader.iter_engines()` deduplicates entries by target; new `_EngineLoader.engine_id(ep)`.
+- `scripts/benchmark.py`, `examples/performance_check.py`, tests and CI use the new engine names.
+- `README.md` and `docs/`: engine tables show the per-engine speed for the new names, with a separate row and
+  description for every `scipy+…` method and a per-engine "Tests" badge column; the engine test badges above
+  the table were moved into it.
+- Engine speed figures in the tables were re-measured (Find Zero / Trajectory vs `python+rk4`): Cython
+  adaptive engines 2567x / 326x, `scipy+rk45` 5.4x / 9.8x, and so on. `cython+verlet` is not re-measured yet.
+- SciPy engine: cut Python-side overhead per call without changing tolerances (no per-call `Velocity`
+  object in `get_density_and_mach_for_altitude`, safeguarded Newton instead of `brentq` for the
+  range-step interpolation, plain math instead of numpy in the terminating events, scalar indexing in
+  `diff_eq`, `warnings.simplefilter` applied once at import). A 2000 m RK45 trajectory takes ~11 ms instead of
+  ~19 ms. As a side effect DOP853's zero-angle solver no longer stalls just above `cZeroFindingAccuracy`,
+  which removes the repeated `Failed to find zero angle using Newton method` warnings.
+
+### Deprecated
+- The legacy flat entry point group `py_ballisticcalc` (`euler_engine`, `rk4_engine`, `scipy_engine`,
+  `cythonized_*_engine`, ...). Loading an engine by these names emits a `DeprecationWarning`.
+
 ## [3.0.0-beta.2] - 2026-09-21
 
 ### Added
@@ -920,9 +956,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Issue #141
 - Trajectories that bend backwards
 
-[Unreleased]: https://github.com/o-murphy/py-ballisticcalc/compare/v3.0.0-beta.2...HEAD
-[3.0.0-beta.2]: https://github.com/o-murphy/py-ballisticcalc/compare/v3.0.0-beta.2...HEAD
-[3.0.0-beta.1]: https://github.com/o-murphy/py-ballisticcalc/compare/v2.3.1...HEAD
+[Unreleased]: https://github.com/o-murphy/py-ballisticcalc/compare/v3.0.0-beta.3...HEAD
+[3.0.0-beta.3]: https://github.com/o-murphy/py-ballisticcalc/releases/tag/v3.0.0-beta.3
+[3.0.0-beta.2]: https://github.com/o-murphy/py-ballisticcalc/releases/tag/v3.0.0-beta.2
+[3.0.0-beta.1]: https://github.com/o-murphy/py-ballisticcalc/releases/tag/v2.3.1
 [2.3.1]: https://github.com/o-murphy/py-ballisticcalc/releases/tag/v2.3.1
 [#339]: https://github.com/o-murphy/py-ballisticcalc/pull/339
 [#340]: https://github.com/o-murphy/py-ballisticcalc/pull/340

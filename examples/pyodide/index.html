@@ -1,5 +1,6 @@
 <!doctype html>
 <html>
+
 <head>
   <!--
     Interactive py-ballisticcalc REPL, running entirely client-side via
@@ -12,21 +13,21 @@
   -->
   <meta charset="UTF-8" />
   <title>py-ballisticcalc — Pyodide REPL</title>
-  <link
-    href="https://cdn.jsdelivr.net/npm/jquery.terminal@2.35.2/css/jquery.terminal.min.css"
-    rel="stylesheet"
-  />
+  <link href="https://cdn.jsdelivr.net/npm/jquery.terminal@2.35.2/css/jquery.terminal.min.css" rel="stylesheet" />
   <style>
     .terminal {
       --size: 1.2;
       --color: rgba(255, 255, 255, 0.8);
     }
+
     .noblink {
       --animation: terminal-none;
     }
+
     body {
       background-color: black;
     }
+
     #loading {
       display: inline-block;
       width: 50px;
@@ -39,6 +40,7 @@
       border-top-color: #fff;
       animation: spin 1s ease-in-out infinite;
     }
+
     @keyframes spin {
       to {
         transform: rotate(360deg);
@@ -46,6 +48,7 @@
     }
   </style>
 </head>
+
 <body>
   <div id="loading"></div>
   <!-- moved out of <head>: plain blocking <script src> tags there stall HTML
@@ -89,7 +92,7 @@ def _demo():
     dm = DragModel(0.381, TableG7, 300, 0.338, Distance.Inch(1.7))
     ammo = Ammo(dm=dm, mv=Unit.MPS(815))
     zero = Shot(weapon=weapon, ammo=ammo)
-    calc = Calculator(engine="cythonized_rk4_engine")  # compiled RK4 engine from exts
+    calc = Calculator(engine="cython.rk4")  # compiled RK4 engine from exts
     calc.set_weapon_zero(zero, Distance.Meter(100))
     shot = Shot(weapon=weapon, ammo=ammo)
     result = calc.fire(shot, Distance.Meter(1000), extra_data=False)
@@ -266,4 +269,5 @@ calc, shot, result = _demo()
     main();
   </script>
 </body>
+
 </html>

@@ -22,7 +22,7 @@ PreferredUnits.distance = Distance.Meter
 ```
 
     
-    Available engines: ['cythonized_rkck_engine', 'cythonized_euler_engine', 'cythonized_rk4_engine', 'cythonized_verlet_engine', 'euler_engine', 'rk4_engine', 'scipy_engine', 'verlet_engine']
+    Available engines: ['cython.rkck', 'cython.euler', 'cython.rk4', 'cython.verlet', 'python.euler', 'python.rk4', 'scipy.rk45', 'python.verlet']
 
 
 ## Reference Calculator
@@ -37,7 +37,7 @@ ref_config = SciPyEngineConfigDict(
     absolute_tolerance=1e-12,
     integration_method="LSODA",
 )
-ref_calc = Calculator(config=ref_config, engine='scipy_engine')
+ref_calc = Calculator(config=ref_config, engine='scipy.lsoda')
 ```
 
 # Scenarios
@@ -196,7 +196,7 @@ def scipy_chk(timeit: bool = False, **kwargs):
     config = SciPyEngineConfigDict(
         **kwargs,
     )
-    calc = Calculator(config=config, engine='scipy_engine')
+    calc = Calculator(config=config, engine=SciPyIntegrationEngine)
     hit = calc.fire(shot=baseline_shot, trajectory_range=range, trajectory_step=reference_distance, raise_range_error=False)
     err = check_error(hit)
     stats_engine = calc._engine_instance
@@ -222,7 +222,7 @@ Here's a quick look at each of the integration methods listed in the SciPyIntegr
 
 
 ```python
-from py_ballisticcalc.engines.scipy_engine import INTEGRATION_METHOD
+from py_ballisticcalc.engines.scipy.rk45 import INTEGRATION_METHOD
 method_summary = []
 for method in get_args(INTEGRATION_METHOD):
     err, count, speed = scipy_chk(timeit=True, integration_method=method)
@@ -1160,7 +1160,7 @@ rk_time_step = RK4IntegrationEngine.DEFAULT_TIME_STEP = 0.001
 step = 5.0
 multiplier = 1.0/step**2
 while multiplier <= 1000.0:
-    err, count, speed = chk_engine('rk4_engine', timeit=True, step_multiplier=multiplier)
+    err, count, speed = chk_engine('python.rk4', timeit=True, step_multiplier=multiplier)
     summary.append(('RK4', multiplier*rk_time_step, err, count, speed))
     multiplier *= step
 df = pd.DataFrame(summary, columns=['Engine', 'Step (s)', 'Error (m)', 'Integration Steps', 'Speed (s)'])
@@ -1294,7 +1294,7 @@ verlet_time_step = VelocityVerletIntegrationEngine.DEFAULT_TIME_STEP
 step = 5.0
 multiplier = 1.0/step**2
 while multiplier <= 500.0:
-    err, count, speed = chk_engine('verlet_engine', timeit=True, step_multiplier=multiplier)
+    err, count, speed = chk_engine('python.verlet', timeit=True, step_multiplier=multiplier)
     summary.append(('Verlet', multiplier*verlet_time_step, err, count, speed))
     multiplier *= step
 df = pd.DataFrame(summary, columns=['Engine', 'Step (s)', 'Error (m)', 'Integration Steps', 'Speed (s)'])
@@ -1411,7 +1411,7 @@ Our Euler integrator uses a base "step" of 0.5ft, which it then converts to a ti
 step = 5.0
 multiplier = 1.0/step**2
 while multiplier <= 1000.0:
-    err, count, speed = chk_engine('euler_engine', timeit=True, step_multiplier=multiplier)
+    err, count, speed = chk_engine('python.euler', timeit=True, step_multiplier=multiplier)
     summary.append(('Euler', multiplier, err, count, speed))
     multiplier *= step
 df = pd.DataFrame(summary, columns=['Engine', 'Multiplier', 'Error (m)', 'Integration Steps', 'Speed (s)'])
@@ -1543,7 +1543,7 @@ EulerIntegrationEngine.time_step = time_step
 step = 5.0
 multiplier = 1.0/step**2
 while multiplier <= 500.0:
-    err, count, speed = chk_engine('euler_engine', step_multiplier=multiplier, timeit=True)
+    err, count, speed = chk_engine('python.euler', step_multiplier=multiplier, timeit=True)
     summary.append(('Euler const', multiplier*0.001, err, count, speed))
     multiplier *= step
 df = pd.DataFrame(summary, columns=['Engine', 'Step (s)', 'Error (m)', 'Integration Steps', 'Speed (s)'])
@@ -1658,8 +1658,8 @@ df[df.Engine == 'Euler const']
 step = 5.0
 multiplier = 1.0/step**2
 while multiplier <= 1000.0:
-    # To get same step as other engines without recompiling, check the base step size in rk4_engine.pyx
-    err, count, speed = chk_engine('cythonized_rk4_engine', timeit=True, step_multiplier=multiplier*(2.0/3.0))
+    # To get same step as other engines without recompiling, check the base step size in python.rk4.pyx
+    err, count, speed = chk_engine('cython.rk4', timeit=True, step_multiplier=multiplier*(2.0/3.0))
     summary.append(('RK4 Cython', multiplier, err, count, speed))
     multiplier *= step
 df = pd.DataFrame(summary, columns=['Engine', 'Multiplier', 'Error (m)', 'Integration Steps', 'Speed (s)'])
@@ -1787,7 +1787,7 @@ Cash-Karp is an adaptive compiled RK45 engine.  `cStepMultiplier` supplies its b
 step = 5.0
 multiplier = 1.0 / step**2
 while multiplier <= 1000.0:
-    err, count, speed = chk_engine('cythonized_rkck_engine', timeit=True, step_multiplier=multiplier)
+    err, count, speed = chk_engine('cython.rkck', timeit=True, step_multiplier=multiplier)
     summary.append(('Cash-Karp Cython', multiplier, err, count, speed))
     multiplier *= step
 df = pd.DataFrame(summary, columns=['Engine', 'Multiplier', 'Error (m)', 'Integration Steps', 'Speed (s)'])

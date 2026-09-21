@@ -45,7 +45,7 @@ atmo = Atmo.icao()
 
 zero = Shot(weapon=weapon, ammo=ammo, atmo=atmo)
 
-calc = Calculator(engine="cythonized_rk4_engine")
+calc = Calculator(engine="cython+rk4")
 calc.set_weapon_zero(zero, Setup.zero)
 
 shot = Shot(weapon=weapon, ammo=ammo, atmo=atmo)

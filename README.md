@@ -19,41 +19,6 @@ LGPL library for small arms ballistic calculations based on point-mass (3 DoF) p
 
 [![Pre-commit](https://github.com/o-murphy/py-ballisticcalc/actions/workflows/pre-commit.yml/badge.svg)](https://github.com/o-murphy/py-ballisticcalc/actions/workflows/pre-commit.yml)
 
-[![pytest-euler-badge]](https://github.com/o-murphy/py-ballisticcalc/actions/workflows/pytest-euler-engine.yml)
-[![pytest-rk4-badge]](https://github.com/o-murphy/py-ballisticcalc/actions/workflows/pytest-rk4-engine.yml)
-[![pytest-verlet-badge]](https://github.com/o-murphy/py-ballisticcalc/actions/workflows/pytest-verlet-engine.yml)
-[![pytest-scipy-badge]](https://github.com/o-murphy/py-ballisticcalc/actions/workflows/pytest-scipy-engine.yml)
-
-[![pytest-cpp-euler-badge]](https://github.com/o-murphy/py-ballisticcalc/actions/workflows/pytest-cythonized-euler-engine.yml)
-[![pytest-cpp-rk4-badge]](https://github.com/o-murphy/py-ballisticcalc/actions/workflows/pytest-cythonized-rk4-engine.yml)
-[![pytest-cpp-verlet-badge]](https://github.com/o-murphy/py-ballisticcalc/actions/workflows/pytest-cythonized-verlet-engine.yml)
-[![pytest-cpp-rkck-badge]](https://github.com/o-murphy/py-ballisticcalc/actions/workflows/pytest-cythonized-ck-engine.yml)
-[![pytest-cpp-dopri-badge]](https://github.com/o-murphy/py-ballisticcalc/actions/workflows/pytest-cythonized-dopri-engine.yml)
-[![pytest-cpp-tsitouras-badge]](https://github.com/o-murphy/py-ballisticcalc/actions/workflows/pytest-cythonized-tsitouras-engine.yml)
-
-[pytest-euler-badge]:
-https://img.shields.io/github/actions/workflow/status/o-murphy/py-ballisticcalc/pytest-euler-engine.yml?logo=python&label=Euler
-[pytest-rk4-badge]:
-https://img.shields.io/github/actions/workflow/status/o-murphy/py-ballisticcalc/pytest-rk4-engine.yml?logo=python&label=RK4
-[pytest-verlet-badge]:
-https://img.shields.io/github/actions/workflow/status/o-murphy/py-ballisticcalc/pytest-verlet-engine.yml?logo=python&label=Verlet
-
-[pytest-scipy-badge]:
-https://img.shields.io/github/actions/workflow/status/o-murphy/py-ballisticcalc/pytest-scipy-engine.yml?logo=python&label=SciPy
-
-[pytest-cpp-euler-badge]:
-https://img.shields.io/github/actions/workflow/status/o-murphy/py-ballisticcalc/pytest-cythonized-euler-engine.yml?logo=cplusplus&label=Euler
-[pytest-cpp-rk4-badge]:
-https://img.shields.io/github/actions/workflow/status/o-murphy/py-ballisticcalc/pytest-cythonized-rk4-engine.yml?logo=cplusplus&label=RK4
-[pytest-cpp-verlet-badge]:
-https://img.shields.io/github/actions/workflow/status/o-murphy/py-ballisticcalc/pytest-cythonized-verlet-engine.yml?logo=cplusplus&label=Verlet
-[pytest-cpp-rkck-badge]:
-https://img.shields.io/github/actions/workflow/status/o-murphy/py-ballisticcalc/pytest-cythonized-ck-engine.yml?logo=cplusplus&label=RKCK
-[pytest-cpp-dopri-badge]:
-https://img.shields.io/github/actions/workflow/status/o-murphy/py-ballisticcalc/pytest-cythonized-dopri-engine.yml?logo=cplusplus&label=DOPRI
-[pytest-cpp-tsitouras-badge]:
-https://img.shields.io/github/actions/workflow/status/o-murphy/py-ballisticcalc/pytest-cythonized-tsitouras-engine.yml?logo=cplusplus&label=Tsitouras
-
 ### Contents
 
 * **[Installation](#installation)**
@@ -141,18 +106,31 @@ Work in your preferred terms with easy conversions for the following dimensions 
 
 Choose between different calculation engines, or build your own.  Included engines:
 
-| Engine Name                                                                                            | Speed (Find Zero / Trajectory)                |        Dependencies         | Description                                       |
-| :----------------------------------------------------------------------------------------------------- | :-------------------------------------------- | :-------------------------: | :------------------------------------------------ |
-| **[`rk4_engine`][py_ballisticcalc.engines.RK4IntegrationEngine]**                                      | Baseline (1x)                                 |        None; default        | Runge-Kutta 4th-order integration                 |
-| [`euler_engine`][py_ballisticcalc.engines.EulerIntegrationEngine]                                      | :material-arrow-down:    0.5x / 0.5x (slower) |            None             | Euler 1st-order integration                       |
-| [`verlet_engine`][py_ballisticcalc.engines.VelocityVerletIntegrationEngine]                            | :material-arrow-down:   0.8x / 0.8x (slower)  |            None             | Verlet 2nd-order symplectic integration           |
-| [`cythonized_rk4_engine`][py_ballisticcalc_exts.CythonizedRK4IntegrationEngine]                        | :material-arrow-up:   205x / 144x (faster)    | [`[exts]`](#cython-engines) | Compiled Runge-Kutta 4th-order                    |
-| [`cythonized_euler_engine`][py_ballisticcalc_exts.CythonizedEulerIntegrationEngine]                    | :material-arrow-up:    54x / 52x (faster)     | [`[exts]`](#cython-engines) | Compiled Euler integration                        |
-| [`cythonized_verlet_engine`][py_ballisticcalc_exts.CythonizedVelocityVerletIntegrationEngine]          | :material-arrow-up:   130x / 99x (faster)     | [`[exts]`](#cython-engines) | Compiled Verlet 2nd-order symplectic              |
-| [`cythonized_rkck_engine`][py_ballisticcalc_exts.CythonizedCashKarpIntegrationEngine][^adaptive]       | :material-arrow-up: ~3370x / ~335x (faster)   | [`[exts]`](#cython-engines) | Compiled Cash-Karp adaptive RK45                  |
-| [`cythonized_dopri_engine`][py_ballisticcalc_exts.CythonizedDormandPrinceIntegrationEngine][^adaptive] | :material-arrow-up: ~3370x / ~335x (faster)   | [`[exts]`](#cython-engines) | Dormand--Prince 5(4), SciPy RK45-style controller |
-| [`cythonized_tsitouras_engine`][py_ballisticcalc_exts.CythonizedTsitourasIntegrationEngine][^adaptive] | :material-arrow-up: ~3370x / ~335x (faster)   | [`[exts]`](#cython-engines) | Tsitouras 5(4), SciPy RK45-style controller       |
-| [`scipy_engine`][py_ballisticcalc.engines.SciPyIntegrationEngine]                                      | :material-arrow-up:  4.6x / 8.3x (faster)     |          `[scipy]`          | Advanced numerical methods                        |
+#### Mean time
+
+![Mean time per call by engine](./docs/concepts/bench.svg)
+
+#### Speedup vs `python.rk4`
+
+![Speedup vs python.rk4](./docs/concepts/bench_speedup.svg)
+
+| Engine Name                   | Speed (Find Zero / Trajectory)       |        Dependencies         | Description                                                     |                                                                                                                                Tests                                                                                                                                 |
+| :---------------------------- | :----------------------------------- | :-------------------------: | :-------------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------: |
+| `python+rk4`                  | Baseline (1x)                        |        None; default        | Runge-Kutta 4th-order integration                               |                   [![tests](https://img.shields.io/github/actions/workflow/status/o-murphy/py-ballisticcalc/pytest-rk4-engine.yml?logo=python&label=tests)](https://github.com/o-murphy/py-ballisticcalc/actions/workflows/pytest-rk4-engine.yml)                    |
+| `python+euler`                | :arrow_down: 0.6x / 0.6x (slower)    |            None             | Euler 1st-order integration                                     |                 [![tests](https://img.shields.io/github/actions/workflow/status/o-murphy/py-ballisticcalc/pytest-euler-engine.yml?logo=python&label=tests)](https://github.com/o-murphy/py-ballisticcalc/actions/workflows/pytest-euler-engine.yml)                  |
+| `python+verlet`               | :arrow_down: 0.8x / 0.8x (slower)    |            None             | Verlet 2nd-order symplectic integration                         |                [![tests](https://img.shields.io/github/actions/workflow/status/o-murphy/py-ballisticcalc/pytest-verlet-engine.yml?logo=python&label=tests)](https://github.com/o-murphy/py-ballisticcalc/actions/workflows/pytest-verlet-engine.yml)                 |
+| `cython+rk4`                  | :arrow_up: 205x / 129x (faster)      | [`[exts]`](#cython-engines) | Compiled Runge-Kutta 4th-order                                  |       [![tests](https://img.shields.io/github/actions/workflow/status/o-murphy/py-ballisticcalc/pytest-cythonized-rk4-engine.yml?logo=cplusplus&label=tests)](https://github.com/o-murphy/py-ballisticcalc/actions/workflows/pytest-cythonized-rk4-engine.yml)       |
+| `cython+euler`                | :arrow_up: 54x / 44x (faster)        | [`[exts]`](#cython-engines) | Compiled Euler integration                                      |     [![tests](https://img.shields.io/github/actions/workflow/status/o-murphy/py-ballisticcalc/pytest-cythonized-euler-engine.yml?logo=cplusplus&label=tests)](https://github.com/o-murphy/py-ballisticcalc/actions/workflows/pytest-cythonized-euler-engine.yml)     |
+| `cython+verlet`               | :arrow_up:   130x / 99x (faster)     | [`[exts]`](#cython-engines) | Compiled Verlet 2nd-order symplectic                            |    [![tests](https://img.shields.io/github/actions/workflow/status/o-murphy/py-ballisticcalc/pytest-cythonized-verlet-engine.yml?logo=cplusplus&label=tests)](https://github.com/o-murphy/py-ballisticcalc/actions/workflows/pytest-cythonized-verlet-engine.yml)    |
+| `cython+rkck`[^adaptive]      | :arrow_up: 2567x / 326x (faster)     | [`[exts]`](#cython-engines) | Compiled Cash-Karp adaptive RK45                                |        [![tests](https://img.shields.io/github/actions/workflow/status/o-murphy/py-ballisticcalc/pytest-cythonized-ck-engine.yml?logo=cplusplus&label=tests)](https://github.com/o-murphy/py-ballisticcalc/actions/workflows/pytest-cythonized-ck-engine.yml)        |
+| `cython+dopri`[^adaptive]     | :arrow_up: 2567x / 326x (faster)     | [`[exts]`](#cython-engines) | Dormand--Prince 5(4), SciPy RK45-style controller               |     [![tests](https://img.shields.io/github/actions/workflow/status/o-murphy/py-ballisticcalc/pytest-cythonized-dopri-engine.yml?logo=cplusplus&label=tests)](https://github.com/o-murphy/py-ballisticcalc/actions/workflows/pytest-cythonized-dopri-engine.yml)     |
+| `cython+tsitouras`[^adaptive] | :arrow_up: 2567x / 326x (faster)     | [`[exts]`](#cython-engines) | Tsitouras 5(4), SciPy RK45-style controller                     | [![tests](https://img.shields.io/github/actions/workflow/status/o-murphy/py-ballisticcalc/pytest-cythonized-tsitouras-engine.yml?logo=cplusplus&label=tests)](https://github.com/o-murphy/py-ballisticcalc/actions/workflows/pytest-cythonized-tsitouras-engine.yml) |
+| `scipy+rk23`                  | :arrow_up: 3.4x / 3.2x (faster)      |          `[scipy]`          | SciPy `solve_ivp` RK23 — Bogacki–Shampine 3(2), lowest order: cheap steps, loose accuracy                    |                                                                                                                                  —                                                                                                                                   |
+| `scipy+rk45`                  | :arrow_up: 5.4x / 9.8x (faster)      |          `[scipy]`          | SciPy `solve_ivp` RK45 — Dormand–Prince 5(4), SciPy default: general-purpose                    |                 [![tests](https://img.shields.io/github/actions/workflow/status/o-murphy/py-ballisticcalc/pytest-scipy-engine.yml?logo=python&label=tests)](https://github.com/o-murphy/py-ballisticcalc/actions/workflows/pytest-scipy-engine.yml)                  |
+| `scipy+dop853`                | :arrow_up: 1.8x / 4.8x (faster)      |          `[scipy]`          | SciPy `solve_ivp` DOP853 — Dormand–Prince 8(5,3), high order: for tight tolerances                  |                                                                                                                                  —                                                                                                                                   |
+| `scipy+radau`                 | :arrow_up: 1.5x / 1.5x (faster)      |          `[scipy]`          | SciPy `solve_ivp` Radau — implicit Radau IIA 5th-order, for stiff problems         |                                                                                                                                  —                                                                                                                                   |
+| `scipy+bdf`                   | :left_right_arrow: 0.8x / 1.5x (mixed) |          `[scipy]`          | SciPy `solve_ivp` BDF — implicit variable-order (1–5) multistep, for stiff problems    |                                                                                                                                  —                                                                                                                                   |
+| `scipy+lsoda`                 | :arrow_up: 2.9x / 4.3x (faster)      |          `[scipy]`          | SciPy `solve_ivp` LSODA — Adams/BDF (ODEPACK), switches automatically between non-stiff and stiff |                                                                                                                                  —                                                                                                                                   |
 
 [^adaptive]: Adaptive RK45; actual speed depends on the configured tolerances. Cash-Karp,
 Dormand-Prince, and Tsitouras measure in the same performance class as each other on typical

@@ -5,11 +5,18 @@ for ballistic trajectory calculations. It implements a plugin-based architecture
 that can dynamically load different integration engines through Python entry points.
 The module relies on the EngineProtocol to ensure that engines offer the necessary methods.
 
+Engines are selected by name as ``"<engine>+<method>"`` or ``"<engine>.<method>"`` (e.g.
+``"python+rk4"``, ``"cython.rk4"``, ``"scipy+dop853"``), where the entry points are registered in
+the ``py_ballisticcalc.engines.<engine>`` groups, or directly by a ``"<module>:<factory>"`` path.
+The legacy flat names (``rk4_engine``, ``cythonized_rk4_engine``, ...) are deprecated.
+
 Key Classes:
     - Calculator: Main ballistics calculator with pluggable engine support
     - _EngineLoader: Internal utility for discovering and loading engine plugins
 """
 
+import ast
+import re
 import warnings
 from collections.abc import Generator
 from collections.abc import Set as AbstractSet
@@ -31,15 +38,29 @@ ConfigT = TypeVar("ConfigT")
 EngineFactoryProtocolType: TypeAlias = EngineFactoryProtocol[Any]
 EngineFactoryProtocolEntry: TypeAlias = str | EngineFactoryProtocolType | None
 
+_CALL_VALUE_RE = re.compile(r"^(?P<target>[^()\s]+)\((?P<args>[^()]*)\)$")
+
 DEFAULT_ENTRY_SUFFIX = "_engine"
-DEFAULT_ENTRY_GROUP = "py_ballisticcalc"
+DEFAULT_ENTRY_GROUP = "py_ballisticcalc"  # legacy flat group
+DEFAULT_ENGINES_GROUP_PREFIX = "py_ballisticcalc.engines."
 DEFAULT_ENTRY: EngineFactoryProtocolType = RK4IntegrationEngine
 
 
 @dataclass
 class _EngineLoader:
+    """Discovers and loads engine factories.
+
+    Supported entry point layouts:
+        - New: group ``py_ballisticcalc.engines.<engine>`` with name ``<method>``,
+          addressed as ``"<engine>+<method>"`` or ``"<engine>.<method>"`` (e.g. ``"cython+rk4"``).
+        - Legacy (temporary): group ``py_ballisticcalc`` with names like ``rk4_engine``.
+          Entries duplicating a new-style entry (same target) are skipped.
+        - Direct: ``"<module>:<factory>"`` path.
+    """
+
     _entry_point_group = DEFAULT_ENTRY_GROUP
     _entry_point_suffix = DEFAULT_ENTRY_SUFFIX
+    _engines_group_prefix = DEFAULT_ENGINES_GROUP_PREFIX
 
     @classmethod
     @cache
@@ -47,20 +68,58 @@ class _EngineLoader:
         return set(entry_points().select(group=cls._entry_point_group))
 
     @classmethod
+    @cache
+    def _get_engine_entries(cls) -> tuple[EntryPoint, ...]:
+        eps = entry_points()
+        found: list[EntryPoint] = []
+        for group in sorted(g for g in eps.groups if g.startswith(cls._engines_group_prefix)):
+            found.extend(sorted(eps.select(group=group), key=lambda ep: ep.name))
+        return tuple(found)
+
+    @classmethod
+    def engine_id(cls, ep: EntryPoint) -> str:
+        """Public identifier of an entry point: ``<engine>+<method>`` for new-style, plain name for legacy."""
+        if ep.group.startswith(cls._engines_group_prefix):
+            return f"{ep.group.removeprefix(cls._engines_group_prefix)}+{ep.name}"
+        return ep.name
+
+    @classmethod
     def iter_engines(cls) -> Generator[EntryPoint, None, None]:
-        """Iterate over all available engines in the entry points."""
-        ballistic_entry_points = cls._get_entries_by_group()
-        for ep in ballistic_entry_points:
-            if ep.name.endswith(cls._entry_point_suffix):
+        """Iterate over all available engines (new-style first, legacy deduplicated by target)."""
+        seen: set[str] = set()
+        for ep in cls._get_engine_entries():
+            seen.add(ep.value)
+            yield ep
+        for ep in sorted(cls._get_entries_by_group(), key=lambda e: e.name):
+            if ep.name.endswith(cls._entry_point_suffix) and ep.value not in seen:
+                seen.add(ep.value)
                 yield ep
+
+    @staticmethod
+    def _resolve(ep: EntryPoint) -> EngineFactoryProtocolType:
+        """Load the entry point object; supports ``module:Factory(key=value, ...)`` call syntax."""
+        m = _CALL_VALUE_RE.match(ep.value)
+        if m is None:
+            return ep.load()
+        target = EntryPoint(ep.name, m["target"], ep.group).load()
+        kwargs: dict[str, Any] = {}
+        for arg in filter(None, (a.strip() for a in m["args"].split(","))):
+            key, sep, raw = arg.partition("=")
+            if not sep:
+                raise ValueError(f"Invalid argument '{arg}' in entry point {ep.value}; expected key=value")
+            try:
+                kwargs[key.strip()] = ast.literal_eval(raw.strip())
+            except (ValueError, SyntaxError):
+                kwargs[key.strip()] = raw.strip()  # bare identifier, e.g. method=RK23
+        return target(**kwargs)
 
     @classmethod
     def _load_from_entry(cls, ep: EntryPoint) -> EngineFactoryProtocolType | None:
         try:
-            factory: EngineFactoryProtocolType = ep.load()
+            factory: EngineFactoryProtocolType = cls._resolve(ep)
             if not isinstance(factory, EngineFactoryProtocol):
                 raise TypeError(f"Unsupported engine {ep.value} does not implement EngineFactoryProtocol")
-            logger.info(f"Loaded calculator from: {ep.value} (Class: {factory})")
+            logger.info(f"Loaded calculator from: {ep.value} (Factory: {factory})")
             return factory  # type: ignore
         except ImportError as e:
             logger.error(f"Error loading engine from {ep.value}: {e}")
@@ -70,16 +129,37 @@ class _EngineLoader:
             logger.exception(f"An unexpected error occurred loading {ep.value}: {e}")
         return None
 
+    @staticmethod
+    def _normalize_name(name: str) -> str:
+        """Normalize ``<engine>.<method>`` to ``<engine>+<method>`` (paths with ':' are left as is)."""
+        if ":" in name or "+" in name:
+            return name
+        engine, sep, method = name.partition(".")
+        return f"{engine}+{method}" if sep else name
+
+    @classmethod
+    def _is_legacy_name(cls, name: str) -> bool:
+        wanted = cls._normalize_name(name)
+        if any(wanted == cls.engine_id(ep) for ep in cls.iter_engines() if ep.group != cls._entry_point_group):
+            return False
+        return any(ep.name == name for ep in cls._get_entries_by_group())
+
     @classmethod
     @cache
     def _load_by_name(cls, name: str) -> EngineFactoryProtocolType | None:
+        wanted = cls._normalize_name(name)
         for ep in cls.iter_engines():
+            if wanted == cls.engine_id(ep) and (factory := cls._load_from_entry(ep)):
+                return factory
+        # Legacy names are matched against the full legacy group, including entries hidden by deduplication
+        for ep in sorted(cls._get_entries_by_group(), key=lambda e: e.name):
             if ep.name == name and (factory := cls._load_from_entry(ep)):
                 return factory
 
+        # Direct "<module>:<factory>" path
         ep = EntryPoint(name, name, cls._entry_point_group)
         if factory := cls._load_from_entry(ep):
-            logger.info(f"Loaded calculator from: {ep.value} (Class: {factory})")
+            logger.info(f"Loaded calculator from: {ep.value} (Factory: {factory})")
             return factory
         return None
 
@@ -91,8 +171,17 @@ class _EngineLoader:
             return entry_point  # type: ignore
         if isinstance(entry_point, str):
             if factory := cls._load_by_name(entry_point):
+                if cls._is_legacy_name(entry_point):
+                    warnings.warn(
+                        f"Engine entry point '{entry_point}' from the legacy '{cls._entry_point_group}' group "
+                        "is deprecated; use '<engine>+<method>' (e.g. 'python+rk4') or '<module>:<factory>' instead.",
+                        DeprecationWarning,
+                        stacklevel=3,  # caller of Calculator(...)
+                    )
                 return factory
-            raise ValueError(f"No 'engine' entry point found containing '{entry_point}'")
+            raise ValueError(
+                f"No engine found for '{entry_point}' (expected '<engine>+<method>', '<engine>.<method>' or '<module>:<factory>')"
+            )
         raise TypeError("Invalid entry_point type, expected 'str' or 'EngineFactoryProtocol'")
 
 

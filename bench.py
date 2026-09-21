@@ -3,7 +3,7 @@ import time
 from py_ballisticcalc import Angular, Calculator, Distance
 from tests.test_zeros import create_ukrop_338lm_shots
 
-en = "scipy_engine"
+en = "py_ballisticcalc:SciPyIntegrationEngine"
 
 ds = list(range(100, 3001, 100))
 zero, shot = create_ukrop_338lm_shots()

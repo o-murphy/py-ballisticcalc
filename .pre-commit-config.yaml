@@ -92,37 +92,37 @@ repos:
       #   pass_filenames: false
 
       # - id: uv-pytest-rk4
-      #   name: pytest rk4_engine
+      #   name: pytest python.rk4
       #   entry: uv
-      #   args: ["run", "pytest", "--engine", "rk4_engine"]
+      #   args: ["run", "pytest", "--engine", "python.rk4"]
       #   language: system
       #   pass_filenames: false
 
       # - id: uv-pytest-euler
       #   name: pytest euler_engine
       #   entry: uv
-      #   args: ["run", "pytest", "--engine", "euler_engine"]
+      #   args: ["run", "pytest", "--engine", "python.euler"]
       #   language: system
       #   pass_filenames: false
 
       # - id: uv-pytest-scipy
       #   name: pytest scipy_engine
       #   entry: uv
-      #   args: ["run", "pytest", "--engine", "scipy_engine"]
+      #   args: ["run", "pytest", "--engine", "scipy.rk4"]
       #   language: system
       #   pass_filenames: false
 
       # - id: uv-pytest-cythonized_rk4
-      #   name: pytest cythonized_rk4_engine
+      #   name: pytest cython.rk4
       #   entry: uv
-      #   args: ["run", "pytest", "--engine", "cythonized_rk4_engine"]
+      #   args: ["run", "pytest", "--engine", "cython.rk4"]
       #   language: system
       #   pass_filenames: false
 
       # - id: uv-pytest-cythonized_euler
       #   name: pytest cythonized_euler_engine
       #   entry: uv
-      #   args: ["run", "pytest", "--engine", "cythonized_euler_engine"]
+      #   args: ["run", "pytest", "--engine", "cython.euler"]
       #   language: system
       #   pass_filenames: false
 
