@@ -29,6 +29,7 @@ LGPL library for small arms ballistic calculations based on point-mass (3 DoF) p
 [![pytest-cpp-verlet-badge]](https://github.com/o-murphy/py-ballisticcalc/actions/workflows/pytest-cythonized-verlet-engine.yml)
 [![pytest-cpp-rkck-badge]](https://github.com/o-murphy/py-ballisticcalc/actions/workflows/pytest-cythonized-ck-engine.yml)
 [![pytest-cpp-dopri-badge]](https://github.com/o-murphy/py-ballisticcalc/actions/workflows/pytest-cythonized-dopri-engine.yml)
+[![pytest-cpp-tsitouras-badge]](https://github.com/o-murphy/py-ballisticcalc/actions/workflows/pytest-cythonized-tsitouras-engine.yml)
 
 [pytest-euler-badge]:
 https://img.shields.io/github/actions/workflow/status/o-murphy/py-ballisticcalc/pytest-euler-engine.yml?logo=python&label=Euler
@@ -50,6 +51,8 @@ https://img.shields.io/github/actions/workflow/status/o-murphy/py-ballisticcalc/
 https://img.shields.io/github/actions/workflow/status/o-murphy/py-ballisticcalc/pytest-cythonized-ck-engine.yml?logo=cplusplus&label=RKCK
 [pytest-cpp-dopri-badge]:
 https://img.shields.io/github/actions/workflow/status/o-murphy/py-ballisticcalc/pytest-cythonized-dopri-engine.yml?logo=cplusplus&label=DOPRI
+[pytest-cpp-tsitouras-badge]:
+https://img.shields.io/github/actions/workflow/status/o-murphy/py-ballisticcalc/pytest-cythonized-tsitouras-engine.yml?logo=cplusplus&label=Tsitouras
 
 ### Contents
 

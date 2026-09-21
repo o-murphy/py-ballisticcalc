@@ -7,7 +7,7 @@ Not meant to be used directly — import `TinyBclibcSingleIntegrationEngine` fro
 Both engines call `tiny_bclibc_integrate_stream`: tiny_bclibc does the range-step/APEX/MACH/ZERO
 filtering AND derived-field computation (density_ratio, drag, spin drift, Coriolis-adjusted
 range, slant_height, angles, energy, ogw) in C, and only calls back into Python at the handful
-of points actually requested -- not once per raw Cash-Karp step. Two gaps against
+of points actually requested -- not once per raw Tsitouras step. Two gaps against
 `BaseIntegrationEngine`'s Python engines are closed here in Python rather than in tiny_bclibc
 itself, to keep that library's C surface minimal (it targets bare-metal/MCU embedding, where
 code size is a real constraint and neither of these is needed by tiny_bclibc's own native
@@ -372,7 +372,7 @@ def _sort_rows(records: list[TrajectoryData]) -> list[TrajectoryData]:
     """Restore strict chronological order without merging same-instant rows.
 
     tiny_bclibc_integrate_stream emits rows in the order its internal checks run within one
-    accepted (Cash-Karp) interval -- all RANGE-step rows first, then APEX/MACH/ZERO for that
+    accepted (Tsitouras) interval -- all RANGE-step rows first, then APEX/MACH/ZERO for that
     same interval -- not strictly by interpolated time: a MACH/ZERO crossing interpolated to
     *before* an already-emitted RANGE row in the same wide interval can arrive after it in
     emission order. A stable sort by time restores global chronological order across the whole
@@ -601,7 +601,7 @@ class TinyBclibcIntegrationEngineBase(BaseIntegrationEngine):
     ) -> HitResult:
         """Create HitResult for the specified shot.
 
-        Runs tiny_bclibc's RK4 core AND its range-step/APEX/MACH/ZERO filtering (at this
+        Runs tiny_bclibc's Tsitouras 5(4) core AND its range-step/APEX/MACH/ZERO filtering (at this
         engine's precision) via tiny_bclibc_integrate_stream, then coalesces/finalizes the
         streamed rows in Python (see module docstring) to match
         `BaseIntegrationEngine`'s other engines' output exactly.
