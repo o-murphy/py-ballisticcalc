@@ -125,8 +125,14 @@ class TinyBclibcSingleIntegrationEngine(TinyBclibcIntegrationEngineBase):
     Additional single-precision-only failures since the Cash-Karp-\>Tsitouras switch (same
     root cause as the double-precision note below, just crossing tighter single-precision
     self-consistency tolerances that Cash-Karp's build happened to stay inside):
-    `test_computer.py::test_cant_zero_elevation`/`test_cant_zero_sight_height`, and
-    `test_mbc.py::test_mbc3`.
+    `test_computer.py::test_cant_zero_elevation`/`test_cant_zero_sight_height`/
+    `test_wind_lag_rule`/`test_multiple_wind`, and `test_mbc.py::test_mbc3`. The last two
+    (`test_wind_lag_rule`, `test_multiple_wind`) newly cross their default (`pytest.approx`
+    with no explicit tolerance override, ~1e-6 relative) self-consistency tolerance after
+    bclibc was bumped to pick up a fix aligning `tiny_bclibc`'s per-stage accumulation order
+    with the C++ engine's (see the double-precision note below) -- that realignment shifted
+    single precision's rounding at the float32 noise floor just enough to flip these two
+    already-marginal comparisons, not a new logic bug.
 
     Examples:
         >>> from py_ballisticcalc.engines.base_engine import BaseEngineConfigDict
@@ -155,13 +161,24 @@ class TinyBclibcDoubleIntegrationEngine(TinyBclibcIntegrationEngineBase):
 
     Known issue: `test_hitresult.py::test_flags` fails here (but not under any Cython engine)
     because `tiny_bclibc`'s hand-written C Tsitouras port and bclibc's C++
-    `BCLIBC_integrateTsitouras` are not bit-identical -- both individually correct, but the
-    FSAL shortcut sums per-stage contributions in a different order than the C++ core's
-    generic weighted-sum, and adaptive step-acceptance decisions are sensitive to that. For
-    this specific shot (wind + calculated powder sensitivity) the MACH crossing lands about
-    0.67 yd off out of 963 yd (0.07%), just outside that test's ±0.5 yd tolerance. Not a
-    missed event and not a coefficient error -- see bclibc's CHANGELOG ("Known issues") for
-    the full explanation.
+    `BCLIBC_integrateTsitouras` are not bit-identical. bclibc was bumped to pick up a fix that
+    aligns `tiny_bclibc`'s per-stage accumulation order with the C++ engine's generic
+    weighted-sum (accumulate the unscaled Sigma k_j*A(i,j) first, then scale by dt and add to
+    vr/pos exactly once, instead of folding dt into each term and adding it straight onto the
+    much larger position/velocity base) -- confirmed via bclibc's identity test to shrink
+    per-field diffs on a simple no-wind shot from ~1e-9 to ~1e-16-1e-13 (several fields now
+    bit-identical). This *specific* shot's divergence barely moved (963.6681688419956 yd before
+    the alignment fix, 963.668168842302 yd after -- a ~1e-9 yd shift, still ~0.67 yd/0.07% off,
+    still outside this test's ±0.5 yd tolerance), because its root cause isn't accumulated
+    rounding at all: somewhere across this shot's ~100 adaptive steps one step's
+    accept/reject decision (`error_norm <= 1.0`) lands on opposite sides of that threshold
+    between the two engines, and once a single step's outcome diverges, every subsequent step
+    size and position follows a completely different (still individually correct) path --
+    a discrete branching sensitivity no amount of matching the *continuous* arithmetic order
+    can close, short of making every intermediate operation (including drag/atmosphere/PCHIP
+    curve evaluation and libm transcendental calls) bit-identical between the hand-written C
+    port and the generic C++ template core. Not a missed event and not a coefficient error --
+    see bclibc's CHANGELOG ("Known issues") for the full explanation.
 
     Examples:
         >>> from py_ballisticcalc.engines.base_engine import BaseEngineConfigDict
