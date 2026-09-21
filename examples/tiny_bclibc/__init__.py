@@ -27,9 +27,7 @@ core itself — not single-precision accumulation error. A failure that appears 
 single-precision engine is (most likely) genuinely a float32-vs-float64 precision effect (see
 `TinyBclibcSingleIntegrationEngine`'s docstring for the verified limits; the exact count varies
 as the shared test suite evolves). The double-precision engine passes its applicable full suite
-with one known exception (`test_hitresult.py::test_flags` -- see
-`TinyBclibcDoubleIntegrationEngine`'s docstring), a cross-implementation FSAL rounding
-difference against bclibc's C++ Tsitouras engine, not a logic bug.
+with no known exceptions.
 
 Architecture:
     Both the RK4 integration itself and its range-step/APEX/MACH/ZERO filtering and
@@ -159,26 +157,17 @@ class TinyBclibcDoubleIntegrationEngine(TinyBclibcIntegrationEngineBase):
     Requires the `PYBALLISTICCALC_TINY_BCLIBC_DP_LIB` environment variable to point at the
     compiled `libtiny_bclibc.so` (`.dylib`/`.dll`) — see `CMakeLists.txt` in this directory.
 
-    Known issue: `test_hitresult.py::test_flags` fails here (but not under any Cython engine)
-    because `tiny_bclibc`'s hand-written C Tsitouras port and bclibc's C++
-    `BCLIBC_integrateTsitouras` are not bit-identical. bclibc was bumped to pick up a fix that
-    aligns `tiny_bclibc`'s per-stage accumulation order with the C++ engine's generic
-    weighted-sum (accumulate the unscaled Sigma k_j*A(i,j) first, then scale by dt and add to
-    vr/pos exactly once, instead of folding dt into each term and adding it straight onto the
-    much larger position/velocity base) -- confirmed via bclibc's identity test to shrink
-    per-field diffs on a simple no-wind shot from ~1e-9 to ~1e-16-1e-13 (several fields now
-    bit-identical). This *specific* shot's divergence barely moved (963.6681688419956 yd before
-    the alignment fix, 963.668168842302 yd after -- a ~1e-9 yd shift, still ~0.67 yd/0.07% off,
-    still outside this test's ±0.5 yd tolerance), because its root cause isn't accumulated
-    rounding at all: somewhere across this shot's ~100 adaptive steps one step's
-    accept/reject decision (`error_norm <= 1.0`) lands on opposite sides of that threshold
-    between the two engines, and once a single step's outcome diverges, every subsequent step
-    size and position follows a completely different (still individually correct) path --
-    a discrete branching sensitivity no amount of matching the *continuous* arithmetic order
-    can close, short of making every intermediate operation (including drag/atmosphere/PCHIP
-    curve evaluation and libm transcendental calls) bit-identical between the hand-written C
-    port and the generic C++ template core. Not a missed event and not a coefficient error --
-    see bclibc's CHANGELOG ("Known issues") for the full explanation.
+    `test_hitresult.py::test_flags` used to fail here (but not under any Cython engine): a
+    step-by-step trajectory diff against the C++ engine showed every regularly-sampled point on
+    both sides of that shot's MACH crossing agreeing to ~1e-14, but the crossing itself landing
+    0.67 yd off out of 963 yd (0.07%) -- isolated entirely to that one interpolated point. Root
+    cause: `tiny_bclibc__hermite_at_time` reconstructed its interval-interior `.mach` (speed /
+    local speed of sound) by linearly interpolating the *ratio* between accepted-step endpoints,
+    rather than reconstructing it from the (exactly Hermite-derivable) velocity divided by a
+    linearly-interpolated speed of sound in fps like the C++ engine does -- throwing away the
+    ratio's curvature, worst right at a MACH crossing's transonic drag-curve bump. Fixed in
+    bclibc (bumped here); `test_flags` now passes under this engine too. See bclibc's CHANGELOG
+    for the full writeup.
 
     Examples:
         >>> from py_ballisticcalc.engines.base_engine import BaseEngineConfigDict

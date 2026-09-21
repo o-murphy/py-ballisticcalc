@@ -27,11 +27,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   [bclibc's CHANGELOG](https://github.com/ballistics-lab/bclibc/blob/main/CHANGELOG.md) for
   details. Further bumped to pick up a fix aligning `tiny_bclibc`'s per-stage Tsitouras
   accumulation order with the C++ engine's (identity-test diffs on a simple shot now at the
-  double-precision noise floor, down from ~1e-9), and its "Known issues" writeup on what that
-  fix did and did not close -- `TinyBclibcDoubleIntegrationEngine`'s and
-  `TinyBclibcSingleIntegrationEngine`'s docstrings here have been updated to match (two new
-  single-precision-only marginal test failures, `test_wind_lag_rule`/`test_multiple_wind`,
-  same precision-floor class as the rest of that list).
+  double-precision noise floor, down from ~1e-9) -- `TinyBclibcSingleIntegrationEngine`'s
+  docstring here has been updated to match (two new single-precision-only marginal test
+  failures, `test_wind_lag_rule`/`test_multiple_wind`, same precision-floor class as the rest
+  of that list). Bumped once more to pick up a genuine fix (not just closer rounding) for
+  `test_hitresult.py::test_flags`, previously `TinyBclibcDoubleIntegrationEngine`'s one known
+  failure: `tiny_bclibc`'s MACH-crossing interpolation linearly interpolated the mach *ratio*
+  itself instead of reconstructing it from Hermite-derived velocity and a linearly-interpolated
+  speed of sound like the C++ engine does, costing real accuracy right at MACH crossings
+  (worst in the transonic region). `test_flags` now passes under
+  `TinyBclibcDoubleIntegrationEngine`; its docstring's known-issue note has been removed.
 
 ## [3.0.0-beta.1] - 2026-09-17
 [:simple-github: Diff since v2.3.1][3.0.0-beta.1]
