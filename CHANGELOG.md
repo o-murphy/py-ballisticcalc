@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.0.0-beta.2] - 2026-09-21
+
 ### Added
 - `cythonized_tsitouras_engine` (`py_ballisticcalc_exts.CythonizedTsitourasIntegrationEngine`):
   a compiled Tsitouras 5(4) ("Tsit5") adaptive engine, wrapping
@@ -918,6 +920,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Issue #141
 - Trajectories that bend backwards
 
+[Unreleased]: https://github.com/o-murphy/py-ballisticcalc/compare/v3.0.0-beta.2...HEAD
+[3.0.0-beta.2]: https://github.com/o-murphy/py-ballisticcalc/compare/v3.0.0-beta.2...HEAD
 [3.0.0-beta.1]: https://github.com/o-murphy/py-ballisticcalc/compare/v2.3.1...HEAD
 [2.3.1]: https://github.com/o-murphy/py-ballisticcalc/releases/tag/v2.3.1
 [#339]: https://github.com/o-murphy/py-ballisticcalc/pull/339
