@@ -1,0 +1,269 @@
+<!doctype html>
+<html>
+<head>
+  <!--
+    Interactive py-ballisticcalc REPL, running entirely client-side via
+    Pyodide (https://pyodide.org — CPython compiled to WebAssembly).
+
+    The console below is adapted from Pyodide's own console.html template:
+    https://github.com/pyodide/pyodide/blob/main/src/templates/console.html
+    (jQuery Terminal + pyodide.console.PyodideConsole), with the
+    packages/demo install script fed in on load instead of an empty prompt.
+  -->
+  <meta charset="UTF-8" />
+  <title>py-ballisticcalc — Pyodide REPL</title>
+  <link
+    href="https://cdn.jsdelivr.net/npm/jquery.terminal@2.35.2/css/jquery.terminal.min.css"
+    rel="stylesheet"
+  />
+  <style>
+    .terminal {
+      --size: 1.2;
+      --color: rgba(255, 255, 255, 0.8);
+    }
+    .noblink {
+      --animation: terminal-none;
+    }
+    body {
+      background-color: black;
+    }
+    #loading {
+      display: inline-block;
+      width: 50px;
+      height: 50px;
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      border: 3px solid rgba(172, 237, 255, 0.5);
+      border-radius: 50%;
+      border-top-color: #fff;
+      animation: spin 1s ease-in-out infinite;
+    }
+    @keyframes spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+  </style>
+</head>
+<body>
+  <div id="loading"></div>
+  <!-- moved out of <head>: plain blocking <script src> tags there stall HTML
+       parsing (and the spinner painting) until all four have downloaded.
+       Down here, the browser paints body + spinner first, then loads these
+       in the background while the user already sees feedback. -->
+  <script src="https://cdn.jsdelivr.net/npm/jquery@3.7.1"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jquery.terminal@2.35.2/js/jquery.terminal.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jquery.terminal@2.35.2/js/unix_formatting.min.js"></script>
+  <!-- pinned to the Pyodide build the exts wasm32 wheel was compiled against -->
+  <script src="https://cdn.jsdelivr.net/pyodide/v314.0.4/full/pyodide.js"></script>
+  <script>
+    "use strict";
+
+    // Executed inside the live console (via term.exec) so the install +
+    // setup steps show up as a normal REPL transcript, not a black box.
+    // Unpinned + pre=True always resolves to the latest release, including
+    // pre-releases (needed while the wasm32 wheel is only published as one:
+    // 2.3.1b2). Pin both to a matching `==x.y.z` instead if you need a
+    // specific, reproducible version rather than "whatever's newest now".
+    const PRELOAD = `
+# 1) install packages from PyPI (pre=True: also allow pre-releases)
+import micropip
+await micropip.install(["py_ballisticcalc", "py_ballisticcalc.exts"], pre=True)
+import importlib.metadata
+print("py_ballisticcalc", importlib.metadata.version("py_ballisticcalc"))
+
+# 2) py_ballisticcalc_exts registers the cythonized_* engines via entry points
+import py_ballisticcalc_exts
+from py_ballisticcalc import *
+
+# 3) .338LM, 300gr SMK, G7 BC=0.381 — zero at 100 m, fire out to 1000 m
+# NOTE: no blank lines inside this body — a blank line dedents/ends the
+# block when fed to the interactive console one line at a time, same as
+# in a real REPL.
+def _demo():
+    PreferredUnits.velocity = Velocity.MPS
+    PreferredUnits.distance = Distance.Meter
+    PreferredUnits.drop = Distance.Centimeter
+    weapon = Weapon(sight_height=Unit.Centimeter(9), twist=10)
+    dm = DragModel(0.381, TableG7, 300, 0.338, Distance.Inch(1.7))
+    ammo = Ammo(dm=dm, mv=Unit.MPS(815))
+    zero = Shot(weapon=weapon, ammo=ammo)
+    calc = Calculator(engine="cythonized_rk4_engine")  # compiled RK4 engine from exts
+    calc.set_weapon_zero(zero, Distance.Meter(100))
+    shot = Shot(weapon=weapon, ammo=ammo)
+    result = calc.fire(shot, Distance.Meter(1000), extra_data=False)
+    p = result.trajectory[-1]
+    print(f"t={p.time:.2f}s  distance={p.distance}  velocity={p.velocity}  "
+          f"drop={p.height}  windage={p.windage}  energy={p.energy}")
+    return calc, shot, result
+
+# 4) run it — calc/shot/result stay available in the REPL afterwards
+calc, shot, result = _demo()
+`.trim();
+
+    function sleep(ms) {
+      return new Promise((resolve) => setTimeout(resolve, ms));
+    }
+
+    async function main() {
+      let term;
+      const pyodide = await loadPyodide();
+
+      const { repr_shorten, BANNER, PyodideConsole } =
+        pyodide.pyimport("pyodide.console");
+      const banner =
+        `py-ballisticcalc — Pyodide ${pyodide.version} REPL\n` +
+        `Installing packages and cooking calc/shot/result...\n\n` +
+        BANNER;
+      const pyconsole = PyodideConsole(pyodide.globals);
+
+      const namespace = pyodide.globals.get("dict")();
+      const await_fut = pyodide.runPython(
+        `
+        import builtins
+        from pyodide.ffi import to_js
+
+        async def await_fut(fut):
+            res = await fut
+            if res is not None:
+                builtins._ = res
+            return to_js([res], depth=1)
+
+        await_fut
+        `,
+        { globals: namespace },
+      );
+      namespace.destroy();
+
+      // unix_formatting.min.js only exposes the ansi->terminal-markup
+      // converter; it does not hook into echo() automatically, so raw
+      // ANSI (e.g. py_ballisticcalc's colored log lines) must be run
+      // through it explicitly before display.
+      const from_ansi = (s) =>
+        $.terminal && $.terminal.from_ansi ? $.terminal.from_ansi(s) : s;
+
+      const echo = (msg, ...opts) =>
+        term.echo(
+          msg.replaceAll("]]", "&rsqb;&rsqb;").replaceAll("[[", "&lsqb;&lsqb;"),
+          ...opts,
+        );
+
+      const ps1 = ">>> ";
+      const ps2 = "... ";
+
+      async function lock() {
+        let resolve;
+        const ready = term.ready;
+        term.ready = new Promise((res) => (resolve = res));
+        await ready;
+        return resolve;
+      }
+
+      async function interpreter(command) {
+        const unlock = await lock();
+        term.pause();
+        for (const c of command.split("\n")) {
+          const escaped = c.replaceAll(/ /g, " ");
+          const fut = pyconsole.push(escaped);
+          term.set_prompt(fut.syntax_check === "incomplete" ? ps2 : ps1);
+          switch (fut.syntax_check) {
+            case "syntax-error":
+              term.error(fut.formatted_error.trimEnd());
+              continue;
+            case "incomplete":
+              continue;
+            case "complete":
+              break;
+            default:
+              throw new Error(`Unexpected type ${fut.syntax_check}`);
+          }
+          const wrapped = await_fut(fut);
+          try {
+            const [value] = await wrapped;
+            if (value !== undefined) {
+              echo(
+                repr_shorten.callKwargs(value, {
+                  separator: "\n<long output truncated>\n",
+                }),
+              );
+            }
+            if (value instanceof pyodide.ffi.PyProxy) {
+              value.destroy();
+            }
+          } catch (e) {
+            if (e.constructor.name === "PythonError") {
+              const message = fut.formatted_error || e.message;
+              term.error(message.trimEnd());
+            } else {
+              throw e;
+            }
+          } finally {
+            fut.destroy();
+            wrapped.destroy();
+          }
+        }
+        term.resume();
+        await sleep(10);
+        unlock();
+      }
+
+      term = $("body").terminal(interpreter, {
+        greetings: banner,
+        prompt: ps1,
+        completionEscape: false,
+        completion: function (command, callback) {
+          callback(pyconsole.complete(command).toJs()[0]);
+        },
+        keymap: {
+          "CTRL+C": async function () {
+            pyconsole.buffer.clear();
+            term.enter();
+            echo("KeyboardInterrupt");
+            term.set_command("");
+            term.set_prompt(ps1);
+          },
+          TAB: (event, original) => {
+            const command = term.before_cursor();
+            if (command.trim() === "") {
+              term.insert("\t");
+              return false;
+            }
+            return original(event);
+          },
+        },
+      });
+      // raw stdout/stderr (stderr is where py_ballisticcalc's colored
+      // logging.StreamHandler output shows up) — convert ANSI first, then
+      // echo directly. Deliberately NOT term.error(): it hardcodes
+      // {formatters: false} and runs escape_brackets() on its argument
+      // (so raw tracebacks with literal "[" / "]" display safely), which
+      // mangles from_ansi's own [[;;]] markup right back into plain text.
+      // The log lines already carry their own level color from
+      // py_ballisticcalc's ColoredFormatter, so plain echo() is enough.
+      pyconsole.stdout_callback = (s) =>
+        term.echo(from_ansi(s), { newline: false });
+      pyconsole.stderr_callback = (s) =>
+        term.echo(from_ansi(s), { newline: false });
+      term.ready = Promise.resolve();
+
+      document.getElementById("loading").remove();
+
+      // Feed the install + setup script into the live console, exactly as
+      // if it had been pasted at the prompt — this is what puts the
+      // micropip install trace and the trajectory result in the transcript.
+      await term.exec(PRELOAD);
+
+      // py_ballisticcalc is unpinned (see PRELOAD comment), so the resolved
+      // version is only known post-install — read it back from the actually
+      // installed package rather than hardcoding it anywhere.
+      const version = pyodide.runPython(
+        "import importlib.metadata; importlib.metadata.version('py_ballisticcalc')",
+      );
+      document.title = `py-ballisticcalc ${version} — Pyodide REPL`;
+    }
+
+    main();
+  </script>
+</body>
+</html>
