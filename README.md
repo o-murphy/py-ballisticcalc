@@ -29,6 +29,7 @@ LGPL library for small arms ballistic calculations based on point-mass (3 DoF) p
 [![pytest-cpp-verlet-badge]](https://github.com/o-murphy/py-ballisticcalc/actions/workflows/pytest-cythonized-verlet-engine.yml)
 [![pytest-cpp-rkck-badge]](https://github.com/o-murphy/py-ballisticcalc/actions/workflows/pytest-cythonized-ck-engine.yml)
 [![pytest-cpp-dopri-badge]](https://github.com/o-murphy/py-ballisticcalc/actions/workflows/pytest-cythonized-dopri-engine.yml)
+[![pytest-cpp-tsitouras-badge]](https://github.com/o-murphy/py-ballisticcalc/actions/workflows/pytest-cythonized-tsitouras-engine.yml)
 
 [pytest-euler-badge]:
 https://img.shields.io/github/actions/workflow/status/o-murphy/py-ballisticcalc/pytest-euler-engine.yml?logo=python&label=Euler
@@ -50,6 +51,8 @@ https://img.shields.io/github/actions/workflow/status/o-murphy/py-ballisticcalc/
 https://img.shields.io/github/actions/workflow/status/o-murphy/py-ballisticcalc/pytest-cythonized-ck-engine.yml?logo=cplusplus&label=RKCK
 [pytest-cpp-dopri-badge]:
 https://img.shields.io/github/actions/workflow/status/o-murphy/py-ballisticcalc/pytest-cythonized-dopri-engine.yml?logo=cplusplus&label=DOPRI
+[pytest-cpp-tsitouras-badge]:
+https://img.shields.io/github/actions/workflow/status/o-murphy/py-ballisticcalc/pytest-cythonized-tsitouras-engine.yml?logo=cplusplus&label=Tsitouras
 
 ### Contents
 
@@ -148,9 +151,13 @@ Choose between different calculation engines, or build your own.  Included engin
 | [`cythonized_verlet_engine`][py_ballisticcalc_exts.CythonizedVelocityVerletIntegrationEngine]          | :material-arrow-up:   130x / 99x (faster)     | [`[exts]`](#cython-engines) | Compiled Verlet 2nd-order symplectic              |
 | [`cythonized_rkck_engine`][py_ballisticcalc_exts.CythonizedCashKarpIntegrationEngine][^adaptive]       | :material-arrow-up: ~3370x / ~335x (faster)   | [`[exts]`](#cython-engines) | Compiled Cash-Karp adaptive RK45                  |
 | [`cythonized_dopri_engine`][py_ballisticcalc_exts.CythonizedDormandPrinceIntegrationEngine][^adaptive] | :material-arrow-up: ~3370x / ~335x (faster)   | [`[exts]`](#cython-engines) | Dormand--Prince 5(4), SciPy RK45-style controller |
+| [`cythonized_tsitouras_engine`][py_ballisticcalc_exts.CythonizedTsitourasIntegrationEngine][^adaptive] | :material-arrow-up: ~3370x / ~335x (faster)   | [`[exts]`](#cython-engines) | Tsitouras 5(4), SciPy RK45-style controller       |
 | [`scipy_engine`][py_ballisticcalc.engines.SciPyIntegrationEngine]                                      | :material-arrow-up:  4.6x / 8.3x (faster)     |          `[scipy]`          | Advanced numerical methods                        |
 
-[^adaptive]: Adaptive RK45; actual speed depends on the configured tolerances.
+[^adaptive]: Adaptive RK45; actual speed depends on the configured tolerances. Cash-Karp,
+Dormand-Prince, and Tsitouras measure in the same performance class as each other on typical
+trajectories -- see [benchmarks](docs/concepts/benchmarks.md#dormand-prince-and-tsitouras-engines)
+for the measurement, not a ranking.
 
 ## About project
 

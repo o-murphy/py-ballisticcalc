@@ -7,6 +7,39 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.0.0-beta.2] - 2026-09-21
+
+### Added
+- `cythonized_tsitouras_engine` (`py_ballisticcalc_exts.CythonizedTsitourasIntegrationEngine`):
+  a compiled Tsitouras 5(4) ("Tsit5") adaptive engine, wrapping
+  [bclibc](https://github.com/ballistics-lab/bclibc)'s new `BCLIBC_integrateTsitouras`.
+  Structurally identical to `cythonized_dopri_engine` (same 7-stage FSAL shape, same SciPy
+  RK45-style component scaling and controller); coefficients verified against
+  `ARKODE_TSITOURAS_7_4_5` in SUNDIALS/ARKODE. Measured against `cythonized_rkck_engine` and
+  `cythonized_dopri_engine` across a sweep of shot profiles: accepted+rejected step counts come
+  out within 1-2 steps of each other for smooth, well-conditioned trajectories at
+  `rtol=atol=1e-6` — no consistent win, despite Tsitouras' smaller leading truncation-error
+  coefficient.
+
+### Changed
+- Bumped the `bclibc` submodule to pick up its own new `BCLIBC_integrateTsitouras`, an FFI
+  unknown-method-fallback fix (unrecognized/out-of-range method now falls back to RK4, not
+  Euler), and `tiny_bclibc`'s internal switch from Cash-Karp to Tsitouras as its baked-in
+  adaptive core (`examples/tiny_bclibc`'s two engines pick this up automatically). See
+  [bclibc's CHANGELOG](https://github.com/ballistics-lab/bclibc/blob/main/CHANGELOG.md) for
+  details. Further bumped to pick up a fix aligning `tiny_bclibc`'s per-stage Tsitouras
+  accumulation order with the C++ engine's (identity-test diffs on a simple shot now at the
+  double-precision noise floor, down from ~1e-9) -- `TinyBclibcSingleIntegrationEngine`'s
+  docstring here has been updated to match (two new single-precision-only marginal test
+  failures, `test_wind_lag_rule`/`test_multiple_wind`, same precision-floor class as the rest
+  of that list). Bumped once more to pick up a genuine fix (not just closer rounding) for
+  `test_hitresult.py::test_flags`, previously `TinyBclibcDoubleIntegrationEngine`'s one known
+  failure: `tiny_bclibc`'s MACH-crossing interpolation linearly interpolated the mach *ratio*
+  itself instead of reconstructing it from Hermite-derived velocity and a linearly-interpolated
+  speed of sound like the C++ engine does, costing real accuracy right at MACH crossings
+  (worst in the transonic region). `test_flags` now passes under
+  `TinyBclibcDoubleIntegrationEngine`; its docstring's known-issue note has been removed.
+
 ## [3.0.0-beta.1] - 2026-09-17
 [:simple-github: Diff since v2.3.1][3.0.0-beta.1]
 
@@ -887,6 +920,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Issue #141
 - Trajectories that bend backwards
 
+[Unreleased]: https://github.com/o-murphy/py-ballisticcalc/compare/v3.0.0-beta.2...HEAD
+[3.0.0-beta.2]: https://github.com/o-murphy/py-ballisticcalc/compare/v3.0.0-beta.2...HEAD
 [3.0.0-beta.1]: https://github.com/o-murphy/py-ballisticcalc/compare/v2.3.1...HEAD
 [2.3.1]: https://github.com/o-murphy/py-ballisticcalc/releases/tag/v2.3.1
 [#339]: https://github.com/o-murphy/py-ballisticcalc/pull/339
