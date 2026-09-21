@@ -51,6 +51,13 @@ def fmt_x(value: float) -> str:
     return f"{value:.3g}" if value < 1000 else f"{value:.0f}"
 
 
+def short_label(engine: str) -> str:
+    """Compact chart label: `module:FooIntegrationEngine` -> `Foo`; `<engine>.<method>` names are kept as is."""
+    if ":" in engine:
+        return engine.split(":", 1)[1].removesuffix("IntegrationEngine")
+    return engine
+
+
 def draw_chart(
     values: dict[tuple[str, str], float],
     engines: list[str],
@@ -90,7 +97,7 @@ def draw_chart(
     ax.set_yscale("log")
     ax.set_ylabel(ylabel, color=TEXT_COLOR, fontsize=FONT_SIZE)
     ax.set_xticks(list(xs))
-    ax.set_xticklabels(engines, rotation=30, ha="right", color=TEXT_COLOR, fontsize=FONT_SIZE)
+    ax.set_xticklabels([short_label(e) for e in engines], rotation=30, ha="right", color=TEXT_COLOR, fontsize=FONT_SIZE)
     ax.tick_params(axis="y", colors=TEXT_COLOR, labelsize=FONT_SIZE)
     ax.set_title(title, color=TEXT_COLOR, fontsize=FONT_SIZE + 3)
     ax.grid(axis="y", which="major", color=TEXT_COLOR, alpha=0.25, linewidth=0.6)

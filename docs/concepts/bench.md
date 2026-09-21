@@ -13,7 +13,7 @@ The vertical scales are logarithmic.
 
 ![Speedup vs python.rk4](bench_speedup.svg)
 
-- **Version:** `3.0.0b3.dev6+gb93f81ed6` (branch `scipy-performance-bench`, commit `b93f81e`)
+- **Version:** `3.0.0b3.dev7+ga8145b128.d20260921` (branch `new-entry-points`, commit `ef170c8`)
 - Where an engine was run several times, the run with the most repeats is used.
 - Only engines present in the benchmark data are listed.
 
@@ -32,9 +32,10 @@ The vertical scales are logarithmic.
 | `scipy.rk45` | 5.678 | 9.77x | 44.611 | 5.41x | 500 |
 | `cython.euler` | 1.267 | 43.8x | 4.455 | 54.2x | 500 |
 | `cython.rk4` | 0.429 | 129x | 1.179 | 205x | 1000 |
+| `tiny_bclibc:TinyBclibcDoubleIntegrationEngine` | 0.245 | 226x | 0.233 | 1036x | 500 |
+| `cython.tsitouras` | 0.170 | 326x | 0.094 | 2567x | 2000 |
 | `cython.dopri` | 0.170 | 326x | 0.094 | 2567x | 2000 |
 | `cython.rkck` | 0.170 | 326x | 0.094 | 2567x | 2000 |
-| `cython.tsitouras` | 0.170 | 326x | 0.094 | 2567x | 2000 |
 
 !!! note
     Adaptive engines (`cython.rkck`, `cython.dopri`, `cython.tsitouras`) take far fewer steps than
