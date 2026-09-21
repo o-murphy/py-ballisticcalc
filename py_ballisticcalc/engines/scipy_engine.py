@@ -129,6 +129,10 @@ __all__ = (
 #     return f"{category.__name__}: {message}\n"
 # warnings.formatwarning = custom_warning_format
 
+# Only issue each distinct RuntimeWarning once for the process, rather than re-applying
+# this global filter on every _integrate() call (it previously ran once per trajectory).
+warnings.simplefilter("once")
+
 
 # type of event callback
 if TYPE_CHECKING:
@@ -420,6 +424,45 @@ class ScipyWindSock:
     def __len__(self) -> int:
         """Return number of wind zones."""
         return len(self.winds) if self.winds else 0
+
+
+def _find_t_for_x(
+    dense_output: Callable[[float], Any], t_lo: float, t_hi: float, x_target: float
+) -> float | None:
+    """Find t in [t_lo, t_hi] where dense_output(t)[0] == x_target.
+
+    x(t) is known to be bracketed (x(t_lo) <= x_target <= x(t_hi) or vice versa) and, unlike a
+    generic root, we already have its exact derivative for free: dx/dt = vx = state[3]. Seeding
+    Newton's method with that derivative converges quadratically, needing only ~2-4 dense-output
+    evaluations for the smooth, locally-monotonic x(t) produced by ballistic trajectories -- far
+    fewer than a derivative-free bracketing method like brentq (which treats x(t) as a black box
+    and needs ~7-10). Newton steps are safeguarded to stay within the shrinking bracket, and a
+    brentq fallback guarantees convergence even in pathological cases (e.g. vx~0 near the apex).
+
+    Returns:
+        The root t, or None if not found.
+    """
+    lo, hi = t_lo, t_hi
+    f_lo = dense_output(lo)[0] - x_target
+    t = hi
+    for _ in range(8):
+        state = dense_output(t)
+        f = state[0] - x_target
+        if abs(f) < 1e-9:  # feet; well beyond any practical accuracy need
+            return t
+        if (f > 0) == (f_lo > 0):
+            lo, f_lo = t, f
+        else:
+            hi = t
+        vx = state[3]
+        t_next = t - f / vx if abs(vx) > 1e-6 else 0.5 * (lo + hi)
+        if not lo < t_next < hi:
+            t_next = 0.5 * (lo + hi)
+        if abs(t_next - t) < 1e-12:
+            return t_next
+        t = t_next
+    res = root_scalar(lambda tt: dense_output(tt)[0] - x_target, bracket=(t_lo, t_hi), method="brentq")
+    return res.root if res.converged else None
 
 
 INTEGRATION_METHOD = Literal["RK23", "RK45", "DOP853", "Radau", "BDF", "LSODA"]
@@ -921,13 +964,13 @@ class SciPyIntegrationEngine(BaseIntegrationEngine):
         @scipy_event(terminal=True, direction=-1)
         def event_max_drop(t: float, s: Any) -> np.floating:  # Stop when y crosses down through max_drop
             if s[4] > 0:  # Don't apply condition while v.y>0
-                return np.float64(1.0)
+                return 1.0  # type: ignore[return-value]
             return s[1] - max_drop + 1e-9  # +epsilon so that we actually cross
 
         @scipy_event(terminal=True)
         def event_min_velocity(t: float, s: Any) -> np.floating:  # Stop when velocity < _cMinimumVelocity
-            v = np.linalg.norm(s[3:6])
-            return v - _cMinimumVelocity
+            vx, vy, vz = s[3], s[4], s[5]
+            return math.sqrt(vx * vx + vy * vy + vz * vz) - _cMinimumVelocity  # type: ignore[return-value]
 
         # TODO: If _cMinimumVelocity<=0 then: either don't add this event, or always return 0.
         traj_events: list[SciPyEvent] = [event_max_range, event_max_drop, event_min_velocity]
@@ -1015,7 +1058,6 @@ class SciPyIntegrationEngine(BaseIntegrationEngine):
                 # endregion Basic approach to interpolate for desired x values
 
                 # region Root-finding approach to interpolate for desired x values:
-                warnings.simplefilter("once")  # Only issue one warning
                 states_at_x: list[np.ndarray] = []
                 t_at_x: list[float] = []
                 for x_target in desired_xs:
@@ -1028,16 +1070,15 @@ class SciPyIntegrationEngine(BaseIntegrationEngine):
                     if idx == 0:
                         t_root = t_vals[0]
                     else:
-                        # Use root_scalar to find t where x(t) == x_target
-                        def x_minus_target(t, x_target=x_target):  # Function for root finding: x(t) - x_target
-                            return sol.sol(t)[0] - x_target  # type: ignore
-
+                        # Newton's method seeded with the ODE's own dx/dt=vx converges quadratically,
+                        # needing far fewer dense-output evaluations than derivative-free brentq;
+                        # falls back to brentq only if Newton fails to converge (e.g. vx~0 near apex).
                         t_lo, t_hi = t_vals[idx - 1], t_vals[idx]
-                        res = root_scalar(x_minus_target, bracket=(t_lo, t_hi), method="brentq")
-                        if not res.converged:
+                        found_t_root = _find_t_for_x(sol.sol, t_lo, t_hi, x_target)
+                        if found_t_root is None:
                             logger.warning(f"Could not find root for requested distance {x_target}")
                             continue
-                        t_root = res.root
+                        t_root = found_t_root
                     state = sol.sol(t_root)
                     t_at_x.append(t_root)
                     states_at_x.append(state)

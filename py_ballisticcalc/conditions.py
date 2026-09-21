@@ -59,6 +59,11 @@ from py_ballisticcalc.vector import ZERO_VECTOR, Vector
 
 __all__ = ("Atmo", "Vacuum", "Wind")
 
+# Computed once via the unit system (rather than on every altitude lookup) so that
+# Atmo.get_density_and_mach_for_altitude() can convert m/s -> fps with a plain
+# multiply instead of constructing and converting a GenericDimension each call.
+_MPS_TO_FPS: float = Velocity.MPS(1.0) >> Velocity.FPS
+
 
 class Atmo:  # pylint: disable=too-many-instance-attributes
     """Atmospheric conditions and density calculations.
@@ -272,7 +277,7 @@ class Atmo:  # pylint: disable=too-many-instance-attributes
             )
 
         t_k = self.temperature_at_altitude(altitude) + cDegreesCtoK
-        mach = Velocity.MPS(Atmo.machK(t_k)) >> Velocity.FPS
+        mach = Atmo.machK(t_k) * _MPS_TO_FPS
         p = self.pressure_at_altitude(altitude)
         density_delta = ((self._t0 + cDegreesCtoK) * p) / (self._p0 * t_k)
         density_ratio = self._density_ratio * density_delta
