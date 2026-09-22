@@ -1268,7 +1268,7 @@ class Temperature(GenericDimension):
         return cls(value_in_units, to_units)
 
     # Convert a +1 delta in the object's unit to raw (Fahrenheit) delta
-    def _units_to_raw_delta(self) -> float:  # type: ignore[override]
+    def _units_to_raw_delta(self) -> float:
         """Map a +1 delta in current temperature unit to a Fahrenheit raw delta.
 
         Returns:
@@ -1280,27 +1280,27 @@ class Temperature(GenericDimension):
             return 9.0 / 5.0
         return 1.0
 
-    def __mul__(self, other: object):  # type: ignore[override]
+    def __mul__(self, other: object):
         """Disallow multiplication for Temperature."""
         raise TypeError("Temperature does not support multiplication")
 
-    def __rmul__(self, other: object):  # type: ignore[override]
+    def __rmul__(self, other: object):
         """Disallow multiplication for Temperature."""
         raise TypeError("Temperature does not support multiplication")
 
-    def __truediv__(self, other: object):  # type: ignore[override]
+    def __truediv__(self, other: object):
         """Disallow division for Temperature."""
         raise TypeError("Temperature does not support division")
 
-    def __rtruediv__(self, other: object):  # type: ignore[override]
+    def __rtruediv__(self, other: object):
         """Disallow division for Temperature."""
         raise TypeError("Temperature does not support division")
 
-    def __imul__(self, other: object):  # type: ignore[override]
+    def __imul__(self, other: object):
         """Disallow in-place multiplication for Temperature."""
         raise TypeError("Temperature does not support multiplication")
 
-    def __itruediv__(self, other: object):  # type: ignore[override]
+    def __itruediv__(self, other: object):
         """Disallow in-place division for Temperature."""
         raise TypeError("Temperature does not support division")
 
@@ -1315,7 +1315,7 @@ class Temperature(GenericDimension):
             return self.__class__.new_from_raw(raw, self.units)
         return NotImplemented
 
-    def __radd__(self, other: Number):  # type: ignore[override]
+    def __radd__(self, other: Number):
         """Right-hand numeric addition; clamp at absolute zero."""
         return self.__add__(other)
 
@@ -1327,7 +1327,7 @@ class Temperature(GenericDimension):
             return self.__class__.new_from_raw(raw, self.units)
         return NotImplemented
 
-    def __rsub__(self, other: Number):  # type: ignore[override]
+    def __rsub__(self, other: Number):
         """Right-hand numeric subtraction; clamp at absolute zero."""
         if isinstance(other, int | float):
             raw = float(other) * self._units_to_raw_delta() - self._value

@@ -2,7 +2,7 @@
 """Compiled adaptive Tsitouras 5(4) ("Tsit5") engine."""
 import math
 from py_ballisticcalc_exts.base_types cimport BCLIBC_ShotProps
-from py_ballisticcalc_exts.base_engine cimport CythonizedBaseIntegrationEngine, BCLIBC_IntegrateCallable
+from py_ballisticcalc_exts.base_engine cimport CythonizedBaseIntegrationEngine
 
 __all__ = ['CythonizedTsitourasIntegrationEngine']
 
@@ -12,7 +12,10 @@ cdef class CythonizedTsitourasIntegrationEngine(CythonizedBaseIntegrationEngine)
         self._DEFAULT_TIME_STEP = 0.0025
         self._relative_tolerance = 1e-6
         self._absolute_tolerance = 1e-6
-        self._this.integrate_func = BCLIBC_IntegrateCallable(BCLIBC_integrateTsitouras)
+        # See cashkarp_engine.pyx's __cinit__: integrate_func takes its own
+        # copy, target() hands back a pointer at that copy.
+        self._this.integrate_func = BCLIBC_TsitourasIntegrator()
+        self._integrator = self._this.integrate_func.target[BCLIBC_TsitourasIntegrator]()
 
     def __init__(self, object config):
         base_config = config
@@ -45,15 +48,15 @@ cdef class CythonizedTsitourasIntegrationEngine(CythonizedBaseIntegrationEngine)
         self._absolute_tolerance = value
 
     cdef BCLIBC_ShotProps* _init_trajectory(self, object shot_info):
-        BCLIBC_tsitourasSetRelativeTolerance(self._relative_tolerance)
-        BCLIBC_tsitourasSetAbsoluteTolerance(self._absolute_tolerance)
+        self._integrator.set_relative_tolerance(self._relative_tolerance)
+        self._integrator.set_absolute_tolerance(self._absolute_tolerance)
         return CythonizedBaseIntegrationEngine._init_trajectory(self, shot_info)
 
     def integrate(self, *args, **kwargs):
         cdef int accepted = 0
         cdef int rejected = 0
         result = CythonizedBaseIntegrationEngine.integrate(self, *args, **kwargs)
-        BCLIBC_tsitourasGetStats(accepted, rejected)
+        self._integrator.get_stats(accepted, rejected)
         self._last_accepted, self._last_rejected = accepted, rejected
         return result
 

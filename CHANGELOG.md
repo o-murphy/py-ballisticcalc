@@ -7,6 +7,46 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.0.0-rc.1] - 2026-09-22
+
+### Fixed
+- `cython.rkck`/`cython.dopri`/`cython.tsitouras`: bumped the
+  `bclibc` submodule to pick up its `BCLIBC_CashKarpIntegrator`/`BCLIBC_DormandPrinceIntegrator`/
+  `BCLIBC_TsitourasIntegrator` classes, replacing the old thread-local tolerance/step-count API
+  (`BCLIBC_cashKarpSetRelativeTolerance`/`BCLIBC_cashKarpGetStats`/etc.). Each engine instance now
+  owns its own integrator (obtained via `std::function::target()` once `integrate_func` has taken a
+  copy of it), instead of every instance of the same adaptive engine on a thread sharing one
+  `thread_local` tolerance/step-count pair — a latent bug that could silently mix up tolerances or
+  accepted/rejected counts between engine instances run concurrently on the same thread (these
+  modules are all `freethreading_compatible`). No change to the public Python API: `relative_tolerance`,
+  `absolute_tolerance`, and `get_step_stats()` behave the same as before.
+- `Calculator._EngineLoader._is_legacy_name` now `@functools.cache`s like its sibling lookups
+  (`_get_entries_by_group`, `_get_engine_entries`, `_load_by_name`) instead of being the one
+  method in that class that re-walked `iter_engines()` (generator, `seen`-set, per-entry
+  `engine_id()`) on every call — wasted, repeated work when many `Calculator` instances are
+  created in a loop with the same `engine=` string, since `entry_points()` itself doesn't change
+  within a process.
+- `vector.py`/`unit.py`: removed 15 of 22 `# type: ignore[override]` comments on arithmetic dunder
+  overrides (`Temperature.__mul__`/`__rmul__`/`__truediv__`/`__rtruediv__`/`__imul__`/
+  `__itruediv__`/`_units_to_raw_delta`/`__radd__`/`__rsub__`, `Vector.__radd__`/`__iadd__`/
+  `__sub__`/`__isub__`/`__imul__`/`__neg__`) that no longer suppress any pyright diagnostic —
+  confirmed by removing each individually and re-running `pyright` clean. The remaining 7
+  (`Temperature.__add__`/`__sub__`/`__iadd__`/`__isub__`, `Vector.__mul__`/`__add__`/`__rmul__`)
+  do still suppress a real `reportIncompatibleMethodOverride` (their `Number`/`Vector` parameter
+  types are narrower than `tuple`'s/`GenericDimension`'s own) and were left in place.
+
+### CI
+- `.pre-commit-config.yaml`: the `uv-lock`/`uv-lock-exts` hooks now run `uv lock --check` instead
+  of `uv lock --upgrade`. `--upgrade` re-resolved to whatever was newest on PyPI *at CI run
+  time*, so a transitive dependency (not even a direct one — `platformdirs`/`virtualenv`, pulled
+  in by `pre-commit`/`uv` themselves) getting a new release between commits failed
+  `pre-commit.yml`'s push-triggered runs with no code change involved (its auto-commit-fixes step
+  only runs on `pull_request` events, so a `push` run just fails outright — see
+  [bclibc-functors CI run 35705018507](https://github.com/o-murphy/py-ballisticcalc/actions/runs/35705018507)
+  for an example). `--check` only verifies `uv.lock` still matches `pyproject.toml`'s own
+  constraints; routine dependency bumps are already Dependabot's job (`.github/dependabot.yml`,
+  weekly).
+
 ## [3.0.0-beta.3] - 2026-09-21
 
 ### Added
@@ -956,7 +996,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Issue #141
 - Trajectories that bend backwards
 
-[Unreleased]: https://github.com/o-murphy/py-ballisticcalc/compare/v3.0.0-beta.3...HEAD
+[Unreleased]: https://github.com/o-murphy/py-ballisticcalc/compare/v3.0.0-rc.1...HEAD
+[3.0.0-rc.1]: https://github.com/o-murphy/py-ballisticcalc/releases/tag/v3.0.0-rc.1
 [3.0.0-beta.3]: https://github.com/o-murphy/py-ballisticcalc/releases/tag/v3.0.0-beta.3
 [3.0.0-beta.2]: https://github.com/o-murphy/py-ballisticcalc/releases/tag/v3.0.0-beta.2
 [3.0.0-beta.1]: https://github.com/o-murphy/py-ballisticcalc/releases/tag/v2.3.1

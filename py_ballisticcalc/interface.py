@@ -138,6 +138,7 @@ class _EngineLoader:
         return f"{engine}+{method}" if sep else name
 
     @classmethod
+    @cache
     def _is_legacy_name(cls, name: str) -> bool:
         wanted = cls._normalize_name(name)
         if any(wanted == cls.engine_id(ep) for ep in cls.iter_engines() if ep.group != cls._entry_point_group):
