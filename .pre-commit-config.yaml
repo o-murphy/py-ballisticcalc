@@ -6,17 +6,24 @@ repos:
   - repo: local
     hooks:
       - id: uv-lock
-        name: uv lock upgrade
+        name: uv lock check
         entry: uv
-        args: ["lock", "--upgrade"]
+        # --check only, not --upgrade: dependency bumps are Dependabot's job
+        # (.github/dependabot.yml, weekly). --upgrade here would re-resolve
+        # to whatever's newest on PyPI *at CI run time*, so a transitive dep
+        # (not even a direct one -- platformdirs/virtualenv via pre-commit
+        # itself) getting a new release between commits fails this hook on
+        # every later push with no code change involved. --check only
+        # verifies uv.lock still matches pyproject.toml's own constraints.
+        args: ["lock", "--check"]
         language: system
         pass_filenames: false
         files: '^(pyproject\.toml|uv\.lock)$'
 
       - id: uv-lock-exts
-        name: uv lock upgrade (exts)
+        name: uv lock check (exts)
         entry: uv
-        args: ["lock", "--upgrade", "--project", "py_ballisticcalc.exts"]
+        args: ["lock", "--check", "--project", "py_ballisticcalc.exts"]
         language: system
         pass_filenames: false
         files: '^py_ballisticcalc\.exts/(pyproject\.toml|uv\.lock)$'
