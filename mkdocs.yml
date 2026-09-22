@@ -173,6 +173,7 @@ extra_javascript:
 
 markdown_extensions:
   - admonition
+  - footnotes
   - tables
   - toc:
       permalink: true

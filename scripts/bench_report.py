@@ -119,7 +119,7 @@ def write_markdown(best: dict, engines: list[str], last: dict, md_path: Path, sv
         "# Benchmarks",
         "",
         "Mean time per call for each engine (lower is better), generated from",
-        "[`benchmarks/benchmarks.csv`](../../benchmarks/benchmarks.csv) by `scripts/bench_report.py`.",
+        "[`benchmarks/benchmarks.csv`](https://github.com/o-murphy/py-ballisticcalc/blob/master/benchmarks/benchmarks.csv) by `scripts/bench_report.py`.",
         "Each engine has two bars: `Trajectory` (fire a trajectory) and `Zero` (find the zero angle).",
         "The vertical scales are logarithmic.",
         "",
