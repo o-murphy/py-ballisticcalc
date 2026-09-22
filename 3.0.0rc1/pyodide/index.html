@@ -96,7 +96,7 @@ def _demo():
     calc.set_weapon_zero(zero, Distance.Meter(100))
     shot = Shot(weapon=weapon, ammo=ammo)
     result = calc.fire(shot, Distance.Meter(1000), extra_data=False)
-    p = result.trajectory[-1]
+    p = result.samples[-1]
     print(f"t={p.time:.2f}s  distance={p.distance}  velocity={p.velocity}  "
           f"drop={p.height}  windage={p.windage}  energy={p.energy}")
     return calc, shot, result
