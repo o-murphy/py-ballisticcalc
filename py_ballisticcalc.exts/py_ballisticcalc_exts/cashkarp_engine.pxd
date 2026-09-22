@@ -15,21 +15,31 @@ cdef extern from "include/bclibc/cash_karp.hpp" namespace "bclibc" nogil:
         BCLIBC_TerminationReason &reason,
     ) except +
 
-    void BCLIBC_cashKarpGetStats(int &out_accepted, int &out_rejected)
-
-    void BCLIBC_cashKarpSetRelativeTolerance(double tolerance) except +
-
-    void BCLIBC_cashKarpSetAbsoluteTolerance(double tolerance) except +
+    # Stateful functor: owns its own tolerances/step-counts per instance
+    # (each field a std::atomic on the C++ side), replacing the old
+    # thread-local free-function API (BCLIBC_cashKarpGetStats/Set*Tolerance).
+    cdef cppclass BCLIBC_CashKarpIntegrator:
+        BCLIBC_CashKarpIntegrator() except +
+        void operator()(
+            BCLIBC_BaseEngine &eng,
+            BCLIBC_BaseTrajDataHandlerInterface &handler,
+            BCLIBC_TerminationReason &reason,
+        ) except +
+        void get_stats(int &out_accepted, int &out_rejected) const
+        void set_relative_tolerance(double tolerance) except +
+        void set_absolute_tolerance(double tolerance) except +
 
 cdef class CythonizedCashKarpIntegrationEngine(CythonizedBaseIntegrationEngine):
     cdef double _relative_tolerance
     cdef double _absolute_tolerance
-    # Per-instance snapshot of BCLIBC_cashKarpGetStats(), taken right after this
-    # engine's own integrate() call returns. BCLIBC_cashKarpGetStats() itself
-    # reads thread-local counters *shared* across every CythonizedCashKarpIntegrationEngine
-    # instance on the same thread -- reading it lazily from get_step_stats()
-    # instead of snapshotting here would silently return whichever instance
-    # integrated *last* on this thread, not necessarily self's own result.
+    # Points at this instance's own integrator living *inside*
+    # self._this.integrate_func (set via std::function::target() in
+    # __cinit__, once integrate_func has been assigned a BCLIBC_CashKarpIntegrator
+    # by value) -- so its tolerances/stats are exclusively this engine's, no
+    # longer shared thread-local state.
+    cdef BCLIBC_CashKarpIntegrator* _integrator
+    # Snapshot of self._integrator.get_stats(), taken right after this
+    # engine's own integrate() call returns.
     cdef int _last_accepted
     cdef int _last_rejected
 

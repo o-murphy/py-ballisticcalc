@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- `cython.rkck`/`cython.dopri`/`cython.tsitouras`: bumped the
+  `bclibc` submodule to pick up its `BCLIBC_CashKarpIntegrator`/`BCLIBC_DormandPrinceIntegrator`/
+  `BCLIBC_TsitourasIntegrator` classes, replacing the old thread-local tolerance/step-count API
+  (`BCLIBC_cashKarpSetRelativeTolerance`/`BCLIBC_cashKarpGetStats`/etc.). Each engine instance now
+  owns its own integrator (obtained via `std::function::target()` once `integrate_func` has taken a
+  copy of it), instead of every instance of the same adaptive engine on a thread sharing one
+  `thread_local` tolerance/step-count pair — a latent bug that could silently mix up tolerances or
+  accepted/rejected counts between engine instances run concurrently on the same thread (these
+  modules are all `freethreading_compatible`). No change to the public Python API: `relative_tolerance`,
+  `absolute_tolerance`, and `get_step_stats()` behave the same as before.
+
 ## [3.0.0-beta.3] - 2026-09-21
 
 ### Added

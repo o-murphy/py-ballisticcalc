@@ -8,12 +8,22 @@ from py_ballisticcalc_exts.base_engine cimport (
 cdef extern from "include/bclibc/tsitouras.hpp" namespace "bclibc" nogil:
     void BCLIBC_integrateTsitouras(
         BCLIBC_BaseEngine &, BCLIBC_BaseTrajDataHandlerInterface &, BCLIBC_TerminationReason &) except +
-    void BCLIBC_tsitourasGetStats(int &, int &)
-    void BCLIBC_tsitourasSetRelativeTolerance(double) except +
-    void BCLIBC_tsitourasSetAbsoluteTolerance(double) except +
+
+    # Stateful functor: owns its own tolerances/step-counts per instance,
+    # replacing the old thread-local free-function API.
+    cdef cppclass BCLIBC_TsitourasIntegrator:
+        BCLIBC_TsitourasIntegrator() except +
+        void operator()(
+            BCLIBC_BaseEngine &, BCLIBC_BaseTrajDataHandlerInterface &, BCLIBC_TerminationReason &) except +
+        void get_stats(int &, int &) const
+        void set_relative_tolerance(double) except +
+        void set_absolute_tolerance(double) except +
 
 cdef class CythonizedTsitourasIntegrationEngine(CythonizedBaseIntegrationEngine):
     cdef double _relative_tolerance
     cdef double _absolute_tolerance
+    # Points at this instance's own integrator living inside
+    # self._this.integrate_func (see __cinit__).
+    cdef BCLIBC_TsitourasIntegrator* _integrator
     cdef int _last_accepted
     cdef int _last_rejected
