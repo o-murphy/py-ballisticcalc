@@ -1277,19 +1277,19 @@
 <td style="text-align: left;">Compiled Verlet 2nd-order symplectic</td>
 </tr>
 <tr>
-<td style="text-align: left;"><a class="autorefs autorefs-internal" href="../../api/calculator/engines/#py_ballisticcalc_exts.CythonizedCashKarpIntegrationEngine"><code>cython+rkck</code></a>[^adaptive]</td>
+<td style="text-align: left;"><a class="autorefs autorefs-internal" href="../../api/calculator/engines/#py_ballisticcalc_exts.CythonizedCashKarpIntegrationEngine"><code>cython+rkck</code></a><sup id="fnref:adaptive"><a class="footnote-ref" href="#fn:adaptive">1</a></sup></td>
 <td style="text-align: left;"><span class="twemoji"><svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"></path></svg></span> 2567x / 326x (faster)</td>
 <td style="text-align: center;"><a href="#cython-engines"><code>[exts]</code></a></td>
 <td style="text-align: left;">Compiled Cash-Karp adaptive RK45</td>
 </tr>
 <tr>
-<td style="text-align: left;"><a class="autorefs autorefs-internal" href="../../api/calculator/engines/#py_ballisticcalc_exts.CythonizedDormandPrinceIntegrationEngine"><code>cython+dopri</code></a>[^adaptive]</td>
+<td style="text-align: left;"><a class="autorefs autorefs-internal" href="../../api/calculator/engines/#py_ballisticcalc_exts.CythonizedDormandPrinceIntegrationEngine"><code>cython+dopri</code></a><sup id="fnref2:adaptive"><a class="footnote-ref" href="#fn:adaptive">1</a></sup></td>
 <td style="text-align: left;"><span class="twemoji"><svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"></path></svg></span> 2567x / 326x (faster)</td>
 <td style="text-align: center;"><a href="#cython-engines"><code>[exts]</code></a></td>
 <td style="text-align: left;">Dormand--Prince 5(4), SciPy RK45-style controller</td>
 </tr>
 <tr>
-<td style="text-align: left;"><a class="autorefs autorefs-internal" href="../../api/calculator/engines/#py_ballisticcalc_exts.CythonizedTsitourasIntegrationEngine"><code>cython+tsitouras</code></a>[^adaptive]</td>
+<td style="text-align: left;"><a class="autorefs autorefs-internal" href="../../api/calculator/engines/#py_ballisticcalc_exts.CythonizedTsitourasIntegrationEngine"><code>cython+tsitouras</code></a><sup id="fnref3:adaptive"><a class="footnote-ref" href="#fn:adaptive">1</a></sup></td>
 <td style="text-align: left;"><span class="twemoji"><svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"></path></svg></span> 2567x / 326x (faster)</td>
 <td style="text-align: center;"><a href="#cython-engines"><code>[exts]</code></a></td>
 <td style="text-align: left;">Tsitouras 5(4), SciPy RK45-style controller</td>
@@ -1345,10 +1345,6 @@ directly against each other and <code>cython+rk4</code>, not against pure-Python
 are in <a href="../benchmarks/#dormand-prince-and-tsitouras-engines">benchmarks</a> — read that section
 before trusting the identical-looking multiplier in <code>cython+tsitouras</code>'s row above:
 all three adaptive engines measure in the same performance class, not a ranking.</p>
-<p>[^adaptive]: Measured directly against pure-Python <code>python+rk4</code>, not composed through
-<code>cython+rk4</code>'s own row above. See <a href="#adaptive-integration">Adaptive integration</a> below
-for why Find Zero and Trajectory differ so much for the adaptive engines even when comparing
-just the Cython engines directly.</p>
 <ul>
 <li>This project will default to the <a class="autorefs autorefs-internal" href="../../api/calculator/engines/#py_ballisticcalc.engines.RK4IntegrationEngine"><code>python+rk4</code></a>.</li>
 <li>For higher speed and precision use the <a class="autorefs autorefs-internal" href="../../api/calculator/engines/#py_ballisticcalc.engines.scipy_engine.SciPyIntegrationEngineFactory"><code>scipy+rk45</code></a> (or another <code>scipy+…</code> method, e.g. <a class="autorefs autorefs-internal" href="../../api/calculator/engines/#py_ballisticcalc.engines.scipy_engine.SciPyIntegrationEngineFactory"><code>scipy+dop853</code></a>).</li>
@@ -1498,6 +1494,17 @@ e.g. a pre-configured factory such as <code>py_ballisticcalc.engines:SciPyDOP853
 <span class="c1"># or</span>
 pytest<span class="w"> </span>./tests<span class="w"> </span>--engine<span class="o">=</span><span class="s2">"my_library.my_module:MyAwesomeEngine"</span><span class="w"> </span>
 </code></pre></div></p>
+<div class="footnote">
+<hr/>
+<ol>
+<li id="fn:adaptive">
+<p>Measured directly against pure-Python <code>python+rk4</code>, not composed through
+<code>cython+rk4</code>'s own row above. See <a href="#adaptive-integration">Adaptive integration</a> below
+for why Find Zero and Trajectory differ so much for the adaptive engines even when comparing
+just the Cython engines directly. <a class="footnote-backref" href="#fnref:adaptive" title="Jump back to footnote 1 in the text">↩</a><a class="footnote-backref" href="#fnref2:adaptive" title="Jump back to footnote 1 in the text">↩</a><a class="footnote-backref" href="#fnref3:adaptive" title="Jump back to footnote 1 in the text">↩</a></p>
+</li>
+</ol>
+</div>
 <form class="md-feedback" hidden="" name="feedback">
 <fieldset>
 <legend class="md-feedback__title">

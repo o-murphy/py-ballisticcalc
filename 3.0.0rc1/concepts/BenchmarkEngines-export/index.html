@@ -1206,7 +1206,7 @@
 </tbody>
 </table>
 </div>
-<p><img alt="png" src="./BenchmarkEngines_6_1.png"/></p>
+<p><img alt="png" src="../BenchmarkEngines_6_1.png"/></p>
 <h3 id="define-error">Define error<a class="headerlink" href="#define-error" title="Permanent link">¶</a></h3>
 <p>We will take the ZERO_DOWN (return-to-zero) row as our reference point for assessing the error in other engines.</p>
 <div class="language-python highlight"><pre><span></span><code><span class="n">reference_row</span> <span class="o">=</span> <span class="n">reference_trajectory</span><span class="o">.</span><span class="n">flag</span><span class="p">(</span><span class="n">TrajFlag</span><span class="o">.</span><span class="n">ZERO_DOWN</span><span class="p">)</span>
@@ -1583,7 +1583,7 @@ Error=0.00000301m.  Integration steps: 917.  Speed: 0.01108s
 <span class="c1">#plt.savefig('ErrorTolerance.svg', bbox_inches='tight')</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
 </code></pre></div>
-<p><img alt="png" src="./BenchmarkEngines_15_0.png"/></p>
+<p><img alt="png" src="../BenchmarkEngines_15_0.png"/></p>
 <h4 id="rk45">RK45<a class="headerlink" href="#rk45" title="Permanent link">¶</a></h4>
 <div class="language-python highlight"><pre><span></span><code><span class="n">method</span> <span class="o">=</span> <span class="s1">'RK45'</span>
 <span class="c1"># Run with rtol as limiting factor</span>
@@ -1828,7 +1828,7 @@ Error=0.00000301m.  Integration steps: 917.  Speed: 0.01108s
 <span class="n">ax</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="n">title</span><span class="o">=</span><span class="s1">'Series / Bubble Size'</span><span class="p">,</span> <span class="n">scatterpoints</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">labelspacing</span><span class="o">=</span><span class="mf">1.5</span><span class="p">,</span> <span class="n">borderpad</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
 </code></pre></div>
-<p><img alt="png" src="./BenchmarkEngines_19_0.png"/></p>
+<p><img alt="png" src="../BenchmarkEngines_19_0.png"/></p>
 <h3 id="chosen-methods">Chosen Methods<a class="headerlink" href="#chosen-methods" title="Permanent link">¶</a></h3>
 <p>For purposes of charting against the non-SciPy methods, we'll vary these two SciPy methods over a range of tolerance settings that give monotonically increasing error with speed.</p>
 <div class="language-python highlight"><pre><span></span><code><span class="n">method</span> <span class="o">=</span> <span class="s1">'RK45'</span>
@@ -2817,7 +2817,7 @@ Error=0.00000301m.  Integration steps: 917.  Speed: 0.01108s
 <span class="n">ax</span><span class="o">.</span><span class="n">grid</span><span class="p">(</span><span class="kc">True</span><span class="p">,</span> <span class="n">which</span><span class="o">=</span><span class="s1">'major'</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.3</span><span class="p">)</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
 </code></pre></div>
-<p><img alt="png" src="./BenchmarkEngines_40_0.png"/></p>
+<p><img alt="png" src="../BenchmarkEngines_40_0.png"/></p>
 <h2 id="data">Data<a class="headerlink" href="#data" title="Permanent link">¶</a></h2>
 <div class="language-python highlight"><pre><span></span><code><span class="n">display</span><span class="p">(</span><span class="n">dfplot</span><span class="o">.</span><span class="n">style</span><span class="o">.</span><span class="n">format</span><span class="p">({</span><span class="s1">'Multiplier'</span><span class="p">:</span> <span class="s1">'</span><span class="si">{:.10f}</span><span class="s1">'</span><span class="p">,</span> <span class="s1">'Error (m)'</span><span class="p">:</span> <span class="s1">'</span><span class="si">{:.12f}</span><span class="s1">'</span><span class="p">}))</span>
 </code></pre></div>
