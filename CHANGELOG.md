@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Fixed
+- Updated legacy annotations in `vector.py`, `unit.py`.
+- `_EngineLoader._is_legacy_name` uses caching.
 - `cython.rkck`/`cython.dopri`/`cython.tsitouras`: bumped the
   `bclibc` submodule to pick up its `BCLIBC_CashKarpIntegrator`/`BCLIBC_DormandPrinceIntegrator`/
   `BCLIBC_TsitourasIntegrator` classes, replacing the old thread-local tolerance/step-count API

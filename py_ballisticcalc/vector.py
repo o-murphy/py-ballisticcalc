@@ -389,7 +389,7 @@ class Vector(NamedTuple):
         """
         return self.add(other)
 
-    def __radd__(self, other: Vector) -> Vector:  # type: ignore[override]
+    def __radd__(self, other: Vector) -> Vector:
         """Right addition operator for vector addition.
 
         Enables vector addition when this vector is on the right side of
@@ -411,7 +411,7 @@ class Vector(NamedTuple):
         """
         return self.add(other)
 
-    def __iadd__(self, other: Vector) -> Vector:  # type: ignore[override]  # noqa: PYI034 -- immutable NamedTuple: returns a new instance, not self
+    def __iadd__(self, other: Vector) -> Vector:  # noqa: PYI034 -- immutable NamedTuple: returns a new instance, not self
         """In-place addition operator for vector addition.
 
         Provides += operator support. Since Vector is immutable (NamedTuple),
@@ -432,7 +432,7 @@ class Vector(NamedTuple):
         """
         return self.add(other)
 
-    def __sub__(self, other: Vector) -> Vector:  # type: ignore[override]
+    def __sub__(self, other: Vector) -> Vector:
         """Subtraction operator for vector subtraction.
 
         Provides intuitive syntax for vector subtraction using the - operator.
@@ -458,7 +458,7 @@ class Vector(NamedTuple):
         """
         return self.subtract(other)
 
-    def __isub__(self, other: Vector) -> Vector:  # type: ignore[override]  # noqa: PYI034 -- immutable NamedTuple: returns a new instance, not self
+    def __isub__(self, other: Vector) -> Vector:  # noqa: PYI034 -- immutable NamedTuple: returns a new instance, not self
         """In-place subtraction operator for vector subtraction.
 
         Provides -= operator support. Since Vector is immutable (NamedTuple),
@@ -516,7 +516,7 @@ class Vector(NamedTuple):
     @overload
     def __imul__(self, other: Vector) -> float: ...
 
-    def __imul__(self, other: float | Vector) -> float | Vector:  # type: ignore[override]
+    def __imul__(self, other: float | Vector) -> float | Vector:
         """In-place multiplication operator for vector operations.
 
         Provides *= operator support. Since Vector is immutable (NamedTuple),
@@ -544,7 +544,7 @@ class Vector(NamedTuple):
         """
         return self.__mul__(other)
 
-    def __neg__(self) -> Vector:  # type: ignore[override]
+    def __neg__(self) -> Vector:
         """Unary negation operator for creating opposite vector.
 
         Provides intuitive syntax for vector negation using the unary - operator.
