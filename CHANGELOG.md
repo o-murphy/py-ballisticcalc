@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - `examples/tiny_bclibc_wasm`: `TinyBclibcWasmDoubleIntegrationEngine`/`TinyBclibcWasmSingleIntegrationEngine`,
-  the WebAssembly counterpart of `examples/tiny_bclibc`, made for Pythonista on iOS. It runs
+  the WebAssembly counterpart of `examples/tiny_bclibc_ctypes`, made for Pythonista on iOS. It runs
   bclibc's import-free tiny_bclibc `.wasm` build (`tiny_bclibc/build_wasm.sh`) inside a JavaScript
   engine: JavaScriptCore's `JSContext` via `objc_util` on iOS, WebKitGTK's JavaScriptCore via
   PyGObject on Linux (`run_example_jsc.py`), or Node. The same JS glue runs on all three hosts, and

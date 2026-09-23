@@ -1,15 +1,17 @@
 """Example: zero, aim and fire through tiny_bclibc running as WebAssembly.
 
-Runs as-is both on a desktop (the module runs in Node) and in Pythonista on iOS (it runs in
-JavaScriptCore's JSContext) -- `_runner.default_runner` picks the host.
+Runs as-is on a desktop (wasmtime, wasm3, Node or WebKitGTK JavaScriptCore, whichever the
+`tiny_bclibc` package finds) and in Pythonista on iOS (JavaScriptCore's JSContext).
 
 Desktop, from the repo root:
-    examples/tiny_bclibc_wasm/build_wasm.sh
+    uv pip install tiny-bclibc-wasm-py wasmtime     # compiles the .wasm modules; wasmtime is optional
     python examples/tiny_bclibc_wasm/run_example.py
+    TINY_BCLIBC_HOST=node python examples/tiny_bclibc_wasm/run_example.py    # pick the host yourself
 
 Pythonista: copy these next to each other into Pythonista's files, then run this script:
     py_ballisticcalc/                    (the package; needs typing_extensions importable too)
-    tiny_bclibc_wasm/                    (this directory, including build/tiny_bclibc_dp.wasm)
+    tiny_bclibc/                         (from the tiny-bclibc-wasm-py wheel, with its .wasm files)
+    tiny_bclibc_wasm/                    (this directory)
 """
 
 import os

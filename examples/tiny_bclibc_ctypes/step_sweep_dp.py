@@ -5,11 +5,11 @@ multiplier is unambiguously a real step-size accuracy regression, not
 conflated with the 11 known SP-only failures.
 
 Usage (from repo root):
-    PYTHONPATH=examples uv run pytest --engine=tiny_bclibc.step_sweep_dp:DP_0_5   # baseline
-    PYTHONPATH=examples uv run pytest --engine=tiny_bclibc.step_sweep_dp:DP_1_0
-    PYTHONPATH=examples uv run pytest --engine=tiny_bclibc.step_sweep_dp:DP_2_0
-    PYTHONPATH=examples uv run pytest --engine=tiny_bclibc.step_sweep_dp:DP_4_0
-    PYTHONPATH=examples uv run python scripts/benchmark.py --engine tiny_bclibc.step_sweep_dp:DP_2_0 -r 1000 -w 100
+    PYTHONPATH=examples uv run pytest --engine=tiny_bclibc_ctypes.step_sweep_dp:DP_0_5   # baseline
+    PYTHONPATH=examples uv run pytest --engine=tiny_bclibc_ctypes.step_sweep_dp:DP_1_0
+    PYTHONPATH=examples uv run pytest --engine=tiny_bclibc_ctypes.step_sweep_dp:DP_2_0
+    PYTHONPATH=examples uv run pytest --engine=tiny_bclibc_ctypes.step_sweep_dp:DP_4_0
+    PYTHONPATH=examples uv run python scripts/benchmark.py --engine tiny_bclibc_ctypes.step_sweep_dp:DP_2_0 -r 1000 -w 100
 """
 
 from . import TinyBclibcDoubleIntegrationEngine
