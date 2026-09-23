@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- `examples/tiny_bclibc_wasm`: `TinyBclibcWasmDoubleIntegrationEngine`/`TinyBclibcWasmSingleIntegrationEngine`,
+  the WebAssembly counterpart of `examples/tiny_bclibc`, made for Pythonista on iOS. It runs
+  bclibc's import-free tiny_bclibc `.wasm` build (`tiny_bclibc/build_wasm.sh`) inside a JavaScript
+  engine: JavaScriptCore's `JSContext` via `objc_util` on iOS, WebKitGTK's JavaScriptCore via
+  PyGObject on Linux (`run_example_jsc.py`), or Node. The same JS glue runs on all three hosts, and
+  one engine call is one JS round trip. The double-precision engine passes the full suite and
+  returns results bit-identical to the native ctypes engine; the single-precision one has the same
+  known float32 exceptions as its ctypes twin. Building the modules needs a bclibc submodule that
+  includes `tiny_bclibc/build_wasm.sh`.
+
 ## [3.0.0-rc.1] - 2026-09-22
 
 ### Fixed
