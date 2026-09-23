@@ -20,7 +20,7 @@ Engines:
     Both can live in one process: each call selects its own precision (`tiny_bclibc.set_precision`).
 
 Setup (the package compiles its own .wasm modules when installed; it needs nothing else):
-    uv pip install tiny-bclibc-wasm-py               # or: ... git+https://github.com/ballistics-lab/tiny-bclibc-wasm-py
+    uv pip install tiny-bclibc-wasm               # or: ... git+https://github.com/ballistics-lab/tiny-bclibc-wasm-py
     uv pip install wasmtime                          # optional in-process host; else Node, ...
 
 Which host runs it, and how to change that: see the package README (`TINY_BCLIBC_HOST=node`, or

@@ -4,13 +4,13 @@ Runs as-is on a desktop (wasmtime, wasm3, Node or WebKitGTK JavaScriptCore, whic
 `tiny_bclibc` package finds) and in Pythonista on iOS (JavaScriptCore's JSContext).
 
 Desktop, from the repo root:
-    uv pip install tiny-bclibc-wasm-py wasmtime     # compiles the .wasm modules; wasmtime is optional
+    uv pip install tiny-bclibc-wasm wasmtime     # compiles the .wasm modules; wasmtime is optional
     python examples/tiny_bclibc_wasm/run_example.py
     TINY_BCLIBC_HOST=node python examples/tiny_bclibc_wasm/run_example.py    # pick the host yourself
 
 Pythonista: copy these next to each other into Pythonista's files, then run this script:
     py_ballisticcalc/                    (the package; needs typing_extensions importable too)
-    tiny_bclibc/                         (from the tiny-bclibc-wasm-py wheel, with its .wasm files)
+    tiny_bclibc/                         (from the tiny-bclibc-wasm wheel, with its .wasm files)
     tiny_bclibc_wasm/                    (this directory)
 """
 
