@@ -52,12 +52,12 @@ Architecture:
     e.g. from the repo root:
     ```bash
     git submodule update --init py_ballisticcalc.exts/py_ballisticcalc_exts/external/bclibc
-    cmake -B examples/tiny_bclibc/build -S examples/tiny_bclibc
-    cmake --build examples/tiny_bclibc/build
-    export PYBALLISTICCALC_TINY_BCLIBC_LIB=$(pwd)/examples/tiny_bclibc/build/single/libtiny_bclibc.so
-    export PYBALLISTICCALC_TINY_BCLIBC_DP_LIB=$(pwd)/examples/tiny_bclibc/build/double/libtiny_bclibc.so
-    PYTHONPATH=examples uv run pytest --engine=tiny_bclibc:TinyBclibcSingleIntegrationEngine
-    PYTHONPATH=examples uv run pytest --engine=tiny_bclibc:TinyBclibcDoubleIntegrationEngine
+    cmake -B examples/tiny_bclibc_ctypes/build -S examples/tiny_bclibc_ctypes
+    cmake --build examples/tiny_bclibc_ctypes/build
+    export PYBALLISTICCALC_TINY_BCLIBC_LIB=$(pwd)/examples/tiny_bclibc_ctypes/build/single/libtiny_bclibc.so
+    export PYBALLISTICCALC_TINY_BCLIBC_DP_LIB=$(pwd)/examples/tiny_bclibc_ctypes/build/double/libtiny_bclibc.so
+    PYTHONPATH=examples uv run pytest --engine=tiny_bclibc_ctypes:TinyBclibcSingleIntegrationEngine
+    PYTHONPATH=examples uv run pytest --engine=tiny_bclibc_ctypes:TinyBclibcDoubleIntegrationEngine
     ```
 
 Requirements:

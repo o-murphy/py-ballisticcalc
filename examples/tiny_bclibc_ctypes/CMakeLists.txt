@@ -2,12 +2,12 @@
 # engines in this directory (__init__.py).
 #
 # Usage (from repo root, after `git submodule update --init`):
-#   cmake -B examples/tiny_bclibc/build -S examples/tiny_bclibc
-#   cmake --build examples/tiny_bclibc/build
+#   cmake -B examples/tiny_bclibc_ctypes/build -S examples/tiny_bclibc_ctypes
+#   cmake --build examples/tiny_bclibc_ctypes/build
 #
 # Then point the engines at the results:
-#   export PYBALLISTICCALC_TINY_BCLIBC_LIB=$(pwd)/examples/tiny_bclibc/build/single/libtiny_bclibc.so
-#   export PYBALLISTICCALC_TINY_BCLIBC_DP_LIB=$(pwd)/examples/tiny_bclibc/build/double/libtiny_bclibc.so
+#   export PYBALLISTICCALC_TINY_BCLIBC_LIB=$(pwd)/examples/tiny_bclibc_ctypes/build/single/libtiny_bclibc.so
+#   export PYBALLISTICCALC_TINY_BCLIBC_DP_LIB=$(pwd)/examples/tiny_bclibc_ctypes/build/double/libtiny_bclibc.so
 #
 # Where bclibc comes from:
 #   py-ballisticcalc already carries bclibc as a single git submodule at

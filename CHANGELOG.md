@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.0.0-rc.2] - 2026-09-23
+
+### Added
+- `examples/tiny_bclibc_wasm`: `TinyBclibcWasmDoubleIntegrationEngine`/`TinyBclibcWasmSingleIntegrationEngine`,
+  the WebAssembly counterpart of `examples/tiny_bclibc_ctypes`, made for Pythonista on iOS. It runs
+  bclibc's import-free tiny_bclibc `.wasm` build (`tiny_bclibc/build_wasm.sh`) inside a JavaScript
+  engine: JavaScriptCore's `JSContext` via `objc_util` on iOS, WebKitGTK's JavaScriptCore via
+  PyGObject on Linux (`run_example_jsc.py`), or Node. The same JS glue runs on all three hosts, and
+  one engine call is one JS round trip. The double-precision engine passes the full suite and
+  returns results bit-identical to the native ctypes engine; the single-precision one has the same
+  known float32 exceptions as its ctypes twin. Building the modules needs a bclibc submodule that
+  includes `tiny_bclibc/build_wasm.sh`.
+
 ## [3.0.0-rc.1] - 2026-09-22
 
 ### Fixed
@@ -996,7 +1009,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Issue #141
 - Trajectories that bend backwards
 
-[Unreleased]: https://github.com/o-murphy/py-ballisticcalc/compare/v3.0.0-rc.1...HEAD
+[Unreleased]: https://github.com/o-murphy/py-ballisticcalc/compare/v3.0.0-rc.2...HEAD
+[3.0.0-rc.2]: https://github.com/o-murphy/py-ballisticcalc/releases/tag/v3.0.0-rc.2
 [3.0.0-rc.1]: https://github.com/o-murphy/py-ballisticcalc/releases/tag/v3.0.0-rc.1
 [3.0.0-beta.3]: https://github.com/o-murphy/py-ballisticcalc/releases/tag/v3.0.0-beta.3
 [3.0.0-beta.2]: https://github.com/o-murphy/py-ballisticcalc/releases/tag/v3.0.0-beta.2

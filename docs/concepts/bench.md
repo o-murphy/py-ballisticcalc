@@ -32,7 +32,7 @@ The vertical scales are logarithmic.
 | `scipy.rk45` | 5.678 | 9.77x | 44.611 | 5.41x | 500 |
 | `cython.euler` | 1.267 | 43.8x | 4.455 | 54.2x | 500 |
 | `cython.rk4` | 0.429 | 129x | 1.179 | 205x | 1000 |
-| `tiny_bclibc:TinyBclibcDoubleIntegrationEngine` | 0.245 | 226x | 0.233 | 1036x | 500 |
+| `tiny_bclibc_ctypes:TinyBclibcDoubleIntegrationEngine` | 0.245 | 226x | 0.233 | 1036x | 500 |
 | `cython.tsitouras` | 0.170 | 326x | 0.094 | 2567x | 2000 |
 | `cython.dopri` | 0.170 | 326x | 0.094 | 2567x | 2000 |
 | `cython.rkck` | 0.170 | 326x | 0.094 | 2567x | 2000 |

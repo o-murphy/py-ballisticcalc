@@ -286,8 +286,8 @@ def _find_library_path(env_var: str, precision_flag: str) -> str:
         "submodule already vendored at "
         "py_ballisticcalc.exts/py_ballisticcalc_exts/external/bclibc):\n"
         "  git submodule update --init py_ballisticcalc.exts/py_ballisticcalc_exts/external/bclibc\n"
-        "  cmake -B examples/tiny_bclibc/build -S examples/tiny_bclibc\n"
-        "  cmake --build examples/tiny_bclibc/build\n"
+        "  cmake -B examples/tiny_bclibc_ctypes/build -S examples/tiny_bclibc_ctypes\n"
+        "  cmake --build examples/tiny_bclibc_ctypes/build\n"
         f"then set {env_var} to the resulting libtiny_bclibc.so (.dylib/.dll) path."
     )
 
