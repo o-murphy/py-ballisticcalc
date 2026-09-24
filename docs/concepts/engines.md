@@ -179,6 +179,24 @@ not only Cash-Karp:
    `cython+rk4` benefit from the same accuracy improvement even though their fixed,
    dense step rarely exposed the original bug.
 
+## Third-party engines
+
+Other packages can register engines through entry points (see [Custom Engines](#custom-engines)).
+Installing such a package is enough to make its engines available by name.
+
+| Engine Name | Package | Description |
+| :--- | :--- | :--- |
+| `tiny_bclibc_wasm+tsitouras` | [`tiny-bclibc-wasm[pybc]`](https://github.com/ballistics-lab/tiny-bclibc-wasm-py) | bclibc's `tiny_bclibc` compiled to WebAssembly, Tsitouras 5(4), double precision. Runs on CPython, PyPy and Pythonista (iOS) with no C extension |
+| `tiny_bclibc_wasm+tsitouras-sp` | [`tiny-bclibc-wasm[pybc]`](https://github.com/ballistics-lab/tiny-bclibc-wasm-py) | The same in single precision (float32 limits) |
+
+```python
+from py_ballisticcalc import Calculator
+
+calc = Calculator(engine="tiny_bclibc_wasm+tsitouras")
+```
+
+These packages are maintained and tested in their own repositories, against this project's test suite.
+
 ## Custom Engines
 
 **To define a custom engine:** Create a separate module with a class that implements the [`EngineProtocol`][py_ballisticcalc.generics.engine.EngineProtocol].

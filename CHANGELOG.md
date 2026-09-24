@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Removed
+- `examples/tiny_bclibc_wasm`: moved to [tiny-bclibc-wasm](https://github.com/ballistics-lab/tiny-bclibc-wasm-py)
+  as `tiny_bclibc.pybc`. That package now registers the engines itself (`tiny_bclibc_wasm+tsitouras`,
+  `tiny_bclibc_wasm+tsitouras-sp`) and tests them with this project's suite, so py-ballisticcalc no
+  longer depends on it, and its CI no longer runs the wasm engine.
+
 ## [3.0.0-rc.2] - 2026-09-23
 
 ### Added
