@@ -132,6 +132,12 @@ Choose between different calculation engines, or build your own.  Included engin
 | `scipy+bdf`                   | :left_right_arrow: 0.8x / 1.5x (mixed) |          `[scipy]`          | SciPy `solve_ivp` BDF — implicit variable-order (1–5) multistep, for stiff problems    |                                                                                                                                  —                                                                                                                                   |
 | `scipy+lsoda`                 | :arrow_up: 2.9x / 4.3x (faster)      |          `[scipy]`          | SciPy `solve_ivp` LSODA — Adams/BDF (ODEPACK), switches automatically between non-stiff and stiff |                                                                                                                                  —                                                                                                                                   |
 
+> [!TIP]
+> No C extensions on your platform? [tiny-bclibc-wasm] runs bclibc's `tiny_bclibc` solver as WebAssembly
+> and plugs into py-ballisticcalc as the `tiny_bclibc_wasm+tsitouras-dp` engine. It is meant for runtimes
+> that can run WebAssembly but can't load CPython extension modules, such as Pythonista on iOS, where the
+> `[exts]` engines can't be installed. Install it with `pip install tiny-bclibc-wasm[pybc]`.
+
 [^adaptive]: Adaptive RK45; actual speed depends on the configured tolerances. Cash-Karp,
 Dormand-Prince, and Tsitouras measure in the same performance class as each other on typical
 trajectories -- see [benchmarks](docs/concepts/benchmarks.md#dormand-prince-and-tsitouras-engines)
@@ -167,6 +173,7 @@ Special thanks to:
 
 * **[bclibc]** - High performance C++/C99 Ballistic solver engine
 * **[micropython-bclibc]** - Pure C99 Ballistic Solver Engine for MicroPython ([bclibc] subset)
+* **[tiny-bclibc-wasm]** - [bclibc]'s `tiny_bclibc` as WebAssembly for CPython, PyPy and Pythonista, usable as a py-ballisticcalc engine
 * **[ebalistyka]** - Ballistic Calculator built with Flutter and high performance C++ engine
 * **[js-ballistics]** - ISC library for small arms ballistic calculations (JavaScript ES6+)
 
@@ -279,6 +286,7 @@ https://o-murphy.github.io/py-ballisticcalc/latest/concepts/engines
 
 [bclibc]: https://github.com/ballistics-lab/bclibc
 [micropython-bclibc]: https://github.com/ballistics-lab/micropython-bclibc
+[tiny-bclibc-wasm]: https://github.com/ballistics-lab/tiny-bclibc-wasm-py
 [ebalistyka]: https://github.com/o-murphy/ebalistyka-app
 [js-ballistics]: https://github.com/o-murphy/js-ballistics
 

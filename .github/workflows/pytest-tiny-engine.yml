@@ -16,7 +16,6 @@ on:
       - ".github/workflows/pytest-tiny-engine.yml"
       - ".github/workflows/pytest-reusable.yml"
       - "examples/tiny_bclibc_ctypes/**"
-      - "examples/tiny_bclibc_wasm/**"
 
   push:
     branches:
@@ -30,16 +29,10 @@ on:
       - ".github/workflows/pytest-tiny-engine.yml"
       - ".github/workflows/pytest-reusable.yml"
       - "examples/tiny_bclibc_ctypes/**"
-      - "examples/tiny_bclibc_wasm/**"
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
-
-env:
-  # tiny-bclibc-wasm (examples/tiny_bclibc_wasm's engine backend), pinned to an exact commit so a
-  # push there can't change this job's result. Bump it deliberately, after checking the new commit.
-  TINY_BCLIBC_WASM_SHA: dab56de07ef9ee1ab3f07fe1a14cb7328f2afe15 # v0.0.1
 
 jobs:
   # Job for minimal matrix, runs ONLY on push events
@@ -52,8 +45,6 @@ jobs:
         include:
           - engine-alias: tiny_bclibc_ctypes
             engine: tiny_bclibc_ctypes:TinyBclibcDoubleIntegrationEngine
-          - engine-alias: tiny_bclibc_wasm
-            engine: tiny_bclibc_wasm:TinyBclibcWasmDoubleIntegrationEngine
 
     name: Python ${{ matrix.python-version }} on ${{ matrix.os }} with ${{ matrix.engine-alias }}
     runs-on: ${{ matrix.os }} # The runner's OS is provided by the 'os' input
@@ -96,23 +87,13 @@ jobs:
         shell: bash
 
       - name: Build ${{ matrix.engine-alias }}
-        if: matrix.engine-alias == 'tiny_bclibc_ctypes'
         run: |
           cmake -B examples/tiny_bclibc_ctypes/build -S examples/tiny_bclibc_ctypes
           cmake --build examples/tiny_bclibc_ctypes/build
         shell: bash
 
-      # Compiles the .wasm modules from the package's bclibc submodule (uv fetches submodules of git
-      # dependencies; the build itself needs only the `ziglang` build requirement). wasmtime is the
-      # in-process WebAssembly host.
-      - name: Install tiny-bclibc-wasm @ ${{ env.TINY_BCLIBC_WASM_SHA }}
-        if: matrix.engine-alias == 'tiny_bclibc_wasm'
-        run: uv pip install "tiny-bclibc-wasm @ git+https://github.com/ballistics-lab/tiny-bclibc-wasm-py@${TINY_BCLIBC_WASM_SHA}" wasmtime
-        shell: bash
-
       - name: Run main tests with ${{ matrix.engine }}
         env:
-          TINY_BCLIBC_HOST: wasmtime # only read by the wasm engine
           PYBALLISTICCALC_TINY_BCLIBC_LIB: ${{ github.workspace }}/examples/tiny_bclibc_ctypes/build/single/libtiny_bclibc.so
           PYBALLISTICCALC_TINY_BCLIBC_DP_LIB: ${{ github.workspace }}/examples/tiny_bclibc_ctypes/build/double/libtiny_bclibc.so
           PYTHONPATH: examples
