@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.0.0-rc.3] - 2026-09-25
+
+### Chores
+- bump to `bclibc@v2.0.0-rc.3`
+
 ### Removed
 - `examples/tiny_bclibc_wasm`: moved to [tiny-bclibc-wasm](https://github.com/ballistics-lab/tiny-bclibc-wasm-py)
   as `tiny_bclibc.pybc`. That package now registers the engines itself (`tiny_bclibc_wasm+tsitouras-dp`,
@@ -1015,7 +1020,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Issue #141
 - Trajectories that bend backwards
 
-[Unreleased]: https://github.com/o-murphy/py-ballisticcalc/compare/v3.0.0-rc.2...HEAD
+[Unreleased]: https://github.com/o-murphy/py-ballisticcalc/compare/v3.0.0-rc.3...HEAD
+[3.0.0-rc.3]: https://github.com/o-murphy/py-ballisticcalc/releases/tag/v3.0.0-rc.3
 [3.0.0-rc.2]: https://github.com/o-murphy/py-ballisticcalc/releases/tag/v3.0.0-rc.2
 [3.0.0-rc.1]: https://github.com/o-murphy/py-ballisticcalc/releases/tag/v3.0.0-rc.1
 [3.0.0-beta.3]: https://github.com/o-murphy/py-ballisticcalc/releases/tag/v3.0.0-beta.3
