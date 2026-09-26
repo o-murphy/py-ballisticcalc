@@ -201,7 +201,7 @@ is_macos = platform.system() == "Darwin"
 if is_msvc:
     # MSVC-specific flags
     c_compile_args = ["/O2", "/W3"]
-    cpp_compile_args = ["/O2", "/W3"]  # "/std:c++11" flag is deprecated
+    cpp_compile_args = ["/O2", "/W3", "/std:c++17"]
     cpp_extra_link_args = []
     # Crucial for MSVC on ARM
     if platform.machine().startswith("ARM"):
@@ -209,7 +209,7 @@ if is_msvc:
         cpp_compile_args.append("/fp:precise")
 elif is_macos:
     c_compile_args = ["-g", "-O0", "-std=c99"]
-    cpp_compile_args = ["-O2", "-Wall"]  # assumes it uses -std=c++14 or newer
+    cpp_compile_args = ["-O2", "-Wall", "-std=c++17"]
     cpp_extra_link_args = ["-stdlib=libc++"]
     os.environ["CC"] = "clang"
     os.environ["CXX"] = "clang++"
@@ -221,18 +221,18 @@ elif IS_EMSCRIPTEN:
     # "-Wl,-strip-all" is dropped: em++'s linker wrapper does not reliably
     # support arbitrary native-ld passthrough flags for stripping.
     c_compile_args = ["-std=c99"]
-    cpp_compile_args = ["-x", "c++", "-std=c++11", "-Wall"]
+    cpp_compile_args = ["-x", "c++", "-std=c++17", "-Wall"]
     cpp_extra_link_args = []
 else:
     # GCC/Clang flags (also covers Android and iOS cross-builds, which use a
     # GNU-compatible clang toolchain via their respective NDK/Xcode setups)
     c_compile_args = ["-g", "-O0", "-std=c99"]
-    cpp_compile_args = ["-x", "c++", "-std=c++11", "-O2", "-Wall", "-g"]
+    cpp_compile_args = ["-x", "c++", "-std=c++17", "-O2", "-Wall", "-g"]
     if DISABLE_STRIP:
         cpp_extra_link_args = []
     else:
         # c_compile_args = ["-O3", "-std=c99", "-DNDEBUG"]
-        # cpp_compile_args = ["-x", "c++", "-std=c++11", "-O3", "-Wall", "-DNDEBUG"]
+        # cpp_compile_args = ["-x", "c++", "-std=c++17", "-O3", "-Wall", "-DNDEBUG"]
         cpp_extra_link_args = ["-Wl,-strip-all"]
 
 
