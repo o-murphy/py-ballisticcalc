@@ -228,7 +228,7 @@ cdef BCLIBC_ShotProps BCLIBC_ShotProps_from_pyobject(object shot_info, double ca
     shot.calc_step = calc_step
 
     # All physics conversion happens inside C++
-    return shot.to_shot_props()
+    return BCLIBC_ShotProps_from_BCLIBC_Shot(shot)
 
 
 # Helper functions to create unit objects

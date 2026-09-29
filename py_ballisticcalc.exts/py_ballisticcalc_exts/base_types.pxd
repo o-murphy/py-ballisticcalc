@@ -238,9 +238,9 @@ cdef extern from "include/bclibc/base_types.hpp" namespace "bclibc" nogil:
             BCLIBC_WindSock wind_sock,
             BCLIBC_TrajFlag filter_flags) except +
 
-        void update_stability_coefficient() except +ZeroDivisionError
+        # update_stability_coefficient()/drag_by_mach() now return a Result instead of
+        # throwing; called only through the BCLIBC_ShotProps_* wrappers in bind.pxd.
         double spin_drift(double time) const
-        double drag_by_mach(double mach) except +ValueError
 
     cdef cppclass BCLIBC_Shot:
         # ammo
@@ -281,8 +281,8 @@ cdef extern from "include/bclibc/base_types.hpp" namespace "bclibc" nogil:
         double azimuth_deg
 
         double calc_step
-
-        BCLIBC_ShotProps to_shot_props() except +
+        # to_shot_props() now returns a Result instead of throwing; called only
+        # through BCLIBC_ShotProps_from_BCLIBC_Shot() in bind.pxd.
 
     # helpers
     double BCLIBC_getCorrection(double distance, double offset) noexcept nogil

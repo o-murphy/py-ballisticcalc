@@ -38,6 +38,30 @@ namespace bclibc
      */
     BCLIBC_Curve BCLIBC_Curve_fromPylist(PyObject *data_points);
 
+    /**
+     * @brief Converts a Python Shot-like object's already-filled BCLIBC_Shot to a BCLIBC_ShotProps.
+     *
+     * bclibc::BCLIBC_Shot::to_shot_props() returns a Result instead of throwing; this wraps it,
+     * setting a Python exception (RuntimeError) and returning a default-constructed BCLIBC_ShotProps
+     * on failure, exactly like the other BCLIBC_*_fromPy* helpers in this header.
+     * @param shot The BCLIBC_Shot to convert.
+     * @return BCLIBC_ShotProps on success, or a default-constructed one with a Python exception set.
+     */
+    BCLIBC_ShotProps BCLIBC_ShotProps_from_BCLIBC_Shot(const BCLIBC_Shot &shot);
+
+    /**
+     * @brief Wraps BCLIBC_ShotProps::update_stability_coefficient(), which returns a Result
+     * instead of throwing. Sets a Python ZeroDivisionError and returns false on failure.
+     */
+    bool BCLIBC_ShotProps_update_stability_coefficient(BCLIBC_ShotProps &props);
+
+    /**
+     * @brief Wraps BCLIBC_ShotProps::drag_by_mach(), which returns a Result instead of
+     * throwing. Sets a Python ValueError and returns false on failure; the drag value is
+     * written to `out` only on success.
+     */
+    bool BCLIBC_ShotProps_drag_by_mach(const BCLIBC_ShotProps &props, double mach, double &out);
+
 }; // namespace bclibc
 
 #endif // __CYTHON__

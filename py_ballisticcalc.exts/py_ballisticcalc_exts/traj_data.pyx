@@ -59,15 +59,16 @@ cdef class CythonizedBaseTrajSeq:
         """Return CythonizedBaseTrajData for the given index.  Supports negative indices."""
         cdef Py_ssize_t _i = <Py_ssize_t>idx
         cdef CythonizedBaseTrajData out = CythonizedBaseTrajData()
-        out._this = self._this[_i]
+        cdef const BCLIBC_BaseTrajData *item = py_traj_seq_getitem(self._this, _i)
+        out._this = item[0]
         return out
 
     def interpolate_at(self, Py_ssize_t idx, str key_attribute, double key_value):
         """Interpolate using points (idx-1, idx, idx+1) keyed by key_attribute at key_value."""
         cdef BCLIBC_BaseTrajData_InterpKey key_kind = _attribute_to_key(key_attribute)
         cdef CythonizedBaseTrajData out = CythonizedBaseTrajData()
-        self._this.interpolate_at(
-            idx, key_kind, key_value, out._this
+        py_traj_seq_interpolate_at(
+            self._this, idx, key_kind, key_value, out._this
         )
         return out
 
@@ -83,15 +84,15 @@ cdef class CythonizedBaseTrajSeq:
         cdef double _start_from_time = 0.0
         if start_from_time is not None:
             _start_from_time = <double>start_from_time
-        self._this.get_at(
-            key_kind, key_value, _start_from_time, out._this
+        py_traj_seq_get_at(
+            self._this, key_kind, key_value, _start_from_time, out._this
         )
         return out
 
     def get_at_slant_height(self, double look_angle_rad, double value):
         """Get CythonizedBaseTrajData where value == slant_height === position.y*cos(a) - position.x*sin(a)."""
         cdef CythonizedBaseTrajData out = CythonizedBaseTrajData()
-        self._this.get_at_slant_height(look_angle_rad, value, out._this)
+        py_traj_seq_get_at_slant_height(self._this, look_angle_rad, value, out._this)
         return out
 
 
@@ -212,7 +213,7 @@ cdef class CythonizedBaseTrajData:
         """
         cdef BCLIBC_BaseTrajData_InterpKey key_kind = _attribute_to_key(key_attribute)
         cdef CythonizedBaseTrajData out = CythonizedBaseTrajData()
-        BCLIBC_BaseTrajData.interpolate(
+        py_base_traj_interpolate(
             key_kind, key_value,
             p0._this, p1._this, p2._this,
             out._this

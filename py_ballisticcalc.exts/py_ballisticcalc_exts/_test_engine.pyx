@@ -12,6 +12,10 @@ from py_ballisticcalc_exts.base_types cimport (
     BCLIBC_calculateEnergy,
     BCLIBC_calculateOgw,
 )
+from py_ballisticcalc_exts.bind cimport (
+    BCLIBC_ShotProps_drag_by_mach,
+    BCLIBC_ShotProps_update_stability_coefficient,
+)
 
 __all__ = ["CythonEngineTestHarness"]
 
@@ -31,7 +35,9 @@ cdef class CythonEngineTestHarness(CythonizedRK4IntegrationEngine):
     cpdef double drag(self, double mach):
         if not self._prepared:
             raise RuntimeError("prepare() must be called first")
-        return self._this.shot.drag_by_mach(mach)
+        cdef double out = 0.0
+        BCLIBC_ShotProps_drag_by_mach(self._this.shot, mach, out)
+        return out
 
     cpdef tuple density_and_mach(self, double altitude_ft):
         if not self._prepared:
@@ -53,7 +59,7 @@ cdef class CythonEngineTestHarness(CythonizedRK4IntegrationEngine):
     cpdef double update_stability(self):
         if not self._prepared:
             raise RuntimeError("prepare() must be called first")
-        self._this.shot.update_stability_coefficient()
+        BCLIBC_ShotProps_update_stability_coefficient(self._this.shot)
         return self._this.shot.stability_coefficient
 
     cpdef double energy(self, double velocity_fps):
