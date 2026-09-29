@@ -153,7 +153,59 @@ namespace bclibc
         }
 
         // --- Phase 2: Call universal core ---
-        return build_pchip_curve_from_arrays(x, y);
+        // build_pchip_curve_from_arrays returns a Result instead of throwing; unwrap it the
+        // same way every other error path in this function already does (PyErr_SetString +
+        // return an empty/default value).
+        auto curve_result = build_pchip_curve_from_arrays(x, y);
+        if (has_error(curve_result))
+        {
+            const auto &error = std::get<BCLIBC_BaseError>(curve_result);
+            PyErr_SetString(PyExc_ValueError, std::visit([](const auto &e) { return e.what(); }, error));
+            return BCLIBC_Curve();
+        }
+        return std::get<BCLIBC_Curve>(curve_result);
+    }
+
+    /**
+     * @brief Converts a Python Shot-like object's already-filled BCLIBC_Shot to a BCLIBC_ShotProps.
+     * @param shot The BCLIBC_Shot to convert.
+     * @return BCLIBC_ShotProps on success, or a default-constructed one with a Python exception set.
+     */
+    BCLIBC_ShotProps BCLIBC_ShotProps_from_BCLIBC_Shot(const BCLIBC_Shot &shot)
+    {
+        auto result = shot.to_shot_props();
+        if (has_error(result))
+        {
+            const auto &error = std::get<BCLIBC_BaseError>(result);
+            PyErr_SetString(PyExc_RuntimeError, std::visit([](const auto &e) { return e.what(); }, error));
+            return BCLIBC_ShotProps();
+        }
+        return std::get<BCLIBC_ShotProps>(result);
+    }
+
+    bool BCLIBC_ShotProps_update_stability_coefficient(BCLIBC_ShotProps &props)
+    {
+        auto result = props.update_stability_coefficient();
+        if (has_error(result))
+        {
+            const auto &error = std::get<BCLIBC_BaseError>(result);
+            PyErr_SetString(PyExc_ZeroDivisionError, std::visit([](const auto &e) { return e.what(); }, error));
+            return false;
+        }
+        return true;
+    }
+
+    bool BCLIBC_ShotProps_drag_by_mach(const BCLIBC_ShotProps &props, double mach, double &out)
+    {
+        auto result = props.drag_by_mach(mach);
+        if (has_error(result))
+        {
+            const auto &error = std::get<BCLIBC_BaseError>(result);
+            PyErr_SetString(PyExc_ValueError, std::visit([](const auto &e) { return e.what(); }, error));
+            return false;
+        }
+        out = std::get<double>(result);
+        return true;
     }
 }; // namespace bclibc
 

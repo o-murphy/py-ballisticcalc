@@ -16,6 +16,10 @@ from py_ballisticcalc_exts.base_types cimport (
 )
 from py_ballisticcalc_exts.base_engine cimport CythonizedBaseIntegrationEngine
 from py_ballisticcalc_exts.traj_data cimport BCLIBC_BaseTrajData, CythonizedBaseTrajData
+from py_ballisticcalc_exts.bind cimport (
+    BCLIBC_ShotProps_drag_by_mach,
+    BCLIBC_ShotProps_update_stability_coefficient,
+)
 
 __all__ = [
     'init_shot',
@@ -56,12 +60,16 @@ cpdef double drag_eval(size_t shot_props_addr, double mach):
         a new public attribute. Tests obtain it with `shot_props_addr = <long>&engine._this.shot`.
     """
     cdef BCLIBC_ShotProps *sp_ptr = <BCLIBC_ShotProps *> shot_props_addr
-    return sp_ptr.drag_by_mach(mach)
+    cdef double out = 0.0
+    BCLIBC_ShotProps_drag_by_mach(sp_ptr[0], mach, out)
+    return out
 
 cpdef double drag_eval_current(object engine, double mach):
     """Evaluate drag using engine's current in-memory ShotProps without exposing raw pointer."""
     cdef CythonizedBaseIntegrationEngine e = <CythonizedBaseIntegrationEngine>engine
-    return e._this.shot.drag_by_mach(mach)
+    cdef double out = 0.0
+    BCLIBC_ShotProps_drag_by_mach(e._this.shot, mach, out)
+    return out
 
 cpdef size_t shot_props_addr(object engine):
     """Return raw address of the engine's internal BCLIBC_ShotProps struct.
@@ -96,7 +104,7 @@ cpdef double spin_drift_eval(size_t shot_props_addr, double time_s):
 
 cpdef double stability_update_eval(size_t shot_props_addr):
     cdef BCLIBC_ShotProps *sp_ptr = <BCLIBC_ShotProps *> shot_props_addr
-    sp_ptr.update_stability_coefficient()
+    BCLIBC_ShotProps_update_stability_coefficient(sp_ptr[0])
     return sp_ptr.stability_coefficient
 
 cpdef dict introspect_shot(size_t shot_props_addr):

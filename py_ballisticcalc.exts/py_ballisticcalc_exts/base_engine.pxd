@@ -16,7 +16,6 @@ from py_ballisticcalc_exts.traj_data cimport (
     BCLIBC_BaseTrajData_InterpKey,
     BCLIBC_BaseTrajDataHandlerInterface
 )
-from py_ballisticcalc_exts.exceptions cimport raise_solver_exception
 
 
 cdef extern from "<functional>" namespace "std":
@@ -70,7 +69,12 @@ cdef extern from "include/bclibc/engine.hpp" namespace "bclibc" nogil:
     # Forward declaration
     cdef cppclass BCLIBC_BaseEngine
 
-    # Declare the function signature type (not a pointer yet)
+    # Declare the function signature type (not a pointer yet). The real
+    # signature returns BCLIBC_BaseResult<std::monostate> (never void) --
+    # Cython does not need that template spelled out here since assignment
+    # into integrate_func (operator=[U]) and BCLIBC_BaseEngine::integrate()
+    # calling it are both resolved against the real header at C++ compile
+    # time, not against this declaration.
     ctypedef void BCLIBC_IntegrateFunc(
         BCLIBC_BaseEngine &eng,
         BCLIBC_BaseTrajDataHandlerInterface &trajectory,
@@ -89,70 +93,227 @@ cdef extern from "include/bclibc/engine.hpp" namespace "bclibc" nogil:
 
         BCLIBC_BaseEngine() except+
 
-        void integrate(
-            double range_limit_ft,
-            BCLIBC_BaseTrajDataHandlerInterface &handler,
-            BCLIBC_TerminationReason &reason) except +raise_solver_exception
+        # Every method below now returns a BCLIBC_(Engine)Result instead of throwing;
+        # Cython has no convenient std::variant binding, so each is called only through
+        # the py_engine_*() wrappers declared below, never directly.
 
-        void integrate_at(
-            BCLIBC_BaseTrajData_InterpKey key,
-            double target_value,
-            BCLIBC_BaseTrajData &raw_data,
-            BCLIBC_TrajectoryData &full_data) except +raise_solver_exception
 
-        void integrate_filtered(
-            double range_limit_ft,
-            double range_step_ft,
-            double time_step,
-            BCLIBC_TrajFlag filter_flags,
-            vector[BCLIBC_TrajectoryData] &records,
-            BCLIBC_TerminationReason &reason,
-            BCLIBC_BaseTrajSeq *dense_trajectory) except +raise_solver_exception
+# bclibc's BCLIBC_BaseEngine methods all return a Result (std::variant<BCLIBC_EngineError, T>)
+# instead of throwing. This shim gives Cython a plain, non-template signature per method:
+# a bint success flag (checked with "except 0"/"except NULL"), the success value written to
+# an out-param, and a PyEngineError out-param describing the failure otherwise -- Cython then
+# raises the matching Python exception itself (see exceptions.pxd's raise_engine_error()),
+# the same rich exceptions "except +raise_solver_exception" used to dispatch via dynamic_cast.
+#
+# Self-contained here (not in py_bind.cpp): every extension that uses BCLIBC_BaseEngine also
+# already compiles engine.cpp (see setup.py's _ENGINE_DEPS), but py_bind.cpp is also compiled
+# into extensions that do NOT (e.g. "bind" itself), where these symbols would be unresolved.
+cdef extern from * nogil:
+    """
+    #include "bclibc/engine.hpp"
+    #include <Python.h>
+    #include <variant>
+    #include <type_traits>
 
-        void find_apex(BCLIBC_BaseTrajData &apex_out) except +raise_solver_exception
+    namespace {
+        // 0 = generic/runtime (BCLIBC_LogicError, DomainError, RuntimeError, OutOfRangeError,
+        //     InvalidArgumentError -- the same catch-all bucket "SolverRuntimeError" used before).
+        // 1 = BCLIBC_SolverOutOfRangeError, 2 = BCLIBC_SolverZeroFindingError,
+        // 3 = BCLIBC_SolverInterceptionError.
+        struct PyEngineError
+        {
+            int kind = 0;
+            const char *message = "";
+            double f0 = 0.0, f1 = 0.0, f2 = 0.0;
+            int i0 = 0;
+            bclibc::BCLIBC_BaseTrajData raw_data;
+            bclibc::BCLIBC_TrajectoryData full_data;
+        };
 
-        double error_at_distance(
-            double angle_rad,
-            double target_x_ft,
-            double target_y_ft) except +raise_solver_exception
+        template <class ErrorVariant>
+        void fill_engine_error(PyEngineError &out, const ErrorVariant &error)
+        {
+            std::visit([&out](const auto &e)
+            {
+                using T = std::decay_t<decltype(e)>;
+                out.message = e.what();
+                if constexpr (std::is_same_v<T, bclibc::BCLIBC_SolverOutOfRangeError>)
+                {
+                    out.kind = 1;
+                    out.f0 = e.requested_distance_ft; out.f1 = e.max_range_ft; out.f2 = e.look_angle_rad;
+                }
+                else if constexpr (std::is_same_v<T, bclibc::BCLIBC_SolverZeroFindingError>)
+                {
+                    out.kind = 2;
+                    out.f0 = e.zero_finding_error; out.i0 = e.iterations_count; out.f1 = e.last_barrel_elevation_rad;
+                }
+                else if constexpr (std::is_same_v<T, bclibc::BCLIBC_SolverInterceptionError>)
+                {
+                    out.kind = 3;
+                    out.raw_data = e.raw_data; out.full_data = e.full_data;
+                }
+                else
+                {
+                    out.kind = 0;
+                }
+            }, error);
+        }
 
-        BCLIBC_MaxRangeResult find_max_range(
-            double low_angle_deg,
-            double high_angle_deg,
-            double APEX_IS_MAX_RANGE_RADIANS) except +raise_solver_exception
+        static bool py_engine_integrate(
+            bclibc::BCLIBC_BaseEngine &eng, double range_limit_ft,
+            bclibc::BCLIBC_BaseTrajDataHandlerInterface &handler, bclibc::BCLIBC_TerminationReason &reason,
+            PyEngineError &err)
+        {
+            auto result = eng.integrate(range_limit_ft, handler, reason);
+            if (bclibc::has_error(result)) { fill_engine_error(err, std::get<bclibc::BCLIBC_BaseError>(result)); return 0; }
+            return 1;
+        }
 
-        void init_zero_calculation(
-            double distance,
-            double APEX_IS_MAX_RANGE_RADIANS,
-            double ALLOWED_ZERO_ERROR_FEET,
-            BCLIBC_ZeroInitialData &result) except +raise_solver_exception
+        static bool py_engine_integrate_at(
+            bclibc::BCLIBC_BaseEngine &eng, bclibc::BCLIBC_BaseTrajData_InterpKey key, double target_value,
+            bclibc::BCLIBC_BaseTrajData &raw_data, bclibc::BCLIBC_TrajectoryData &full_data, PyEngineError &err)
+        {
+            auto result = eng.integrate_at(key, target_value, raw_data, full_data);
+            if (bclibc::has_error(result)) { fill_engine_error(err, std::get<bclibc::BCLIBC_EngineError>(result)); return 0; }
+            return 1;
+        }
 
-        double zero_angle_with_fallback(
-            double distance,
-            double APEX_IS_MAX_RANGE_RADIANS,
-            double ALLOWED_ZERO_ERROR_FEET) except +raise_solver_exception
+        static bool py_engine_integrate_filtered(
+            bclibc::BCLIBC_BaseEngine &eng, double range_limit_ft, double range_step_ft, double time_step,
+            bclibc::BCLIBC_TrajFlag filter_flags, std::vector<bclibc::BCLIBC_TrajectoryData> &records,
+            bclibc::BCLIBC_TerminationReason &reason, bclibc::BCLIBC_BaseTrajSeq *dense_trajectory, PyEngineError &err)
+        {
+            auto result = eng.integrate_filtered(range_limit_ft, range_step_ft, time_step, filter_flags,
+                                                  records, reason, dense_trajectory);
+            if (bclibc::has_error(result)) { fill_engine_error(err, std::get<bclibc::BCLIBC_BaseError>(result)); return 0; }
+            return 1;
+        }
 
-        double zero_angle(
-            double distance,
-            double APEX_IS_MAX_RANGE_RADIANS,
-            double ALLOWED_ZERO_ERROR_FEET) except +raise_solver_exception
+        static bool py_engine_find_apex(
+            bclibc::BCLIBC_BaseEngine &eng, bclibc::BCLIBC_BaseTrajData &apex_out, PyEngineError &err)
+        {
+            auto result = eng.find_apex(apex_out);
+            if (bclibc::has_error(result)) { fill_engine_error(err, std::get<bclibc::BCLIBC_EngineError>(result)); return 0; }
+            return 1;
+        }
 
-        double find_zero_angle(
-            double distance,
-            int lofted,
-            double APEX_IS_MAX_RANGE_RADIANS,
-            double ALLOWED_ZERO_ERROR_FEET) except +raise_solver_exception
+        static bool py_engine_error_at_distance(
+            bclibc::BCLIBC_BaseEngine &eng, double angle_rad, double target_x_ft, double target_y_ft,
+            double &value_out, PyEngineError &err)
+        {
+            auto result = eng.error_at_distance(angle_rad, target_x_ft, target_y_ft);
+            if (bclibc::has_error(result)) { fill_engine_error(err, std::get<bclibc::BCLIBC_EngineError>(result)); return 0; }
+            value_out = std::get<double>(result);
+            return 1;
+        }
 
-        BCLIBC_ZeroPointResult zero_point_with_fallback(
-            double distance,
-            double APEX_IS_MAX_RANGE_RADIANS,
-            double ALLOWED_ZERO_ERROR_FEET) except +raise_solver_exception
+        static bool py_engine_find_max_range(
+            bclibc::BCLIBC_BaseEngine &eng, double low_angle_deg, double high_angle_deg,
+            double apex_is_max_range_radians, bclibc::BCLIBC_MaxRangeResult &out, PyEngineError &err)
+        {
+            auto result = eng.find_max_range(low_angle_deg, high_angle_deg, apex_is_max_range_radians);
+            if (bclibc::has_error(result)) { fill_engine_error(err, std::get<bclibc::BCLIBC_EngineError>(result)); return 0; }
+            out = std::get<bclibc::BCLIBC_MaxRangeResult>(result);
+            return 1;
+        }
 
-        BCLIBC_ZeroPointResult find_zero_point(
-            double distance,
-            int lofted,
-            double APEX_IS_MAX_RANGE_RADIANS,
-            double ALLOWED_ZERO_ERROR_FEET) except +raise_solver_exception
+        static bool py_engine_init_zero_calculation(
+            bclibc::BCLIBC_BaseEngine &eng, double distance, double apex_is_max_range_radians,
+            double allowed_zero_error_feet, bclibc::BCLIBC_ZeroInitialData &out, PyEngineError &err)
+        {
+            auto result = eng.init_zero_calculation(distance, apex_is_max_range_radians, allowed_zero_error_feet, out);
+            if (bclibc::has_error(result)) { fill_engine_error(err, std::get<bclibc::BCLIBC_EngineError>(result)); return 0; }
+            return 1;
+        }
+
+        static bool py_engine_zero_angle_with_fallback(
+            bclibc::BCLIBC_BaseEngine &eng, double distance, double apex_is_max_range_radians,
+            double allowed_zero_error_feet, double &angle_out, PyEngineError &err)
+        {
+            auto result = eng.zero_angle_with_fallback(distance, apex_is_max_range_radians, allowed_zero_error_feet);
+            if (bclibc::has_error(result)) { fill_engine_error(err, std::get<bclibc::BCLIBC_EngineError>(result)); return 0; }
+            angle_out = std::get<double>(result);
+            return 1;
+        }
+
+        static bool py_engine_zero_angle(
+            bclibc::BCLIBC_BaseEngine &eng, double distance, double apex_is_max_range_radians,
+            double allowed_zero_error_feet, double &angle_out, PyEngineError &err)
+        {
+            auto result = eng.zero_angle(distance, apex_is_max_range_radians, allowed_zero_error_feet);
+            if (bclibc::has_error(result)) { fill_engine_error(err, std::get<bclibc::BCLIBC_EngineError>(result)); return 0; }
+            angle_out = std::get<double>(result);
+            return 1;
+        }
+
+        static bool py_engine_find_zero_angle(
+            bclibc::BCLIBC_BaseEngine &eng, double distance, int lofted, double apex_is_max_range_radians,
+            double allowed_zero_error_feet, double &angle_out, PyEngineError &err)
+        {
+            auto result = eng.find_zero_angle(distance, lofted, apex_is_max_range_radians, allowed_zero_error_feet);
+            if (bclibc::has_error(result)) { fill_engine_error(err, std::get<bclibc::BCLIBC_EngineError>(result)); return 0; }
+            angle_out = std::get<double>(result);
+            return 1;
+        }
+
+        static bool py_engine_zero_point_with_fallback(
+            bclibc::BCLIBC_BaseEngine &eng, double distance, double apex_is_max_range_radians,
+            double allowed_zero_error_feet, bclibc::BCLIBC_ZeroPointResult &out, PyEngineError &err)
+        {
+            auto result = eng.zero_point_with_fallback(distance, apex_is_max_range_radians, allowed_zero_error_feet);
+            if (bclibc::has_error(result)) { fill_engine_error(err, std::get<bclibc::BCLIBC_EngineError>(result)); return 0; }
+            out = std::get<bclibc::BCLIBC_ZeroPointResult>(result);
+            return 1;
+        }
+
+        static bool py_engine_find_zero_point(
+            bclibc::BCLIBC_BaseEngine &eng, double distance, int lofted, double apex_is_max_range_radians,
+            double allowed_zero_error_feet, bclibc::BCLIBC_ZeroPointResult &out, PyEngineError &err)
+        {
+            auto result = eng.find_zero_point(distance, lofted, apex_is_max_range_radians, allowed_zero_error_feet);
+            if (bclibc::has_error(result)) { fill_engine_error(err, std::get<bclibc::BCLIBC_EngineError>(result)); return 0; }
+            out = std::get<bclibc::BCLIBC_ZeroPointResult>(result);
+            return 1;
+        }
+    }
+    """
+    cdef struct PyEngineError:
+        int kind
+        const char *message
+        double f0
+        double f1
+        double f2
+        int i0
+        BCLIBC_BaseTrajData raw_data
+        BCLIBC_TrajectoryData full_data
+
+    bint py_engine_integrate(
+        BCLIBC_BaseEngine&, double, BCLIBC_BaseTrajDataHandlerInterface&, BCLIBC_TerminationReason&,
+        PyEngineError&) except 0
+    bint py_engine_integrate_at(
+        BCLIBC_BaseEngine&, BCLIBC_BaseTrajData_InterpKey, double, BCLIBC_BaseTrajData&, BCLIBC_TrajectoryData&,
+        PyEngineError&) except 0
+    bint py_engine_integrate_filtered(
+        BCLIBC_BaseEngine&, double, double, double, BCLIBC_TrajFlag, vector[BCLIBC_TrajectoryData]&,
+        BCLIBC_TerminationReason&, BCLIBC_BaseTrajSeq*, PyEngineError&) except 0
+    bint py_engine_find_apex(BCLIBC_BaseEngine&, BCLIBC_BaseTrajData&, PyEngineError&) except 0
+    bint py_engine_error_at_distance(
+        BCLIBC_BaseEngine&, double, double, double, double&, PyEngineError&) except 0
+    bint py_engine_find_max_range(
+        BCLIBC_BaseEngine&, double, double, double, BCLIBC_MaxRangeResult&, PyEngineError&) except 0
+    bint py_engine_init_zero_calculation(
+        BCLIBC_BaseEngine&, double, double, double, BCLIBC_ZeroInitialData&, PyEngineError&) except 0
+    bint py_engine_zero_angle_with_fallback(
+        BCLIBC_BaseEngine&, double, double, double, double&, PyEngineError&) except 0
+    bint py_engine_zero_angle(
+        BCLIBC_BaseEngine&, double, double, double, double&, PyEngineError&) except 0
+    bint py_engine_find_zero_angle(
+        BCLIBC_BaseEngine&, double, int, double, double, double&, PyEngineError&) except 0
+    bint py_engine_zero_point_with_fallback(
+        BCLIBC_BaseEngine&, double, double, double, BCLIBC_ZeroPointResult&, PyEngineError&) except 0
+    bint py_engine_find_zero_point(
+        BCLIBC_BaseEngine&, double, int, double, double, BCLIBC_ZeroPointResult&, PyEngineError&) except 0
+
 
 cdef class CythonizedBaseIntegrationEngine:
 

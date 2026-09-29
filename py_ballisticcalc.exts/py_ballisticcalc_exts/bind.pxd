@@ -8,6 +8,7 @@ from py_ballisticcalc_exts.base_types cimport (
     BCLIBC_Coriolis,
     BCLIBC_WindSock,
     BCLIBC_ShotProps,
+    BCLIBC_Shot,
 )
 from py_ballisticcalc_exts.v3d cimport BCLIBC_V3dT
 from py_ballisticcalc_exts.traj_data cimport BCLIBC_BaseTrajData_InterpKey
@@ -18,6 +19,11 @@ cdef extern from "include/bclibc/py_bind.hpp" namespace "bclibc" nogil:
     BCLIBC_Curve BCLIBC_Curve_fromPylist(PyObject *data_points) except *
     BCLIBC_Config BCLIBC_Config_fromPyObject(PyObject * config) except *
     BCLIBC_Atmosphere BCLIBC_Atmosphere_fromPyObject(PyObject *atmo) except *
+    # BCLIBC_Shot::to_shot_props() returns a Result instead of throwing; this wraps it and
+    # sets a Python exception on failure, same "except *" convention as the others here.
+    BCLIBC_ShotProps BCLIBC_ShotProps_from_BCLIBC_Shot(const BCLIBC_Shot &shot) except *
+    bint BCLIBC_ShotProps_update_stability_coefficient(BCLIBC_ShotProps &props) except *
+    bint BCLIBC_ShotProps_drag_by_mach(const BCLIBC_ShotProps &props, double mach, double &out) except *
 
 # python to C objects conversion
 cdef BCLIBC_Config BCLIBC_Config_from_pyobject(object config)

@@ -92,8 +92,8 @@ cdef class CythonizedCashKarpIntegrationEngine(CythonizedBaseIntegrationEngine):
         CythonizedCashKarpIntegrationEngine self,
         object shot_info,
     ):
-        self._integrator.set_relative_tolerance(self._relative_tolerance)
-        self._integrator.set_absolute_tolerance(self._absolute_tolerance)
+        py_cashkarp_set_relative_tolerance(self._integrator[0], self._relative_tolerance)
+        py_cashkarp_set_absolute_tolerance(self._integrator[0], self._absolute_tolerance)
         return CythonizedBaseIntegrationEngine._init_trajectory(self, shot_info)
 
     def integrate(self, *args, **kwargs):

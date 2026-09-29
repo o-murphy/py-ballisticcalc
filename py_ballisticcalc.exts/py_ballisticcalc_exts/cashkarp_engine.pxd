@@ -26,8 +26,47 @@ cdef extern from "include/bclibc/cash_karp.hpp" namespace "bclibc" nogil:
             BCLIBC_TerminationReason &reason,
         ) except +
         void get_stats(int &out_accepted, int &out_rejected) const
-        void set_relative_tolerance(double tolerance) except +
-        void set_absolute_tolerance(double tolerance) except +
+        # set_relative_tolerance/set_absolute_tolerance now return a Result instead of
+        # throwing std::invalid_argument; called only through the py_cashkarp_set_*()
+        # wrappers below.
+
+# bclibc no longer throws: BCLIBC_CashKarpIntegrator's tolerance setters return a Result.
+# Self-contained here (not py_bind.cpp/base_engine.pxd): this is the only extension that
+# compiles cash_karp.cpp (see setup.py's _CASH_KARP_DEPS).
+cdef extern from *:
+    """
+    #include "bclibc/cash_karp.hpp"
+    #include <Python.h>
+    #include <variant>
+
+    namespace {
+        static bool py_cashkarp_set_relative_tolerance(bclibc::BCLIBC_CashKarpIntegrator &integrator, double tolerance)
+        {
+            auto result = integrator.set_relative_tolerance(tolerance);
+            if (bclibc::has_error(result))
+            {
+                const auto &error = std::get<bclibc::BCLIBC_BaseError>(result);
+                PyErr_SetString(PyExc_ValueError, std::visit([](const auto &e) { return e.what(); }, error));
+                return 0;
+            }
+            return 1;
+        }
+
+        static bool py_cashkarp_set_absolute_tolerance(bclibc::BCLIBC_CashKarpIntegrator &integrator, double tolerance)
+        {
+            auto result = integrator.set_absolute_tolerance(tolerance);
+            if (bclibc::has_error(result))
+            {
+                const auto &error = std::get<bclibc::BCLIBC_BaseError>(result);
+                PyErr_SetString(PyExc_ValueError, std::visit([](const auto &e) { return e.what(); }, error));
+                return 0;
+            }
+            return 1;
+        }
+    }
+    """
+    bint py_cashkarp_set_relative_tolerance(BCLIBC_CashKarpIntegrator&, double) except 0
+    bint py_cashkarp_set_absolute_tolerance(BCLIBC_CashKarpIntegrator&, double) except 0
 
 cdef class CythonizedCashKarpIntegrationEngine(CythonizedBaseIntegrationEngine):
     cdef double _relative_tolerance
