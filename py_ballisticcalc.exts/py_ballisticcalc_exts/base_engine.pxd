@@ -165,7 +165,11 @@ cdef extern from * nogil:
             PyEngineError &err)
         {
             auto result = eng.integrate(range_limit_ft, handler, reason);
-            if (bclibc::has_error(result)) { fill_engine_error(err, std::get<bclibc::BCLIBC_BaseError>(result)); return 0; }
+            if (bclibc::has_error(result))
+            {
+                fill_engine_error(err, std::get<bclibc::BCLIBC_BaseError>(result));
+                return 0;
+            }
             return 1;
         }
 
@@ -174,7 +178,11 @@ cdef extern from * nogil:
             bclibc::BCLIBC_BaseTrajData &raw_data, bclibc::BCLIBC_TrajectoryData &full_data, PyEngineError &err)
         {
             auto result = eng.integrate_at(key, target_value, raw_data, full_data);
-            if (bclibc::has_error(result)) { fill_engine_error(err, std::get<bclibc::BCLIBC_EngineError>(result)); return 0; }
+            if (bclibc::has_error(result))
+            {
+                fill_engine_error(err, std::get<bclibc::BCLIBC_EngineError>(result));
+                return 0;
+            }
             return 1;
         }
 
@@ -185,7 +193,11 @@ cdef extern from * nogil:
         {
             auto result = eng.integrate_filtered(range_limit_ft, range_step_ft, time_step, filter_flags,
                                                   records, reason, dense_trajectory);
-            if (bclibc::has_error(result)) { fill_engine_error(err, std::get<bclibc::BCLIBC_BaseError>(result)); return 0; }
+            if (bclibc::has_error(result))
+            {
+                fill_engine_error(err, std::get<bclibc::BCLIBC_BaseError>(result));
+                return 0;
+            }
             return 1;
         }
 
@@ -193,7 +205,11 @@ cdef extern from * nogil:
             bclibc::BCLIBC_BaseEngine &eng, bclibc::BCLIBC_BaseTrajData &apex_out, PyEngineError &err)
         {
             auto result = eng.find_apex(apex_out);
-            if (bclibc::has_error(result)) { fill_engine_error(err, std::get<bclibc::BCLIBC_EngineError>(result)); return 0; }
+            if (bclibc::has_error(result))
+            {
+                fill_engine_error(err, std::get<bclibc::BCLIBC_EngineError>(result));
+                return 0;
+            }
             return 1;
         }
 
@@ -202,7 +218,11 @@ cdef extern from * nogil:
             double &value_out, PyEngineError &err)
         {
             auto result = eng.error_at_distance(angle_rad, target_x_ft, target_y_ft);
-            if (bclibc::has_error(result)) { fill_engine_error(err, std::get<bclibc::BCLIBC_EngineError>(result)); return 0; }
+            if (bclibc::has_error(result))
+            {
+                fill_engine_error(err, std::get<bclibc::BCLIBC_EngineError>(result));
+                return 0;
+            }
             value_out = std::get<double>(result);
             return 1;
         }
@@ -212,7 +232,11 @@ cdef extern from * nogil:
             double apex_is_max_range_radians, bclibc::BCLIBC_MaxRangeResult &out, PyEngineError &err)
         {
             auto result = eng.find_max_range(low_angle_deg, high_angle_deg, apex_is_max_range_radians);
-            if (bclibc::has_error(result)) { fill_engine_error(err, std::get<bclibc::BCLIBC_EngineError>(result)); return 0; }
+            if (bclibc::has_error(result))
+            {
+                fill_engine_error(err, std::get<bclibc::BCLIBC_EngineError>(result));
+                return 0;
+            }
             out = std::get<bclibc::BCLIBC_MaxRangeResult>(result);
             return 1;
         }
@@ -222,7 +246,11 @@ cdef extern from * nogil:
             double allowed_zero_error_feet, bclibc::BCLIBC_ZeroInitialData &out, PyEngineError &err)
         {
             auto result = eng.init_zero_calculation(distance, apex_is_max_range_radians, allowed_zero_error_feet, out);
-            if (bclibc::has_error(result)) { fill_engine_error(err, std::get<bclibc::BCLIBC_EngineError>(result)); return 0; }
+            if (bclibc::has_error(result))
+            {
+                fill_engine_error(err, std::get<bclibc::BCLIBC_EngineError>(result));
+                return 0;
+            }
             return 1;
         }
 
@@ -231,7 +259,11 @@ cdef extern from * nogil:
             double allowed_zero_error_feet, double &angle_out, PyEngineError &err)
         {
             auto result = eng.zero_angle_with_fallback(distance, apex_is_max_range_radians, allowed_zero_error_feet);
-            if (bclibc::has_error(result)) { fill_engine_error(err, std::get<bclibc::BCLIBC_EngineError>(result)); return 0; }
+            if (bclibc::has_error(result))
+            {
+                fill_engine_error(err, std::get<bclibc::BCLIBC_EngineError>(result));
+                return 0;
+            }
             angle_out = std::get<double>(result);
             return 1;
         }
@@ -241,7 +273,11 @@ cdef extern from * nogil:
             double allowed_zero_error_feet, double &angle_out, PyEngineError &err)
         {
             auto result = eng.zero_angle(distance, apex_is_max_range_radians, allowed_zero_error_feet);
-            if (bclibc::has_error(result)) { fill_engine_error(err, std::get<bclibc::BCLIBC_EngineError>(result)); return 0; }
+            if (bclibc::has_error(result))
+            {
+                fill_engine_error(err, std::get<bclibc::BCLIBC_EngineError>(result));
+                return 0;
+            }
             angle_out = std::get<double>(result);
             return 1;
         }
@@ -251,7 +287,11 @@ cdef extern from * nogil:
             double allowed_zero_error_feet, double &angle_out, PyEngineError &err)
         {
             auto result = eng.find_zero_angle(distance, lofted, apex_is_max_range_radians, allowed_zero_error_feet);
-            if (bclibc::has_error(result)) { fill_engine_error(err, std::get<bclibc::BCLIBC_EngineError>(result)); return 0; }
+            if (bclibc::has_error(result))
+            {
+                fill_engine_error(err, std::get<bclibc::BCLIBC_EngineError>(result));
+                return 0;
+            }
             angle_out = std::get<double>(result);
             return 1;
         }
@@ -261,7 +301,11 @@ cdef extern from * nogil:
             double allowed_zero_error_feet, bclibc::BCLIBC_ZeroPointResult &out, PyEngineError &err)
         {
             auto result = eng.zero_point_with_fallback(distance, apex_is_max_range_radians, allowed_zero_error_feet);
-            if (bclibc::has_error(result)) { fill_engine_error(err, std::get<bclibc::BCLIBC_EngineError>(result)); return 0; }
+            if (bclibc::has_error(result))
+            {
+                fill_engine_error(err, std::get<bclibc::BCLIBC_EngineError>(result));
+                return 0;
+            }
             out = std::get<bclibc::BCLIBC_ZeroPointResult>(result);
             return 1;
         }
@@ -271,7 +315,11 @@ cdef extern from * nogil:
             double allowed_zero_error_feet, bclibc::BCLIBC_ZeroPointResult &out, PyEngineError &err)
         {
             auto result = eng.find_zero_point(distance, lofted, apex_is_max_range_radians, allowed_zero_error_feet);
-            if (bclibc::has_error(result)) { fill_engine_error(err, std::get<bclibc::BCLIBC_EngineError>(result)); return 0; }
+            if (bclibc::has_error(result))
+            {
+                fill_engine_error(err, std::get<bclibc::BCLIBC_EngineError>(result));
+                return 0;
+            }
             out = std::get<bclibc::BCLIBC_ZeroPointResult>(result);
             return 1;
         }
@@ -289,30 +337,30 @@ cdef extern from * nogil:
 
     bint py_engine_integrate(
         BCLIBC_BaseEngine&, double, BCLIBC_BaseTrajDataHandlerInterface&, BCLIBC_TerminationReason&,
-        PyEngineError&) except 0
+        PyEngineError&) noexcept
     bint py_engine_integrate_at(
         BCLIBC_BaseEngine&, BCLIBC_BaseTrajData_InterpKey, double, BCLIBC_BaseTrajData&, BCLIBC_TrajectoryData&,
-        PyEngineError&) except 0
+        PyEngineError&) noexcept
     bint py_engine_integrate_filtered(
         BCLIBC_BaseEngine&, double, double, double, BCLIBC_TrajFlag, vector[BCLIBC_TrajectoryData]&,
-        BCLIBC_TerminationReason&, BCLIBC_BaseTrajSeq*, PyEngineError&) except 0
-    bint py_engine_find_apex(BCLIBC_BaseEngine&, BCLIBC_BaseTrajData&, PyEngineError&) except 0
+        BCLIBC_TerminationReason&, BCLIBC_BaseTrajSeq*, PyEngineError&) noexcept
+    bint py_engine_find_apex(BCLIBC_BaseEngine&, BCLIBC_BaseTrajData&, PyEngineError&) noexcept
     bint py_engine_error_at_distance(
-        BCLIBC_BaseEngine&, double, double, double, double&, PyEngineError&) except 0
+        BCLIBC_BaseEngine&, double, double, double, double&, PyEngineError&) noexcept
     bint py_engine_find_max_range(
-        BCLIBC_BaseEngine&, double, double, double, BCLIBC_MaxRangeResult&, PyEngineError&) except 0
+        BCLIBC_BaseEngine&, double, double, double, BCLIBC_MaxRangeResult&, PyEngineError&) noexcept
     bint py_engine_init_zero_calculation(
-        BCLIBC_BaseEngine&, double, double, double, BCLIBC_ZeroInitialData&, PyEngineError&) except 0
+        BCLIBC_BaseEngine&, double, double, double, BCLIBC_ZeroInitialData&, PyEngineError&) noexcept
     bint py_engine_zero_angle_with_fallback(
-        BCLIBC_BaseEngine&, double, double, double, double&, PyEngineError&) except 0
+        BCLIBC_BaseEngine&, double, double, double, double&, PyEngineError&) noexcept
     bint py_engine_zero_angle(
-        BCLIBC_BaseEngine&, double, double, double, double&, PyEngineError&) except 0
+        BCLIBC_BaseEngine&, double, double, double, double&, PyEngineError&) noexcept
     bint py_engine_find_zero_angle(
-        BCLIBC_BaseEngine&, double, int, double, double, double&, PyEngineError&) except 0
+        BCLIBC_BaseEngine&, double, int, double, double, double&, PyEngineError&) noexcept
     bint py_engine_zero_point_with_fallback(
-        BCLIBC_BaseEngine&, double, double, double, BCLIBC_ZeroPointResult&, PyEngineError&) except 0
+        BCLIBC_BaseEngine&, double, double, double, BCLIBC_ZeroPointResult&, PyEngineError&) noexcept
     bint py_engine_find_zero_point(
-        BCLIBC_BaseEngine&, double, int, double, double, BCLIBC_ZeroPointResult&, PyEngineError&) except 0
+        BCLIBC_BaseEngine&, double, int, double, double, BCLIBC_ZeroPointResult&, PyEngineError&) noexcept
 
 
 cdef class CythonizedBaseIntegrationEngine:

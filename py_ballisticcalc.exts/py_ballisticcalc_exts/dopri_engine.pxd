@@ -30,7 +30,8 @@ cdef extern from *:
     #include <variant>
 
     namespace {
-        static bool py_dopri_set_relative_tolerance(bclibc::BCLIBC_DormandPrinceIntegrator &integrator, double tolerance)
+        static bool py_dopri_set_relative_tolerance(
+            bclibc::BCLIBC_DormandPrinceIntegrator &integrator, double tolerance)
         {
             auto result = integrator.set_relative_tolerance(tolerance);
             if (bclibc::has_error(result))
@@ -42,7 +43,8 @@ cdef extern from *:
             return 1;
         }
 
-        static bool py_dopri_set_absolute_tolerance(bclibc::BCLIBC_DormandPrinceIntegrator &integrator, double tolerance)
+        static bool py_dopri_set_absolute_tolerance(
+            bclibc::BCLIBC_DormandPrinceIntegrator &integrator, double tolerance)
         {
             auto result = integrator.set_absolute_tolerance(tolerance);
             if (bclibc::has_error(result))
