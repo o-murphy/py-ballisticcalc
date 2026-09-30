@@ -70,7 +70,7 @@ cdef extern from *:
             auto result = seq.get_at(key_kind, key_value, start_from_time, out);
             if (bclibc::has_error(result))
             {
-                PyErr_SetString(PyExc_RuntimeError, bclibc_error_what(std::get<bclibc::BCLIBC_BaseError>(result)));
+                raise_bclibc_error(std::get<bclibc::BCLIBC_BaseError>(result));
                 return 0;
             }
             return 1;
@@ -83,7 +83,7 @@ cdef extern from *:
             auto result = seq.get_at_slant_height(look_angle_rad, value, out);
             if (bclibc::has_error(result))
             {
-                PyErr_SetString(PyExc_RuntimeError, bclibc_error_what(std::get<bclibc::BCLIBC_BaseError>(result)));
+                raise_bclibc_error(std::get<bclibc::BCLIBC_BaseError>(result));
                 return 0;
             }
             return 1;
@@ -96,7 +96,7 @@ cdef extern from *:
             auto result = seq.interpolate_at(idx, key_kind, key_value, out);
             if (bclibc::has_error(result))
             {
-                PyErr_SetString(PyExc_RuntimeError, bclibc_error_what(std::get<bclibc::BCLIBC_BaseError>(result)));
+                raise_bclibc_error(std::get<bclibc::BCLIBC_BaseError>(result));
                 return 0;
             }
             return 1;
@@ -108,7 +108,7 @@ cdef extern from *:
             auto result = seq[idx];
             if (bclibc::has_error(result))
             {
-                PyErr_SetString(PyExc_IndexError, bclibc_error_what(std::get<bclibc::BCLIBC_BaseError>(result)));
+                raise_bclibc_error(std::get<bclibc::BCLIBC_BaseError>(result));
                 return nullptr;
             }
             return &std::get<std::reference_wrapper<const bclibc::BCLIBC_BaseTrajData>>(result).get();
@@ -121,7 +121,7 @@ cdef extern from *:
             auto result = bclibc::BCLIBC_TrajectoryData::from_base(props, data, flag);
             if (bclibc::has_error(result))
             {
-                PyErr_SetString(PyExc_RuntimeError, bclibc_error_what(std::get<bclibc::BCLIBC_BaseError>(result)));
+                raise_bclibc_error(std::get<bclibc::BCLIBC_BaseError>(result));
                 return 0;
             }
             out = std::get<bclibc::BCLIBC_TrajectoryData>(result);
