@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- `py_ballisticcalc.exts`: the Cython bindings follow bclibc's new exception-free API (`BCLIBC_Result<T>` /
+  `BCLIBC_Error` instead of C++ exceptions). The inline C++ shims in the `.pxd` files (`py_engine_*`, `py_traj_seq_*`,
+  `PyEngineError`, the per-engine `py_*_set_*_tolerance` and the `BCLIBC_ShotProps_*` wrappers of `py_bind.cpp`) are gone:
+  the bclibc methods are declared directly, as `noexcept`, in the `.pxd` files, and a failure is raised in one place,
+  `raise_engine_error()` (`exceptions.pxd`). The new `result.pxd` declares `BCLIBC_Result`/`BCLIBC_Error`.
+  Python-visible behaviour is unchanged: `OutOfRangeError`, `ZeroFindingError`, `InterceptionError` and
+  `SolverRuntimeError` come from the solver payloads, every other error maps exactly as Cython's default `except +` did
+  (`ValueError`, `IndexError`, `RuntimeError`), and the fixed per-call types are kept (`ZeroDivisionError` for
+  `interpolate` and `update_stability_coefficient`, `IndexError` for `BaseTrajSeq[...]`, `ValueError` for `drag_by_mach`).
+- bump the `bclibc` submodule to its exception-free (`noexcept`) revision.
+
 ## [3.0.0-rc.3] - 2026-09-25
 
 ### Chores
