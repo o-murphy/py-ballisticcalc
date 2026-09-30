@@ -17,7 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `SolverRuntimeError` come from the solver payloads, every other error maps exactly as Cython's default `except +` did
   (`ValueError`, `IndexError`, `RuntimeError`), and the fixed per-call types are kept (`ZeroDivisionError` for
   `interpolate` and `update_stability_coefficient`, `IndexError` for `BaseTrajSeq[...]`, `ValueError` for `drag_by_mach`).
-- bump the `bclibc` submodule to its exception-free (`noexcept`) revision.
+- bump the `bclibc` submodule to its exception-free (`noexcept`) revision ([ballistics-lab/bclibc#40](https://github.com/ballistics-lab/bclibc/pull/40)).
 
 ## [3.0.0-rc.3] - 2026-09-25
 
