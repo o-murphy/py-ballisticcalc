@@ -5,68 +5,31 @@ from py_ballisticcalc_exts.base_engine cimport (
     CythonizedBaseIntegrationEngine,
     BCLIBC_BaseTrajDataHandlerInterface,
 )
+from py_ballisticcalc_exts.result cimport BCLIBC_Result, monostate
 
 
 cdef extern from "include/bclibc/cash_karp.hpp" namespace "bclibc" nogil:
 
-    void BCLIBC_integrateCashKarp(
+    BCLIBC_Result[monostate] BCLIBC_integrateCashKarp(
         BCLIBC_BaseEngine &eng,
         BCLIBC_BaseTrajDataHandlerInterface &handler,
         BCLIBC_TerminationReason &reason,
-    ) except +
+    ) noexcept
 
     # Stateful functor: owns its own tolerances/step-counts per instance
     # (each field a std::atomic on the C++ side), replacing the old
     # thread-local free-function API (BCLIBC_cashKarpGetStats/Set*Tolerance).
     cdef cppclass BCLIBC_CashKarpIntegrator:
         BCLIBC_CashKarpIntegrator() except +
-        void operator()(
+        BCLIBC_Result[monostate] operator()(
             BCLIBC_BaseEngine &eng,
             BCLIBC_BaseTrajDataHandlerInterface &handler,
             BCLIBC_TerminationReason &reason,
-        ) except +
+        ) noexcept
         void get_stats(int &out_accepted, int &out_rejected) const
-        # set_relative_tolerance/set_absolute_tolerance now return a Result instead of
-        # throwing std::invalid_argument; called only through the py_cashkarp_set_*()
-        # wrappers below.
+        BCLIBC_Result[monostate] set_relative_tolerance(double tolerance) noexcept
+        BCLIBC_Result[monostate] set_absolute_tolerance(double tolerance) noexcept
 
-# bclibc no longer throws: BCLIBC_CashKarpIntegrator's tolerance setters return a Result.
-# Self-contained here (not py_bind.cpp/base_engine.pxd): this is the only extension that
-# compiles cash_karp.cpp (see setup.py's _CASH_KARP_DEPS).
-cdef extern from *:
-    """
-    #include "bclibc/cash_karp.hpp"
-    #include <Python.h>
-    #include <variant>
-
-    namespace {
-        static bool py_cashkarp_set_relative_tolerance(bclibc::BCLIBC_CashKarpIntegrator &integrator, double tolerance)
-        {
-            auto result = integrator.set_relative_tolerance(tolerance);
-            if (bclibc::has_error(result))
-            {
-                const auto &error = std::get<bclibc::BCLIBC_BaseError>(result);
-                PyErr_SetString(PyExc_ValueError, std::visit([](const auto &e) { return e.what(); }, error));
-                return 0;
-            }
-            return 1;
-        }
-
-        static bool py_cashkarp_set_absolute_tolerance(bclibc::BCLIBC_CashKarpIntegrator &integrator, double tolerance)
-        {
-            auto result = integrator.set_absolute_tolerance(tolerance);
-            if (bclibc::has_error(result))
-            {
-                const auto &error = std::get<bclibc::BCLIBC_BaseError>(result);
-                PyErr_SetString(PyExc_ValueError, std::visit([](const auto &e) { return e.what(); }, error));
-                return 0;
-            }
-            return 1;
-        }
-    }
-    """
-    bint py_cashkarp_set_relative_tolerance(BCLIBC_CashKarpIntegrator&, double) except 0
-    bint py_cashkarp_set_absolute_tolerance(BCLIBC_CashKarpIntegrator&, double) except 0
 
 cdef class CythonizedCashKarpIntegrationEngine(CythonizedBaseIntegrationEngine):
     cdef double _relative_tolerance

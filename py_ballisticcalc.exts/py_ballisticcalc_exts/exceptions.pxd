@@ -1,10 +1,16 @@
-# bclibc never throws: BCLIBC_BaseEngine's methods return a Result, unwrapped in Cython
-# via the py_engine_*() wrappers in base_engine.pxd, which fill a PyEngineError on failure.
-# This module turns that plain struct into the same rich py_ballisticcalc.exceptions type the
-# old dynamic_cast-based exception_dispatch used to raise from a caught C++ exception.
+# bclibc never throws: its methods return a BCLIBC_Result (see result.pxd). This module turns
+# the solver payloads of a BCLIBC_Error into the rich py_ballisticcalc.exceptions types the old
+# dynamic_cast-based exception_dispatch raised from a caught C++ exception; every other error
+# falls through to raise_std_error(), i.e. Cython's own default `except +` mapping.
 
-from py_ballisticcalc_exts.base_engine cimport PyEngineError
+from py_ballisticcalc_exts.result cimport (
+    BCLIBC_Error,
+    BCLIBC_ErrorKind,
+    raise_std_error,
+)
 from py_ballisticcalc_exts.traj_data cimport (
+    BCLIBC_BaseTrajData,
+    BCLIBC_TrajectoryData,
     CythonizedBaseTrajData,
     TrajectoryData_from_cpp,
 )
@@ -14,36 +20,62 @@ from py_ballisticcalc_exts.bind cimport (
 )
 
 
-cdef inline void raise_engine_error(const PyEngineError &err):
-    """Raises the py_ballisticcalc exception matching a failed py_engine_*() call.
+cdef extern from "bclibc/exceptions.hpp" namespace "bclibc" nogil:
+    cdef cppclass BCLIBC_SolverOutOfRangeError:
+        double requested_distance_ft
+        double max_range_ft
+        double look_angle_rad
 
-    err.kind:
-        1 - BCLIBC_SolverOutOfRangeError  -> OutOfRangeError
-        2 - BCLIBC_SolverZeroFindingError -> ZeroFindingError
-        3 - BCLIBC_SolverInterceptionError -> InterceptionError
-        0 - anything else (BCLIBC_LogicError/DomainError/RuntimeError/OutOfRangeError/
-            InvalidArgumentError) -> SolverRuntimeError, the same catch-all bucket the old
-            dynamic_cast dispatch used for every solver error without a specific handler.
+    cdef cppclass BCLIBC_SolverZeroFindingError:
+        double zero_finding_error
+        int iterations_count
+        double last_barrel_elevation_rad
+
+    cdef cppclass BCLIBC_SolverInterceptionError:
+        BCLIBC_BaseTrajData raw_data
+        BCLIBC_TrajectoryData full_data
+
+
+cdef inline void raise_engine_error(const BCLIBC_Error &err):
+    """Raises the py_ballisticcalc exception matching a failed BCLIBC_BaseEngine call.
+
+    BCLIBC_Solver{OutOfRange,ZeroFinding,Interception,Runtime}Error -> OutOfRangeError,
+    ZeroFindingError, InterceptionError, SolverRuntimeError; everything else -> raise_std_error().
     """
     from py_ballisticcalc.exceptions import (
         OutOfRangeError, ZeroFindingError, InterceptionError, SolverRuntimeError,
     )
-    cdef str message = err.message.decode("utf-8")
+    cdef BCLIBC_ErrorKind kind = err.kind()
+    cdef str message = err.what().decode("utf-8")
+    cdef const BCLIBC_SolverOutOfRangeError *out_of_range
+    cdef const BCLIBC_SolverZeroFindingError *zero_finding
+    cdef const BCLIBC_SolverInterceptionError *interception
     cdef CythonizedBaseTrajData raw_data
     cdef object py_full_data
 
-    if err.kind == 1:
+    if kind == BCLIBC_ErrorKind.SolverOutOfRange:
+        out_of_range = err.payload[BCLIBC_SolverOutOfRangeError]()
         raise OutOfRangeError(
-            feet_from_c(err.f0), feet_from_c(err.f1), rad_from_c(err.f2), message
+            feet_from_c(out_of_range.requested_distance_ft),
+            feet_from_c(out_of_range.max_range_ft),
+            rad_from_c(out_of_range.look_angle_rad),
+            message,
         )
-    elif err.kind == 2:
+    elif kind == BCLIBC_ErrorKind.SolverZeroFinding:
+        zero_finding = err.payload[BCLIBC_SolverZeroFindingError]()
         raise ZeroFindingError(
-            err.f0, err.i0, rad_from_c(err.f1), message
+            zero_finding.zero_finding_error,
+            zero_finding.iterations_count,
+            rad_from_c(zero_finding.last_barrel_elevation_rad),
+            message,
         )
-    elif err.kind == 3:
+    elif kind == BCLIBC_ErrorKind.SolverInterception:
+        interception = err.payload[BCLIBC_SolverInterceptionError]()
         raw_data = CythonizedBaseTrajData()
-        raw_data._this = err.raw_data
-        py_full_data = TrajectoryData_from_cpp(err.full_data)
+        raw_data._this = interception.raw_data
+        py_full_data = TrajectoryData_from_cpp(interception.full_data)
         raise InterceptionError(message, (raw_data, py_full_data))
-    else:
+    elif kind == BCLIBC_ErrorKind.SolverRuntime:
         raise SolverRuntimeError(message)
+    else:
+        raise_std_error(err)

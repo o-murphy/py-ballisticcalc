@@ -5,16 +5,13 @@ Provides direct C-layer accessors for parity tests without modifying production
 engine modules. Not part of the public API.
 """
 from cython cimport final
+from py_ballisticcalc_exts.result cimport BCLIBC_Result, monostate
 from libcpp.cmath cimport sin, cos
 from py_ballisticcalc_exts.rk4_engine cimport CythonizedRK4IntegrationEngine
 from py_ballisticcalc_exts.traj_data cimport CythonizedBaseTrajSeq, BCLIBC_BaseTrajData
 from py_ballisticcalc_exts.base_types cimport (
     BCLIBC_calculateEnergy,
     BCLIBC_calculateOgw,
-)
-from py_ballisticcalc_exts.bind cimport (
-    BCLIBC_ShotProps_drag_by_mach,
-    BCLIBC_ShotProps_update_stability_coefficient,
 )
 
 __all__ = ["CythonEngineTestHarness"]
@@ -36,7 +33,10 @@ cdef class CythonEngineTestHarness(CythonizedRK4IntegrationEngine):
         if not self._prepared:
             raise RuntimeError("prepare() must be called first")
         cdef double out = 0.0
-        BCLIBC_ShotProps_drag_by_mach(self._this.shot, mach, out)
+        cdef BCLIBC_Result[double] drag_res = self._this.shot.drag_by_mach(mach)
+        if not drag_res.has_value():
+            raise ValueError(drag_res.error().what().decode("utf-8"))
+        out = drag_res.value()
         return out
 
     cpdef tuple density_and_mach(self, double altitude_ft):
@@ -59,7 +59,9 @@ cdef class CythonEngineTestHarness(CythonizedRK4IntegrationEngine):
     cpdef double update_stability(self):
         if not self._prepared:
             raise RuntimeError("prepare() must be called first")
-        BCLIBC_ShotProps_update_stability_coefficient(self._this.shot)
+        cdef BCLIBC_Result[monostate] stab_res = self._this.shot.update_stability_coefficient()
+        if not stab_res.has_value():
+            raise ZeroDivisionError(stab_res.error().what().decode("utf-8"))
         return self._this.shot.stability_coefficient
 
     cpdef double energy(self, double velocity_fps):

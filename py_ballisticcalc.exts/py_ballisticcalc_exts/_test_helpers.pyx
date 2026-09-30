@@ -15,11 +15,8 @@ from py_ballisticcalc_exts.base_types cimport (
     BCLIBC_calculateOgw,
 )
 from py_ballisticcalc_exts.base_engine cimport CythonizedBaseIntegrationEngine
+from py_ballisticcalc_exts.result cimport BCLIBC_Result, monostate
 from py_ballisticcalc_exts.traj_data cimport BCLIBC_BaseTrajData, CythonizedBaseTrajData
-from py_ballisticcalc_exts.bind cimport (
-    BCLIBC_ShotProps_drag_by_mach,
-    BCLIBC_ShotProps_update_stability_coefficient,
-)
 
 __all__ = [
     'init_shot',
@@ -61,14 +58,20 @@ cpdef double drag_eval(size_t shot_props_addr, double mach):
     """
     cdef BCLIBC_ShotProps *sp_ptr = <BCLIBC_ShotProps *> shot_props_addr
     cdef double out = 0.0
-    BCLIBC_ShotProps_drag_by_mach(sp_ptr[0], mach, out)
+    cdef BCLIBC_Result[double] drag_res = sp_ptr[0].drag_by_mach(mach)
+    if not drag_res.has_value():
+        raise ValueError(drag_res.error().what().decode("utf-8"))
+    out = drag_res.value()
     return out
 
 cpdef double drag_eval_current(object engine, double mach):
     """Evaluate drag using engine's current in-memory ShotProps without exposing raw pointer."""
     cdef CythonizedBaseIntegrationEngine e = <CythonizedBaseIntegrationEngine>engine
     cdef double out = 0.0
-    BCLIBC_ShotProps_drag_by_mach(e._this.shot, mach, out)
+    cdef BCLIBC_Result[double] drag_res = e._this.shot.drag_by_mach(mach)
+    if not drag_res.has_value():
+        raise ValueError(drag_res.error().what().decode("utf-8"))
+    out = drag_res.value()
     return out
 
 cpdef size_t shot_props_addr(object engine):
@@ -104,7 +107,9 @@ cpdef double spin_drift_eval(size_t shot_props_addr, double time_s):
 
 cpdef double stability_update_eval(size_t shot_props_addr):
     cdef BCLIBC_ShotProps *sp_ptr = <BCLIBC_ShotProps *> shot_props_addr
-    BCLIBC_ShotProps_update_stability_coefficient(sp_ptr[0])
+    cdef BCLIBC_Result[monostate] stab_res = sp_ptr[0].update_stability_coefficient()
+    if not stab_res.has_value():
+        raise ZeroDivisionError(stab_res.error().what().decode("utf-8"))
     return sp_ptr.stability_coefficient
 
 cpdef dict introspect_shot(size_t shot_props_addr):
