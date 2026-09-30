@@ -17,7 +17,6 @@ from py_ballisticcalc_exts.traj_data cimport (
     BCLIBC_BaseTrajDataHandlerInterface,
     TrajectoryData_from_cpp,
     TrajectoryData_list_from_cpp,
-    py_trajectory_data_from_base,
 )
 from py_ballisticcalc_exts.base_types cimport (
     # types and methods
@@ -35,6 +34,7 @@ from py_ballisticcalc_exts.bind cimport (
     _attribute_to_key,
 )
 from py_ballisticcalc_exts.exceptions cimport raise_engine_error
+from py_ballisticcalc_exts.result cimport BCLIBC_Result, monostate, raise_std_error
 
 from py_ballisticcalc.shot import ShotProps
 from py_ballisticcalc.engines.base_engine import create_base_engine_config
@@ -178,20 +178,12 @@ cdef class CythonizedBaseIntegrationEngine:
         self._init_trajectory(shot_info)
         cdef BCLIBC_ZeroPointResult result
         cdef double feet = distance._feet
-        cdef PyEngineError err
-        cdef bint ok
+        cdef BCLIBC_Result[BCLIBC_ZeroPointResult] res
         with nogil:
-            ok = py_engine_find_zero_point(
-                self._this,
-                feet,
-                lofted,
-                _APEX_IS_MAX_RANGE_RADIANS,
-                _ALLOWED_ZERO_ERROR_FEET,
-                result,
-                err,
-            )
-        if not ok:
-            raise_engine_error(err)
+            res = self._this.find_zero_point(feet, lofted, _APEX_IS_MAX_RANGE_RADIANS, _ALLOWED_ZERO_ERROR_FEET)
+        if not res.has_value():
+            raise_engine_error(res.error())
+        result = res.value()
         if not result.has_point:
             raise SolverRuntimeError("Zero-angle fast path did not evaluate a trajectory point")
         return rad_from_c(result.angle_rad), TrajectoryData_from_cpp(result.point)
@@ -230,19 +222,12 @@ cdef class CythonizedBaseIntegrationEngine:
         cdef:
             double result
             double feet = distance._feet
-            PyEngineError err
-            bint ok
+            BCLIBC_Result[double] res
         with nogil:
-            ok = py_engine_zero_angle_with_fallback(
-                self._this,
-                feet,
-                _APEX_IS_MAX_RANGE_RADIANS,
-                _ALLOWED_ZERO_ERROR_FEET,
-                result,
-                err,
-            )
-        if not ok:
-            raise_engine_error(err)
+            res = self._this.zero_angle_with_fallback(feet, _APEX_IS_MAX_RANGE_RADIANS, _ALLOWED_ZERO_ERROR_FEET)
+        if not res.has_value():
+            raise_engine_error(res.error())
+        result = res.value()
         return rad_from_c(result)
 
     def zero_point(self, object shot_info, object distance):
@@ -268,19 +253,12 @@ cdef class CythonizedBaseIntegrationEngine:
         self._init_trajectory(shot_info)
         cdef BCLIBC_ZeroPointResult result
         cdef double feet = distance._feet
-        cdef PyEngineError err
-        cdef bint ok
+        cdef BCLIBC_Result[BCLIBC_ZeroPointResult] res
         with nogil:
-            ok = py_engine_zero_point_with_fallback(
-                self._this,
-                feet,
-                _APEX_IS_MAX_RANGE_RADIANS,
-                _ALLOWED_ZERO_ERROR_FEET,
-                result,
-                err,
-            )
-        if not ok:
-            raise_engine_error(err)
+            res = self._this.zero_point_with_fallback(feet, _APEX_IS_MAX_RANGE_RADIANS, _ALLOWED_ZERO_ERROR_FEET)
+        if not res.has_value():
+            raise_engine_error(res.error())
+        result = res.value()
         if not result.has_point:
             raise SolverRuntimeError("Zero-angle fast path did not evaluate a trajectory point")
         return rad_from_c(result.angle_rad), TrajectoryData_from_cpp(result.point)
@@ -323,8 +301,7 @@ cdef class CythonizedBaseIntegrationEngine:
             double range_step_ft = dist_step._feet if dist_step is not None else range_limit_ft
             vector[BCLIBC_TrajectoryData] filtered_records
             CythonizedBaseTrajSeq dense_trajectory
-            PyEngineError err
-            bint ok
+            BCLIBC_Result[monostate] res
 
         if dense_output:
             dense_trajectory = CythonizedBaseTrajSeq()
@@ -332,8 +309,7 @@ cdef class CythonizedBaseIntegrationEngine:
         self._init_trajectory(shot_info)
 
         with nogil:
-            ok = py_engine_integrate_filtered(
-                self._this,
+            res = self._this.integrate_filtered(
                 range_limit_ft,
                 range_step_ft,
                 time_step,
@@ -341,10 +317,9 @@ cdef class CythonizedBaseIntegrationEngine:
                 filtered_records,
                 reason,
                 &dense_trajectory._this if dense_output else NULL,
-                err,
             )
-        if not ok:
-            raise_engine_error(err)
+        if not res.has_value():
+            raise_engine_error(res.error())
 
         trajectory = TrajectoryData_list_from_cpp(filtered_records)
 
@@ -427,19 +402,12 @@ cdef class CythonizedBaseIntegrationEngine:
             double: The miss distance in feet (positive if overshot, negative if undershot).
         """
         cdef double value_out
-        cdef PyEngineError err
-        cdef bint ok
+        cdef BCLIBC_Result[double] res
         with nogil:
-            ok = py_engine_error_at_distance(
-                self._this,
-                angle_rad,
-                target_x_ft,
-                target_y_ft,
-                value_out,
-                err,
-            )
-        if not ok:
-            raise_engine_error(err)
+            res = self._this.error_at_distance(angle_rad, target_x_ft, target_y_ft)
+        if not res.has_value():
+            raise_engine_error(res.error())
+        value_out = res.value()
         return value_out
 
     cdef BCLIBC_ShotProps* _init_trajectory(
@@ -483,19 +451,11 @@ cdef class CythonizedBaseIntegrationEngine:
             tuple: (status, look_angle_rad, slant_range_ft, target_x_ft, target_y_ft, start_height_ft)
             where status is: 0 = CONTINUE, 1 = DONE (early return with look_angle_rad)
         """
-        cdef PyEngineError err
-        cdef bint ok
+        cdef BCLIBC_Result[monostate] res
         with nogil:
-            ok = py_engine_init_zero_calculation(
-                self._this,
-                distance,
-                _APEX_IS_MAX_RANGE_RADIANS,
-                _ALLOWED_ZERO_ERROR_FEET,
-                out,
-                err,
-            )
-        if not ok:
-            raise_engine_error(err)
+            res = self._this.init_zero_calculation(distance, _APEX_IS_MAX_RANGE_RADIANS, _ALLOWED_ZERO_ERROR_FEET, out)
+        if not res.has_value():
+            raise_engine_error(res.error())
 
     cdef double _find_zero_angle(
         CythonizedBaseIntegrationEngine self,
@@ -515,20 +475,12 @@ cdef class CythonizedBaseIntegrationEngine:
         """
         self._init_trajectory(shot_info)
         cdef double angle_out
-        cdef PyEngineError err
-        cdef bint ok
+        cdef BCLIBC_Result[double] res
         with nogil:
-            ok = py_engine_find_zero_angle(
-                self._this,
-                distance,
-                lofted,
-                _APEX_IS_MAX_RANGE_RADIANS,
-                _ALLOWED_ZERO_ERROR_FEET,
-                angle_out,
-                err,
-            )
-        if not ok:
-            raise_engine_error(err)
+            res = self._this.find_zero_angle(distance, lofted, _APEX_IS_MAX_RANGE_RADIANS, _ALLOWED_ZERO_ERROR_FEET)
+        if not res.has_value():
+            raise_engine_error(res.error())
+        angle_out = res.value()
         return angle_out
 
     cdef BCLIBC_MaxRangeResult _find_max_range(
@@ -550,19 +502,12 @@ cdef class CythonizedBaseIntegrationEngine:
         """
         self._init_trajectory(shot_info)
         cdef BCLIBC_MaxRangeResult range_out
-        cdef PyEngineError err
-        cdef bint ok
+        cdef BCLIBC_Result[BCLIBC_MaxRangeResult] res
         with nogil:
-            ok = py_engine_find_max_range(
-                self._this,
-                low_angle_deg,
-                high_angle_deg,
-                _APEX_IS_MAX_RANGE_RADIANS,
-                range_out,
-                err,
-            )
-        if not ok:
-            raise_engine_error(err)
+            res = self._this.find_max_range(low_angle_deg, high_angle_deg, _APEX_IS_MAX_RANGE_RADIANS)
+        if not res.has_value():
+            raise_engine_error(res.error())
+        range_out = res.value()
         return range_out
 
     cdef BCLIBC_TrajectoryData _find_apex(
@@ -578,17 +523,17 @@ cdef class CythonizedBaseIntegrationEngine:
         self._init_trajectory(shot_info)
         cdef BCLIBC_BaseTrajData apex = BCLIBC_BaseTrajData()
         cdef BCLIBC_TrajectoryData full_data
-        cdef PyEngineError err
-        cdef bint ok
+        cdef BCLIBC_Result[monostate] res
         with nogil:
-            ok = py_engine_find_apex(self._this, apex, err)
-        if not ok:
-            raise_engine_error(err)
-        # py_trajectory_data_from_base is declared "except 0": a failure already sets the
-        # Python exception, so Cython raises it automatically -- no need to check here too.
-        py_trajectory_data_from_base(
-            self._this.shot, apex, BCLIBC_TrajFlag.BCLIBC_TRAJ_FLAG_APEX, full_data
+            res = self._this.find_apex(apex)
+        if not res.has_value():
+            raise_engine_error(res.error())
+        cdef BCLIBC_Result[BCLIBC_TrajectoryData] full_result = BCLIBC_TrajectoryData.from_base(
+            self._this.shot, apex, BCLIBC_TrajFlag.BCLIBC_TRAJ_FLAG_APEX
         )
+        if not full_result.has_value():
+            raise_std_error(full_result.error())
+        full_data = full_result.value()
         return full_data
 
     cdef double _zero_angle(
@@ -609,19 +554,12 @@ cdef class CythonizedBaseIntegrationEngine:
         """
         self._init_trajectory(shot_info)
         cdef double angle_out
-        cdef PyEngineError err
-        cdef bint ok
+        cdef BCLIBC_Result[double] res
         with nogil:
-            ok = py_engine_zero_angle(
-                self._this,
-                distance,
-                _APEX_IS_MAX_RANGE_RADIANS,
-                _ALLOWED_ZERO_ERROR_FEET,
-                angle_out,
-                err,
-            )
-        if not ok:
-            raise_engine_error(err)
+            res = self._this.zero_angle(distance, _APEX_IS_MAX_RANGE_RADIANS, _ALLOWED_ZERO_ERROR_FEET)
+        if not res.has_value():
+            raise_engine_error(res.error())
+        angle_out = res.value()
         return angle_out
 
     cdef void _integrate_raw_at(
@@ -654,19 +592,11 @@ cdef class CythonizedBaseIntegrationEngine:
             SolverRuntimeError: If some other internal error occured
         """
         self._init_trajectory(shot_info)
-        cdef PyEngineError err
-        cdef bint ok
+        cdef BCLIBC_Result[monostate] res
         with nogil:
-            ok = py_engine_integrate_at(
-                self._this,
-                key,
-                target_value,
-                raw_data,
-                full_data,
-                err,
-            )
-        if not ok:
-            raise_engine_error(err)
+            res = self._this.integrate_at(key, target_value, raw_data, full_data)
+        if not res.has_value():
+            raise_engine_error(res.error())
 
     cdef void _integrate(
         CythonizedBaseIntegrationEngine self,
@@ -689,9 +619,8 @@ cdef class CythonizedBaseIntegrationEngine:
                 BCLIBC_TerminationReason: Termination reason if applicable.
         """
         self._init_trajectory(shot_info)
-        cdef PyEngineError err
-        cdef bint ok
+        cdef BCLIBC_Result[monostate] res
         with nogil:
-            ok = py_engine_integrate(self._this, range_limit_ft, handler, reason, err)
-        if not ok:
-            raise_engine_error(err)
+            res = self._this.integrate(range_limit_ft, handler, reason)
+        if not res.has_value():
+            raise_engine_error(res.error())

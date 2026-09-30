@@ -4,61 +4,22 @@ from py_ballisticcalc_exts.base_engine cimport (
     CythonizedBaseIntegrationEngine,
     BCLIBC_BaseTrajDataHandlerInterface
 )
+from py_ballisticcalc_exts.result cimport BCLIBC_Result, monostate
 
 cdef extern from "include/bclibc/tsitouras.hpp" namespace "bclibc" nogil:
-    void BCLIBC_integrateTsitouras(
-        BCLIBC_BaseEngine &, BCLIBC_BaseTrajDataHandlerInterface &, BCLIBC_TerminationReason &) except +
+    BCLIBC_Result[monostate] BCLIBC_integrateTsitouras(
+        BCLIBC_BaseEngine &, BCLIBC_BaseTrajDataHandlerInterface &, BCLIBC_TerminationReason &) noexcept
 
     # Stateful functor: owns its own tolerances/step-counts per instance,
     # replacing the old thread-local free-function API.
     cdef cppclass BCLIBC_TsitourasIntegrator:
         BCLIBC_TsitourasIntegrator() except +
-        void operator()(
-            BCLIBC_BaseEngine &, BCLIBC_BaseTrajDataHandlerInterface &, BCLIBC_TerminationReason &) except +
+        BCLIBC_Result[monostate] operator()(
+            BCLIBC_BaseEngine &, BCLIBC_BaseTrajDataHandlerInterface &, BCLIBC_TerminationReason &) noexcept
         void get_stats(int &, int &) const
-        # set_relative_tolerance/set_absolute_tolerance now return a Result instead of
-        # throwing std::invalid_argument; called only through the py_tsitouras_set_*()
-        # wrappers below.
+        BCLIBC_Result[monostate] set_relative_tolerance(double tolerance) noexcept
+        BCLIBC_Result[monostate] set_absolute_tolerance(double tolerance) noexcept
 
-# bclibc no longer throws: BCLIBC_TsitourasIntegrator's tolerance setters return a Result.
-# Self-contained here: this is the only extension that compiles tsitouras.cpp
-# (see setup.py's _TSITOURAS_DEPS).
-cdef extern from *:
-    """
-    #include "bclibc/tsitouras.hpp"
-    #include <Python.h>
-    #include <variant>
-
-    namespace {
-        static bool py_tsitouras_set_relative_tolerance(
-            bclibc::BCLIBC_TsitourasIntegrator &integrator, double tolerance)
-        {
-            auto result = integrator.set_relative_tolerance(tolerance);
-            if (bclibc::has_error(result))
-            {
-                const auto &error = std::get<bclibc::BCLIBC_BaseError>(result);
-                PyErr_SetString(PyExc_ValueError, std::visit([](const auto &e) { return e.what(); }, error));
-                return 0;
-            }
-            return 1;
-        }
-
-        static bool py_tsitouras_set_absolute_tolerance(
-            bclibc::BCLIBC_TsitourasIntegrator &integrator, double tolerance)
-        {
-            auto result = integrator.set_absolute_tolerance(tolerance);
-            if (bclibc::has_error(result))
-            {
-                const auto &error = std::get<bclibc::BCLIBC_BaseError>(result);
-                PyErr_SetString(PyExc_ValueError, std::visit([](const auto &e) { return e.what(); }, error));
-                return 0;
-            }
-            return 1;
-        }
-    }
-    """
-    bint py_tsitouras_set_relative_tolerance(BCLIBC_TsitourasIntegrator&, double) except 0
-    bint py_tsitouras_set_absolute_tolerance(BCLIBC_TsitourasIntegrator&, double) except 0
 
 cdef class CythonizedTsitourasIntegrationEngine(CythonizedBaseIntegrationEngine):
     cdef double _relative_tolerance
