@@ -1,0 +1,1229 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title id="pageTitle">Aerial Target Sight-FOV Compare</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<body class="bg-slate-100 text-slate-900">
+  <div class="max-w-5xl mx-auto p-3 sm:p-6 space-y-4 sm:space-y-6"
+    style="padding-bottom: calc(12rem + env(safe-area-inset-bottom, 0px));">
+
+    <header>
+      <h1 id="appTitle" class="text-xl sm:text-2xl font-semibold">Aerial Target Sight-FOV Compare</h1>
+      <p id="introText" class="text-sm text-slate-500 mt-1">
+        Drop one .a7p ballistic profile below. For a target crossing straight and level, strictly
+        perpendicular to the line of sight at constant speed, this computes the required windage lead
+        by iterative convergence and checks whether the lead point still falls inside two different
+        scope fields of view, so you can compare them directly.
+      </p>
+      <p class="text-xs text-slate-400 mt-1">
+        <span id="creditsNote">Your profile and settings are kept in this browser only (localStorage).</span>
+      </p>
+    </header>
+
+    <section class="grid grid-cols-2 lg:grid-cols-3 gap-3">
+      <div class="bg-white rounded-lg shadow p-3 sm:p-4">
+        <label id="targetDistanceLabel" class="block text-sm font-medium mb-1" for="targetDistance">Target distance
+          (slant), m</label>
+        <input id="targetDistance" type="number" value="707.11" min="1" step="1"
+          class="w-full rounded border-slate-300 focus:border-blue-500 focus:ring-blue-500" />
+      </div>
+      <div class="bg-white rounded-lg shadow p-3 sm:p-4">
+        <label id="lookAngleLabel" class="block text-sm font-medium mb-1" for="lookAngle">Look angle, deg</label>
+        <input id="lookAngle" type="number" value="45" step="0.5"
+          class="w-full rounded border-slate-300 focus:border-blue-500 focus:ring-blue-500" />
+      </div>
+      <div class="bg-white rounded-lg shadow p-3 sm:p-4">
+        <label id="targetSpeedLabel" class="block text-sm font-medium mb-1" for="targetSpeed">Target speed, m/s</label>
+        <input id="targetSpeed" type="number" value="50" min="0" step="1"
+          class="w-full rounded border-slate-300 focus:border-blue-500 focus:ring-blue-500" />
+      </div>
+    </section>
+
+    <section class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+      <div class="bg-white rounded-lg shadow p-3 sm:p-4">
+        <div class="font-medium mb-2 flex items-center gap-2">
+          <span id="fovALabel">FOV A</span>
+          <span class="inline-block w-3 h-3 rounded-sm" style="background:#eab308"></span>
+        </div>
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label id="fovAXLabel" class="block text-xs text-slate-500 mb-1" for="fovAX">Horizontal, deg</label>
+            <input id="fovAX" type="number" value="12.5" min="0.01" step="0.01"
+              class="w-full rounded border-slate-300 focus:border-blue-500 focus:ring-blue-500" />
+          </div>
+          <div>
+            <label id="fovAYLabel" class="block text-xs text-slate-500 mb-1" for="fovAY">Vertical, deg</label>
+            <input id="fovAY" type="number" value="9.95" min="0.01" step="0.01"
+              class="w-full rounded border-slate-300 focus:border-blue-500 focus:ring-blue-500" />
+          </div>
+        </div>
+      </div>
+      <div class="bg-white rounded-lg shadow p-3 sm:p-4">
+        <div class="font-medium mb-2 flex items-center gap-2">
+          <span id="fovBLabel">FOV B</span>
+          <span class="inline-block w-3 h-3 rounded-sm" style="background:#0ea5e9"></span>
+        </div>
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label id="fovBXLabel" class="block text-xs text-slate-500 mb-1" for="fovBX">Horizontal, deg</label>
+            <input id="fovBX" type="number" value="5.86" min="0.01" step="0.01"
+              class="w-full rounded border-slate-300 focus:border-blue-500 focus:ring-blue-500" />
+          </div>
+          <div>
+            <label id="fovBYLabel" class="block text-xs text-slate-500 mb-1" for="fovBY">Vertical, deg</label>
+            <input id="fovBY" type="number" value="4.69" min="0.01" step="0.01"
+              class="w-full rounded border-slate-300 focus:border-blue-500 focus:ring-blue-500" />
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <div id="statusBox" class="bg-white rounded-lg shadow p-3 sm:p-4 text-sm text-slate-500">
+      Drop a profile to begin.
+    </div>
+
+    <section>
+      <div id="profileDrop"
+        class="border-2 sm:border-dashed border-slate-300 rounded-lg p-4 sm:p-6 text-center text-slate-500 sm:text-slate-400 bg-white active:bg-slate-50 cursor-pointer transition-colors text-sm sm:text-base">
+        <span id="profileDropDesktopText" class="hidden sm:inline">Drop one .a7p file here, or tap to browse</span>
+        <span id="profileDropMobileText" class="sm:hidden">📁 Tap to choose a .a7p file</span>
+      </div>
+      <input id="profileFileInput" type="file" accept=".a7p" class="hidden" />
+      <div id="profileCard" class="mt-3"></div>
+    </section>
+
+    <section class="bg-white rounded-lg shadow p-3 sm:p-4">
+      <div id="resultsSummary" class="text-sm space-y-1 mb-3"></div>
+
+      <div class="flex flex-wrap items-center gap-x-4 gap-y-1 mb-2">
+        <div id="legend" class="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-600"></div>
+        <label class="inline-flex items-center gap-2 cursor-pointer">
+          <input id="showFovCone" type="checkbox" class="sr-only peer" checked />
+          <div
+            class="relative w-9 h-5 bg-slate-300 rounded-full peer-checked:bg-blue-600 transition-colors after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-4">
+          </div>
+          <span id="showFovConeLabel" class="text-xs text-slate-600">Show FOV cone/rays from observer</span>
+        </label>
+        <label class="inline-flex items-center gap-2 cursor-pointer">
+          <input id="trueProjection" type="checkbox" class="sr-only peer" />
+          <div
+            class="relative w-9 h-5 bg-slate-300 rounded-full peer-checked:bg-blue-600 transition-colors after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-4">
+          </div>
+          <span id="trueProjectionLabel" class="text-xs text-slate-600">True perspective projection (trapezoid)</span>
+        </label>
+      </div>
+
+      <div class="relative w-full" style="aspect-ratio: 4/3;">
+        <canvas id="fovCanvas" class="w-full h-full"></canvas>
+      </div>
+
+      <div class="flex items-center gap-3 mt-2">
+        <button id="playBtn" class="text-sm bg-blue-600 hover:bg-blue-500 text-white rounded px-3 py-1.5 font-medium"
+          disabled>▶</button>
+        <select id="playbackSpeed" class="text-sm rounded border-slate-300 focus:border-blue-500 focus:ring-blue-500">
+          <option value="0.25">0.25×</option>
+          <option value="0.5" selected>0.5×</option>
+          <option value="1">1×</option>
+        </select>
+        <input id="frameSlider" type="range" min="0" max="0" value="0" step="1" class="flex-1" disabled />
+        <span id="frameLabel" class="text-xs text-slate-500 w-16 text-right">0 / 0</span>
+      </div>
+    </section>
+  </div>
+
+  <div id="exampleToast"
+    class="hidden fixed top-4 left-1/2 -translate-x-1/2 w-[calc(100%-2rem)] sm:w-auto sm:max-w-sm bg-slate-900 text-white rounded-lg shadow-lg p-4 z-50">
+    <p id="toastText" class="text-sm">No profile loaded yet. Try the bundled example:</p>
+    <p id="toastExample" class="text-xs text-slate-300 mt-0.5">M33 BALL</p>
+    <div class="mt-3 flex gap-2 justify-end">
+      <button id="exampleDismiss" class="text-xs text-slate-300 hover:text-white px-2 py-1">Dismiss</button>
+      <button id="exampleLoad" class="text-xs bg-blue-600 hover:bg-blue-500 rounded px-3 py-1.5 font-medium">Load
+        example</button>
+    </div>
+  </div>
+
+  <script type="module">
+    import {
+      Calculator, Shot, Weapon, Ammo, DragModel, DragModelMultiBC, BCPoint,
+      DragTables, Atmo, UNew, Distance, Angular, Velocity, preferredUnits,
+    } from "https://cdn.jsdelivr.net/npm/js-ballistics@3.1.0-rc.3/dist/index.js";
+    import { decode } from "https://esm.sh/a7p-js@1.2.1";
+
+    preferredUnits.distance = Distance.Meter;
+    preferredUnits.velocity = Velocity.MPS;
+    preferredUnits.drop = Distance.Centimeter;
+    preferredUnits.sight_height = Distance.Millimeter;
+    preferredUnits.angular = Angular.Degree;
+    preferredUnits.adjustment = Angular.MIL;
+
+    const STORAGE_KEY = "fov-compare-v1";
+    const K_SCREEN = 500; // arbitrary internal projection scale (visualization only)
+    const POSITION_VECTOR_COLOR = "#0891b2"; // teal
+    const LEAD_VECTOR_COLOR = "#9333ea"; // vivid purple
+    const MAX_ITER = 10;
+    const CONV_THRESHOLD_S = 0.001;
+
+    // ---- i18n ---------------------------------------------------------------
+    const LOCALE = /^(uk|ru)/i.test(navigator.language || "") ? "uk" : "en";
+
+    const STRINGS = {
+      en: {
+        pageTitle: "Aerial Target Sight-FOV Compare",
+        appTitle: "Aerial Target Sight-FOV Compare",
+        introText:
+          "Drop one .a7p ballistic profile below. For a target crossing straight and level, strictly " +
+          "perpendicular to the line of sight at constant speed, this computes the required windage lead " +
+          "by iterative convergence and checks whether the lead point still falls inside two different " +
+          "scope fields of view, so you can compare them directly.",
+        creditsNote: "Your profile and settings are kept in this browser only (localStorage).",
+        targetDistanceLabel: "Target distance (slant), m",
+        lookAngleLabel: "Look angle, deg",
+        targetSpeedLabel: "Target speed, m/s",
+        fovALabel: "FOV A",
+        fovBLabel: "FOV B",
+        fovAXLabel: "Horizontal, deg",
+        fovAYLabel: "Vertical, deg",
+        fovBXLabel: "Horizontal, deg",
+        fovBYLabel: "Vertical, deg",
+        statusInitial: "Drop a profile to begin.",
+        profileDropDesktopText: "Drop one .a7p file here, or tap to browse",
+        profileDropMobileText: "📁 Tap to choose a .a7p file",
+        toastText: "No profile loaded yet. Try the bundled example:",
+        toastExample: "M33 BALL",
+        exampleDismiss: "Dismiss",
+        exampleLoad: "Load example",
+        removeProfile: "✕",
+        fallbackBadge: "⚠ custom BC approximated",
+        fallbackBadgeTitle: "CUSTOM Cd/Mach curve approximated as a single G1 BC",
+        statusComputing: "Computing…",
+        statusResult: "Zeroed at {zeroDist} m ({zero} mil)",
+        statusError: "Error: {msg}",
+        parseError: "Failed to parse {name}: {msg}",
+        exampleLoadError: "Failed to load example profile: {msg}",
+        resTof: "Time of flight (TOF)",
+        resDistance: "Distance at intercept",
+        resLateral: "Target lateral travel during TOF",
+        resWindage: "Windage lead",
+        resIter: "Iterations",
+        resError: "Error (TOF convergence residual)",
+        resConverged: "converged",
+        resNotConverged: "NOT converged",
+        resHalfFov: "half-FOV",
+        resInside: "✓ inside FOV",
+        resOutside: "✗ OUTSIDE FOV",
+        legendTarget: "Target",
+        legendLead: "Lead point",
+        legendVelocity: "Velocity",
+        legendReticle: "Reticle (mil rings)",
+        legendPositionVector: "Position vector",
+        legendLeadVector: "Lead vector",
+        showFovConeLabel: "Show FOV cone/rays from observer",
+        trueProjectionLabel: "True perspective projection (trapezoid)",
+      },
+      uk: {
+        pageTitle: "Порівняння FOV прицілу для аеро-цілі",
+        appTitle: "Порівняння FOV прицілу для аеро-цілі",
+        introText:
+          "Перетягніть один балістичний профіль .a7p нижче. Для цілі, що летить прямо і рівно, строго " +
+          "перпендикулярно до лінії візування зі сталою швидкістю, тут обчислюється потрібне бічне " +
+          "упередження методом ітеративної збіжності, і перевіряється, чи потрапляє точка упередження " +
+          "у поле зору двох різних прицілів, щоб порівняти їх напряму.",
+        creditsNote: "Ваш профіль і налаштування зберігаються лише у цьому браузері (localStorage).",
+        targetDistanceLabel: "Дальність до цілі (slant), м",
+        lookAngleLabel: "Кут візування, °",
+        targetSpeedLabel: "Швидкість цілі, м/с",
+        fovALabel: "FOV A",
+        fovBLabel: "FOV B",
+        fovAXLabel: "Горизонтальний, °",
+        fovAYLabel: "Вертикальний, °",
+        fovBXLabel: "Горизонтальний, °",
+        fovBYLabel: "Вертикальний, °",
+        statusInitial: "Перетягніть профіль, щоб почати.",
+        profileDropDesktopText: "Перетягніть сюди один .a7p файл, або натисніть, щоб обрати",
+        profileDropMobileText: "📁 Натисніть, щоб обрати .a7p файл",
+        toastText: "Ще немає завантаженого профілю. Спробуйте вбудований приклад:",
+        toastExample: "M33 BALL",
+        exampleDismiss: "Закрити",
+        exampleLoad: "Завантажити приклад",
+        removeProfile: "✕",
+        fallbackBadge: "⚠ CUSTOM БК приблизно",
+        fallbackBadgeTitle: "Крива CUSTOM Cd/Mach наближена як одна точка БК G1",
+        statusComputing: "Обчислення…",
+        statusResult: "Пристрілка на {zeroDist} м ({zero} mil)",
+        statusError: "Помилка: {msg}",
+        parseError: "Не вдалось розпарсити {name}: {msg}",
+        exampleLoadError: "Не вдалось завантажити приклад: {msg}",
+        resTof: "Час польоту кулі (TOF)",
+        resDistance: "Дальність у точці зустрічі",
+        resLateral: "Бічне зміщення цілі за TOF",
+        resWindage: "Упередження (windage)",
+        resIter: "Ітерацій",
+        resError: "Похибка (залишок збіжності TOF)",
+        resConverged: "збіглося",
+        resNotConverged: "НЕ збіглося",
+        resHalfFov: "половина FOV",
+        resInside: "✓ в межах FOV",
+        resOutside: "✗ ПОЗА FOV",
+        legendTarget: "Ціль",
+        legendLead: "Точка упередження",
+        legendVelocity: "Швидкість",
+        legendReticle: "Сітка (mil-кільця)",
+        legendPositionVector: "Вектор позиції",
+        legendLeadVector: "Вектор упередження",
+        showFovConeLabel: "Показати конус/промені FOV від спостерігача",
+        trueProjectionLabel: "Справжня перспективна проєкція (трапеція)",
+      },
+    };
+
+    function t(key, vars) {
+      let str = STRINGS[LOCALE][key] ?? STRINGS.en[key] ?? key;
+      if (vars) {
+        for (const [k, v] of Object.entries(vars)) str = str.replaceAll(`{${k}}`, v);
+      }
+      return str;
+    }
+
+    function applyStaticI18n() {
+      document.documentElement.lang = LOCALE;
+      document.title = t("pageTitle");
+      document.getElementById("appTitle").textContent = t("appTitle");
+      document.getElementById("introText").innerHTML = t("introText");
+      document.getElementById("creditsNote").textContent = t("creditsNote");
+      document.getElementById("targetDistanceLabel").textContent = t("targetDistanceLabel");
+      document.getElementById("lookAngleLabel").textContent = t("lookAngleLabel");
+      document.getElementById("targetSpeedLabel").textContent = t("targetSpeedLabel");
+      document.getElementById("fovALabel").textContent = t("fovALabel");
+      document.getElementById("fovBLabel").textContent = t("fovBLabel");
+      document.getElementById("fovAXLabel").textContent = t("fovAXLabel");
+      document.getElementById("fovAYLabel").textContent = t("fovAYLabel");
+      document.getElementById("fovBXLabel").textContent = t("fovBXLabel");
+      document.getElementById("fovBYLabel").textContent = t("fovBYLabel");
+      document.getElementById("profileDropDesktopText").textContent = t("profileDropDesktopText");
+      document.getElementById("profileDropMobileText").textContent = t("profileDropMobileText");
+      document.getElementById("showFovConeLabel").textContent = t("showFovConeLabel");
+      document.getElementById("trueProjectionLabel").textContent = t("trueProjectionLabel");
+      document.getElementById("toastText").textContent = t("toastText");
+      document.getElementById("toastExample").textContent = t("toastExample");
+      document.getElementById("exampleDismiss").textContent = t("exampleDismiss");
+      document.getElementById("exampleLoad").textContent = t("exampleLoad");
+      document.getElementById("statusBox").textContent = t("statusInitial");
+    }
+
+    const calc = new Calculator();
+    const state = {
+      profile: null,
+      series: null,
+      fovA: null,
+      fovB: null,
+      viewBounds: null,
+      frameIndex: 0,
+      playing: false,
+      rafId: null,
+      lastTimestamp: null,
+      virtualElapsedS: 0,
+      playbackSpeed: 0.5,
+      showFovCone: true,
+      trueProjection: false,
+    };
+
+    // ---- .a7p -> js-ballistics mapping (same convention as the trajectory-compare tool) ----
+    function a7pProfileToLoad(profile, fileName) {
+      const weight = UNew.Grain(profile.bWeight / 10);
+      const diameter = UNew.Inch(profile.bDiameter / 1000);
+      const length = UNew.Inch(profile.bLength / 1000);
+
+      let dm;
+      let usingFallbackDragTable = false;
+      if (profile.bcType === "CUSTOM") {
+        usingFallbackDragTable = true;
+        dm = new DragModel({
+          bc: profile.coefRows[0].bcCd / 10000, dragTable: DragTables.G1, weight, diameter, length,
+        });
+      } else {
+        const dragTable = DragTables[profile.bcType];
+        const bcPoints = profile.coefRows.map(
+          (row) => new BCPoint({ BC: row.bcCd / 10000, V: UNew.MPS(row.mv / 10) })
+        );
+        dm = bcPoints.length > 1
+          ? DragModelMultiBC({ bcPoints, dragTable, weight, diameter, length })
+          : new DragModel({ bc: bcPoints[0].BC, dragTable, weight, diameter, length });
+      }
+
+      const twistIn = profile.rTwist / 100;
+      const twist = profile.twistDir === "LEFT" ? -twistIn : twistIn;
+
+      return {
+        fileName,
+        label: profile.bulletName || profile.cartridgeName || profile.profileName || fileName,
+        usingFallbackDragTable,
+        weapon: () => new Weapon({ sightHeight: UNew.Millimeter(profile.scHeight), twist: UNew.Inch(twist) }),
+        ammo: () => new Ammo({
+          dm,
+          mv: UNew.MPS(profile.cMuzzleVelocity / 10),
+          powderTemp: UNew.Celsius(profile.cZeroPTemperature),
+          tempModifier: profile.cTCoeff / 1000,
+          usePowderSensitivity: true,
+        }),
+        zeroLookAngle: UNew.Degree(profile.cZeroWPitch),
+      };
+    }
+
+    // ---- input readers -------------------------------------------------------
+    function numInput(id, fallback) {
+      const v = parseFloat(document.getElementById(id).value);
+      return Number.isFinite(v) ? v : fallback;
+    }
+
+    // ---- convergence algorithm: mirrors crossing_lead.py / lead.py ----
+    // Target moves at constant speed strictly perpendicular to the line of sight
+    // (only Z changes; X, Y stay fixed). Zeroing happens once; the convergence loop
+    // is solved independently for every animation frame (each a different starting Z0),
+    // matching StraightCrossingTarget in lead.py sweeping from -amplitude to +amplitude.
+    //
+    // The time of flight to a position comes from a single Calculator.aim() call.
+    // The bullet flies in a vertical plane towards the point, so the look angle and
+    // the slant distance are recomputed from the exact 3D position on every iteration.
+    const ANIMATION_FRAMES = 72;
+
+    async function computeAnimationSeries(load, { targetDistanceM, lookAngleDeg, speedMps }) {
+      const weapon = load.weapon();
+      const ammo = load.ammo();
+      const atmo = Atmo.icao();
+
+      // Zero distance always equals target distance - no separate zero-distance input.
+      const zeroShot = new Shot({ weapon, ammo, atmo, lookAngle: load.zeroLookAngle });
+      const zeroElevation = await calc.setWeaponZero(zeroShot, UNew.Meter(targetDistanceM));
+      weapon.zeroElevation = zeroElevation;
+
+      const lookAngleRad = (lookAngleDeg * Math.PI) / 180;
+      const x = targetDistanceM * Math.cos(lookAngleRad);
+      const y = targetDistanceM * Math.sin(lookAngleRad);
+
+      // Trajectory point (with .time) at the target position (x, y, z).
+      async function aimAt(z) {
+        const horizontalRange = Math.hypot(x, z);
+        const shot = new Shot({
+          weapon, ammo, atmo,
+          lookAngle: UNew.Radian(Math.atan2(y, horizontalRange)),
+        });
+        const [, , point] = await calc.aim(shot, UNew.Meter(Math.hypot(horizontalRange, y)));
+        return point;
+      }
+
+      async function solveAt(z0) {
+        let tof = (await aimAt(z0)).time;
+        let converged = false;
+        let iterations = 0;
+        let residualS = Infinity; // how much TOF still moved on the deciding iteration
+
+        for (let i = 0; i < MAX_ITER; i++) {
+          iterations = i + 1;
+          const tofNew = (await aimAt(z0 + speedMps * tof)).time;
+          residualS = Math.abs(tofNew - tof);
+          if (residualS < CONV_THRESHOLD_S) {
+            converged = true;
+            tof = tofNew;
+            break;
+          }
+          tof = tofNew;
+        }
+
+        const futureZ = z0 + speedMps * tof;
+        const futureDistance = Math.sqrt(x * x + y * y + futureZ * futureZ);
+        const windageRad = Math.atan2(futureZ - z0, futureDistance);
+        return { x, y, z0, tof, futureZ, futureDistance, windageRad, iterations, converged, residualS };
+      }
+
+      // Same convention as StraightCrossingTarget in lead.py: one clean pass from
+      // -amplitude to +amplitude, sized so the sweep takes 8s of REAL target motion
+      // (durationS below) - independent of speed, since amplitude scales with it.
+      const amplitude = speedMps > 0 ? speedMps * 4 : 0;
+      const durationS = speedMps > 0 ? (2 * amplitude) / speedMps : 0;
+      const numFrames = speedMps > 0 ? ANIMATION_FRAMES : 1;
+      const frames = [];
+      for (let i = 0; i < numFrames; i++) {
+        const z0 = numFrames === 1 ? 0 : -amplitude + (2 * amplitude * i) / (numFrames - 1);
+        frames.push(await solveAt(z0));
+      }
+
+      return { frames, x, y, speedMps, amplitude, durationS, zeroElevationMil: zeroElevation.In(Angular.MIL) };
+    }
+
+    // ---- FOV geometry -------------------------------------------------------
+    // The scope's true FOV is a cone of constant angular half-width/half-height
+    // around the ACTUAL boresight direction (the real 3D vector toward the lead
+    // point) - not around the global X-axis. Projected into our screen space
+    // (K*z/x, K*y/x), that cone becomes a distorted quadrilateral (trapezoid-ish),
+    // not a flat rectangle, whenever the boresight is off-axis (elevation and/or
+    // windage != 0). We build a local "camera" frame around the boresight and
+    // project true angular offsets, instead of approximating with a flat box.
+    function vecCross(a, b) {
+      return [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]];
+    }
+    function vecNormalize(v) {
+      const n = Math.hypot(v[0], v[1], v[2]) || 1;
+      return [v[0] / n, v[1] / n, v[2] / n];
+    }
+    function buildLocalFrame(forward) {
+      const f = vecNormalize(forward);
+      const worldUp = [0, 1, 0];
+      let right = vecCross(f, worldUp);
+      const rightNorm = Math.hypot(...right);
+      right = rightNorm < 1e-9 ? [1, 0, 0] : right.map((c) => c / rightNorm);
+      const up = vecNormalize(vecCross(right, f));
+      return { f, right, up };
+    }
+    // angleH/angleV are true angular offsets (radians) from the boresight, in a
+    // rectilinear (tangent-space) sense - matches how FOV degrees are defined.
+    function angularOffsetToScreen(frame, angleHRad, angleVRad, K) {
+      const { f, right, up } = frame;
+      const th = Math.tan(angleHRad), tv = Math.tan(angleVRad);
+      const dx = f[0] + right[0] * th + up[0] * tv;
+      const dy = f[1] + right[1] * th + up[1] * tv;
+      const dz = f[2] + right[2] * th + up[2] * tv;
+      return [(K * dz) / dx, (K * dy) / dx];
+    }
+
+    function fovCorners(fovXDeg, fovYDeg, forward, K) {
+      const frame = buildLocalFrame(forward);
+      const halfH = (fovXDeg / 2) * (Math.PI / 180);
+      const halfV = (fovYDeg / 2) * (Math.PI / 180);
+      return [
+        angularOffsetToScreen(frame, -halfH, halfV, K),
+        angularOffsetToScreen(frame, halfH, halfV, K),
+        angularOffsetToScreen(frame, halfH, -halfV, K),
+        angularOffsetToScreen(frame, -halfH, -halfV, K),
+      ];
+    }
+
+    // Rays to the box's left/right edge MIDPOINTS (ignoring its height entirely),
+    // rather than to whichever corners give the widest possible angular spread -
+    // always the smaller of the two angular spans.
+    function fovMinimalRays(fovXDeg, forward, K) {
+      const frame = buildLocalFrame(forward);
+      const halfH = (fovXDeg / 2) * (Math.PI / 180);
+      return [
+        angularOffsetToScreen(frame, -halfH, 0, K),
+        angularOffsetToScreen(frame, halfH, 0, K),
+      ];
+    }
+
+    // Flat/simplified approximation (default): a Z/Y-axis-aligned rectangle sized
+    // by K*(D/x), ignoring how the true FOV cone actually tilts/distorts around
+    // an off-axis boresight. Much easier to read at a glance; toggle to the true
+    // perspective projection above (fovCorners) for geometric accuracy.
+    function fovCornersFlat(fovXDeg, fovYDeg, x, slantDistance, centerZ, centerY, K) {
+      const scale = K * (slantDistance / x);
+      const halfW = scale * Math.tan((fovXDeg / 2) * (Math.PI / 180));
+      const halfH = scale * Math.tan((fovYDeg / 2) * (Math.PI / 180));
+      return [
+        [centerZ - halfW, centerY + halfH],
+        [centerZ + halfW, centerY + halfH],
+        [centerZ + halfW, centerY - halfH],
+        [centerZ - halfW, centerY - halfH],
+      ];
+    }
+    function fovMinimalRaysFlat(fovXDeg, x, slantDistance, centerZ, centerY, K) {
+      const scale = K * (slantDistance / x);
+      const halfW = scale * Math.tan((fovXDeg / 2) * (Math.PI / 180));
+      return [[centerZ - halfW, centerY], [centerZ + halfW, centerY]];
+    }
+
+    function extendRayToBounds([cz, cy], xlim, ylim, margin = 1.2) {
+      const ts = [];
+      if (cz > 0) ts.push(xlim[1] / cz);
+      else if (cz < 0) ts.push(xlim[0] / cz);
+      if (cy > 0) ts.push(ylim[1] / cy);
+      else if (cy < 0) ts.push(ylim[0] / cy);
+      const t = Math.min(...ts.filter((v) => v > 0)) * margin;
+      return [cz * t, cy * t];
+    }
+
+    // ---- reticle grid (crosshair + mil-radius rings centered on the lead point) ----
+    const MIL_TO_RAD = Math.PI / 3200; // 6400 mil = 2*pi rad (NATO mil)
+
+    function drawReticleGrid(ctx, toPx, W, H, centerData, forward, K, fovA, fovB, trueProjection) {
+      const [ccx, ccy] = toPx(centerData);
+
+      const maxHalfFovMil = (Math.max(fovA.x, fovA.y, fovB.x, fovB.y) / 2) * (6400 / 360);
+      const maxRadiusMil = maxHalfFovMil * 1.3;
+
+      ctx.save();
+      ctx.strokeStyle = "rgba(15,23,42,0.35)";
+      ctx.fillStyle = "rgba(15,23,42,0.55)";
+      ctx.lineWidth = 1;
+      ctx.font = "10px sans-serif";
+
+      // main crosshair, centered on the lead point (where the reticle actually points)
+      ctx.beginPath();
+      ctx.moveTo(0, ccy); ctx.lineTo(W, ccy);
+      ctx.moveTo(ccx, 0); ctx.lineTo(ccx, H);
+      ctx.stroke();
+
+      // concentric rings at a fixed 20 mil step. True mode: distorted curves at
+      // constant angular radius around the boresight (same tangent-space
+      // convention as fovCorners). Flat mode (default): plain screen-space circles.
+      const milStep = 20;
+      const RING_SAMPLES = 48;
+      ctx.strokeStyle = "rgba(15,23,42,0.18)";
+
+      if (trueProjection) {
+        const frame = buildLocalFrame(forward);
+        for (let mil = milStep; mil <= maxRadiusMil; mil += milStep) {
+          const thetaRad = mil * MIL_TO_RAD;
+          ctx.beginPath();
+          for (let i = 0; i <= RING_SAMPLES; i++) {
+            const phi = (i / RING_SAMPLES) * 2 * Math.PI;
+            const screenPt = angularOffsetToScreen(frame, Math.cos(phi) * thetaRad, Math.sin(phi) * thetaRad, K);
+            const [px, py] = toPx(screenPt);
+            if (i === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+          }
+          ctx.stroke();
+          // label at the upper-right (45°) point of each ring, so labels fan out
+          // instead of clustering at one shared spot.
+          const labelScreenPt = angularOffsetToScreen(frame, Math.SQRT1_2 * thetaRad, Math.SQRT1_2 * thetaRad, K);
+          const [lx, ly] = toPx(labelScreenPt);
+          ctx.fillText(`${mil}`, lx + 3, ly - 3);
+        }
+      } else {
+        const x = forward[0];
+        const slantDistance = Math.hypot(forward[0], forward[1], forward[2]);
+        const scale = K * (slantDistance / x);
+        const [ux] = toPx([centerData[0] + 1, centerData[1]]);
+        const pxPerUnit = Math.abs(ux - ccx);
+        for (let mil = milStep; mil <= maxRadiusMil; mil += milStep) {
+          const radiusPx = scale * Math.tan(mil * MIL_TO_RAD) * pxPerUnit;
+          if (!Number.isFinite(radiusPx) || radiusPx <= 0) continue;
+          ctx.beginPath();
+          ctx.arc(ccx, ccy, radiusPx, 0, 2 * Math.PI);
+          ctx.stroke();
+          ctx.fillText(`${mil}`, ccx + radiusPx * Math.SQRT1_2 + 3, ccy - radiusPx * Math.SQRT1_2 - 3);
+        }
+      }
+      ctx.restore();
+    }
+
+    // ---- canvas rendering -----------------------------------------------------
+    // Fixed view bounds computed ONCE across every animation frame, so the camera
+    // doesn't jump/rescale as the target sweeps across (matches lead.py's fixed
+    // ax.set_xlim/ylim rather than re-fitting per frame).
+    function computeViewBounds(series, fovA, fovB, canvasAspect) {
+      const { x, y } = series;
+      const allPts = [[0, 0]];
+      for (const frame of series.frames) {
+        const targetScreen = [(K_SCREEN * frame.z0) / x, (K_SCREEN * y) / x];
+        const leadScreen = [(K_SCREEN * frame.futureZ) / x, (K_SCREEN * y) / x];
+        allPts.push(targetScreen, leadScreen);
+        const forward = [x, y, frame.futureZ];
+        for (const fov of [fovA, fovB]) {
+          allPts.push(...fovCorners(fov.x, fov.y, forward, K_SCREEN));
+        }
+      }
+
+      const xs = allPts.map((p) => p[0]);
+      const ys = allPts.map((p) => p[1]);
+      let minX = Math.min(...xs), maxX = Math.max(...xs);
+      let minY = Math.min(...ys), maxY = Math.max(...ys);
+      const padX = Math.max((maxX - minX) * 0.15, 20);
+      const padY = Math.max((maxY - minY) * 0.15, 20);
+      minX -= padX; maxX += padX; minY -= padY; maxY += padY;
+
+      const dataW = maxX - minX, dataH = maxY - minY;
+      const dataAspect = dataW / dataH;
+      if (dataAspect > canvasAspect) {
+        const targetH = dataW / canvasAspect;
+        const cy = (minY + maxY) / 2;
+        minY = cy - targetH / 2;
+        maxY = cy + targetH / 2;
+      } else {
+        const targetW = dataH * canvasAspect;
+        const cx = (minX + maxX) / 2;
+        minX = cx - targetW / 2;
+        maxX = cx + targetW / 2;
+      }
+      return { minX, maxX, minY, maxY };
+    }
+
+    function renderFov(frame, fovA, fovB, viewBounds, speedMps, showFovCone, trueProjection) {
+      const canvas = document.getElementById("fovCanvas");
+      const dpr = window.devicePixelRatio || 1;
+      const rect = canvas.getBoundingClientRect();
+      canvas.width = rect.width * dpr;
+      canvas.height = rect.height * dpr;
+      const ctx = canvas.getContext("2d");
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      const W = rect.width, H = rect.height;
+      ctx.clearRect(0, 0, W, H);
+
+      const { x, futureDistance, futureZ, y, z0 } = frame;
+      const targetScreen = [(K_SCREEN * z0) / x, (K_SCREEN * y) / x];
+      const leadScreen = [(K_SCREEN * futureZ) / x, (K_SCREEN * y) / x];
+      const boresightForward = [x, y, futureZ]; // real 3D direction the reticle center points at
+
+      const { minX, maxX, minY, maxY } = viewBounds;
+      const xlim = [minX, maxX];
+      const ylim = [minY, maxY];
+      const toPx = ([px, py]) => [((px - minX) / (maxX - minX)) * W, H - ((py - minY) / (maxY - minY)) * H];
+
+      function drawPolygon(points, fillStyle, strokeStyle) {
+        ctx.beginPath();
+        points.forEach(([px, py], i) => {
+          const [cx, cy] = toPx([px, py]);
+          if (i === 0) ctx.moveTo(cx, cy); else ctx.lineTo(cx, cy);
+        });
+        ctx.closePath();
+        if (fillStyle) { ctx.fillStyle = fillStyle; ctx.fill(); }
+        if (strokeStyle) { ctx.strokeStyle = strokeStyle; ctx.lineWidth = 1.5; ctx.stroke(); }
+      }
+
+      function drawFovSet(fovDeg, color, boxAlpha, coneAlpha) {
+        const corners = trueProjection
+          ? fovCorners(fovDeg.x, fovDeg.y, boresightForward, K_SCREEN)
+          : fovCornersFlat(fovDeg.x, fovDeg.y, x, futureDistance, leadScreen[0], leadScreen[1], K_SCREEN);
+
+        // Rays from the observer (0,0) to the FOV box + the cone fill between
+        // them - optional (toggle), using the box's left/right edge MIDPOINTS
+        // rather than its widest diagonal corners.
+        if (showFovCone) {
+          const [rMin, rMax] = trueProjection
+            ? fovMinimalRays(fovDeg.x, boresightForward, K_SCREEN)
+            : fovMinimalRaysFlat(fovDeg.x, x, futureDistance, leadScreen[0], leadScreen[1], K_SCREEN);
+          const eMin = extendRayToBounds(rMin, xlim, ylim);
+          const eMax = extendRayToBounds(rMax, xlim, ylim);
+          drawPolygon([[0, 0], eMin, eMax], hexWithAlpha(color, coneAlpha), null);
+          ctx.beginPath();
+          const [ox, oy] = toPx([0, 0]);
+          const [mx1, my1] = toPx(eMin);
+          const [mx2, my2] = toPx(eMax);
+          ctx.moveTo(ox, oy); ctx.lineTo(mx1, my1);
+          ctx.moveTo(ox, oy); ctx.lineTo(mx2, my2);
+          ctx.strokeStyle = hexWithAlpha(color, 0.7);
+          ctx.lineWidth = 1;
+          ctx.stroke();
+        }
+
+        drawPolygon(corners, hexWithAlpha(color, boxAlpha), color);
+      }
+
+      function hexWithAlpha(hex, alpha) {
+        const r = parseInt(hex.slice(1, 3), 16);
+        const g = parseInt(hex.slice(3, 5), 16);
+        const b = parseInt(hex.slice(5, 7), 16);
+        return `rgba(${r},${g},${b},${alpha})`;
+      }
+
+      // grid
+      ctx.strokeStyle = "#e2e8f0";
+      ctx.lineWidth = 0.5;
+      for (let gx = Math.ceil(minX / 200) * 200; gx < maxX; gx += 200) {
+        const [px1] = toPx([gx, minY]);
+        ctx.beginPath(); ctx.moveTo(px1, 0); ctx.lineTo(px1, H); ctx.stroke();
+      }
+      for (let gy = Math.ceil(minY / 200) * 200; gy < maxY; gy += 200) {
+        const [, py1] = toPx([minX, gy]);
+        ctx.beginPath(); ctx.moveTo(0, py1); ctx.lineTo(W, py1); ctx.stroke();
+      }
+
+      // crosshair
+      ctx.strokeStyle = "rgba(239,68,68,0.5)";
+      ctx.setLineDash([4, 4]);
+      const [cz0] = toPx([0, minY]);
+      ctx.beginPath(); ctx.moveTo(cz0, 0); ctx.lineTo(cz0, H); ctx.stroke();
+      const [, cyT] = toPx([minX, targetScreen[1]]);
+      ctx.beginPath(); ctx.moveTo(0, cyT); ctx.lineTo(W, cyT); ctx.stroke();
+      ctx.setLineDash([]);
+
+      // position_vector / lead_vector: dotted lines from the observer (0,0) to the
+      // target and to the lead point, matching lead.py.
+      ctx.setLineDash([2, 3]);
+      ctx.lineWidth = 1.5;
+      const [ox0, oy0] = toPx([0, 0]);
+      ctx.strokeStyle = POSITION_VECTOR_COLOR;
+      ctx.beginPath();
+      ctx.moveTo(ox0, oy0);
+      ctx.lineTo(...toPx(targetScreen));
+      ctx.stroke();
+      ctx.strokeStyle = LEAD_VECTOR_COLOR;
+      ctx.beginPath();
+      ctx.moveTo(ox0, oy0);
+      ctx.lineTo(...toPx(leadScreen));
+      ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.lineWidth = 1;
+
+      // Draw the larger FOV first so the smaller one's box always stays visible on top.
+      const areaA = fovA.x * fovA.y, areaB = fovB.x * fovB.y;
+      const setA = () => drawFovSet(fovA, "#eab308", 0.2, 0.1);
+      const setB = () => drawFovSet(fovB, "#0ea5e9", 0.2, 0.07);
+      if (areaA >= areaB) { setA(); setB(); } else { setB(); setA(); }
+
+      // Reticle grid centered on the LEAD POINT (where the reticle center actually
+      // points once the lead is held): main crosshair + concentric rings at
+      // correct mil radii around the true boresight direction, so a ring labeled
+      // "N mil" really is N mil out from the lead point (properly distorted, not
+      // a flat screen-space circle).
+      drawReticleGrid(ctx, toPx, W, H, leadScreen, boresightForward, K_SCREEN, fovA, fovB, trueProjection);
+
+      // velocity arrow (target moves purely in +Z, perpendicular to line of sight)
+      function drawArrow(fromPx, toPx, color) {
+        ctx.strokeStyle = color;
+        ctx.fillStyle = color;
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(fromPx[0], fromPx[1]);
+        ctx.lineTo(toPx[0], toPx[1]);
+        ctx.stroke();
+        const angle = Math.atan2(toPx[1] - fromPx[1], toPx[0] - fromPx[0]);
+        const headLen = 8;
+        ctx.beginPath();
+        ctx.moveTo(toPx[0], toPx[1]);
+        ctx.lineTo(toPx[0] - headLen * Math.cos(angle - Math.PI / 6), toPx[1] - headLen * Math.sin(angle - Math.PI / 6));
+        ctx.lineTo(toPx[0] - headLen * Math.cos(angle + Math.PI / 6), toPx[1] - headLen * Math.sin(angle + Math.PI / 6));
+        ctx.closePath();
+        ctx.fill();
+      }
+      // Arrow length = a fixed fraction of the target->lead displacement (i.e. how
+      // far the target actually travels during TOF), so it visually represents
+      // real motion and can never reach past the lead point itself.
+      if (speedMps > 0) {
+        const VELOCITY_ARROW_FRACTION = 1.0;
+        const arrowTarget = [
+          targetScreen[0] + (leadScreen[0] - targetScreen[0]) * VELOCITY_ARROW_FRACTION,
+          targetScreen[1],
+        ];
+        drawArrow(toPx(targetScreen), toPx(arrowTarget), "#16a34a");
+      }
+
+      // target + lead markers (labels live in the legend only, not on the canvas)
+      // Dot size = a fixed 5 mil angular diameter at that point's own slant
+      // distance (mil-dot reticle convention), not an arbitrary pixel size.
+      const DOT_MIL_DIAMETER = 5;
+      const pxPerUnit = W / (maxX - minX);
+      function dotRadiusPx(slantDistance) {
+        const scale = K_SCREEN * (slantDistance / x);
+        const radiusUnits = scale * Math.tan((DOT_MIL_DIAMETER / 2) * MIL_TO_RAD);
+        return Math.max(radiusUnits * pxPerUnit, 2);
+      }
+
+      function drawDot([px, py], color, radiusPx) {
+        const [cx, cy] = toPx([px, py]);
+        ctx.beginPath();
+        ctx.arc(cx, cy, radiusPx, 0, 2 * Math.PI);
+        ctx.fillStyle = color;
+        ctx.fill();
+        ctx.strokeStyle = "#1e293b";
+        ctx.lineWidth = 1;
+        ctx.stroke();
+      }
+      const targetSlantDistance = Math.sqrt(x * x + y * y + z0 * z0);
+      drawDot(targetScreen, "#dc2626", dotRadiusPx(targetSlantDistance));
+      drawDot(leadScreen, "#d946ef", dotRadiusPx(futureDistance));
+    }
+
+    // ---- results summary ------------------------------------------------------
+    function fovVerdict(windageRad, elevationRadAbs, fovDeg) {
+      const windageMil = Math.abs((windageRad * 180) / Math.PI) * (6400 / 360);
+      const halfFovXMil = (fovDeg.x / 2) * (6400 / 360);
+      const halfFovYMil = (fovDeg.y / 2) * (6400 / 360);
+      const inside = windageMil <= halfFovXMil && elevationRadAbs <= halfFovYMil;
+      return { windageMil, halfFovXMil, halfFovYMil, inside };
+    }
+
+    function renderSummary(result, fovA, fovB) {
+      const windageMil = (result.windageRad * 180) / Math.PI * (6400 / 360);
+      const windageMoa = (result.windageRad * 180) / Math.PI * 60;
+      const vA = fovVerdict(result.windageRad, 0, fovA);
+      const vB = fovVerdict(result.windageRad, 0, fovB);
+
+      const rows = [
+        [t("resTof"), `${result.tof.toFixed(3)} s`],
+        [t("resDistance"), `${result.futureDistance.toFixed(2)} m`],
+        [t("resLateral"), `${(result.futureZ - result.z0).toFixed(2)} m`],
+        [t("resWindage"), `${windageMil.toFixed(2)} mil (${windageMoa.toFixed(2)} MOA)`],
+        [t("resIter"), `${result.iterations} (${result.converged ? t("resConverged") : t("resNotConverged")})`],
+        [t("resError"), `${(result.residualS * 1000).toFixed(2)} ms`],
+      ];
+
+      const rowsHtml = rows.map(([k, v]) => `<div class="flex justify-between gap-2"><span class="text-slate-500">${k}</span><span class="font-medium">${v}</span></div>`).join("");
+
+      const verdictHtml = `
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2">
+      <div class="rounded p-2" style="background:rgba(234,179,8,0.12)">
+        <div class="font-medium">FOV A (${fovA.x}° x ${fovA.y}°) — ${t("resHalfFov")}: ${vA.halfFovXMil.toFixed(1)} mil</div>
+        <div class="${vA.inside ? "text-green-700" : "text-red-700"} font-semibold">${vA.inside ? t("resInside") : t("resOutside")}</div>
+      </div>
+      <div class="rounded p-2" style="background:rgba(14,165,233,0.12)">
+        <div class="font-medium">FOV B (${fovB.x}° x ${fovB.y}°) — ${t("resHalfFov")}: ${vB.halfFovXMil.toFixed(1)} mil</div>
+        <div class="${vB.inside ? "text-green-700" : "text-red-700"} font-semibold">${vB.inside ? t("resInside") : t("resOutside")}</div>
+      </div>
+    </div>`;
+
+      document.getElementById("resultsSummary").innerHTML = rowsHtml + verdictHtml;
+    }
+
+    // ---- legend -------------------------------------------------------------
+    function renderLegend() {
+      const items = [
+        ["#dc2626", t("legendTarget")],
+        ["#d946ef", t("legendLead")],
+        ["#16a34a", t("legendVelocity")],
+        [POSITION_VECTOR_COLOR, t("legendPositionVector")],
+        [LEAD_VECTOR_COLOR, t("legendLeadVector")],
+        ["#0f172a", t("legendReticle")],
+        ["#eab308", "FOV A"],
+        ["#0ea5e9", "FOV B"],
+      ];
+      document.getElementById("legend").innerHTML = items
+        .map(([color, label]) => `<span class="inline-flex items-center gap-1"><span class="inline-block w-3 h-3 rounded-sm" style="background:${color}"></span>${label}</span>`)
+        .join("");
+    }
+
+    // ---- playback -------------------------------------------------------------
+    function stopPlayback() {
+      state.playing = false;
+      if (state.rafId) { cancelAnimationFrame(state.rafId); state.rafId = null; }
+      state.lastTimestamp = null;
+      document.getElementById("playBtn").textContent = "▶";
+    }
+
+    // Linearly interpolate between the two nearest precomputed keyframes so
+    // playback is smooth at 60fps regardless of how many physics samples were
+    // actually computed (iterations/converged aren't numeric, so just carry the
+    // nearer keyframe's value for those two).
+    function interpolateFrame(frames, floatIdx) {
+      const n = frames.length;
+      const i0 = Math.max(0, Math.min(n - 1, Math.floor(floatIdx)));
+      const i1 = Math.min(n - 1, i0 + 1);
+      const frac = floatIdx - i0;
+      const a = frames[i0], b = frames[i1];
+      const lerp = (k) => a[k] + (b[k] - a[k]) * frac;
+      return {
+        x: lerp("x"), y: lerp("y"), z0: lerp("z0"), tof: lerp("tof"),
+        futureZ: lerp("futureZ"), futureDistance: lerp("futureDistance"), windageRad: lerp("windageRad"),
+        iterations: frac < 0.5 ? a.iterations : b.iterations,
+        converged: frac < 0.5 ? a.converged : b.converged,
+        residualS: frac < 0.5 ? a.residualS : b.residualS,
+      };
+    }
+
+    // 1× = real time (wall-clock playback matches the target's actual flight
+    // duration, series.durationS); 0.5×/0.25× stretch it out for easier viewing.
+    // Reads state.playbackSpeed fresh every frame, so changing the dropdown
+    // mid-playback takes effect immediately without restarting.
+    function playbackStep(timestampMs) {
+      if (!state.playing || !state.series) return;
+      if (state.lastTimestamp == null) state.lastTimestamp = timestampMs;
+      const dtS = (timestampMs - state.lastTimestamp) / 1000;
+      state.lastTimestamp = timestampMs;
+      state.virtualElapsedS = (state.virtualElapsedS + dtS * state.playbackSpeed) % state.series.durationS;
+
+      const floatIdx = (state.virtualElapsedS / state.series.durationS) * (state.series.frames.length - 1);
+      const frame = interpolateFrame(state.series.frames, floatIdx);
+      renderSummary(frame, state.fovA, state.fovB);
+      renderFov(frame, state.fovA, state.fovB, state.viewBounds, state.series.speedMps, state.showFovCone, state.trueProjection);
+
+      const idxRounded = Math.round(floatIdx);
+      state.frameIndex = idxRounded;
+      document.getElementById("frameSlider").value = idxRounded;
+      document.getElementById("frameLabel").textContent = `${idxRounded + 1} / ${state.series.frames.length}`;
+
+      state.rafId = requestAnimationFrame(playbackStep);
+    }
+
+    function startPlayback() {
+      if (!state.series || state.series.frames.length <= 1 || state.series.durationS <= 0) return;
+      state.playing = true;
+      state.lastTimestamp = null;
+      document.getElementById("playBtn").textContent = "⏸";
+      state.rafId = requestAnimationFrame(playbackStep);
+    }
+
+    function renderFrame(idx) {
+      if (!state.series) return;
+      state.frameIndex = idx;
+      state.virtualElapsedS = state.series.frames.length > 1
+        ? (idx / (state.series.frames.length - 1)) * state.series.durationS
+        : 0;
+      const frame = state.series.frames[idx];
+      renderSummary(frame, state.fovA, state.fovB);
+      renderFov(frame, state.fovA, state.fovB, state.viewBounds, state.series.speedMps, state.showFovCone, state.trueProjection);
+      const slider = document.getElementById("frameSlider");
+      slider.value = idx;
+      document.getElementById("frameLabel").textContent = `${idx + 1} / ${state.series.frames.length}`;
+    }
+
+    document.getElementById("playBtn").addEventListener("click", () => {
+      if (state.playing) stopPlayback(); else startPlayback();
+    });
+    document.getElementById("frameSlider").addEventListener("input", (e) => {
+      stopPlayback();
+      renderFrame(parseInt(e.target.value, 10));
+    });
+    document.getElementById("playbackSpeed").addEventListener("change", (e) => {
+      state.playbackSpeed = parseFloat(e.target.value) || 0.5;
+      saveState();
+    });
+    document.getElementById("showFovCone").addEventListener("change", (e) => {
+      state.showFovCone = e.target.checked;
+      saveState();
+      if (state.series) renderFrame(state.frameIndex);
+    });
+    document.getElementById("trueProjection").addEventListener("change", (e) => {
+      state.trueProjection = e.target.checked;
+      saveState();
+      if (state.series) renderFrame(state.frameIndex);
+    });
+
+    // ---- orchestration ----------------------------------------------------
+    async function recompute() {
+      stopPlayback();
+      const statusBox = document.getElementById("statusBox");
+      const playBtn = document.getElementById("playBtn");
+      const slider = document.getElementById("frameSlider");
+      if (!state.profile) {
+        statusBox.textContent = t("statusInitial");
+        document.getElementById("resultsSummary").innerHTML = "";
+        document.getElementById("legend").innerHTML = "";
+        playBtn.disabled = true;
+        slider.disabled = true;
+        document.getElementById("frameLabel").textContent = "0 / 0";
+        const canvas = document.getElementById("fovCanvas");
+        const ctx = canvas.getContext("2d");
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        state.series = null;
+        return;
+      }
+      statusBox.textContent = t("statusComputing");
+      try {
+        const params = {
+          targetDistanceM: numInput("targetDistance", 500),
+          lookAngleDeg: numInput("lookAngle", 0),
+          speedMps: numInput("targetSpeed", 0),
+        };
+        state.series = await computeAnimationSeries(state.profile, params);
+        state.fovA = { x: numInput("fovAX", 10), y: numInput("fovAY", 10) };
+        state.fovB = { x: numInput("fovBX", 10), y: numInput("fovBY", 10) };
+
+        const canvas = document.getElementById("fovCanvas");
+        const rect = canvas.getBoundingClientRect();
+        state.viewBounds = computeViewBounds(state.series, state.fovA, state.fovB, rect.width / rect.height);
+
+        renderLegend();
+        slider.max = state.series.frames.length - 1;
+        slider.disabled = state.series.frames.length <= 1;
+        playBtn.disabled = state.series.frames.length <= 1;
+        renderFrame(0);
+
+        statusBox.textContent = `${state.profile.label} — ` + t("statusResult", {
+          zero: state.series.zeroElevationMil.toFixed(2),
+          zeroDist: params.targetDistanceM,
+        });
+
+        if (state.series.frames.length > 1) startPlayback();
+      } catch (err) {
+        console.error(err);
+        statusBox.textContent = t("statusError", { msg: err && err.message ? err.message : String(err) });
+      }
+    }
+
+    // ---- profile card UI --------------------------------------------------
+    function warningBadge(load) {
+      if (!load.usingFallbackDragTable) return "";
+      return `<span class="ml-2 text-amber-600 text-xs" title="${t("fallbackBadgeTitle")}">${t("fallbackBadge")}</span>`;
+    }
+
+    function renderProfileCard() {
+      const card = document.getElementById("profileCard");
+      card.innerHTML = "";
+      if (!state.profile) return;
+      const div = document.createElement("div");
+      div.className = "bg-white rounded-lg shadow p-3 flex items-center justify-between gap-2";
+      div.innerHTML = `
+    <div class="min-w-0">
+      <div class="font-medium truncate">${state.profile.label}${warningBadge(state.profile)}</div>
+      <div class="text-xs text-slate-500 truncate">${state.profile.fileName}</div>
+    </div>
+    <button class="text-slate-400 hover:text-red-600 text-sm shrink-0 px-2 py-1" data-action="remove">${t("removeProfile")}</button>`;
+      div.querySelector('[data-action="remove"]').addEventListener("click", () => {
+        state.profile = null;
+        refresh();
+      });
+      card.appendChild(div);
+    }
+
+    // ---- persistence (localStorage) ---------------------------------------
+    function bufferToBase64(buffer) {
+      let binary = "";
+      const bytes = new Uint8Array(buffer);
+      for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]);
+      return btoa(binary);
+    }
+    function base64ToBuffer(base64) {
+      const binary = atob(base64);
+      const bytes = new Uint8Array(binary.length);
+      for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+      return bytes.buffer;
+    }
+
+    function saveState() {
+      const payload = {
+        targetDistance: document.getElementById("targetDistance").value,
+        lookAngle: document.getElementById("lookAngle").value,
+        targetSpeed: document.getElementById("targetSpeed").value,
+        fovAX: document.getElementById("fovAX").value,
+        fovAY: document.getElementById("fovAY").value,
+        fovBX: document.getElementById("fovBX").value,
+        fovBY: document.getElementById("fovBY").value,
+        playbackSpeed: state.playbackSpeed,
+        showFovCone: state.showFovCone,
+        trueProjection: state.trueProjection,
+        profile: state.profile ? { fileName: state.profile.fileName, data: bufferToBase64(state.profile.rawBuffer) } : null,
+      };
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
+      } catch (err) {
+        console.warn("Failed to persist state:", err);
+      }
+    }
+
+    async function loadFromBase64(fileName, base64) {
+      const buffer = base64ToBuffer(base64);
+      const payload = decode(buffer);
+      const load = a7pProfileToLoad(payload.profile, fileName);
+      load.rawBuffer = buffer;
+      return load;
+    }
+
+    async function restoreState() {
+      let raw;
+      try { raw = localStorage.getItem(STORAGE_KEY); } catch (err) { return; }
+      if (!raw) return;
+      let payload;
+      try { payload = JSON.parse(raw); } catch (err) { return; }
+
+      for (const [key, id] of [
+        ["targetDistance", "targetDistance"],
+        ["lookAngle", "lookAngle"], ["targetSpeed", "targetSpeed"],
+        ["fovAX", "fovAX"], ["fovAY", "fovAY"], ["fovBX", "fovBX"], ["fovBY", "fovBY"],
+      ]) {
+        if (payload[key] != null) document.getElementById(id).value = payload[key];
+      }
+      if (payload.playbackSpeed != null) {
+        state.playbackSpeed = payload.playbackSpeed;
+        document.getElementById("playbackSpeed").value = String(payload.playbackSpeed);
+      }
+      if (payload.showFovCone != null) {
+        state.showFovCone = payload.showFovCone;
+        document.getElementById("showFovCone").checked = payload.showFovCone;
+      }
+      if (payload.trueProjection != null) {
+        state.trueProjection = payload.trueProjection;
+        document.getElementById("trueProjection").checked = payload.trueProjection;
+      }
+
+      try {
+        if (payload.profile) state.profile = await loadFromBase64(payload.profile.fileName, payload.profile.data);
+      } catch (err) {
+        console.warn("Failed to restore saved profile:", err);
+      }
+    }
+
+    // ---- file loading + drag & drop ----------------------------------------
+    async function loadFile(file) {
+      const buffer = await file.arrayBuffer();
+      const payload = decode(buffer);
+      const load = a7pProfileToLoad(payload.profile, file.name);
+      load.rawBuffer = buffer;
+      return load;
+    }
+
+    function refresh() {
+      saveState();
+      renderProfileCard();
+      recompute();
+    }
+
+    async function handleProfileFiles(files) {
+      if (!files.length) return;
+      try {
+        state.profile = await loadFile(files[0]);
+        refresh();
+      } catch (err) {
+        console.error(err);
+        document.getElementById("statusBox").textContent = t("parseError", { name: files[0].name, msg: err.message });
+      }
+    }
+
+    function wireDropZone(zoneId, inputId, onFiles) {
+      const zone = document.getElementById(zoneId);
+      const input = document.getElementById(inputId);
+      zone.addEventListener("click", () => input.click());
+      input.addEventListener("change", () => {
+        onFiles(Array.from(input.files ?? []));
+        input.value = "";
+      });
+      ["dragenter", "dragover"].forEach((evt) =>
+        zone.addEventListener(evt, (e) => { e.preventDefault(); zone.classList.add("border-blue-500", "bg-blue-50"); })
+      );
+      ["dragleave", "drop"].forEach((evt) =>
+        zone.addEventListener(evt, (e) => { e.preventDefault(); zone.classList.remove("border-blue-500", "bg-blue-50"); })
+      );
+      zone.addEventListener("drop", (e) => {
+        const files = Array.from(e.dataTransfer?.files ?? []).filter((f) => f.name.toLowerCase().endsWith(".a7p"));
+        onFiles(files);
+      });
+    }
+    wireDropZone("profileDrop", "profileFileInput", handleProfileFiles);
+
+    let recomputeTimer = null;
+    function scheduleRecompute() {
+      clearTimeout(recomputeTimer);
+      recomputeTimer = setTimeout(() => { saveState(); recompute(); }, 200);
+    }
+    [
+      "targetDistance", "lookAngle", "targetSpeed",
+      "fovAX", "fovAY", "fovBX", "fovBY",
+    ].forEach((id) => document.getElementById(id).addEventListener("input", scheduleRecompute));
+    window.addEventListener("resize", () => recompute());
+
+    // ---- bundled example (M33 BALL, reused from the trajectory-compare tool) ----
+    const EXAMPLE_PROFILE = {
+      fileName: "m33-ball.a7p",
+      data: "ZDQ2MjRlMGU3ODc3NTU4OTIzOGI0MTZkZGRiNzYxOWYK7gUKBTUwQk1HEg42NDdHUiBNMzMgQkFMTBoONjQ3R1IgTTMzIEJBTEwiBy41MCBCTUcqBjY0N0dSTkhfUNwLWL5BYA9o6Ad4D4ABkE6IASiYAQ+gAf4DqAHGMrAB6BHAAQHKAQgI/wEYASCQTsoBCQj/ARgCIKCcAcoBCQj/ARgDILDqAcoBCQj/ARgEIKCNBtIBywSQTqCcAajDAbDqAbiRAsC4ApDIAuDXArDnAoD3AtCGA6CWA/ClA8C1A5DFA+DUA8jcA7DkA5jsA4D0A+j7A9CDBLiLBKCTBIibBPCiBNiqBMCyBKi6BJDCBPjJBODRBMjZBLDhBJjpBIDxBOj4BNCABbiIBaCQBYiYBfCfBdinBcCvBai3BZC/BfjGBeDOBcjWBbDeBZjmBYDuBej1BdD9BbiFBqCNBpSRBoiVBvyYBvCcBuSgBtikBsyoBsCsBrSwBqi0Bpy4BpC8BoTABvjDBuzHBuDLBtTPBsjTBrzXBrDbBqTfBpjjBoznBoDrBvTuBujyBtz2BtD6BsT+BriCB6yGB6CKB5SOB4iSB/yVB/CZB+SdB9ihB8ylB8CpB7StB6ixB5y1B5C5B4S9B/jAB+zEB+DIB9TMB8jQB7zUB7DYB6TcB5jgB4zkB4DoB/TrB+jvB9zzB9D3B8T7B7j/B6yDCKCHCJSLCIiPCPySCPCWCOSaCNieCMyiCMCmCLSqCKiuCJyyCJC2CIS6CPi9COzBCODFCNTJCMjNCLzRCLDVCKTZCJjdCIzhCIDlCPToCOjsCNzwCND0CMT4CLj8CKyACaCECZSICYiMCfyPCfCTCeSXCdibCcyfCcCjCbSnCairCZyvCZCzCYS3Cfi6Cey+CeDCCdTGCcjKCbzOCbDSCaTWCZjaCYzeCYDiCfTlCejpCdztCdDxCcT1Cbj5Caz9CaCBCpSFCoiJCvyMCvCQCuSUCtiYCsycCsCgCrSkCqioCpysCpCwCtoBAwigGuIBBy41MCBCTUc=",
+    };
+
+    async function loadExampleProfile() {
+      const file = new File([base64ToBuffer(EXAMPLE_PROFILE.data)], EXAMPLE_PROFILE.fileName);
+      await handleProfileFiles([file]);
+    }
+
+    function hideExampleToast() { document.getElementById("exampleToast").classList.add("hidden"); }
+
+    document.getElementById("exampleLoad").addEventListener("click", async () => {
+      hideExampleToast();
+      try {
+        await loadExampleProfile();
+      } catch (err) {
+        console.error(err);
+        document.getElementById("statusBox").textContent = t("exampleLoadError", { msg: err.message });
+      }
+    });
+    document.getElementById("exampleDismiss").addEventListener("click", hideExampleToast);
+
+    async function init() {
+      applyStaticI18n();
+      await restoreState();
+      renderProfileCard();
+      await recompute();
+      if (!state.profile) document.getElementById("exampleToast").classList.remove("hidden");
+    }
+    init();
+  </script>
+</body>
+
+</html>

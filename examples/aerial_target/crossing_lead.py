@@ -52,16 +52,17 @@ class CrossingLead:
     converged: bool
     distance: float  # slant distance to the meeting point, m
     lateral_offset: float  # target travel during the time of flight, m
-    horizontal_lead: Angular  # to the right of the current line of sight
-    vertical_hold: Angular  # above the current line of sight: bullet drop and look angle change
-    shot: Shot  # shot aimed at the meeting point, `vertical_hold` already applied
+    windage_lead: Angular  # lead on the sight reticle: lateral travel seen from the meeting distance
+    azimuth_lead: Angular  # change of the horizontal bearing to the target (for azimuth/elevation mounts)
+    drop_hold: Angular  # vertical hold for the meeting point, relative to the weapon zero
+    shot: Shot  # shot aimed at the meeting point, `drop_hold` already applied
 
 
 def aim_at(zero: Shot, x: float, y: float, z: float):
     """Aim at the point (x: horizontal distance, y: height, z: lateral offset), meters.
 
     Returns the trajectory point at that position, the vertical hold relative to the
-    weapon zero, the look angle (rad) and the shot with the look angle set.
+    weapon zero and the shot with the look angle set.
     """
     horizontal_range = math.hypot(x, z)
     look_angle = math.atan2(y, horizontal_range)
@@ -70,7 +71,7 @@ def aim_at(zero: Shot, x: float, y: float, z: float):
     shot = copy.copy(zero)
     shot.look_angle = Angular.Radian(look_angle)
     hold, _windage, point = calc.aim(shot, Distance.Meter(slant_distance))
-    return point, hold, look_angle, shot
+    return point, hold, shot
 
 
 def calculate_crossing_lead(
@@ -83,30 +84,31 @@ def calculate_crossing_lead(
 ) -> CrossingLead:
     x = target_height_m / math.tan(math.radians(look_angle_deg))  # horizontal distance
     y = target_height_m
-    initial_look_angle = math.atan2(y, x)
 
-    point, hold, look_angle, shot = aim_at(zero, x, y, 0.0)
+    point, hold, shot = aim_at(zero, x, y, 0.0)
     tof = point.time
 
     converged = False
     iterations = 0
     for iterations in range(1, max_iterations + 1):
-        point, hold, look_angle, shot = aim_at(zero, x, y, target_speed_mps * tof)
+        point, hold, shot = aim_at(zero, x, y, target_speed_mps * tof)
         converged = abs(point.time - tof) < convergence_threshold
         tof = point.time
         if converged:
             break
 
     z = target_speed_mps * tof
+    distance = math.sqrt(x**2 + y**2 + z**2)
     shot.relative_angle = hold
     return CrossingLead(
         time_of_flight=tof,
         iterations=iterations,
         converged=converged,
-        distance=math.sqrt(x**2 + y**2 + z**2),
+        distance=distance,
         lateral_offset=z,
-        horizontal_lead=Angular.Radian(math.atan2(z, x)),
-        vertical_hold=Angular.Radian((hold >> Angular.Radian) + (look_angle - initial_look_angle)),
+        windage_lead=Angular.Radian(math.atan2(z, distance)),
+        azimuth_lead=Angular.Radian(math.atan2(z, x)),
+        drop_hold=hold,
         shot=shot,
     )
 
@@ -128,9 +130,10 @@ def main():
     print(f"Time of flight:           {lead.time_of_flight:.3f} s")
     print(f"Distance to meeting point:{lead.distance:9.2f} m")
     print(f"Target travel in flight:  {lead.lateral_offset:.2f} m")
-    print(f"Horizontal lead:          {lead.horizontal_lead >> Angular.Mil:.2f} mil "
-          f"({lead.horizontal_lead >> Angular.MOA:.2f} MOA)")
-    print(f"Vertical hold:            {lead.vertical_hold >> Angular.Mil:.2f} mil")
+    print(f"Windage lead (reticle):   {lead.windage_lead >> Angular.Mil:.2f} mil "
+          f"({lead.windage_lead >> Angular.MOA:.2f} MOA)")
+    print(f"Azimuth lead:             {lead.azimuth_lead >> Angular.Mil:.2f} mil")
+    print(f"Drop hold at meeting pt:  {lead.drop_hold >> Angular.Mil:.2f} mil")
     print(f"Iterations:               {lead.iterations} ({'converged' if lead.converged else 'NOT converged'})")
 
     # Check: fire with the hold applied at the meeting point. The bullet must arrive on the
