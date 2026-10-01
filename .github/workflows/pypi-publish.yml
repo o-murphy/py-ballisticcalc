@@ -26,29 +26,6 @@ permissions:
   contents: write
 
 jobs:
-  create-release:
-    if: github.event_name == 'push'
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v7
-        with:
-          fetch-depth: 0
-
-      - name: Generate release notes
-        id: notes
-        uses: ./.github/actions/gen_release_notes
-        with:
-          version: ${{ github.ref_name }}
-
-      - name: Create GitHub Release (draft)
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          gh release create "${{ github.ref_name }}" \
-            --title "py-ballisticcalc ${{ github.ref_name }}" \
-            --notes-file "${{ steps.notes.outputs.notes_file }}" \
-            --draft
-
   build-sdist:
     name: Build SDist and pure Python wheel
     runs-on: ubuntu-latest
@@ -224,11 +201,34 @@ jobs:
   publish:
     needs: [build-sdist, build]
     runs-on: ubuntu-latest
+    # requires manual approval in repo Settings → Environments
     environment: ${{ github.event_name == 'push' && 'pypi' || inputs.testpypi && 'testpypi' || 'build' }}
     permissions:
+      contents: write
       id-token: write
 
     steps:
+      - uses: actions/checkout@v7
+        if: ${{ github.event_name == 'push' }}
+        with:
+          fetch-depth: 0
+
+      - name: Generate release notes
+        id: notes
+        if: ${{ github.event_name == 'push' }}
+        uses: ./.github/actions/gen_release_notes
+        with:
+          version: ${{ github.ref_name }}
+
+      - name: Create GitHub Release
+        if: ${{ github.event_name == 'push' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "${{ github.ref_name }}" \
+            --title "py-ballisticcalc ${{ github.ref_name }}" \
+            --notes-file "${{ steps.notes.outputs.notes_file }}"
+
       - name: Download all artifacts dynamically
         uses: actions/download-artifact@v8
         with:
