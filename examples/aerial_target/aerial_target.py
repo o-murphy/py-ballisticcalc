@@ -105,11 +105,12 @@ class AerialTarget:
 
         expected_distance_vector = distance_vector + (velocity_vector * time_of_flight)
 
-        horizontal_preemption_angle_rad = math.atan(expected_distance_vector.x / expected_distance_vector.y)
-        new_look_angle_rad = math.atan(expected_distance_vector.z / expected_distance_vector.y)
+        # Exact 3D geometry: x - lateral, y - horizontal distance along the initial sight line, z - up
+        horizontal_range_ft = math.hypot(expected_distance_vector.x, expected_distance_vector.y)
+        horizontal_preemption_angle_rad = math.atan2(expected_distance_vector.x, expected_distance_vector.y)
+        new_look_angle_rad = math.atan2(expected_distance_vector.z, horizontal_range_ft)
         vertical_preemption_angle_rad = new_look_angle_rad - look_angle_rad
-        new_slant_distance_ft = (expected_distance_vector.y / math.cos(new_look_angle_rad)) / math.cos(
-            horizontal_preemption_angle_rad)
+        new_slant_distance_ft = math.hypot(horizontal_range_ft, expected_distance_vector.z)
 
         pos = AerialTargetPosition(
             time_of_flight,
@@ -163,15 +164,30 @@ class AerialTarget:
         _, pos = self.at_time(flight_time)
 
         if adjust:
-            max_iterations = 20
+            # Solve f(t) = time_of_flight(target position at t) - t = 0 with the secant method.
+            # (Plain fixed-point iteration t <- time_of_flight(t) is too slow for fast targets
+            # at long range, where the iteration factor approaches 1.)
+            max_iterations = 30
             time_tolerance = 1e-4  # seconds
+
+            def residual(t: float) -> float:
+                _, p = self.at_time(t)
+                return time_of_flight(p.slant_distance, p.look_angle) - t
+
+            t_prev, f_prev = 0.0, flight_time  # f(0) = time of flight to the initial position
+            t_cur = flight_time
             for _ in range(max_iterations):
-                new_time = time_of_flight(pos.slant_distance, pos.look_angle)
-                converged = abs(new_time - flight_time) <= time_tolerance
-                flight_time = new_time
-                _, pos = self.at_time(flight_time)
-                if converged:
+                f_cur = residual(t_cur)
+                if abs(f_cur) <= time_tolerance:
+                    flight_time = t_cur + f_cur
                     break
+                if f_cur == f_prev:
+                    raise ArithmeticError("Preemption search stalled")
+                t_prev, f_prev, t_cur = t_cur, f_cur, t_cur - f_cur * (t_cur - t_prev) / (f_cur - f_prev)
+            else:
+                raise ArithmeticError(
+                    f"Preemption did not converge in {max_iterations} iterations (target may be unreachable)")
+            _, pos = self.at_time(flight_time)
 
         logger.debug(f"t={flight_time:.4f}\t"
                      f"dir={self.direction_from >> Unit.Degree:.2f}\t"
