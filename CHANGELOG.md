@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.0.0-rc.4] - 2026-10-01
+
 ### Changed
 - `py_ballisticcalc.exts`: the Cython bindings follow bclibc's new exception-free API (`BCLIBC_Result<T>` /
   `BCLIBC_Error` instead of C++ exceptions). The inline C++ shims in the `.pxd` files (`py_engine_*`, `py_traj_seq_*`,
@@ -17,7 +19,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `SolverRuntimeError` come from the solver payloads, every other error maps exactly as Cython's default `except +` did
   (`ValueError`, `IndexError`, `RuntimeError`), and the fixed per-call types are kept (`ZeroDivisionError` for
   `interpolate` and `update_stability_coefficient`, `IndexError` for `BaseTrajSeq[...]`, `ValueError` for `drag_by_mach`).
-- bump the `bclibc` submodule to its exception-free (`noexcept`) revision ([ballistics-lab/bclibc#40](https://github.com/ballistics-lab/bclibc/pull/40)).
+- Pin `bclibc` to [`v2.0.0-rc.4`](https://github.com/ballistics-lab/bclibc/releases/tag/v2.0.0-rc.4), its exception-free
+  (`noexcept`) revision ([ballistics-lab/bclibc#40](https://github.com/ballistics-lab/bclibc/pull/40)), further bumped
+  to pick up `BCLIBC_Error`'s payload accessor rename to `payload<P>()` (it collided with Python's `is` keyword) and a
+  default-constructible `BCLIBC_Result` for Cython ([ballistics-lab/bclibc#41](https://github.com/ballistics-lab/bclibc/pull/41)).
 
 ## [3.0.0-rc.3] - 2026-09-25
 
@@ -1032,7 +1037,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Issue #141
 - Trajectories that bend backwards
 
-[Unreleased]: https://github.com/o-murphy/py-ballisticcalc/compare/v3.0.0-rc.3...HEAD
+[Unreleased]: https://github.com/o-murphy/py-ballisticcalc/compare/v3.0.0-rc.4...HEAD
+[3.0.0-rc.4]: https://github.com/o-murphy/py-ballisticcalc/releases/tag/v3.0.0-rc.4
 [3.0.0-rc.3]: https://github.com/o-murphy/py-ballisticcalc/releases/tag/v3.0.0-rc.3
 [3.0.0-rc.2]: https://github.com/o-murphy/py-ballisticcalc/releases/tag/v3.0.0-rc.2
 [3.0.0-rc.1]: https://github.com/o-murphy/py-ballisticcalc/releases/tag/v3.0.0-rc.1
