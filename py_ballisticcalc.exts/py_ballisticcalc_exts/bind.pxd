@@ -8,6 +8,7 @@ from py_ballisticcalc_exts.base_types cimport (
     BCLIBC_Coriolis,
     BCLIBC_WindSock,
     BCLIBC_ShotProps,
+    BCLIBC_Shot,
 )
 from py_ballisticcalc_exts.v3d cimport BCLIBC_V3dT
 from py_ballisticcalc_exts.traj_data cimport BCLIBC_BaseTrajData_InterpKey

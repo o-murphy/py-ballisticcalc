@@ -20,6 +20,7 @@ from py_ballisticcalc.unit import (
     Unit,
 )
 from py_ballisticcalc_exts.v3d cimport BCLIBC_V3dT
+from py_ballisticcalc_exts.result cimport BCLIBC_Result, raise_std_error
 from py_ballisticcalc_exts.traj_data cimport BCLIBC_BaseTrajData_InterpKey
 
 from py_ballisticcalc.vector import Vector
@@ -228,7 +229,10 @@ cdef BCLIBC_ShotProps BCLIBC_ShotProps_from_pyobject(object shot_info, double ca
     shot.calc_step = calc_step
 
     # All physics conversion happens inside C++
-    return shot.to_shot_props()
+    cdef BCLIBC_Result[BCLIBC_ShotProps] res = shot.to_shot_props()
+    if not res.has_value():
+        raise_std_error(res.error())
+    return res.value()
 
 
 # Helper functions to create unit objects

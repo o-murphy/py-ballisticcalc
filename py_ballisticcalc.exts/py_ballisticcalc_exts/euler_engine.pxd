@@ -5,15 +5,16 @@ from py_ballisticcalc_exts.base_engine cimport (
     CythonizedBaseIntegrationEngine,
     BCLIBC_BaseTrajDataHandlerInterface,
 )
+from py_ballisticcalc_exts.result cimport BCLIBC_Result, monostate
 
 
 cdef extern from "include/bclibc/euler.hpp" namespace "bclibc" nogil:
 
-    void BCLIBC_integrateEULER(
+    BCLIBC_Result[monostate] BCLIBC_integrateEULER(
         BCLIBC_BaseEngine &eng,
         BCLIBC_BaseTrajDataHandlerInterface &handler,
         BCLIBC_TerminationReason &reason,
-    ) except +
+    ) noexcept
 
 cdef class CythonizedEulerIntegrationEngine(CythonizedBaseIntegrationEngine):
     pass

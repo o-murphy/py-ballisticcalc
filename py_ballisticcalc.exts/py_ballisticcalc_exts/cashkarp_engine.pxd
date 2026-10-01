@@ -5,29 +5,31 @@ from py_ballisticcalc_exts.base_engine cimport (
     CythonizedBaseIntegrationEngine,
     BCLIBC_BaseTrajDataHandlerInterface,
 )
+from py_ballisticcalc_exts.result cimport BCLIBC_Result, monostate
 
 
 cdef extern from "include/bclibc/cash_karp.hpp" namespace "bclibc" nogil:
 
-    void BCLIBC_integrateCashKarp(
+    BCLIBC_Result[monostate] BCLIBC_integrateCashKarp(
         BCLIBC_BaseEngine &eng,
         BCLIBC_BaseTrajDataHandlerInterface &handler,
         BCLIBC_TerminationReason &reason,
-    ) except +
+    ) noexcept
 
     # Stateful functor: owns its own tolerances/step-counts per instance
     # (each field a std::atomic on the C++ side), replacing the old
     # thread-local free-function API (BCLIBC_cashKarpGetStats/Set*Tolerance).
     cdef cppclass BCLIBC_CashKarpIntegrator:
         BCLIBC_CashKarpIntegrator() except +
-        void operator()(
+        BCLIBC_Result[monostate] operator()(
             BCLIBC_BaseEngine &eng,
             BCLIBC_BaseTrajDataHandlerInterface &handler,
             BCLIBC_TerminationReason &reason,
-        ) except +
+        ) noexcept
         void get_stats(int &out_accepted, int &out_rejected) const
-        void set_relative_tolerance(double tolerance) except +
-        void set_absolute_tolerance(double tolerance) except +
+        BCLIBC_Result[monostate] set_relative_tolerance(double tolerance) noexcept
+        BCLIBC_Result[monostate] set_absolute_tolerance(double tolerance) noexcept
+
 
 cdef class CythonizedCashKarpIntegrationEngine(CythonizedBaseIntegrationEngine):
     cdef double _relative_tolerance

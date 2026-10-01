@@ -4,6 +4,7 @@
 #include <cstdlib>
 #include <cmath>
 #include "bclibc/py_bind.hpp"
+#include "bclibc/exceptions.hpp" // BCLIBC_Error must be complete to read a BCLIBC_Result
 
 namespace bclibc
 {
@@ -153,7 +154,16 @@ namespace bclibc
         }
 
         // --- Phase 2: Call universal core ---
-        return build_pchip_curve_from_arrays(x, y);
+        // build_pchip_curve_from_arrays returns a Result instead of throwing; unwrap it the
+        // same way every other error path in this function already does (PyErr_SetString +
+        // return an empty/default value).
+        auto curve_result = build_pchip_curve_from_arrays(x, y);
+        if (has_error(curve_result))
+        {
+            PyErr_SetString(PyExc_ValueError, curve_result.error().what());
+            return BCLIBC_Curve();
+        }
+        return curve_result.value();
     }
 }; // namespace bclibc
 

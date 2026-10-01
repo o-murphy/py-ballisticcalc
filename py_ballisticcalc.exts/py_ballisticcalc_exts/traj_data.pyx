@@ -16,6 +16,8 @@ passing Python cdef-class instances into nogil code paths.
 from cython cimport final
 from cython.operator cimport dereference as deref, preincrement as inc
 from py_ballisticcalc_exts.bind cimport _attribute_to_key, v3d_to_vector
+from py_ballisticcalc_exts.result cimport BCLIBC_Result, monostate, raise_std_error
+from libcpp.functional cimport reference_wrapper
 from py_ballisticcalc.trajectory_data import TrajectoryData, TrajFlag
 
 __all__ = ('CythonizedBaseTrajSeq', 'CythonizedBaseTrajData')
@@ -59,16 +61,19 @@ cdef class CythonizedBaseTrajSeq:
         """Return CythonizedBaseTrajData for the given index.  Supports negative indices."""
         cdef Py_ssize_t _i = <Py_ssize_t>idx
         cdef CythonizedBaseTrajData out = CythonizedBaseTrajData()
-        out._this = self._this[_i]
+        cdef BCLIBC_Result[reference_wrapper[const BCLIBC_BaseTrajData]] item = self._this[_i]
+        if not item.has_value():
+            raise IndexError(item.error().what().decode("utf-8"))
+        out._this = item.value().get()
         return out
 
     def interpolate_at(self, Py_ssize_t idx, str key_attribute, double key_value):
         """Interpolate using points (idx-1, idx, idx+1) keyed by key_attribute at key_value."""
         cdef BCLIBC_BaseTrajData_InterpKey key_kind = _attribute_to_key(key_attribute)
         cdef CythonizedBaseTrajData out = CythonizedBaseTrajData()
-        self._this.interpolate_at(
-            idx, key_kind, key_value, out._this
-        )
+        cdef BCLIBC_Result[monostate] res = self._this.interpolate_at(idx, key_kind, key_value, out._this)
+        if not res.has_value():
+            raise_std_error(res.error())
         return out
 
     def get_at(self, str key_attribute, double key_value, object start_from_time=None) -> CythonizedBaseTrajData:
@@ -83,15 +88,17 @@ cdef class CythonizedBaseTrajSeq:
         cdef double _start_from_time = 0.0
         if start_from_time is not None:
             _start_from_time = <double>start_from_time
-        self._this.get_at(
-            key_kind, key_value, _start_from_time, out._this
-        )
+        cdef BCLIBC_Result[monostate] res = self._this.get_at(key_kind, key_value, _start_from_time, out._this)
+        if not res.has_value():
+            raise_std_error(res.error())
         return out
 
     def get_at_slant_height(self, double look_angle_rad, double value):
         """Get CythonizedBaseTrajData where value == slant_height === position.y*cos(a) - position.x*sin(a)."""
         cdef CythonizedBaseTrajData out = CythonizedBaseTrajData()
-        self._this.get_at_slant_height(look_angle_rad, value, out._this)
+        cdef BCLIBC_Result[monostate] res = self._this.get_at_slant_height(look_angle_rad, value, out._this)
+        if not res.has_value():
+            raise_std_error(res.error())
         return out
 
 
@@ -212,11 +219,13 @@ cdef class CythonizedBaseTrajData:
         """
         cdef BCLIBC_BaseTrajData_InterpKey key_kind = _attribute_to_key(key_attribute)
         cdef CythonizedBaseTrajData out = CythonizedBaseTrajData()
-        BCLIBC_BaseTrajData.interpolate(
+        cdef BCLIBC_Result[monostate] res = BCLIBC_BaseTrajData.interpolate(
             key_kind, key_value,
             p0._this, p1._this, p2._this,
             out._this
         )
+        if not res.has_value():
+            raise ZeroDivisionError(res.error().what().decode("utf-8"))
         return out
 
 

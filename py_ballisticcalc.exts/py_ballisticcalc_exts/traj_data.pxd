@@ -9,7 +9,8 @@ from py_ballisticcalc_exts.base_types cimport (
     BCLIBC_TrajFlag
 )
 from py_ballisticcalc_exts.interp cimport BCLIBC_InterpMethod
-
+from libcpp.functional cimport reference_wrapper
+from py_ballisticcalc_exts.result cimport BCLIBC_Result, monostate
 
 cdef extern from "include/bclibc/traj_data.hpp" namespace "bclibc" nogil:
 
@@ -59,17 +60,17 @@ cdef extern from "include/bclibc/traj_data.hpp" namespace "bclibc" nogil:
         double slant_val_buf(double ca, double sa) const
 
         @staticmethod
-        void interpolate(
+        BCLIBC_Result[monostate] interpolate(
             BCLIBC_BaseTrajData_InterpKey key_kind,
             double key_value,
             const BCLIBC_BaseTrajData &p0,
             const BCLIBC_BaseTrajData &p1,
             const BCLIBC_BaseTrajData &p2,
             BCLIBC_BaseTrajData &out
-        ) except +ZeroDivisionError
+        ) noexcept
 
     cdef cppclass BCLIBC_BaseTrajDataHandlerInterface:
-        void handle(const BCLIBC_BaseTrajData &data) except +
+        BCLIBC_Result[monostate] handle(const BCLIBC_BaseTrajData &data) noexcept
         void insert_handler(vector[BCLIBC_BaseTrajDataHandlerInterface*].iterator position,
                             BCLIBC_BaseTrajDataHandlerInterface *handler) except +
         vector[BCLIBC_BaseTrajDataHandlerInterface*].iterator begin()
@@ -77,39 +78,38 @@ cdef extern from "include/bclibc/traj_data.hpp" namespace "bclibc" nogil:
 
     cdef cppclass BCLIBC_BaseTrajDataHandlerCompositor(BCLIBC_BaseTrajDataHandlerInterface):
         BCLIBC_BaseTrajDataHandlerCompositor() except +
-        void handle(const BCLIBC_BaseTrajData& data) except +
+        BCLIBC_Result[monostate] handle(const BCLIBC_BaseTrajData& data) noexcept
         void add_handler(BCLIBC_BaseTrajDataHandlerInterface* handler) except +
 
     cdef cppclass BCLIBC_BaseTrajSeq(BCLIBC_BaseTrajDataHandlerInterface):
 
         BCLIBC_BaseTrajSeq() except +
 
-        void handle(const BCLIBC_BaseTrajData& data) except +
         void append(
             const BCLIBC_BaseTrajData &data
         ) except +
         Py_ssize_t get_length() const
         Py_ssize_t get_capacity() const
-        void interpolate_at(
+        BCLIBC_Result[monostate] interpolate_at(
             Py_ssize_t idx,
             BCLIBC_BaseTrajData_InterpKey key_kind,
             double key_value,
             BCLIBC_BaseTrajData &out
-        ) except +
-        void get_at_slant_height(
+        ) noexcept
+        BCLIBC_Result[monostate] get_at_slant_height(
             double look_angle_rad,
             double value,
             BCLIBC_BaseTrajData &out
-        ) except +
-        BCLIBC_BaseTrajData &operator[](
+        ) noexcept
+        BCLIBC_Result[reference_wrapper[const BCLIBC_BaseTrajData]] operator[](
             Py_ssize_t idx
-        ) except +IndexError
-        void get_at(
+        ) noexcept
+        BCLIBC_Result[monostate] get_at(
             BCLIBC_BaseTrajData_InterpKey key_kind,
             double key_value,
             double start_from_time,
             BCLIBC_BaseTrajData &out
-        ) except +
+        ) noexcept
 
     cdef enum class BCLIBC_TrajectoryData_InterpKey:
         pass
@@ -139,36 +139,12 @@ cdef extern from "include/bclibc/traj_data.hpp" namespace "bclibc" nogil:
 
         BCLIBC_TrajectoryData() except +
 
-        BCLIBC_TrajectoryData(
-            const BCLIBC_ShotProps &props,
-            double time,
-            const BCLIBC_V3dT &range_vector,
-            const BCLIBC_V3dT &velocity_vector,
-            double mach,
-            BCLIBC_TrajFlag flag
-        ) except +
-
-        BCLIBC_TrajectoryData(
+        @staticmethod
+        BCLIBC_Result[BCLIBC_TrajectoryData] from_base(
             const BCLIBC_ShotProps &props,
             const BCLIBC_BaseTrajData &data,
             BCLIBC_TrajFlag flag
-        ) except +
-
-        BCLIBC_TrajectoryData(
-            const BCLIBC_ShotProps &props,
-            const BCLIBC_FlaggedData &data
-        ) except +
-
-        @staticmethod
-        BCLIBC_TrajectoryData interpolate(
-            BCLIBC_TrajectoryData_InterpKey key,
-            double value,
-            const BCLIBC_TrajectoryData &t0,
-            const BCLIBC_TrajectoryData &t1,
-            const BCLIBC_TrajectoryData &t2,
-            BCLIBC_TrajFlag flag,
-            BCLIBC_InterpMethod method
-        ) except +
+        ) noexcept
 
 
 cdef class CythonizedBaseTrajSeq:

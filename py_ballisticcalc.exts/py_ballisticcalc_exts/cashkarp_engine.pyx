@@ -10,6 +10,7 @@ import math
 
 from py_ballisticcalc_exts.base_types cimport BCLIBC_ShotProps
 from py_ballisticcalc_exts.base_engine cimport CythonizedBaseIntegrationEngine
+from py_ballisticcalc_exts.result cimport BCLIBC_Result, monostate, raise_std_error
 
 __all__ = [
     'CythonizedCashKarpIntegrationEngine',
@@ -92,8 +93,12 @@ cdef class CythonizedCashKarpIntegrationEngine(CythonizedBaseIntegrationEngine):
         CythonizedCashKarpIntegrationEngine self,
         object shot_info,
     ):
-        self._integrator.set_relative_tolerance(self._relative_tolerance)
-        self._integrator.set_absolute_tolerance(self._absolute_tolerance)
+        cdef BCLIBC_Result[monostate] res = self._integrator[0].set_relative_tolerance(self._relative_tolerance)
+        if not res.has_value():
+            raise_std_error(res.error())
+        res = self._integrator[0].set_absolute_tolerance(self._absolute_tolerance)
+        if not res.has_value():
+            raise_std_error(res.error())
         return CythonizedBaseIntegrationEngine._init_trajectory(self, shot_info)
 
     def integrate(self, *args, **kwargs):

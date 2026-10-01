@@ -1,5 +1,6 @@
 from libcpp.vector cimport vector
 from py_ballisticcalc_exts.v3d cimport BCLIBC_V3dT
+from py_ballisticcalc_exts.result cimport BCLIBC_Result, monostate
 
 
 cdef extern from "include/bclibc/base_types.hpp" namespace "bclibc" nogil:
@@ -238,9 +239,9 @@ cdef extern from "include/bclibc/base_types.hpp" namespace "bclibc" nogil:
             BCLIBC_WindSock wind_sock,
             BCLIBC_TrajFlag filter_flags) except +
 
-        void update_stability_coefficient() except +ZeroDivisionError
+        BCLIBC_Result[monostate] update_stability_coefficient() noexcept
+        BCLIBC_Result[double] drag_by_mach(double mach) noexcept
         double spin_drift(double time) const
-        double drag_by_mach(double mach) except +ValueError
 
     cdef cppclass BCLIBC_Shot:
         # ammo
@@ -281,8 +282,7 @@ cdef extern from "include/bclibc/base_types.hpp" namespace "bclibc" nogil:
         double azimuth_deg
 
         double calc_step
-
-        BCLIBC_ShotProps to_shot_props() except +
+        BCLIBC_Result[BCLIBC_ShotProps] to_shot_props() noexcept
 
     # helpers
     double BCLIBC_getCorrection(double distance, double offset) noexcept nogil

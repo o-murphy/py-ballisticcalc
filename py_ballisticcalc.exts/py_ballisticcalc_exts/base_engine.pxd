@@ -9,6 +9,7 @@ from py_ballisticcalc_exts.base_types cimport (
     BCLIBC_TerminationReason,
 )
 from py_ballisticcalc_exts.v3d cimport BCLIBC_V3dT
+from py_ballisticcalc_exts.result cimport BCLIBC_Result, monostate
 from py_ballisticcalc_exts.traj_data cimport (
     BCLIBC_BaseTrajSeq,
     BCLIBC_BaseTrajData,
@@ -16,7 +17,6 @@ from py_ballisticcalc_exts.traj_data cimport (
     BCLIBC_BaseTrajData_InterpKey,
     BCLIBC_BaseTrajDataHandlerInterface
 )
-from py_ballisticcalc_exts.exceptions cimport raise_solver_exception
 
 
 cdef extern from "<functional>" namespace "std":
@@ -71,11 +71,11 @@ cdef extern from "include/bclibc/engine.hpp" namespace "bclibc" nogil:
     cdef cppclass BCLIBC_BaseEngine
 
     # Declare the function signature type (not a pointer yet)
-    ctypedef void BCLIBC_IntegrateFunc(
+    ctypedef BCLIBC_Result[monostate] BCLIBC_IntegrateFunc(
         BCLIBC_BaseEngine &eng,
         BCLIBC_BaseTrajDataHandlerInterface &trajectory,
         BCLIBC_TerminationReason &reason,
-    ) except +
+    ) noexcept
 
     # Declare function
     ctypedef function[BCLIBC_IntegrateFunc] BCLIBC_IntegrateCallable
@@ -89,70 +89,71 @@ cdef extern from "include/bclibc/engine.hpp" namespace "bclibc" nogil:
 
         BCLIBC_BaseEngine() except+
 
-        void integrate(
+        BCLIBC_Result[monostate] integrate(
             double range_limit_ft,
             BCLIBC_BaseTrajDataHandlerInterface &handler,
-            BCLIBC_TerminationReason &reason) except +raise_solver_exception
+            BCLIBC_TerminationReason &reason) noexcept
 
-        void integrate_at(
+        BCLIBC_Result[monostate] integrate_at(
             BCLIBC_BaseTrajData_InterpKey key,
             double target_value,
             BCLIBC_BaseTrajData &raw_data,
-            BCLIBC_TrajectoryData &full_data) except +raise_solver_exception
+            BCLIBC_TrajectoryData &full_data) noexcept
 
-        void integrate_filtered(
+        BCLIBC_Result[monostate] integrate_filtered(
             double range_limit_ft,
             double range_step_ft,
             double time_step,
             BCLIBC_TrajFlag filter_flags,
             vector[BCLIBC_TrajectoryData] &records,
             BCLIBC_TerminationReason &reason,
-            BCLIBC_BaseTrajSeq *dense_trajectory) except +raise_solver_exception
+            BCLIBC_BaseTrajSeq *dense_trajectory) noexcept
 
-        void find_apex(BCLIBC_BaseTrajData &apex_out) except +raise_solver_exception
+        BCLIBC_Result[monostate] find_apex(BCLIBC_BaseTrajData &apex_out) noexcept
 
-        double error_at_distance(
+        BCLIBC_Result[double] error_at_distance(
             double angle_rad,
             double target_x_ft,
-            double target_y_ft) except +raise_solver_exception
+            double target_y_ft) noexcept
 
-        BCLIBC_MaxRangeResult find_max_range(
+        BCLIBC_Result[BCLIBC_MaxRangeResult] find_max_range(
             double low_angle_deg,
             double high_angle_deg,
-            double APEX_IS_MAX_RANGE_RADIANS) except +raise_solver_exception
+            double APEX_IS_MAX_RANGE_RADIANS) noexcept
 
-        void init_zero_calculation(
+        BCLIBC_Result[monostate] init_zero_calculation(
             double distance,
             double APEX_IS_MAX_RANGE_RADIANS,
             double ALLOWED_ZERO_ERROR_FEET,
-            BCLIBC_ZeroInitialData &result) except +raise_solver_exception
+            BCLIBC_ZeroInitialData &result) noexcept
 
-        double zero_angle_with_fallback(
+        BCLIBC_Result[double] zero_angle_with_fallback(
             double distance,
             double APEX_IS_MAX_RANGE_RADIANS,
-            double ALLOWED_ZERO_ERROR_FEET) except +raise_solver_exception
+            double ALLOWED_ZERO_ERROR_FEET) noexcept
 
-        double zero_angle(
+        BCLIBC_Result[double] zero_angle(
             double distance,
             double APEX_IS_MAX_RANGE_RADIANS,
-            double ALLOWED_ZERO_ERROR_FEET) except +raise_solver_exception
+            double ALLOWED_ZERO_ERROR_FEET) noexcept
 
-        double find_zero_angle(
-            double distance,
-            int lofted,
-            double APEX_IS_MAX_RANGE_RADIANS,
-            double ALLOWED_ZERO_ERROR_FEET) except +raise_solver_exception
-
-        BCLIBC_ZeroPointResult zero_point_with_fallback(
-            double distance,
-            double APEX_IS_MAX_RANGE_RADIANS,
-            double ALLOWED_ZERO_ERROR_FEET) except +raise_solver_exception
-
-        BCLIBC_ZeroPointResult find_zero_point(
+        BCLIBC_Result[double] find_zero_angle(
             double distance,
             int lofted,
             double APEX_IS_MAX_RANGE_RADIANS,
-            double ALLOWED_ZERO_ERROR_FEET) except +raise_solver_exception
+            double ALLOWED_ZERO_ERROR_FEET) noexcept
+
+        BCLIBC_Result[BCLIBC_ZeroPointResult] zero_point_with_fallback(
+            double distance,
+            double APEX_IS_MAX_RANGE_RADIANS,
+            double ALLOWED_ZERO_ERROR_FEET) noexcept
+
+        BCLIBC_Result[BCLIBC_ZeroPointResult] find_zero_point(
+            double distance,
+            int lofted,
+            double APEX_IS_MAX_RANGE_RADIANS,
+            double ALLOWED_ZERO_ERROR_FEET) noexcept
+
 
 cdef class CythonizedBaseIntegrationEngine:
 
