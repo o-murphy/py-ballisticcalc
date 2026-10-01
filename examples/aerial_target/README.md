@@ -1,24 +1,50 @@
-# Aerial target shooting
+# Aerial target lead
 
+Lead (preemption) for an aerial target crossing the line of sight, found by iterating the
+bullet's time of flight until it converges. Run it with:
 
-## The chart below displays simple bullet and target trajectories crossing model
-We have to calculate adjustment by x and y for the sight.
-We uses simplified model, so it is assumed that 
-* the target has constant velocity
-* the target has constant flight direction angle relative to the sight line
-* target doesn't change it's altitude
-* We uses just 1 of [Aircraft principal axes](https://en.wikipedia.org/wiki/Aircraft_principal_axes) (Yaw)
-* we have these parameters are known
-  * target's velocity
-  * target's flight direction
-  * "look distance" target to  (along the sight line) or target distance along the ground
-  * sight look angle
-  * target's size (to accurate adjustment)
+```shell
+uv run examples/aerial_target/crossing_lead.py
+```
 
-<img src="./assets/AerialTargetTrajectory.svg" alt="Aerial Target" style="width: 100%;">
+## Model
 
+* the target flies at a constant speed, level, perpendicular to the line of sight;
+* the target's look angle, height and speed are known;
+* zero, ammo and atmosphere come from the `Shot`.
 
-## We can create a precalculated reticle for specific projectile and target
-There the reticle example that was precalculated for the target size of ~3m, velocity - 50mps, look distance - 800m and the look angle - 20 degrees
+The bullet needs time `t` to reach the target, and the target moves while it flies, so the bullet
+has to be aimed at the point where the target will be. That point depends on `t`, and `t` depends
+on that point, so the example iterates:
 
-<img src="./assets/AerialTargetReticle.svg" alt="Aerial Target" style="width: 100%;">
+1. `t` = time of flight to the target's current position;
+2. move the target forward by `speed * t`;
+3. `t` = time of flight to the new position; repeat until `t` changes less than 1 ms.
+
+`Calculator.aim()` returns the time of flight and the vertical hold for a position in one call. The
+look angle and slant distance of the predicted point are recomputed from exact 3D geometry on each
+iteration, since the bullet flies in a vertical plane towards it.
+
+## Output
+
+```
+Time of flight:           1.060 s
+Distance to meeting point:   709.09 m
+Target travel in flight:  53.00 m
+Horizontal lead:          107.57 mil (363.05 MOA)
+Vertical hold:            -0.45 mil
+Iterations:               2 (converged)
+
+Check: bullet time 1.060 s vs target time 1.060 s, miss -0.00 cm from the sight line
+```
+
+The check fires the shot with the hold applied: the bullet arrives on the sight line at the time
+the target does.
+
+## Notes
+
+* Crossing targets converge in 2-3 iterations. For a fast target moving away at long range plain
+  iteration can be slow, and there may be no solution at all if the target is faster than the bullet.
+* Wind and spin drift are not part of the lead.
+* Compared with a loop built from `barrel_elevation_for_target()` plus `fire()`, `aim()` needs one
+  call per iteration and gives the same time of flight; the iteration count is the same.
