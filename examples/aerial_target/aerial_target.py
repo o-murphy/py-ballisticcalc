@@ -2,7 +2,7 @@
 import math
 from dataclasses import dataclass, field
 
-from typing import Union, NamedTuple
+from typing import Optional, Union, NamedTuple
 
 from py_ballisticcalc import *
 
@@ -132,88 +132,53 @@ class AerialTarget:
 
     def get_preemption(self, weapon: Weapon,
                        ammo: Ammo, zero_atmo: Atmo,
-                       zero_distance: Distance, adjust: bool = True):
+                       zero_distance: Distance, adjust: bool = True,
+                       calc: Optional[Calculator] = None):
+        """Calculate sight adjustment (preemption) for the moving target.
 
+        Uses `Calculator.aim()` to get the bullet time of flight to the target's
+        look-distance, then moves the target for that time and repeats until the
+        time of flight converges (the point where bullet and target trajectories cross).
+
+        Args:
+            weapon: Weapon (its `zero_elevation` is set from `zero_distance`).
+            ammo: Ammunition.
+            zero_atmo: Atmosphere at the zero and at the shot.
+            zero_distance: Distance the weapon is zeroed at.
+            adjust: If False, only the initial target position is used to get time of flight
+                (no iteration).
+            calc: Optional `Calculator` to use (default engine if omitted).
+        """
+        calc = calc or Calculator()
         zero = Shot(weapon=weapon, ammo=ammo, atmo=zero_atmo)
-        calc = Calculator()
         calc.set_weapon_zero(zero, zero_distance)
 
-        def get_trajectory_for_look_angle(distance: Distance, look_angle):
-            shot = Shot(look_angle=look_angle,
-                        weapon=weapon,
-                        ammo=ammo,
-                        atmo=zero_atmo)
-            shot_result = calc.fire(shot, Unit.Foot((distance >> Unit.Foot) + 0.1), distance)
-            return shot_result
+        def time_of_flight(slant_distance: Distance, look_angle: Angular) -> float:
+            shot = Shot(look_angle=look_angle, weapon=weapon, ammo=ammo, atmo=zero_atmo)
+            _hold, _windage, point = calc.aim(shot, slant_distance)
+            return point.time
 
-        shot_result = get_trajectory_for_look_angle(
-            Unit.Foot(self._prepared.slant_distance_ft * math.cos(self._prepared.look_angle_rad)),
-            Unit.Radian(self._prepared.look_angle_rad)
-        )[-1]
-        _, pos = self.at_time(shot_result.time)
+        # time of flight to the target's initial position
+        flight_time = time_of_flight(self.slant_distance, self.look_angle)
+        _, pos = self.at_time(flight_time)
 
-        if not adjust:
-            logger.debug(f"t={shot_result.time:.4f}\t"
-                         f"dir={self.direction_from >> Unit.Degree:.2f}\t"
-                         f"sd={Unit.Foot((pos.slant_distance >> Unit.Foot) * math.cos(pos.look_angle >> Unit.Radian)) >> Unit.Meter:.2f}\t\t\t"
-                         f"la={(Unit.Radian(pos.look_angle) >> Unit.Degree):.5f}\t"
-                         f"xs={(pos.x_shift >> Unit.Thousandth):.5f}\t"
-                         f"ys={(pos.y_shift >> Unit.Thousandth):.5f}\t"
-                         f"xsd={(pos.x_shift >> Unit.Degree):.5f}\t"
-                         f"ysd={(pos.y_shift >> Unit.Degree):.5f}\t")
-            return pos
+        if adjust:
+            max_iterations = 20
+            time_tolerance = 1e-4  # seconds
+            for _ in range(max_iterations):
+                new_time = time_of_flight(pos.slant_distance, pos.look_angle)
+                converged = abs(new_time - flight_time) <= time_tolerance
+                flight_time = new_time
+                _, pos = self.at_time(flight_time)
+                if converged:
+                    break
 
-        initial_slant_distance_ft = self._prepared.slant_distance_ft
-        initial_look_angle_rad = self._prepared.look_angle_rad
-        initial_distance_ft = initial_slant_distance_ft * math.cos(initial_look_angle_rad)
-
-        # minimal time delta to have a possibility to shoot the target
-        length_delta_coeff = 1 / 5
-        time_delta = self._prepared.length_ft * length_delta_coeff / self._prepared.speed_fps
-
-        # get target movement on time step
-        _, pos_delta = self.at_time(time_delta)
-
-        new_distance_ft = (pos_delta.slant_distance >> Distance.Foot) * math.cos(pos_delta.look_angle >> Angular.Radian)
-        distance_delta_ft = new_distance_ft - initial_distance_ft
-
-        look_angle_delta_rad = -(pos_delta.y_shift >> Unit.Radian)
-
-        # find trajectories crossing point
-        prev_trajectory_match_distance_ft = 1e5
-        while True:
-            initial_distance_ft += distance_delta_ft
-            initial_look_angle_rad += look_angle_delta_rad
-            shot_result = get_trajectory_for_look_angle(
-                Unit.Foot(initial_distance_ft), Unit.Radian(initial_look_angle_rad)
-            )[-1]
-
-            _, pos_adjusted = self.at_time(shot_result.time)
-
-            cur_shot_distance_ft = shot_result.distance >> Unit.Foot
-            cur_target_distance_ft = (pos_adjusted.slant_distance >> Unit.Foot) * math.cos(
-                pos_adjusted.look_angle >> Unit.Radian)
-
-            cur_trajectory_match_distance_ft = abs(cur_shot_distance_ft - cur_target_distance_ft)
-
-            if (cur_trajectory_match_distance_ft
-                    <= self._prepared.length_ft * length_delta_coeff):
-                break
-
-            if cur_trajectory_match_distance_ft >= prev_trajectory_match_distance_ft:
-                break
-
-            prev_trajectory_match_distance_ft = cur_trajectory_match_distance_ft
-
-        logger.debug(f"t={shot_result.time:.4f}\t"
+        logger.debug(f"t={flight_time:.4f}\t"
                      f"dir={self.direction_from >> Unit.Degree:.2f}\t"
-                     f"sd={Unit.Foot(cur_shot_distance_ft) >> Unit.Meter:.2f}\t"
-                     f"td={Unit.Foot(cur_target_distance_ft) >> Unit.Meter:.2f}\t"
-                     f"la={(Unit.Radian(initial_look_angle_rad) >> Unit.Degree):.5f}\t"
-                     f"xs={(pos_adjusted.x_shift >> Unit.Thousandth):.5f}\t"
-                     f"ys={(pos_adjusted.y_shift >> Unit.Thousandth):.5f}\t"
-                     f"xsd={(pos_adjusted.x_shift >> Unit.Degree):.5f}\t"
-                     f"ysd={(pos_adjusted.y_shift >> Unit.Degree):.5f}\t"
-                     f"{Unit.Foot(cur_trajectory_match_distance_ft) >> Unit.Meter:.2f}"
-                     f"/{Unit.Foot(prev_trajectory_match_distance_ft) >> Unit.Meter:.2f}m")
-        return pos_adjusted
+                     f"sd={pos.slant_distance >> Unit.Meter:.2f}\t"
+                     f"la={pos.look_angle >> Unit.Degree:.5f}\t"
+                     f"xs={pos.x_shift >> Unit.Thousandth:.5f}\t"
+                     f"ys={pos.y_shift >> Unit.Thousandth:.5f}\t"
+                     f"xsd={pos.x_shift >> Unit.Degree:.5f}\t"
+                     f"ysd={pos.y_shift >> Unit.Degree:.5f}")
+        return pos
