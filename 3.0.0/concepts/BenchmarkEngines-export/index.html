@@ -1,0 +1,3402 @@
+
+<!DOCTYPE html>
+
+<html class="no-js" lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width,initial-scale=1" name="viewport"/>
+<meta content="LGPL ballistic calculation library" name="description"/>
+<link href="https://o-murphy.github.io/py-ballisticcalc/latest/concepts/BenchmarkEngines-export/" rel="canonical"/>
+<link href="../../favicon.svg" rel="icon"/>
+<meta content="mkdocs-ProperDocs 1.6.7, mkdocs-material-9.7.7" name="generator"/>
+<title>Load - py-ballisticcalc</title>
+<link href="../../assets/stylesheets/main.ec1eaa64.min.css" rel="stylesheet"/>
+<link href="../../assets/stylesheets/palette.ab4e12ef.min.css" rel="stylesheet"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css?family=Public+Sans:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&amp;display=fallback" rel="stylesheet"/>
+<style>:root{--md-text-font:"Public Sans";--md-code-font:"Roboto Mono"}</style>
+<link href="../../assets/_mkdocstrings.css" rel="stylesheet"/>
+<link href="../../extra/terminal.css" rel="stylesheet"/>
+<link href="../../extra/tweaks.css" rel="stylesheet"/>
+<link href="../../extra/katex/katex.min.css" rel="stylesheet"/>
+<script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+</head>
+<body data-md-color-accent="teal" data-md-color-primary="teal" data-md-color-scheme="default" dir="ltr">
+<input autocomplete="off" class="md-toggle" data-md-toggle="drawer" id="__drawer" type="checkbox"/>
+<input autocomplete="off" class="md-toggle" data-md-toggle="search" id="__search" type="checkbox"/>
+<label class="md-overlay" for="__drawer"></label>
+<div data-md-component="skip">
+<a class="md-skip" href="#load">
+          Skip to content
+        </a>
+</div>
+<div data-md-component="announce">
+</div>
+<div data-md-color-scheme="default" data-md-component="outdated" hidden="">
+</div>
+<header class="md-header" data-md-component="header">
+<nav aria-label="Header" class="md-header__inner md-grid">
+<a aria-label="py-ballisticcalc" class="md-header__button md-logo" data-md-component="logo" href="../.." title="py-ballisticcalc">
+<img alt="logo" src="../../favicon.svg"/>
+</a>
+<label class="md-header__button md-icon" for="__drawer">
+<svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"></path></svg>
+</label>
+<div class="md-header__title" data-md-component="header-title">
+<div class="md-header__ellipsis">
+<div class="md-header__topic">
+<span class="md-ellipsis">
+            py-ballisticcalc
+          </span>
+</div>
+<div class="md-header__topic" data-md-component="header-topic">
+<span class="md-ellipsis">
+            
+              Load
+            
+          </span>
+</div>
+</div>
+</div>
+<form class="md-header__option" data-md-component="palette">
+<input aria-label="Switch to light mode" class="md-option" data-md-color-accent="teal" data-md-color-media="(prefers-color-scheme)" data-md-color-primary="teal" data-md-color-scheme="default" id="__palette_0" name="__palette" type="radio"/>
+<label class="md-header__button md-icon" for="__palette_1" hidden="" title="Switch to light mode">
+<svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 2a7 7 0 0 0-7 7c0 2.38 1.19 4.47 3 5.74V17a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1v-2.26c1.81-1.27 3-3.36 3-5.74a7 7 0 0 0-7-7M9 21a1 1 0 0 0 1 1h4a1 1 0 0 0 1-1v-1H9z"></path></svg>
+</label>
+<input aria-label="Switch to dark mode" class="md-option" data-md-color-accent="teal" data-md-color-media="(prefers-color-scheme: light)" data-md-color-primary="teal" data-md-color-scheme="default" id="__palette_1" name="__palette" type="radio"/>
+<label class="md-header__button md-icon" for="__palette_2" hidden="" title="Switch to dark mode">
+<svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 2a7 7 0 0 1 7 7c0 2.38-1.19 4.47-3 5.74V17a1 1 0 0 1-1 1H9a1 1 0 0 1-1-1v-2.26C6.19 13.47 5 11.38 5 9a7 7 0 0 1 7-7M9 21v-1h6v1a1 1 0 0 1-1 1h-4a1 1 0 0 1-1-1m3-17a5 5 0 0 0-5 5c0 2.05 1.23 3.81 3 4.58V16h4v-2.42c1.77-.77 3-2.53 3-4.58a5 5 0 0 0-5-5"></path></svg>
+</label>
+<input aria-label="Switch to system preference" class="md-option" data-md-color-accent="teal" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-primary="teal" data-md-color-scheme="slate" id="__palette_2" name="__palette" type="radio"/>
+<label class="md-header__button md-icon" for="__palette_0" hidden="" title="Switch to system preference">
+<svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M9 2c3.87 0 7 3.13 7 7 0 2.38-1.19 4.47-3 5.74V17c0 .55-.45 1-1 1H6c-.55 0-1-.45-1-1v-2.26C3.19 13.47 2 11.38 2 9c0-3.87 3.13-7 7-7M6 21v-1h6v1c0 .55-.45 1-1 1H7c-.55 0-1-.45-1-1M9 4C6.24 4 4 6.24 4 9c0 2.05 1.23 3.81 3 4.58V16h4v-2.42c1.77-.77 3-2.53 3-4.58 0-2.76-2.24-5-5-5m10 9h-2l-3.2 9h1.9l.7-2h3.2l.7 2h1.9zm-2.15 5.65L18 15l1.15 3.65z"></path></svg>
+</label>
+</form>
+<script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+<label class="md-header__button md-icon" for="__search">
+<svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"></path></svg>
+</label>
+<div class="md-search" data-md-component="search" role="dialog">
+<label class="md-search__overlay" for="__search"></label>
+<div class="md-search__inner" role="search">
+<form class="md-search__form" name="search">
+<input aria-label="Search" autocapitalize="off" autocomplete="off" autocorrect="off" class="md-search__input" data-md-component="search-query" name="query" placeholder="Search" required="" spellcheck="false" type="text"/>
+<label class="md-search__icon md-icon" for="__search">
+<svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"></path></svg>
+<svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"></path></svg>
+</label>
+<nav aria-label="Search" class="md-search__options">
+<button aria-label="Clear" class="md-search__icon md-icon" tabindex="-1" title="Clear" type="reset">
+<svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"></path></svg>
+</button>
+</nav>
+<div class="md-search__suggest" data-md-component="search-suggest"></div>
+</form>
+<div class="md-search__output">
+<div class="md-search__scrollwrap" data-md-scrollfix="" tabindex="0">
+<div class="md-search-result" data-md-component="search-result">
+<div class="md-search-result__meta">
+            Initializing search
+          </div>
+<ol class="md-search-result__list" role="presentation"></ol>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="md-header__source">
+<a class="md-source" data-md-component="source" href="https://github.com/o-murphy/py-ballisticcalc" title="Go to repository">
+<div class="md-source__icon md-icon">
+<svg viewbox="0 0 448 512" xmlns="http://www.w3.org/2000/svg"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"></path></svg>
+</div>
+<div class="md-source__repository">
+    o-murphy/py-ballisticcalc
+  </div>
+</a>
+</div>
+</nav>
+</header>
+<div class="md-container" data-md-component="container">
+<nav aria-label="Tabs" class="md-tabs" data-md-component="tabs">
+<div class="md-grid">
+<ul class="md-tabs__list">
+<li class="md-tabs__item">
+<a class="md-tabs__link" href="../..">
+          
+  
+  
+  Get started
+
+        </a>
+</li>
+<li class="md-tabs__item">
+<a class="md-tabs__link" href="../">
+          
+  
+  
+  Concepts
+
+        </a>
+</li>
+<li class="md-tabs__item">
+<a class="md-tabs__link" href="../../api/">
+          
+  
+  
+  API Documentation
+
+        </a>
+</li>
+<li class="md-tabs__item">
+<a class="md-tabs__link" href="../../internals/architecture/">
+          
+  
+  
+  Internals
+
+        </a>
+</li>
+<li class="md-tabs__item">
+<a class="md-tabs__link" href="../../contributors/">
+        
+  
+  
+    
+  
+  Contributors
+
+      </a>
+</li>
+<li class="md-tabs__item">
+<a class="md-tabs__link" href="../../about/">
+        
+  
+  
+    
+  
+  About
+
+      </a>
+</li>
+</ul>
+</div>
+</nav>
+<main class="md-main" data-md-component="main">
+<div class="md-main__inner md-grid">
+<div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation">
+<div class="md-sidebar__scrollwrap">
+<div class="md-sidebar__inner">
+<nav aria-label="Navigation" class="md-nav md-nav--primary md-nav--lifted" data-md-level="0">
+<label class="md-nav__title" for="__drawer">
+<a aria-label="py-ballisticcalc" class="md-nav__button md-logo" data-md-component="logo" href="../.." title="py-ballisticcalc">
+<img alt="logo" src="../../favicon.svg"/>
+</a>
+    py-ballisticcalc
+  </label>
+<div class="md-nav__source">
+<a class="md-source" data-md-component="source" href="https://github.com/o-murphy/py-ballisticcalc" title="Go to repository">
+<div class="md-source__icon md-icon">
+<svg viewbox="0 0 448 512" xmlns="http://www.w3.org/2000/svg"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"></path></svg>
+</div>
+<div class="md-source__repository">
+    o-murphy/py-ballisticcalc
+  </div>
+</a>
+</div>
+<ul class="md-nav__list" data-md-scrollfix="">
+<li class="md-nav__item md-nav__item--nested">
+<input class="md-nav__toggle md-toggle md-toggle--indeterminate" id="__nav_1" type="checkbox"/>
+<label class="md-nav__link" for="__nav_1" id="__nav_1_label" tabindex="0">
+<span class="md-ellipsis">
+    
+  
+    Get started
+  
+
+    
+  </span>
+<span class="md-nav__icon md-icon"></span>
+</label>
+<nav aria-expanded="false" aria-labelledby="__nav_1_label" class="md-nav" data-md-level="1">
+<label class="md-nav__title" for="__nav_1">
+<span class="md-nav__icon md-icon"></span>
+            
+  
+    Get started
+  
+
+          </label>
+<ul class="md-nav__list" data-md-scrollfix="">
+<li class="md-nav__item">
+<a class="md-nav__link" href="../..">
+<span class="md-ellipsis">
+    
+  
+    QuickStart
+  
+
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../../install/">
+<span class="md-ellipsis">
+    
+  
+    Installation
+  
+
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../../help/">
+<span class="md-ellipsis">
+    
+  
+    Help
+  
+
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../../pyodide/">
+<span class="md-ellipsis">
+    
+  
+    Interactive Web REPL
+  
+
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../../contributing/">
+<span class="md-ellipsis">
+    
+  
+    Contributing
+  
+
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../../changelog/">
+<span class="md-ellipsis">
+    
+  
+    Changelog
+  
+
+    
+  </span>
+</a>
+</li>
+</ul>
+</nav>
+</li>
+<li class="md-nav__item md-nav__item--nested">
+<input class="md-nav__toggle md-toggle md-toggle--indeterminate" id="__nav_2" type="checkbox"/>
+<label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="0">
+<span class="md-ellipsis">
+    
+  
+    Concepts
+  
+
+    
+  </span>
+<span class="md-nav__icon md-icon"></span>
+</label>
+<nav aria-expanded="false" aria-labelledby="__nav_2_label" class="md-nav" data-md-level="1">
+<label class="md-nav__title" for="__nav_2">
+<span class="md-nav__icon md-icon"></span>
+            
+  
+    Concepts
+  
+
+          </label>
+<ul class="md-nav__list" data-md-scrollfix="">
+<li class="md-nav__item">
+<a class="md-nav__link" href="../">
+<span class="md-ellipsis">
+    
+  
+    Basics
+  
+
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../unit/">
+<span class="md-ellipsis">
+    
+  
+    📏 Units
+  
+
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item md-nav__item--nested">
+<input class="md-nav__toggle md-toggle md-toggle--indeterminate" id="__nav_2_3" type="checkbox"/>
+<label class="md-nav__link" for="__nav_2_3" id="__nav_2_3_label" tabindex="0">
+<span class="md-ellipsis">
+    
+  
+    Calculation Engines
+  
+
+    
+  </span>
+<span class="md-nav__icon md-icon"></span>
+</label>
+<nav aria-expanded="false" aria-labelledby="__nav_2_3_label" class="md-nav" data-md-level="2">
+<label class="md-nav__title" for="__nav_2_3">
+<span class="md-nav__icon md-icon"></span>
+            
+  
+    Calculation Engines
+  
+
+          </label>
+<ul class="md-nav__list" data-md-scrollfix="">
+<li class="md-nav__item">
+<a class="md-nav__link" href="../engines/">
+<span class="md-ellipsis">
+    
+  
+    ⚙️ Engines
+  
+
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../benchmarks/">
+<span class="md-ellipsis">
+    
+  
+    📊 Benchmarks
+  
+
+    
+  </span>
+</a>
+</li>
+</ul>
+</nav>
+</li>
+<li class="md-nav__item md-nav__item--nested">
+<input class="md-nav__toggle md-toggle md-toggle--indeterminate" id="__nav_2_4" type="checkbox"/>
+<label class="md-nav__link" for="__nav_2_4" id="__nav_2_4_label" tabindex="0">
+<span class="md-ellipsis">
+    
+  
+    Conditions
+  
+
+    
+  </span>
+<span class="md-nav__icon md-icon"></span>
+</label>
+<nav aria-expanded="false" aria-labelledby="__nav_2_4_label" class="md-nav" data-md-level="2">
+<label class="md-nav__title" for="__nav_2_4">
+<span class="md-nav__icon md-icon"></span>
+            
+  
+    Conditions
+  
+
+          </label>
+<ul class="md-nav__list" data-md-scrollfix="">
+<li class="md-nav__item">
+<a class="md-nav__link" href="../conditions/atmo/">
+<span class="md-ellipsis">
+    
+  
+    🌡️ Atmo
+  
+
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../conditions/wind/">
+<span class="md-ellipsis">
+    
+  
+    💨 Wind
+  
+
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../conditions/shot/">
+<span class="md-ellipsis">
+    
+  
+    🎯 Shot
+  
+
+    
+  </span>
+</a>
+</li>
+</ul>
+</nav>
+</li>
+<li class="md-nav__item md-nav__item--nested">
+<input class="md-nav__toggle md-toggle md-toggle--indeterminate" id="__nav_2_5" type="checkbox"/>
+<label class="md-nav__link" for="__nav_2_5" id="__nav_2_5_label" tabindex="0">
+<span class="md-ellipsis">
+    
+  
+    Munitions
+  
+
+    
+  </span>
+<span class="md-nav__icon md-icon"></span>
+</label>
+<nav aria-expanded="false" aria-labelledby="__nav_2_5_label" class="md-nav" data-md-level="2">
+<label class="md-nav__title" for="__nav_2_5">
+<span class="md-nav__icon md-icon"></span>
+            
+  
+    Munitions
+  
+
+          </label>
+<ul class="md-nav__list" data-md-scrollfix="">
+<li class="md-nav__item">
+<a class="md-nav__link" href="../munition/weapon/">
+<span class="md-ellipsis">
+    
+  
+    🔫 Weapon
+  
+
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../munition/ammo/">
+<span class="md-ellipsis">
+    
+  
+    💣 Ammo
+  
+
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../drag_model/">
+<span class="md-ellipsis">
+    
+  
+    🪂 DragModel
+  
+
+    
+  </span>
+</a>
+</li>
+</ul>
+</nav>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../trajectory_data/">
+<span class="md-ellipsis">
+    
+  
+    📈 Trajectory Data
+  
+
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../vector/">
+<span class="md-ellipsis">
+    
+  
+    📐 Vector
+  
+
+    
+  </span>
+</a>
+</li>
+</ul>
+</nav>
+</li>
+<li class="md-nav__item md-nav__item--nested">
+<input class="md-nav__toggle md-toggle md-toggle--indeterminate" id="__nav_3" type="checkbox"/>
+<label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+<span class="md-ellipsis">
+    
+  
+    API Documentation
+  
+
+    
+  </span>
+<span class="md-nav__icon md-icon"></span>
+</label>
+<nav aria-expanded="false" aria-labelledby="__nav_3_label" class="md-nav" data-md-level="1">
+<label class="md-nav__title" for="__nav_3">
+<span class="md-nav__icon md-icon"></span>
+            
+  
+    API Documentation
+  
+
+          </label>
+<ul class="md-nav__list" data-md-scrollfix="">
+<li class="md-nav__item">
+<a class="md-nav__link" href="../../api/">
+<span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item md-nav__item--nested">
+<input class="md-nav__toggle md-toggle md-toggle--indeterminate" id="__nav_3_2" type="checkbox"/>
+<label class="md-nav__link" for="__nav_3_2" id="__nav_3_2_label" tabindex="0">
+<span class="md-ellipsis">
+    
+  
+    Calculator
+  
+
+    
+  </span>
+<span class="md-nav__icon md-icon"></span>
+</label>
+<nav aria-expanded="false" aria-labelledby="__nav_3_2_label" class="md-nav" data-md-level="2">
+<label class="md-nav__title" for="__nav_3_2">
+<span class="md-nav__icon md-icon"></span>
+            
+  
+    Calculator
+  
+
+          </label>
+<ul class="md-nav__list" data-md-scrollfix="">
+<li class="md-nav__item">
+<a class="md-nav__link" href="../../api/calculator/engines/">
+<span class="md-ellipsis">
+    
+  
+    Engines
+  
+
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../../api/calculator/interface/">
+<span class="md-ellipsis">
+    
+  
+    Interface
+  
+
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../../api/calculator/protocol/">
+<span class="md-ellipsis">
+    
+  
+    Protocol
+  
+
+    
+  </span>
+</a>
+</li>
+</ul>
+</nav>
+</li>
+<li class="md-nav__item md-nav__item--nested">
+<input class="md-nav__toggle md-toggle md-toggle--indeterminate" id="__nav_3_3" type="checkbox"/>
+<label class="md-nav__link" for="__nav_3_3" id="__nav_3_3_label" tabindex="0">
+<span class="md-ellipsis">
+    
+  
+    Conditions
+  
+
+    
+  </span>
+<span class="md-nav__icon md-icon"></span>
+</label>
+<nav aria-expanded="false" aria-labelledby="__nav_3_3_label" class="md-nav" data-md-level="2">
+<label class="md-nav__title" for="__nav_3_3">
+<span class="md-nav__icon md-icon"></span>
+            
+  
+    Conditions
+  
+
+          </label>
+<ul class="md-nav__list" data-md-scrollfix="">
+<li class="md-nav__item">
+<a class="md-nav__link" href="../../api/conditions/atmo/">
+<span class="md-ellipsis">
+    
+  
+    Atmo
+  
+
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../../api/conditions/wind/">
+<span class="md-ellipsis">
+    
+  
+    Wind
+  
+
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../../api/conditions/shot/">
+<span class="md-ellipsis">
+    
+  
+    Shot
+  
+
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../../api/conditions/shotprops/">
+<span class="md-ellipsis">
+    
+  
+    ShotProps
+  
+
+    
+  </span>
+</a>
+</li>
+</ul>
+</nav>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../../api/constants/">
+<span class="md-ellipsis">
+    
+  
+    Constants
+  
+
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item md-nav__item--nested">
+<input class="md-nav__toggle md-toggle md-toggle--indeterminate" id="__nav_3_5" type="checkbox"/>
+<label class="md-nav__link" for="__nav_3_5" id="__nav_3_5_label" tabindex="0">
+<span class="md-ellipsis">
+    
+  
+    Munitions
+  
+
+    
+  </span>
+<span class="md-nav__icon md-icon"></span>
+</label>
+<nav aria-expanded="false" aria-labelledby="__nav_3_5_label" class="md-nav" data-md-level="2">
+<label class="md-nav__title" for="__nav_3_5">
+<span class="md-nav__icon md-icon"></span>
+            
+  
+    Munitions
+  
+
+          </label>
+<ul class="md-nav__list" data-md-scrollfix="">
+<li class="md-nav__item">
+<a class="md-nav__link" href="../../api/munition/ammo/">
+<span class="md-ellipsis">
+    
+  
+    Ammo
+  
+
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../../api/drag_model/">
+<span class="md-ellipsis">
+    
+  
+    DragModel
+  
+
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../../api/drag_tables/">
+<span class="md-ellipsis">
+    
+  
+    DragTables
+  
+
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../../api/munition/sight/">
+<span class="md-ellipsis">
+    
+  
+    Sight
+  
+
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../../api/munition/weapon/">
+<span class="md-ellipsis">
+    
+  
+    Weapon
+  
+
+    
+  </span>
+</a>
+</li>
+</ul>
+</nav>
+</li>
+<li class="md-nav__item md-nav__item--nested">
+<input class="md-nav__toggle md-toggle md-toggle--indeterminate" id="__nav_3_6" type="checkbox"/>
+<label class="md-nav__link" for="__nav_3_6" id="__nav_3_6_label" tabindex="0">
+<span class="md-ellipsis">
+    
+  
+    Results
+  
+
+    
+  </span>
+<span class="md-nav__icon md-icon"></span>
+</label>
+<nav aria-expanded="false" aria-labelledby="__nav_3_6_label" class="md-nav" data-md-level="2">
+<label class="md-nav__title" for="__nav_3_6">
+<span class="md-nav__icon md-icon"></span>
+            
+  
+    Results
+  
+
+          </label>
+<ul class="md-nav__list" data-md-scrollfix="">
+<li class="md-nav__item">
+<a class="md-nav__link" href="../../api/hit_result/">
+<span class="md-ellipsis">
+    
+  
+    HitResult
+  
+
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../../api/trajectory_data/">
+<span class="md-ellipsis">
+    
+  
+    TrajectoryData
+  
+
+    
+  </span>
+</a>
+</li>
+</ul>
+</nav>
+</li>
+<li class="md-nav__item md-nav__item--nested">
+<input class="md-nav__toggle md-toggle md-toggle--indeterminate" id="__nav_3_7" type="checkbox"/>
+<label class="md-nav__link" for="__nav_3_7" id="__nav_3_7_label" tabindex="0">
+<span class="md-ellipsis">
+    
+  
+    Units
+  
+
+    
+  </span>
+<span class="md-nav__icon md-icon"></span>
+</label>
+<nav aria-expanded="false" aria-labelledby="__nav_3_7_label" class="md-nav" data-md-level="2">
+<label class="md-nav__title" for="__nav_3_7">
+<span class="md-nav__icon md-icon"></span>
+            
+  
+    Units
+  
+
+          </label>
+<ul class="md-nav__list" data-md-scrollfix="">
+<li class="md-nav__item">
+<a class="md-nav__link" href="../../api/units/dimensions/">
+<span class="md-ellipsis">
+    
+  
+    Dimensions
+  
+
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../../api/units/preferred_units/">
+<span class="md-ellipsis">
+    
+  
+    PreferredUnits
+  
+
+    
+  </span>
+</a>
+</li>
+</ul>
+</nav>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../../api/vector/">
+<span class="md-ellipsis">
+    
+  
+    Vector
+  
+
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../../api/exceptions/">
+<span class="md-ellipsis">
+    
+  
+    Exceptions
+  
+
+    
+  </span>
+</a>
+</li>
+</ul>
+</nav>
+</li>
+<li class="md-nav__item md-nav__item--nested">
+<input class="md-nav__toggle md-toggle md-toggle--indeterminate" id="__nav_4" type="checkbox"/>
+<label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+<span class="md-ellipsis">
+    
+  
+    Internals
+  
+
+    
+  </span>
+<span class="md-nav__icon md-icon"></span>
+</label>
+<nav aria-expanded="false" aria-labelledby="__nav_4_label" class="md-nav" data-md-level="1">
+<label class="md-nav__title" for="__nav_4">
+<span class="md-nav__icon md-icon"></span>
+            
+  
+    Internals
+  
+
+          </label>
+<ul class="md-nav__list" data-md-scrollfix="">
+<li class="md-nav__item">
+<a class="md-nav__link" href="../../internals/architecture/">
+<span class="md-ellipsis">
+    
+  
+    Architecture
+  
+
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../../internals/details/">
+<span class="md-ellipsis">
+    
+  
+    Developer Details
+  
+
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../../internals/cython/">
+<span class="md-ellipsis">
+    
+  
+    Cython Notes
+  
+
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../../internals/logger/">
+<span class="md-ellipsis">
+    
+  
+    Logger
+  
+
+    
+  </span>
+</a>
+</li>
+</ul>
+</nav>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../../contributors/">
+<span class="md-ellipsis">
+    
+  
+    Contributors
+  
+
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../../about/">
+<span class="md-ellipsis">
+    
+  
+    About
+  
+
+    
+  </span>
+</a>
+</li>
+</ul>
+</nav>
+</div>
+</div>
+</div>
+<div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc">
+<div class="md-sidebar__scrollwrap">
+<div class="md-sidebar__inner">
+<nav aria-label="Page contents" class="md-nav md-nav--secondary">
+<label class="md-nav__title" for="__toc">
+<span class="md-nav__icon md-icon"></span>
+      Page contents
+    </label>
+<ul class="md-nav__list" data-md-component="toc" data-md-scrollfix="">
+<li class="md-nav__item">
+<a class="md-nav__link" href="#reference-calculator">
+<span class="md-ellipsis">
+      
+        Reference Calculator
+      
+    </span>
+</a>
+</li>
+</ul>
+</nav>
+</div>
+</div>
+</div>
+<div class="md-content" data-md-component="content">
+<article class="md-content__inner md-typeset">
+<h1 id="load">Load<a class="headerlink" href="#load" title="Permanent link">¶</a></h1>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">import</span><span class="w"> </span><span class="nn">io</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">math</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">sys</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">get_args</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">py_ballisticcalc</span><span class="w"> </span><span class="kn">import</span> <span class="n">Ammo</span><span class="p">,</span> <span class="n">Atmo</span><span class="p">,</span> <span class="n">Weapon</span><span class="p">,</span> <span class="n">Shot</span><span class="p">,</span> <span class="n">Calculator</span><span class="p">,</span> <span class="n">HitResult</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">py_ballisticcalc</span><span class="w"> </span><span class="kn">import</span> <span class="n">RangeError</span><span class="p">,</span> <span class="n">TrajFlag</span><span class="p">,</span> <span class="n">BaseEngineConfigDict</span><span class="p">,</span> <span class="n">SciPyEngineConfigDict</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">py_ballisticcalc</span><span class="w"> </span><span class="kn">import</span> <span class="n">TableG7</span><span class="p">,</span> <span class="n">logger</span><span class="p">,</span> <span class="n">loadMetricUnits</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">py_ballisticcalc.drag_model</span><span class="w"> </span><span class="kn">import</span> <span class="n">DragModel</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">py_ballisticcalc.unit</span><span class="w"> </span><span class="kn">import</span> <span class="o">*</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">py_ballisticcalc.interface</span><span class="w"> </span><span class="kn">import</span> <span class="n">_EngineLoader</span>
+<span class="n">logger</span><span class="o">.</span><span class="n">setLevel</span><span class="p">(</span><span class="n">logging</span><span class="o">.</span><span class="n">WARNING</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"</span><span class="se">\n</span><span class="s2">Available engines: "</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="nb">sorted</span><span class="p">([</span><span class="n">e</span><span class="o">.</span><span class="n">name</span> <span class="k">for</span> <span class="n">e</span> <span class="ow">in</span> <span class="n">_EngineLoader</span><span class="o">.</span><span class="n">iter_engines</span><span class="p">()])))</span>
+<span class="n">loadMetricUnits</span><span class="p">()</span>
+<span class="n">PreferredUnits</span><span class="o">.</span><span class="n">drop</span> <span class="o">=</span> <span class="n">Distance</span><span class="o">.</span><span class="n">Meter</span>
+<span class="n">PreferredUnits</span><span class="o">.</span><span class="n">distance</span> <span class="o">=</span> <span class="n">Distance</span><span class="o">.</span><span class="n">Meter</span>
+</code></pre></div>
+<div class="language-text highlight"><pre><span></span><code>Available engines: ['cython.rkck', 'cython.euler', 'cython.rk4', 'cython.verlet', 'python.euler', 'python.rk4', 'scipy.rk45', 'python.verlet']
+</code></pre></div>
+<h2 id="reference-calculator">Reference Calculator<a class="headerlink" href="#reference-calculator" title="Permanent link">¶</a></h2>
+<p>This <em>reference calculator</em> will determine the "correct" trajectory against which the error of all others will be measured.</p>
+<div class="language-python highlight"><pre><span></span><code><span class="n">ref_config</span> <span class="o">=</span> <span class="n">SciPyEngineConfigDict</span><span class="p">(</span>
+    <span class="n">relative_tolerance</span><span class="o">=</span><span class="mf">1e-12</span><span class="p">,</span>
+    <span class="n">absolute_tolerance</span><span class="o">=</span><span class="mf">1e-12</span><span class="p">,</span>
+    <span class="n">integration_method</span><span class="o">=</span><span class="s2">"LSODA"</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="n">ref_calc</span> <span class="o">=</span> <span class="n">Calculator</span><span class="p">(</span><span class="n">config</span><span class="o">=</span><span class="n">ref_config</span><span class="p">,</span> <span class="n">engine</span><span class="o">=</span><span class="s1">'scipy.lsoda'</span><span class="p">)</span>
+</code></pre></div>
+<h1 id="scenarios">Scenarios<a class="headerlink" href="#scenarios" title="Permanent link">¶</a></h1>
+<h2 id="2km-flat-fire-trajectory">2km flat-fire trajectory<a class="headerlink" href="#2km-flat-fire-trajectory" title="Permanent link">¶</a></h2>
+<p>A typical 7.62mm bullet launched at an elevation (60mils, about 3.375 degrees) sufficient to reach approximately 2km.  We use the reference calculator to compute the trajectory.</p>
+<div class="language-python highlight"><pre><span></span><code><span class="n">dm</span> <span class="o">=</span> <span class="n">DragModel</span><span class="p">(</span><span class="mf">0.22</span><span class="p">,</span> <span class="n">TableG7</span><span class="p">,</span> <span class="n">Weight</span><span class="o">.</span><span class="n">Gram</span><span class="p">(</span><span class="mi">10</span><span class="p">),</span> <span class="n">Distance</span><span class="o">.</span><span class="n">Centimeter</span><span class="p">(</span><span class="mf">7.62</span><span class="p">),</span> <span class="n">Distance</span><span class="o">.</span><span class="n">Centimeter</span><span class="p">(</span><span class="mf">3.0</span><span class="p">))</span>
+<span class="n">ammo</span> <span class="o">=</span> <span class="n">Ammo</span><span class="p">(</span><span class="n">dm</span><span class="p">,</span> <span class="n">Velocity</span><span class="o">.</span><span class="n">MPS</span><span class="p">(</span><span class="mi">800</span><span class="p">))</span>
+<span class="n">weapon</span> <span class="o">=</span> <span class="n">Weapon</span><span class="p">(</span><span class="n">sight_height</span><span class="o">=</span><span class="n">Distance</span><span class="o">.</span><span class="n">Centimeter</span><span class="p">(</span><span class="mi">4</span><span class="p">),</span> <span class="n">twist</span><span class="o">=</span><span class="n">Distance</span><span class="o">.</span><span class="n">Centimeter</span><span class="p">(</span><span class="mi">30</span><span class="p">),</span> <span class="n">zero_elevation</span><span class="o">=</span><span class="n">Angular</span><span class="o">.</span><span class="n">Mil</span><span class="p">(</span><span class="mf">60.0</span><span class="p">))</span>
+<span class="n">baseline_shot</span> <span class="o">=</span> <span class="n">Shot</span><span class="p">(</span><span class="n">weapon</span><span class="o">=</span><span class="n">weapon</span><span class="p">,</span> <span class="n">ammo</span><span class="o">=</span><span class="n">ammo</span><span class="p">,</span> <span class="n">atmo</span><span class="o">=</span><span class="n">Atmo</span><span class="o">.</span><span class="n">icao</span><span class="p">())</span>
+<span class="nb">range</span> <span class="o">=</span> <span class="n">Distance</span><span class="o">.</span><span class="n">Meter</span><span class="p">(</span><span class="mi">2000</span><span class="p">)</span>
+<span class="n">range_step</span> <span class="o">=</span> <span class="n">Distance</span><span class="o">.</span><span class="n">Meter</span><span class="p">(</span><span class="mi">100</span><span class="p">)</span>
+<span class="n">reference_trajectory</span> <span class="o">=</span> <span class="n">ref_calc</span><span class="o">.</span><span class="n">fire</span><span class="p">(</span><span class="n">shot</span><span class="o">=</span><span class="n">baseline_shot</span><span class="p">,</span> <span class="n">trajectory_range</span><span class="o">=</span><span class="nb">range</span><span class="p">,</span> <span class="n">trajectory_step</span><span class="o">=</span><span class="n">range_step</span><span class="p">,</span> <span class="n">flags</span><span class="o">=</span><span class="n">TrajFlag</span><span class="o">.</span><span class="n">ALL</span><span class="p">)</span>
+<span class="n">reference_trajectory</span><span class="o">.</span><span class="n">plot</span><span class="p">()</span>
+<span class="n">ref</span> <span class="o">=</span> <span class="n">reference_trajectory</span><span class="o">.</span><span class="n">dataframe</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span><span class="o">.</span><span class="n">drop</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="s1">'slant_height'</span><span class="p">,</span> <span class="s1">'drop_angle'</span><span class="p">,</span> <span class="s1">'windage'</span><span class="p">,</span> <span class="s1">'windage_angle'</span><span class="p">,</span> <span class="s1">'slant_distance'</span><span class="p">,</span> <span class="s1">'ogw'</span><span class="p">])</span>
+<span class="n">ref</span><span class="p">[</span><span class="n">ref</span><span class="o">.</span><span class="n">flag</span> <span class="o">!=</span> <span class="s2">"RANGE"</span><span class="p">]</span>
+</code></pre></div>
+<div>
+<style scoped="">
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+<thead>
+<tr style="text-align: right;">
+<th></th>
+<th>time</th>
+<th>distance</th>
+<th>velocity</th>
+<th>mach</th>
+<th>height</th>
+<th>angle</th>
+<th>density_ratio</th>
+<th>drag</th>
+<th>energy</th>
+<th>flag</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<th>0</th>
+<td>0.000 s</td>
+<td>0.0 m</td>
+<td>800 m/s</td>
+<td>2.35 mach</td>
+<td>-0.0 m</td>
+<td>3.3750 °</td>
+<td>1.00043e+00</td>
+<td>2.634e-04</td>
+<td>3200 J</td>
+<td>ZERO_UP|RANGE</td>
+</tr>
+<tr>
+<th>8</th>
+<td>1.524 s</td>
+<td>800.0 m</td>
+<td>346 m/s</td>
+<td>1.02 mach</td>
+<td>38.4 m</td>
+<td>1.6513 °</td>
+<td>9.96747e-01</td>
+<td>3.772e-04</td>
+<td>598 J</td>
+<td>MACH|RANGE</td>
+</tr>
+<tr>
+<th>11</th>
+<td>2.488 s</td>
+<td>1100.0 m</td>
+<td>290 m/s</td>
+<td>0.85 mach</td>
+<td>42.7 m</td>
+<td>-0.0927 °</td>
+<td>9.96334e-01</td>
+<td>1.245e-04</td>
+<td>421 J</td>
+<td>RANGE|APEX</td>
+</tr>
+<tr>
+<th>19</th>
+<td>5.713 s</td>
+<td>1900.0 m</td>
+<td>216 m/s</td>
+<td>0.63 mach</td>
+<td>-4.9 m</td>
+<td>-7.4145 °</td>
+<td>1.00043e+00</td>
+<td>1.134e-04</td>
+<td>233 J</td>
+<td>ZERO_DOWN|RANGE</td>
+</tr>
+</tbody>
+</table>
+</div>
+<p><img alt="png" src="../BenchmarkEngines_6_1.png"/></p>
+<h3 id="define-error">Define error<a class="headerlink" href="#define-error" title="Permanent link">¶</a></h3>
+<p>We will take the ZERO_DOWN (return-to-zero) row as our reference point for assessing the error in other engines.</p>
+<div class="language-python highlight"><pre><span></span><code><span class="n">reference_row</span> <span class="o">=</span> <span class="n">reference_trajectory</span><span class="o">.</span><span class="n">flag</span><span class="p">(</span><span class="n">TrajFlag</span><span class="o">.</span><span class="n">ZERO_DOWN</span><span class="p">)</span>
+<span class="n">reference_distance</span> <span class="o">=</span> <span class="n">reference_row</span><span class="o">.</span><span class="n">distance</span>
+<span class="n">reference_distance_meter</span> <span class="o">=</span> <span class="n">reference_distance</span> <span class="o">&gt;&gt;</span> <span class="n">Distance</span><span class="o">.</span><span class="n">Meter</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">check_error</span><span class="p">(</span><span class="n">hit</span><span class="p">:</span> <span class="n">HitResult</span><span class="p">,</span> <span class="n">output</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Error is vertical distance from zero at the reference distance."""</span>
+    <span class="c1"># Query the exact reference distance.  `get_at()` uses the accepted-step</span>
+    <span class="c1"># interpolant when available, otherwise exact records rather than the</span>
+    <span class="c1"># scheduled presentation table (`trajectory`).</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">chkpt</span> <span class="o">=</span> <span class="n">hit</span><span class="o">.</span><span class="n">get_at</span><span class="p">(</span><span class="s1">'distance'</span><span class="p">,</span> <span class="n">reference_distance</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">ArithmeticError</span><span class="p">:</span>
+        <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="s1">'inf'</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">chkpt</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">chk_x</span> <span class="o">=</span> <span class="n">chkpt</span><span class="o">.</span><span class="n">distance</span> <span class="o">&gt;&gt;</span> <span class="n">Distance</span><span class="o">.</span><span class="n">Meter</span>
+        <span class="n">chk_h</span> <span class="o">=</span> <span class="n">chkpt</span><span class="o">.</span><span class="n">height</span> <span class="o">&gt;&gt;</span> <span class="n">Distance</span><span class="o">.</span><span class="n">Meter</span>
+        <span class="n">chk_err</span> <span class="o">=</span> <span class="n">math</span><span class="o">.</span><span class="n">sqrt</span><span class="p">((</span><span class="n">chk_x</span><span class="o">-</span><span class="n">reference_distance_meter</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span> <span class="o">+</span> <span class="n">chk_h</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">output</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">'At </span><span class="si">{</span><span class="n">chkpt</span><span class="o">.</span><span class="n">time</span><span class="si">}</span><span class="s1">s: (</span><span class="si">{</span><span class="n">chk_x</span><span class="si">}</span><span class="s1">, </span><span class="si">{</span><span class="n">chk_h</span><span class="si">}</span><span class="s1">)m ==&gt; Error = </span><span class="si">{</span><span class="n">chk_err</span><span class="si">:</span><span class="s1">.8f</span><span class="si">}</span><span class="s1">m'</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">chk_err</span>
+    <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="s1">'inf'</span><span class="p">)</span>
+
+<span class="n">summary</span> <span class="o">=</span> <span class="p">[]</span>
+</code></pre></div>
+<h2 id="scipy">SciPy<a class="headerlink" href="#scipy" title="Permanent link">¶</a></h2>
+<div class="language-python highlight"><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">scipy_chk</span><span class="p">(</span><span class="n">timeit</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="n">config</span> <span class="o">=</span> <span class="n">SciPyEngineConfigDict</span><span class="p">(</span>
+        <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">calc</span> <span class="o">=</span> <span class="n">Calculator</span><span class="p">(</span><span class="n">config</span><span class="o">=</span><span class="n">config</span><span class="p">,</span> <span class="n">engine</span><span class="o">=</span><span class="n">SciPyIntegrationEngine</span><span class="p">)</span>
+    <span class="n">hit</span> <span class="o">=</span> <span class="n">calc</span><span class="o">.</span><span class="n">fire</span><span class="p">(</span><span class="n">shot</span><span class="o">=</span><span class="n">baseline_shot</span><span class="p">,</span> <span class="n">trajectory_range</span><span class="o">=</span><span class="nb">range</span><span class="p">,</span> <span class="n">trajectory_step</span><span class="o">=</span><span class="n">reference_distance</span><span class="p">,</span> <span class="n">raise_range_error</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">err</span> <span class="o">=</span> <span class="n">check_error</span><span class="p">(</span><span class="n">hit</span><span class="p">)</span>
+    <span class="n">stats_engine</span> <span class="o">=</span> <span class="n">calc</span><span class="o">.</span><span class="n">_engine_instance</span>
+    <span class="n">stats_engine</span><span class="o">.</span><span class="n">integrate</span><span class="p">(</span><span class="n">baseline_shot</span><span class="p">,</span> <span class="nb">range</span><span class="p">,</span> <span class="n">reference_distance</span><span class="p">)</span>
+    <span class="n">evals</span> <span class="o">=</span> <span class="n">stats_engine</span><span class="o">.</span><span class="n">integration_step_count</span>
+    <span class="k">if</span> <span class="n">timeit</span><span class="p">:</span>
+        <span class="n">speed</span> <span class="o">=</span> <span class="o">%</span><span class="n">timeit</span> <span class="o">-</span><span class="n">o</span> <span class="n">calc</span><span class="o">.</span><span class="n">fire</span><span class="p">(</span><span class="n">shot</span><span class="o">=</span><span class="n">baseline_shot</span><span class="p">,</span> <span class="n">trajectory_range</span><span class="o">=</span><span class="nb">range</span><span class="p">,</span> <span class="n">trajectory_step</span><span class="o">=</span><span class="n">reference_distance</span><span class="p">,</span> <span class="n">raise_range_error</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">err</span><span class="p">,</span> <span class="n">evals</span><span class="p">,</span> <span class="n">speed</span><span class="o">.</span><span class="n">average</span>
+    <span class="k">return</span> <span class="n">err</span><span class="p">,</span> <span class="n">evals</span>
+<span class="n">logger</span><span class="o">.</span><span class="n">setLevel</span><span class="p">(</span><span class="n">logging</span><span class="o">.</span><span class="n">WARNING</span><span class="p">)</span>
+<span class="c1"># Run with default tolerance:</span>
+<span class="n">err</span><span class="p">,</span> <span class="n">count</span><span class="p">,</span> <span class="n">speed</span> <span class="o">=</span> <span class="n">scipy_chk</span><span class="p">(</span><span class="n">timeit</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">integration_method</span><span class="o">=</span><span class="s2">"LSODA"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">'Error=</span><span class="si">{</span><span class="n">err</span><span class="si">:</span><span class="s1">.8f</span><span class="si">}</span><span class="s1">m.  Integration steps: </span><span class="si">{</span><span class="n">count</span><span class="si">}</span><span class="s1">.  Speed: </span><span class="si">{</span><span class="n">speed</span><span class="si">:</span><span class="s1">.5f</span><span class="si">}</span><span class="s1">s'</span><span class="p">)</span>
+</code></pre></div>
+<div class="language-text highlight"><pre><span></span><code>11.1 ms ± 114 μs per loop (mean ± std. dev. of 7 runs, 100 loops each)
+Error=0.00000301m.  Integration steps: 917.  Speed: 0.01108s
+</code></pre></div>
+<h3 id="integration-methods">Integration Methods<a class="headerlink" href="#integration-methods" title="Permanent link">¶</a></h3>
+<p>Here's a quick look at each of the integration methods listed in the SciPyIntegrationEngine, using its default error tolerance settings.</p>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">py_ballisticcalc.engines.scipy.rk45</span><span class="w"> </span><span class="kn">import</span> <span class="n">INTEGRATION_METHOD</span>
+<span class="n">method_summary</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="k">for</span> <span class="n">method</span> <span class="ow">in</span> <span class="n">get_args</span><span class="p">(</span><span class="n">INTEGRATION_METHOD</span><span class="p">):</span>
+    <span class="n">err</span><span class="p">,</span> <span class="n">count</span><span class="p">,</span> <span class="n">speed</span> <span class="o">=</span> <span class="n">scipy_chk</span><span class="p">(</span><span class="n">timeit</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">integration_method</span><span class="o">=</span><span class="n">method</span><span class="p">)</span>
+    <span class="n">method_summary</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="s1">'SciPy'</span><span class="p">,</span> <span class="n">method</span><span class="p">,</span> <span class="n">err</span><span class="p">,</span> <span class="n">count</span><span class="p">,</span> <span class="n">speed</span><span class="p">))</span>
+<span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">method_summary</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="s1">'Engine'</span><span class="p">,</span> <span class="s1">'Setting'</span><span class="p">,</span> <span class="s1">'Error (m)'</span><span class="p">,</span> <span class="s1">'Integration Steps'</span><span class="p">,</span> <span class="s1">'Speed (s)'</span><span class="p">])</span><span class="o">.</span><span class="n">set_index</span><span class="p">(</span><span class="s1">'Setting'</span><span class="p">)</span><span class="o">.</span><span class="n">sort_values</span><span class="p">(</span><span class="n">by</span><span class="o">=</span><span class="s1">'Error (m)'</span><span class="p">,</span> <span class="n">ascending</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</code></pre></div>
+<div class="language-text highlight"><pre><span></span><code>17 ms ± 570 μs per loop (mean ± std. dev. of 7 runs, 100 loops each)
+
+
+5.02 ms ± 247 μs per loop (mean ± std. dev. of 7 runs, 100 loops each)
+
+
+12.3 ms ± 207 μs per loop (mean ± std. dev. of 7 runs, 100 loops each)
+
+
+40.4 ms ± 376 μs per loop (mean ± std. dev. of 7 runs, 10 loops each)
+
+
+41 ms ± 1.29 ms per loop (mean ± std. dev. of 7 runs, 10 loops each)
+
+
+11.8 ms ± 614 μs per loop (mean ± std. dev. of 7 runs, 100 loops each)
+</code></pre></div>
+<div>
+<style scoped="">
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+<thead>
+<tr style="text-align: right;">
+<th></th>
+<th>Engine</th>
+<th>Error (m)</th>
+<th>Integration Steps</th>
+<th>Speed (s)</th>
+</tr>
+<tr>
+<th>Setting</th>
+<th></th>
+<th></th>
+<th></th>
+<th></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<th>LSODA</th>
+<td>SciPy</td>
+<td>0.000003</td>
+<td>917</td>
+<td>0.011757</td>
+</tr>
+<tr>
+<th>Radau</th>
+<td>SciPy</td>
+<td>0.000005</td>
+<td>1627</td>
+<td>0.040380</td>
+</tr>
+<tr>
+<th>RK23</th>
+<td>SciPy</td>
+<td>0.000022</td>
+<td>1226</td>
+<td>0.016952</td>
+</tr>
+<tr>
+<th>BDF</th>
+<td>SciPy</td>
+<td>0.000022</td>
+<td>1013</td>
+<td>0.040996</td>
+</tr>
+<tr>
+<th>DOP853</th>
+<td>SciPy</td>
+<td>0.000085</td>
+<td>1397</td>
+<td>0.012261</td>
+</tr>
+<tr>
+<th>RK45</th>
+<td>SciPy</td>
+<td>0.000352</td>
+<td>458</td>
+<td>0.005021</td>
+</tr>
+</tbody>
+</table>
+</div>
+<h3 id="tolerance">Tolerance<a class="headerlink" href="#tolerance" title="Permanent link">¶</a></h3>
+<p>SciPy allows us to specify both "absolute" and "relative" error tolerance.  The meaning of the two terms and their interaction isn't always intuitive, so let's see what happens as we vary each while holding out the other term.  We'll do this for both the LSODA and RK45 methods.</p>
+<h4 id="lsoda">LSODA<a class="headerlink" href="#lsoda" title="Permanent link">¶</a></h4>
+<div class="language-python highlight"><pre><span></span><code><span class="n">tol_tests</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="n">method</span> <span class="o">=</span> <span class="s1">'LSODA'</span>
+<span class="c1"># Run with rtol as limiting factor</span>
+<span class="n">rtol</span> <span class="o">=</span> <span class="mf">1.</span>
+<span class="n">atol</span> <span class="o">=</span> <span class="mf">1e-13</span>
+<span class="k">while</span> <span class="n">rtol</span> <span class="o">&gt;</span> <span class="mf">1e-8</span><span class="p">:</span>
+    <span class="n">rtol</span> <span class="o">/=</span> <span class="mf">10.0</span>
+    <span class="n">err</span><span class="p">,</span> <span class="n">count</span> <span class="o">=</span> <span class="n">scipy_chk</span><span class="p">(</span><span class="n">integration_method</span><span class="o">=</span><span class="n">method</span><span class="p">,</span> <span class="n">relative_tolerance</span><span class="o">=</span><span class="n">rtol</span><span class="p">,</span> <span class="n">absolute_tolerance</span><span class="o">=</span><span class="n">atol</span><span class="p">)</span>
+    <span class="n">tol_tests</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">method</span><span class="p">,</span> <span class="n">atol</span><span class="p">,</span> <span class="n">rtol</span><span class="p">,</span> <span class="n">err</span><span class="p">,</span> <span class="n">count</span><span class="p">))</span>
+<span class="c1"># Run with atol as limiting factor</span>
+<span class="n">atol</span> <span class="o">=</span> <span class="mf">1.</span>
+<span class="n">rtol</span> <span class="o">=</span> <span class="mf">1e-13</span>
+<span class="k">while</span> <span class="n">atol</span> <span class="o">&gt;</span> <span class="mf">1e-8</span><span class="p">:</span>
+    <span class="n">atol</span> <span class="o">/=</span> <span class="mf">10.0</span>
+    <span class="n">err</span><span class="p">,</span> <span class="n">count</span> <span class="o">=</span> <span class="n">scipy_chk</span><span class="p">(</span><span class="n">integration_method</span><span class="o">=</span><span class="n">method</span><span class="p">,</span> <span class="n">relative_tolerance</span><span class="o">=</span><span class="n">rtol</span><span class="p">,</span> <span class="n">absolute_tolerance</span><span class="o">=</span><span class="n">atol</span><span class="p">)</span>
+    <span class="n">tol_tests</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">method</span><span class="p">,</span> <span class="n">atol</span><span class="p">,</span> <span class="n">rtol</span><span class="p">,</span> <span class="n">err</span><span class="p">,</span> <span class="n">count</span><span class="p">))</span>
+<span class="n">display</span><span class="p">(</span>
+    <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">tol_tests</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="s1">'Method'</span><span class="p">,</span> <span class="s1">'Absolute Tolerance'</span><span class="p">,</span> <span class="s1">'Relative Tolerance'</span><span class="p">,</span> <span class="s1">'Error (m)'</span><span class="p">,</span> <span class="s1">'Integration Steps'</span><span class="p">])</span>
+      <span class="o">.</span><span class="n">sort_values</span><span class="p">(</span><span class="n">by</span><span class="o">=</span><span class="s1">'Error (m)'</span><span class="p">,</span> <span class="n">ascending</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+      <span class="o">.</span><span class="n">style</span><span class="o">.</span><span class="n">format</span><span class="p">({</span><span class="s1">'Absolute Tolerance'</span><span class="p">:</span> <span class="s1">'</span><span class="si">{:.0e}</span><span class="s1">'</span><span class="p">,</span> <span class="s1">'Relative Tolerance'</span><span class="p">:</span> <span class="s1">'</span><span class="si">{:.0e}</span><span class="s1">'</span><span class="p">,</span> <span class="s1">'Error (m)'</span><span class="p">:</span> <span class="s1">'</span><span class="si">{:.11f}</span><span class="s1">'</span><span class="p">}))</span>
+</code></pre></div>
+<style type="text/css">
+</style>
+<table id="T_a367c">
+<thead>
+<tr>
+<th class="blank level0"> </th>
+<th class="col_heading level0 col0" id="T_a367c_level0_col0">Method</th>
+<th class="col_heading level0 col1" id="T_a367c_level0_col1">Absolute Tolerance</th>
+<th class="col_heading level0 col2" id="T_a367c_level0_col2">Relative Tolerance</th>
+<th class="col_heading level0 col3" id="T_a367c_level0_col3">Error (m)</th>
+<th class="col_heading level0 col4" id="T_a367c_level0_col4">Integration Steps</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<th class="row_heading level0 row0" id="T_a367c_level0_row0">0</th>
+<td class="data row0 col0" id="T_a367c_row0_col0">LSODA</td>
+<td class="data row0 col1" id="T_a367c_row0_col1">1e-13</td>
+<td class="data row0 col2" id="T_a367c_row0_col2">1e-01</td>
+<td class="data row0 col3" id="T_a367c_row0_col3">1.90600084705</td>
+<td class="data row0 col4" id="T_a367c_row0_col4">102</td>
+</tr>
+<tr>
+<th class="row_heading level0 row1" id="T_a367c_level0_row1">2</th>
+<td class="data row1 col0" id="T_a367c_row1_col0">LSODA</td>
+<td class="data row1 col1" id="T_a367c_row1_col1">1e-13</td>
+<td class="data row1 col2" id="T_a367c_row1_col2">1e-03</td>
+<td class="data row1 col3" id="T_a367c_row1_col3">0.56000312520</td>
+<td class="data row1 col4" id="T_a367c_row1_col4">149</td>
+</tr>
+<tr>
+<th class="row_heading level0 row2" id="T_a367c_level0_row2">1</th>
+<td class="data row2 col0" id="T_a367c_row2_col0">LSODA</td>
+<td class="data row2 col1" id="T_a367c_row2_col1">1e-13</td>
+<td class="data row2 col2" id="T_a367c_row2_col2">1e-02</td>
+<td class="data row2 col3" id="T_a367c_row2_col3">0.05036840988</td>
+<td class="data row2 col4" id="T_a367c_row2_col4">117</td>
+</tr>
+<tr>
+<th class="row_heading level0 row3" id="T_a367c_level0_row3">3</th>
+<td class="data row3 col0" id="T_a367c_row3_col0">LSODA</td>
+<td class="data row3 col1" id="T_a367c_row3_col1">1e-13</td>
+<td class="data row3 col2" id="T_a367c_row3_col2">1e-04</td>
+<td class="data row3 col3" id="T_a367c_row3_col3">0.02164497295</td>
+<td class="data row3 col4" id="T_a367c_row3_col4">218</td>
+</tr>
+<tr>
+<th class="row_heading level0 row4" id="T_a367c_level0_row4">9</th>
+<td class="data row4 col0" id="T_a367c_row4_col0">LSODA</td>
+<td class="data row4 col1" id="T_a367c_row4_col1">1e-01</td>
+<td class="data row4 col2" id="T_a367c_row4_col2">1e-13</td>
+<td class="data row4 col3" id="T_a367c_row4_col3">0.01331754678</td>
+<td class="data row4 col4" id="T_a367c_row4_col4">82</td>
+</tr>
+<tr>
+<th class="row_heading level0 row5" id="T_a367c_level0_row5">10</th>
+<td class="data row5 col0" id="T_a367c_row5_col0">LSODA</td>
+<td class="data row5 col1" id="T_a367c_row5_col1">1e-02</td>
+<td class="data row5 col2" id="T_a367c_row5_col2">1e-13</td>
+<td class="data row5 col3" id="T_a367c_row5_col3">0.00241211642</td>
+<td class="data row5 col4" id="T_a367c_row5_col4">165</td>
+</tr>
+<tr>
+<th class="row_heading level0 row6" id="T_a367c_level0_row6">4</th>
+<td class="data row6 col0" id="T_a367c_row6_col0">LSODA</td>
+<td class="data row6 col1" id="T_a367c_row6_col1">1e-13</td>
+<td class="data row6 col2" id="T_a367c_row6_col2">1e-05</td>
+<td class="data row6 col3" id="T_a367c_row6_col3">0.00141573223</td>
+<td class="data row6 col4" id="T_a367c_row6_col4">207</td>
+</tr>
+<tr>
+<th class="row_heading level0 row7" id="T_a367c_level0_row7">11</th>
+<td class="data row7 col0" id="T_a367c_row7_col0">LSODA</td>
+<td class="data row7 col1" id="T_a367c_row7_col1">1e-03</td>
+<td class="data row7 col2" id="T_a367c_row7_col2">1e-13</td>
+<td class="data row7 col3" id="T_a367c_row7_col3">0.00119584405</td>
+<td class="data row7 col4" id="T_a367c_row7_col4">289</td>
+</tr>
+<tr>
+<th class="row_heading level0 row8" id="T_a367c_level0_row8">5</th>
+<td class="data row8 col0" id="T_a367c_row8_col0">LSODA</td>
+<td class="data row8 col1" id="T_a367c_row8_col1">1e-13</td>
+<td class="data row8 col2" id="T_a367c_row8_col2">1e-06</td>
+<td class="data row8 col3" id="T_a367c_row8_col3">0.00022170359</td>
+<td class="data row8 col4" id="T_a367c_row8_col4">333</td>
+</tr>
+<tr>
+<th class="row_heading level0 row9" id="T_a367c_level0_row9">6</th>
+<td class="data row9 col0" id="T_a367c_row9_col0">LSODA</td>
+<td class="data row9 col1" id="T_a367c_row9_col1">1e-13</td>
+<td class="data row9 col2" id="T_a367c_row9_col2">1e-07</td>
+<td class="data row9 col3" id="T_a367c_row9_col3">0.00006796582</td>
+<td class="data row9 col4" id="T_a367c_row9_col4">612</td>
+</tr>
+<tr>
+<th class="row_heading level0 row10" id="T_a367c_level0_row10">12</th>
+<td class="data row10 col0" id="T_a367c_row10_col0">LSODA</td>
+<td class="data row10 col1" id="T_a367c_row10_col1">1e-04</td>
+<td class="data row10 col2" id="T_a367c_row10_col2">1e-13</td>
+<td class="data row10 col3" id="T_a367c_row10_col3">0.00005085833</td>
+<td class="data row10 col4" id="T_a367c_row10_col4">539</td>
+</tr>
+<tr>
+<th class="row_heading level0 row11" id="T_a367c_level0_row11">7</th>
+<td class="data row11 col0" id="T_a367c_row11_col0">LSODA</td>
+<td class="data row11 col1" id="T_a367c_row11_col1">1e-13</td>
+<td class="data row11 col2" id="T_a367c_row11_col2">1e-08</td>
+<td class="data row11 col3" id="T_a367c_row11_col3">0.00000665238</td>
+<td class="data row11 col4" id="T_a367c_row11_col4">1057</td>
+</tr>
+<tr>
+<th class="row_heading level0 row12" id="T_a367c_level0_row12">14</th>
+<td class="data row12 col0" id="T_a367c_row12_col0">LSODA</td>
+<td class="data row12 col1" id="T_a367c_row12_col1">1e-06</td>
+<td class="data row12 col2" id="T_a367c_row12_col2">1e-13</td>
+<td class="data row12 col3" id="T_a367c_row12_col3">0.00000351151</td>
+<td class="data row12 col4" id="T_a367c_row12_col4">1460</td>
+</tr>
+<tr>
+<th class="row_heading level0 row13" id="T_a367c_level0_row13">13</th>
+<td class="data row13 col0" id="T_a367c_row13_col0">LSODA</td>
+<td class="data row13 col1" id="T_a367c_row13_col1">1e-05</td>
+<td class="data row13 col2" id="T_a367c_row13_col2">1e-13</td>
+<td class="data row13 col3" id="T_a367c_row13_col3">0.00000123119</td>
+<td class="data row13 col4" id="T_a367c_row13_col4">1108</td>
+</tr>
+<tr>
+<th class="row_heading level0 row14" id="T_a367c_level0_row14">15</th>
+<td class="data row14 col0" id="T_a367c_row14_col0">LSODA</td>
+<td class="data row14 col1" id="T_a367c_row14_col1">1e-07</td>
+<td class="data row14 col2" id="T_a367c_row14_col2">1e-13</td>
+<td class="data row14 col3" id="T_a367c_row14_col3">0.00000032946</td>
+<td class="data row14 col4" id="T_a367c_row14_col4">1839</td>
+</tr>
+<tr>
+<th class="row_heading level0 row15" id="T_a367c_level0_row15">8</th>
+<td class="data row15 col0" id="T_a367c_row15_col0">LSODA</td>
+<td class="data row15 col1" id="T_a367c_row15_col1">1e-13</td>
+<td class="data row15 col2" id="T_a367c_row15_col2">1e-09</td>
+<td class="data row15 col3" id="T_a367c_row15_col3">0.00000018333</td>
+<td class="data row15 col4" id="T_a367c_row15_col4">1493</td>
+</tr>
+<tr>
+<th class="row_heading level0 row16" id="T_a367c_level0_row16">16</th>
+<td class="data row16 col0" id="T_a367c_row16_col0">LSODA</td>
+<td class="data row16 col1" id="T_a367c_row16_col1">1e-08</td>
+<td class="data row16 col2" id="T_a367c_row16_col2">1e-13</td>
+<td class="data row16 col3" id="T_a367c_row16_col3">0.00000000849</td>
+<td class="data row16 col4" id="T_a367c_row16_col4">2281</td>
+</tr>
+<tr>
+<th class="row_heading level0 row17" id="T_a367c_level0_row17">17</th>
+<td class="data row17 col0" id="T_a367c_row17_col0">LSODA</td>
+<td class="data row17 col1" id="T_a367c_row17_col1">1e-09</td>
+<td class="data row17 col2" id="T_a367c_row17_col2">1e-13</td>
+<td class="data row17 col3" id="T_a367c_row17_col3">0.00000000088</td>
+<td class="data row17 col4" id="T_a367c_row17_col4">2848</td>
+</tr>
+</tbody>
+</table>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="n">df_tol</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">tol_tests</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="s1">'Method'</span><span class="p">,</span> <span class="s1">'Absolute Tolerance'</span><span class="p">,</span> <span class="s1">'Relative Tolerance'</span><span class="p">,</span> <span class="s1">'Error (m)'</span><span class="p">,</span> <span class="s1">'Integration Steps'</span><span class="p">])</span>
+<span class="c1"># Separate the two series of data</span>
+<span class="n">atol_fixed</span> <span class="o">=</span> <span class="n">df_tol</span><span class="p">[</span><span class="n">df_tol</span><span class="p">[</span><span class="s1">'Absolute Tolerance'</span><span class="p">]</span> <span class="o">==</span> <span class="mf">1e-13</span><span class="p">]</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+<span class="n">rtol_fixed</span> <span class="o">=</span> <span class="n">df_tol</span><span class="p">[</span><span class="n">df_tol</span><span class="p">[</span><span class="s1">'Relative Tolerance'</span><span class="p">]</span> <span class="o">==</span> <span class="mf">1e-13</span><span class="p">]</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+
+<span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">12</span><span class="p">,</span> <span class="mi">8</span><span class="p">))</span>
+<span class="c1"># Plot the series where Absolute Tolerance is fixed</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span>
+    <span class="n">np</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="n">atol_fixed</span><span class="p">[</span><span class="s1">'Relative Tolerance'</span><span class="p">]),</span>
+    <span class="n">atol_fixed</span><span class="p">[</span><span class="s1">'Error (m)'</span><span class="p">],</span>
+    <span class="n">s</span><span class="o">=</span><span class="n">atol_fixed</span><span class="p">[</span><span class="s1">'Integration Steps'</span><span class="p">]</span> <span class="o">*</span> <span class="mf">0.5</span><span class="p">,</span>  <span class="c1"># Scale size for better visibility</span>
+    <span class="n">label</span><span class="o">=</span><span class="s1">'Relative Tolerance'</span><span class="p">,</span>
+    <span class="n">alpha</span><span class="o">=</span><span class="mf">0.7</span><span class="p">,</span>
+    <span class="n">edgecolors</span><span class="o">=</span><span class="s1">'w'</span><span class="p">,</span>
+    <span class="n">linewidth</span><span class="o">=</span><span class="mf">0.5</span>
+<span class="p">)</span>
+<span class="c1"># Plot the series where Relative Tolerance is fixed</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span>
+    <span class="n">np</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="n">rtol_fixed</span><span class="p">[</span><span class="s1">'Absolute Tolerance'</span><span class="p">]),</span>
+    <span class="n">rtol_fixed</span><span class="p">[</span><span class="s1">'Error (m)'</span><span class="p">],</span>
+    <span class="n">s</span><span class="o">=</span><span class="n">rtol_fixed</span><span class="p">[</span><span class="s1">'Integration Steps'</span><span class="p">]</span> <span class="o">*</span> <span class="mf">0.5</span><span class="p">,</span>  <span class="c1"># Scale size for better visibility</span>
+    <span class="n">label</span><span class="o">=</span><span class="s1">'Absolute Tolerance'</span><span class="p">,</span>
+    <span class="n">alpha</span><span class="o">=</span><span class="mf">0.7</span><span class="p">,</span>
+    <span class="n">edgecolors</span><span class="o">=</span><span class="s1">'w'</span><span class="p">,</span>
+    <span class="n">linewidth</span><span class="o">=</span><span class="mf">0.5</span>
+<span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s1">'Log10(Tolerance)'</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s1">'Error (m)'</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s1">'Error vs. Tolerance for LSODA (Point size reflects #/integration steps)'</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">grid</span><span class="p">(</span><span class="kc">True</span><span class="p">,</span> <span class="n">which</span><span class="o">=</span><span class="s1">'both'</span><span class="p">,</span> <span class="n">linestyle</span><span class="o">=</span><span class="s1">'--'</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="mf">0.5</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_yscale</span><span class="p">(</span><span class="s1">'log'</span><span class="p">)</span> <span class="c1"># Use a log scale for error to see the full range</span>
+<span class="c1"># Add a legend for bubble sizes</span>
+<span class="k">for</span> <span class="n">steps</span> <span class="ow">in</span> <span class="p">[</span><span class="mi">100</span><span class="p">,</span> <span class="mi">500</span><span class="p">,</span> <span class="mi">1000</span><span class="p">]:</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">scatter</span><span class="p">([],</span> <span class="p">[],</span> <span class="n">s</span><span class="o">=</span><span class="n">steps</span> <span class="o">*</span> <span class="mf">0.5</span><span class="p">,</span> <span class="n">c</span><span class="o">=</span><span class="s1">'k'</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.7</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="sa">f</span><span class="s1">'</span><span class="si">{</span><span class="n">steps</span><span class="si">}</span><span class="s1"> steps'</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="n">title</span><span class="o">=</span><span class="s1">'Series / Bubble Size'</span><span class="p">,</span> <span class="n">scatterpoints</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">labelspacing</span><span class="o">=</span><span class="mf">1.5</span><span class="p">,</span> <span class="n">borderpad</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">loc</span><span class="o">=</span><span class="s1">'lower right'</span><span class="p">)</span>
+<span class="c1">#plt.savefig('ErrorTolerance.svg', bbox_inches='tight')</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</code></pre></div>
+<p><img alt="png" src="../BenchmarkEngines_15_0.png"/></p>
+<h4 id="rk45">RK45<a class="headerlink" href="#rk45" title="Permanent link">¶</a></h4>
+<div class="language-python highlight"><pre><span></span><code><span class="n">method</span> <span class="o">=</span> <span class="s1">'RK45'</span>
+<span class="c1"># Run with rtol as limiting factor</span>
+<span class="n">rtol</span> <span class="o">=</span> <span class="mf">1e-1</span>
+<span class="n">atol</span> <span class="o">=</span> <span class="mf">1e-13</span>
+<span class="k">while</span> <span class="n">rtol</span> <span class="o">&gt;</span> <span class="mf">1e-10</span><span class="p">:</span>
+    <span class="n">rtol</span> <span class="o">/=</span> <span class="mf">10.0</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">err</span><span class="p">,</span> <span class="n">count</span> <span class="o">=</span> <span class="n">scipy_chk</span><span class="p">(</span><span class="n">integration_method</span><span class="o">=</span><span class="n">method</span><span class="p">,</span> <span class="n">relative_tolerance</span><span class="o">=</span><span class="n">rtol</span><span class="p">,</span> <span class="n">absolute_tolerance</span><span class="o">=</span><span class="n">atol</span><span class="p">)</span>
+        <span class="n">tol_tests</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">method</span><span class="p">,</span> <span class="n">atol</span><span class="p">,</span> <span class="n">rtol</span><span class="p">,</span> <span class="n">err</span><span class="p">,</span> <span class="n">count</span><span class="p">))</span>
+    <span class="k">except</span> <span class="ne">ArithmeticError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Failed to reach distance with </span><span class="si">{</span><span class="n">rtol</span><span class="si">=}</span><span class="s2">"</span><span class="p">)</span>
+        <span class="k">continue</span>
+<span class="c1"># Run with atol as limiting factor</span>
+<span class="n">atol</span> <span class="o">=</span> <span class="mf">1e-1</span>
+<span class="n">rtol</span> <span class="o">=</span> <span class="mf">1e-13</span>
+<span class="k">while</span> <span class="n">atol</span> <span class="o">&gt;</span> <span class="mf">1e-10</span><span class="p">:</span>
+    <span class="n">atol</span> <span class="o">/=</span> <span class="mf">10.0</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">err</span><span class="p">,</span> <span class="n">count</span> <span class="o">=</span> <span class="n">scipy_chk</span><span class="p">(</span><span class="n">integration_method</span><span class="o">=</span><span class="n">method</span><span class="p">,</span> <span class="n">relative_tolerance</span><span class="o">=</span><span class="n">rtol</span><span class="p">,</span> <span class="n">absolute_tolerance</span><span class="o">=</span><span class="n">atol</span><span class="p">)</span>
+        <span class="n">tol_tests</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">method</span><span class="p">,</span> <span class="n">atol</span><span class="p">,</span> <span class="n">rtol</span><span class="p">,</span> <span class="n">err</span><span class="p">,</span> <span class="n">count</span><span class="p">))</span>
+    <span class="k">except</span> <span class="ne">ArithmeticError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Failed to reach distance with </span><span class="si">{</span><span class="n">atol</span><span class="si">=}</span><span class="s2">"</span><span class="p">)</span>
+        <span class="k">continue</span>
+<span class="n">df_tol</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">tol_tests</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="s1">'Method'</span><span class="p">,</span> <span class="s1">'Absolute Tolerance'</span><span class="p">,</span> <span class="s1">'Relative Tolerance'</span><span class="p">,</span> <span class="s1">'Error (m)'</span><span class="p">,</span> <span class="s1">'Integration Steps'</span><span class="p">])</span><span class="o">.</span><span class="n">sort_values</span><span class="p">(</span><span class="n">by</span><span class="o">=</span><span class="s1">'Error (m)'</span><span class="p">,</span> <span class="n">ascending</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<span class="n">display</span><span class="p">(</span><span class="n">df_tol</span><span class="p">[</span><span class="n">df_tol</span><span class="p">[</span><span class="s1">'Method'</span><span class="p">]</span> <span class="o">==</span> <span class="s1">'RK45'</span><span class="p">]</span><span class="o">.</span><span class="n">sort_values</span><span class="p">(</span><span class="n">by</span><span class="o">=</span><span class="s1">'Error (m)'</span><span class="p">,</span> <span class="n">ascending</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+      <span class="o">.</span><span class="n">style</span><span class="o">.</span><span class="n">format</span><span class="p">({</span><span class="s1">'Absolute Tolerance'</span><span class="p">:</span> <span class="s1">'</span><span class="si">{:.0e}</span><span class="s1">'</span><span class="p">,</span> <span class="s1">'Relative Tolerance'</span><span class="p">:</span> <span class="s1">'</span><span class="si">{:.0e}</span><span class="s1">'</span><span class="p">,</span> <span class="s1">'Error (m)'</span><span class="p">:</span> <span class="s1">'</span><span class="si">{:.11f}</span><span class="s1">'</span><span class="p">}))</span>
+</code></pre></div>
+<style type="text/css">
+</style>
+<table id="T_1a875">
+<thead>
+<tr>
+<th class="blank level0"> </th>
+<th class="col_heading level0 col0" id="T_1a875_level0_col0">Method</th>
+<th class="col_heading level0 col1" id="T_1a875_level0_col1">Absolute Tolerance</th>
+<th class="col_heading level0 col2" id="T_1a875_level0_col2">Relative Tolerance</th>
+<th class="col_heading level0 col3" id="T_1a875_level0_col3">Error (m)</th>
+<th class="col_heading level0 col4" id="T_1a875_level0_col4">Integration Steps</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<th class="row_heading level0 row0" id="T_1a875_level0_row0">18</th>
+<td class="data row0 col0" id="T_1a875_row0_col0">RK45</td>
+<td class="data row0 col1" id="T_1a875_row0_col1">1e-13</td>
+<td class="data row0 col2" id="T_1a875_row0_col2">1e-02</td>
+<td class="data row0 col3" id="T_1a875_row0_col3">4.80785741502</td>
+<td class="data row0 col4" id="T_1a875_row0_col4">110</td>
+</tr>
+<tr>
+<th class="row_heading level0 row1" id="T_1a875_level0_row1">19</th>
+<td class="data row1 col0" id="T_1a875_row1_col0">RK45</td>
+<td class="data row1 col1" id="T_1a875_row1_col1">1e-13</td>
+<td class="data row1 col2" id="T_1a875_row1_col2">1e-03</td>
+<td class="data row1 col3" id="T_1a875_row1_col3">1.27925616677</td>
+<td class="data row1 col4" id="T_1a875_row1_col4">110</td>
+</tr>
+<tr>
+<th class="row_heading level0 row2" id="T_1a875_level0_row2">20</th>
+<td class="data row2 col0" id="T_1a875_row2_col0">RK45</td>
+<td class="data row2 col1" id="T_1a875_row2_col1">1e-13</td>
+<td class="data row2 col2" id="T_1a875_row2_col2">1e-04</td>
+<td class="data row2 col3" id="T_1a875_row2_col3">0.23688121562</td>
+<td class="data row2 col4" id="T_1a875_row2_col4">134</td>
+</tr>
+<tr>
+<th class="row_heading level0 row3" id="T_1a875_level0_row3">28</th>
+<td class="data row3 col0" id="T_1a875_row3_col0">RK45</td>
+<td class="data row3 col1" id="T_1a875_row3_col1">1e-02</td>
+<td class="data row3 col2" id="T_1a875_row3_col2">1e-13</td>
+<td class="data row3 col3" id="T_1a875_row3_col3">0.01987211151</td>
+<td class="data row3 col4" id="T_1a875_row3_col4">98</td>
+</tr>
+<tr>
+<th class="row_heading level0 row4" id="T_1a875_level0_row4">21</th>
+<td class="data row4 col0" id="T_1a875_row4_col0">RK45</td>
+<td class="data row4 col1" id="T_1a875_row4_col1">1e-13</td>
+<td class="data row4 col2" id="T_1a875_row4_col2">1e-05</td>
+<td class="data row4 col3" id="T_1a875_row4_col3">0.00558365130</td>
+<td class="data row4 col4" id="T_1a875_row4_col4">170</td>
+</tr>
+<tr>
+<th class="row_heading level0 row5" id="T_1a875_level0_row5">22</th>
+<td class="data row5 col0" id="T_1a875_row5_col0">RK45</td>
+<td class="data row5 col1" id="T_1a875_row5_col1">1e-13</td>
+<td class="data row5 col2" id="T_1a875_row5_col2">1e-06</td>
+<td class="data row5 col3" id="T_1a875_row5_col3">0.00309949836</td>
+<td class="data row5 col4" id="T_1a875_row5_col4">200</td>
+</tr>
+<tr>
+<th class="row_heading level0 row6" id="T_1a875_level0_row6">29</th>
+<td class="data row6 col0" id="T_1a875_row6_col0">RK45</td>
+<td class="data row6 col1" id="T_1a875_row6_col1">1e-03</td>
+<td class="data row6 col2" id="T_1a875_row6_col2">1e-13</td>
+<td class="data row6 col3" id="T_1a875_row6_col3">0.00148058349</td>
+<td class="data row6 col4" id="T_1a875_row6_col4">140</td>
+</tr>
+<tr>
+<th class="row_heading level0 row7" id="T_1a875_level0_row7">30</th>
+<td class="data row7 col0" id="T_1a875_row7_col0">RK45</td>
+<td class="data row7 col1" id="T_1a875_row7_col1">1e-04</td>
+<td class="data row7 col2" id="T_1a875_row7_col2">1e-13</td>
+<td class="data row7 col3" id="T_1a875_row7_col3">0.00026892650</td>
+<td class="data row7 col4" id="T_1a875_row7_col4">224</td>
+</tr>
+<tr>
+<th class="row_heading level0 row8" id="T_1a875_level0_row8">24</th>
+<td class="data row8 col0" id="T_1a875_row8_col0">RK45</td>
+<td class="data row8 col1" id="T_1a875_row8_col1">1e-13</td>
+<td class="data row8 col2" id="T_1a875_row8_col2">1e-08</td>
+<td class="data row8 col3" id="T_1a875_row8_col3">0.00026740152</td>
+<td class="data row8 col4" id="T_1a875_row8_col4">464</td>
+</tr>
+<tr>
+<th class="row_heading level0 row9" id="T_1a875_level0_row9">23</th>
+<td class="data row9 col0" id="T_1a875_row9_col0">RK45</td>
+<td class="data row9 col1" id="T_1a875_row9_col1">1e-13</td>
+<td class="data row9 col2" id="T_1a875_row9_col2">1e-07</td>
+<td class="data row9 col3" id="T_1a875_row9_col3">0.00026298424</td>
+<td class="data row9 col4" id="T_1a875_row9_col4">302</td>
+</tr>
+<tr>
+<th class="row_heading level0 row10" id="T_1a875_level0_row10">31</th>
+<td class="data row10 col0" id="T_1a875_row10_col0">RK45</td>
+<td class="data row10 col1" id="T_1a875_row10_col1">1e-05</td>
+<td class="data row10 col2" id="T_1a875_row10_col2">1e-13</td>
+<td class="data row10 col3" id="T_1a875_row10_col3">0.00003909501</td>
+<td class="data row10 col4" id="T_1a875_row10_col4">584</td>
+</tr>
+<tr>
+<th class="row_heading level0 row11" id="T_1a875_level0_row11">25</th>
+<td class="data row11 col0" id="T_1a875_row11_col0">RK45</td>
+<td class="data row11 col1" id="T_1a875_row11_col1">1e-13</td>
+<td class="data row11 col2" id="T_1a875_row11_col2">1e-09</td>
+<td class="data row11 col3" id="T_1a875_row11_col3">0.00002767164</td>
+<td class="data row11 col4" id="T_1a875_row11_col4">962</td>
+</tr>
+<tr>
+<th class="row_heading level0 row12" id="T_1a875_level0_row12">32</th>
+<td class="data row12 col0" id="T_1a875_row12_col0">RK45</td>
+<td class="data row12 col1" id="T_1a875_row12_col1">1e-06</td>
+<td class="data row12 col2" id="T_1a875_row12_col2">1e-13</td>
+<td class="data row12 col3" id="T_1a875_row12_col3">0.00000383078</td>
+<td class="data row12 col4" id="T_1a875_row12_col4">944</td>
+</tr>
+<tr>
+<th class="row_heading level0 row13" id="T_1a875_level0_row13">26</th>
+<td class="data row13 col0" id="T_1a875_row13_col0">RK45</td>
+<td class="data row13 col1" id="T_1a875_row13_col1">1e-13</td>
+<td class="data row13 col2" id="T_1a875_row13_col2">1e-10</td>
+<td class="data row13 col3" id="T_1a875_row13_col3">0.00000161046</td>
+<td class="data row13 col4" id="T_1a875_row13_col4">1490</td>
+</tr>
+<tr>
+<th class="row_heading level0 row14" id="T_1a875_level0_row14">33</th>
+<td class="data row14 col0" id="T_1a875_row14_col0">RK45</td>
+<td class="data row14 col1" id="T_1a875_row14_col1">1e-07</td>
+<td class="data row14 col2" id="T_1a875_row14_col2">1e-13</td>
+<td class="data row14 col3" id="T_1a875_row14_col3">0.00000052081</td>
+<td class="data row14 col4" id="T_1a875_row14_col4">1478</td>
+</tr>
+<tr>
+<th class="row_heading level0 row15" id="T_1a875_level0_row15">34</th>
+<td class="data row15 col0" id="T_1a875_row15_col0">RK45</td>
+<td class="data row15 col1" id="T_1a875_row15_col1">1e-08</td>
+<td class="data row15 col2" id="T_1a875_row15_col2">1e-13</td>
+<td class="data row15 col3" id="T_1a875_row15_col3">0.00000037750</td>
+<td class="data row15 col4" id="T_1a875_row15_col4">2018</td>
+</tr>
+<tr>
+<th class="row_heading level0 row16" id="T_1a875_level0_row16">27</th>
+<td class="data row16 col0" id="T_1a875_row16_col0">RK45</td>
+<td class="data row16 col1" id="T_1a875_row16_col1">1e-13</td>
+<td class="data row16 col2" id="T_1a875_row16_col2">1e-11</td>
+<td class="data row16 col3" id="T_1a875_row16_col3">0.00000017391</td>
+<td class="data row16 col4" id="T_1a875_row16_col4">2036</td>
+</tr>
+<tr>
+<th class="row_heading level0 row17" id="T_1a875_level0_row17">36</th>
+<td class="data row17 col0" id="T_1a875_row17_col0">RK45</td>
+<td class="data row17 col1" id="T_1a875_row17_col1">1e-10</td>
+<td class="data row17 col2" id="T_1a875_row17_col2">1e-13</td>
+<td class="data row17 col3" id="T_1a875_row17_col3">0.00000000827</td>
+<td class="data row17 col4" id="T_1a875_row17_col4">3434</td>
+</tr>
+<tr>
+<th class="row_heading level0 row18" id="T_1a875_level0_row18">35</th>
+<td class="data row18 col0" id="T_1a875_row18_col0">RK45</td>
+<td class="data row18 col1" id="T_1a875_row18_col1">1e-09</td>
+<td class="data row18 col2" id="T_1a875_row18_col2">1e-13</td>
+<td class="data row18 col3" id="T_1a875_row18_col3">0.00000000509</td>
+<td class="data row18 col4" id="T_1a875_row18_col4">2840</td>
+</tr>
+<tr>
+<th class="row_heading level0 row19" id="T_1a875_level0_row19">37</th>
+<td class="data row19 col0" id="T_1a875_row19_col0">RK45</td>
+<td class="data row19 col1" id="T_1a875_row19_col1">1e-11</td>
+<td class="data row19 col2" id="T_1a875_row19_col2">1e-13</td>
+<td class="data row19 col3" id="T_1a875_row19_col3">0.00000000388</td>
+<td class="data row19 col4" id="T_1a875_row19_col4">3704</td>
+</tr>
+</tbody>
+</table>
+<h4 id="chart">Chart<a class="headerlink" href="#chart" title="Permanent link">¶</a></h4>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+
+<span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">12</span><span class="p">,</span> <span class="mi">8</span><span class="p">))</span>
+<span class="k">for</span> <span class="n">method</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">'LSODA'</span><span class="p">,</span> <span class="s1">'RK45'</span><span class="p">]:</span>
+    <span class="n">atol_fixed</span> <span class="o">=</span> <span class="n">df_tol</span><span class="p">[(</span><span class="n">df_tol</span><span class="o">.</span><span class="n">Method</span> <span class="o">==</span> <span class="n">method</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">df_tol</span><span class="p">[</span><span class="s1">'Absolute Tolerance'</span><span class="p">]</span> <span class="o">==</span> <span class="mf">1e-13</span><span class="p">)]</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+    <span class="n">rtol_fixed</span> <span class="o">=</span> <span class="n">df_tol</span><span class="p">[(</span><span class="n">df_tol</span><span class="o">.</span><span class="n">Method</span> <span class="o">==</span> <span class="n">method</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">df_tol</span><span class="p">[</span><span class="s1">'Relative Tolerance'</span><span class="p">]</span> <span class="o">==</span> <span class="mf">1e-13</span><span class="p">)]</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+    <span class="c1"># Plot the series where Absolute Tolerance is fixed</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span>
+        <span class="n">np</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="n">atol_fixed</span><span class="p">[</span><span class="s1">'Relative Tolerance'</span><span class="p">]),</span>
+        <span class="n">atol_fixed</span><span class="p">[</span><span class="s1">'Error (m)'</span><span class="p">],</span>
+        <span class="n">s</span><span class="o">=</span><span class="n">atol_fixed</span><span class="p">[</span><span class="s1">'Integration Steps'</span><span class="p">]</span> <span class="o">*</span> <span class="mf">0.5</span><span class="p">,</span>  <span class="c1"># Scale size for better visibility</span>
+        <span class="n">label</span><span class="o">=</span><span class="n">method</span> <span class="o">+</span> <span class="s1">' Relative Tolerance'</span><span class="p">,</span>
+        <span class="n">alpha</span><span class="o">=</span><span class="mf">0.7</span><span class="p">,</span>
+        <span class="n">edgecolors</span><span class="o">=</span><span class="s1">'w'</span><span class="p">,</span>
+        <span class="n">linewidth</span><span class="o">=</span><span class="mf">0.5</span>
+    <span class="p">)</span>
+    <span class="c1"># Plot the series where Relative Tolerance is fixed</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span>
+        <span class="n">np</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="n">rtol_fixed</span><span class="p">[</span><span class="s1">'Absolute Tolerance'</span><span class="p">]),</span>
+        <span class="n">rtol_fixed</span><span class="p">[</span><span class="s1">'Error (m)'</span><span class="p">],</span>
+        <span class="n">s</span><span class="o">=</span><span class="n">rtol_fixed</span><span class="p">[</span><span class="s1">'Integration Steps'</span><span class="p">]</span> <span class="o">*</span> <span class="mf">0.5</span><span class="p">,</span>  <span class="c1"># Scale size for better visibility</span>
+        <span class="n">label</span><span class="o">=</span><span class="n">method</span> <span class="o">+</span> <span class="s1">' Absolute Tolerance'</span><span class="p">,</span>
+        <span class="n">alpha</span><span class="o">=</span><span class="mf">0.7</span><span class="p">,</span>
+        <span class="n">edgecolors</span><span class="o">=</span><span class="s1">'w'</span><span class="p">,</span>
+        <span class="n">linewidth</span><span class="o">=</span><span class="mf">0.5</span>
+    <span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s1">'Log10(Tolerance)'</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s1">'Error (m)'</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s1">'Error vs. Tolerance (Point size reflects #/integration steps)'</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">grid</span><span class="p">(</span><span class="kc">True</span><span class="p">,</span> <span class="n">which</span><span class="o">=</span><span class="s1">'both'</span><span class="p">,</span> <span class="n">linestyle</span><span class="o">=</span><span class="s1">'--'</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="mf">0.5</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_yscale</span><span class="p">(</span><span class="s1">'log'</span><span class="p">)</span> <span class="c1"># Use a log scale for error to see the full range</span>
+<span class="c1"># Add a legend for bubble sizes</span>
+<span class="k">for</span> <span class="n">steps</span> <span class="ow">in</span> <span class="p">[</span><span class="mi">100</span><span class="p">,</span> <span class="mi">500</span><span class="p">,</span> <span class="mi">1000</span><span class="p">]:</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">scatter</span><span class="p">([],</span> <span class="p">[],</span> <span class="n">s</span><span class="o">=</span><span class="n">steps</span> <span class="o">*</span> <span class="mf">0.5</span><span class="p">,</span> <span class="n">c</span><span class="o">=</span><span class="s1">'k'</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.7</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="sa">f</span><span class="s1">'</span><span class="si">{</span><span class="n">steps</span><span class="si">}</span><span class="s1"> steps'</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="n">title</span><span class="o">=</span><span class="s1">'Series / Bubble Size'</span><span class="p">,</span> <span class="n">scatterpoints</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">labelspacing</span><span class="o">=</span><span class="mf">1.5</span><span class="p">,</span> <span class="n">borderpad</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</code></pre></div>
+<p><img alt="png" src="../BenchmarkEngines_19_0.png"/></p>
+<h3 id="chosen-methods">Chosen Methods<a class="headerlink" href="#chosen-methods" title="Permanent link">¶</a></h3>
+<p>For purposes of charting against the non-SciPy methods, we'll vary these two SciPy methods over a range of tolerance settings that give monotonically increasing error with speed.</p>
+<div class="language-python highlight"><pre><span></span><code><span class="n">method</span> <span class="o">=</span> <span class="s1">'RK45'</span>
+<span class="n">atol</span> <span class="o">=</span> <span class="mf">1e-10</span>
+<span class="k">while</span> <span class="n">atol</span> <span class="o">&lt;</span> <span class="mf">1.0</span><span class="p">:</span>
+    <span class="n">err</span><span class="p">,</span> <span class="n">count</span><span class="p">,</span> <span class="n">speed</span> <span class="o">=</span> <span class="n">scipy_chk</span><span class="p">(</span><span class="n">timeit</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">integration_method</span><span class="o">=</span><span class="n">method</span><span class="p">,</span> <span class="n">absolute_tolerance</span><span class="o">=</span><span class="n">atol</span><span class="p">,</span> <span class="n">relative_tolerance</span><span class="o">=</span><span class="mf">1e-12</span><span class="p">)</span>
+    <span class="n">summary</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="s1">'SciPy '</span><span class="o">+</span><span class="n">method</span><span class="p">,</span> <span class="n">atol</span><span class="p">,</span> <span class="n">err</span><span class="p">,</span> <span class="n">count</span><span class="p">,</span> <span class="n">speed</span><span class="p">))</span>
+    <span class="n">atol</span> <span class="o">*=</span> <span class="mf">10.0</span>
+<span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">summary</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="s1">'Engine'</span><span class="p">,</span> <span class="s1">'atol'</span><span class="p">,</span> <span class="s1">'Error (m)'</span><span class="p">,</span> <span class="s1">'Integration Steps'</span><span class="p">,</span> <span class="s1">'Speed (s)'</span><span class="p">])</span>
+<span class="n">display</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="n">df</span><span class="o">.</span><span class="n">Engine</span> <span class="o">==</span> <span class="s1">'SciPy '</span><span class="o">+</span><span class="n">method</span><span class="p">]</span><span class="o">.</span><span class="n">style</span><span class="o">.</span><span class="n">format</span><span class="p">({</span><span class="s1">'atol'</span><span class="p">:</span> <span class="s1">'</span><span class="si">{:.0e}</span><span class="s1">'</span><span class="p">,</span> <span class="s1">'Error (m)'</span><span class="p">:</span> <span class="s1">'</span><span class="si">{:.10f}</span><span class="s1">'</span><span class="p">}))</span>
+</code></pre></div>
+<div class="language-text highlight"><pre><span></span><code>27.4 ms ± 612 μs per loop (mean ± std. dev. of 7 runs, 10 loops each)
+
+
+22.6 ms ± 175 μs per loop (mean ± std. dev. of 7 runs, 10 loops each)
+
+
+18.2 ms ± 334 μs per loop (mean ± std. dev. of 7 runs, 100 loops each)
+
+
+13.6 ms ± 33.7 μs per loop (mean ± std. dev. of 7 runs, 100 loops each)
+
+
+9.04 ms ± 96.1 μs per loop (mean ± std. dev. of 7 runs, 100 loops each)
+
+
+5.13 ms ± 57 μs per loop (mean ± std. dev. of 7 runs, 100 loops each)
+
+
+2.7 ms ± 14.9 μs per loop (mean ± std. dev. of 7 runs, 100 loops each)
+
+
+1.84 ms ± 20.1 μs per loop (mean ± std. dev. of 7 runs, 1,000 loops each)
+
+
+1.5 ms ± 38.9 μs per loop (mean ± std. dev. of 7 runs, 1,000 loops each)
+
+
+1.1 ms ± 22.7 μs per loop (mean ± std. dev. of 7 runs, 1,000 loops each)
+</code></pre></div>
+<style type="text/css">
+</style>
+<table id="T_2f878">
+<thead>
+<tr>
+<th class="blank level0"> </th>
+<th class="col_heading level0 col0" id="T_2f878_level0_col0">Engine</th>
+<th class="col_heading level0 col1" id="T_2f878_level0_col1">atol</th>
+<th class="col_heading level0 col2" id="T_2f878_level0_col2">Error (m)</th>
+<th class="col_heading level0 col3" id="T_2f878_level0_col3">Integration Steps</th>
+<th class="col_heading level0 col4" id="T_2f878_level0_col4">Speed (s)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<th class="row_heading level0 row0" id="T_2f878_level0_row0">0</th>
+<td class="data row0 col0" id="T_2f878_row0_col0">SciPy RK45</td>
+<td class="data row0 col1" id="T_2f878_row0_col1">1e-10</td>
+<td class="data row0 col2" id="T_2f878_row0_col2">0.0000000073</td>
+<td class="data row0 col3" id="T_2f878_row0_col3">2786</td>
+<td class="data row0 col4" id="T_2f878_row0_col4">0.027407</td>
+</tr>
+<tr>
+<th class="row_heading level0 row1" id="T_2f878_level0_row1">1</th>
+<td class="data row1 col0" id="T_2f878_row1_col0">SciPy RK45</td>
+<td class="data row1 col1" id="T_2f878_row1_col1">1e-09</td>
+<td class="data row1 col2" id="T_2f878_row1_col2">0.0000000506</td>
+<td class="data row1 col3" id="T_2f878_row1_col3">2348</td>
+<td class="data row1 col4" id="T_2f878_row1_col4">0.022587</td>
+</tr>
+<tr>
+<th class="row_heading level0 row2" id="T_2f878_level0_row2">2</th>
+<td class="data row2 col0" id="T_2f878_row2_col0">SciPy RK45</td>
+<td class="data row2 col1" id="T_2f878_row2_col1">1e-08</td>
+<td class="data row2 col2" id="T_2f878_row2_col2">0.0000002889</td>
+<td class="data row2 col3" id="T_2f878_row2_col3">1844</td>
+<td class="data row2 col4" id="T_2f878_row2_col4">0.018157</td>
+</tr>
+<tr>
+<th class="row_heading level0 row3" id="T_2f878_level0_row3">3</th>
+<td class="data row3 col0" id="T_2f878_row3_col0">SciPy RK45</td>
+<td class="data row3 col1" id="T_2f878_row3_col1">1e-07</td>
+<td class="data row3 col2" id="T_2f878_row3_col2">0.0000006043</td>
+<td class="data row3 col3" id="T_2f878_row3_col3">1412</td>
+<td class="data row3 col4" id="T_2f878_row3_col4">0.013582</td>
+</tr>
+<tr>
+<th class="row_heading level0 row4" id="T_2f878_level0_row4">4</th>
+<td class="data row4 col0" id="T_2f878_row4_col0">SciPy RK45</td>
+<td class="data row4 col1" id="T_2f878_row4_col1">1e-06</td>
+<td class="data row4 col2" id="T_2f878_row4_col2">0.0000312028</td>
+<td class="data row4 col3" id="T_2f878_row4_col3">932</td>
+<td class="data row4 col4" id="T_2f878_row4_col4">0.009044</td>
+</tr>
+<tr>
+<th class="row_heading level0 row5" id="T_2f878_level0_row5">5</th>
+<td class="data row5 col0" id="T_2f878_row5_col0">SciPy RK45</td>
+<td class="data row5 col1" id="T_2f878_row5_col1">1e-05</td>
+<td class="data row5 col2" id="T_2f878_row5_col2">0.0000273116</td>
+<td class="data row5 col3" id="T_2f878_row5_col3">500</td>
+<td class="data row5 col4" id="T_2f878_row5_col4">0.005128</td>
+</tr>
+<tr>
+<th class="row_heading level0 row6" id="T_2f878_level0_row6">6</th>
+<td class="data row6 col0" id="T_2f878_row6_col0">SciPy RK45</td>
+<td class="data row6 col1" id="T_2f878_row6_col1">1e-04</td>
+<td class="data row6 col2" id="T_2f878_row6_col2">0.0003269344</td>
+<td class="data row6 col3" id="T_2f878_row6_col3">230</td>
+<td class="data row6 col4" id="T_2f878_row6_col4">0.002695</td>
+</tr>
+<tr>
+<th class="row_heading level0 row7" id="T_2f878_level0_row7">7</th>
+<td class="data row7 col0" id="T_2f878_row7_col0">SciPy RK45</td>
+<td class="data row7 col1" id="T_2f878_row7_col1">1e-03</td>
+<td class="data row7 col2" id="T_2f878_row7_col2">0.0014805741</td>
+<td class="data row7 col3" id="T_2f878_row7_col3">140</td>
+<td class="data row7 col4" id="T_2f878_row7_col4">0.001839</td>
+</tr>
+<tr>
+<th class="row_heading level0 row8" id="T_2f878_level0_row8">8</th>
+<td class="data row8 col0" id="T_2f878_row8_col0">SciPy RK45</td>
+<td class="data row8 col1" id="T_2f878_row8_col1">1e-02</td>
+<td class="data row8 col2" id="T_2f878_row8_col2">0.0198725849</td>
+<td class="data row8 col3" id="T_2f878_row8_col3">98</td>
+<td class="data row8 col4" id="T_2f878_row8_col4">0.001498</td>
+</tr>
+<tr>
+<th class="row_heading level0 row9" id="T_2f878_level0_row9">9</th>
+<td class="data row9 col0" id="T_2f878_row9_col0">SciPy RK45</td>
+<td class="data row9 col1" id="T_2f878_row9_col1">1e-01</td>
+<td class="data row9 col2" id="T_2f878_row9_col2">0.3694933259</td>
+<td class="data row9 col3" id="T_2f878_row9_col3">62</td>
+<td class="data row9 col4" id="T_2f878_row9_col4">0.001102</td>
+</tr>
+</tbody>
+</table>
+<div class="language-python highlight"><pre><span></span><code><span class="n">method</span> <span class="o">=</span> <span class="s1">'LSODA'</span>
+<span class="n">atol</span> <span class="o">=</span> <span class="mf">1e-10</span>
+<span class="k">while</span> <span class="n">atol</span> <span class="o">&lt;</span> <span class="mf">1.0</span><span class="p">:</span>
+    <span class="n">err</span><span class="p">,</span> <span class="n">count</span><span class="p">,</span> <span class="n">speed</span> <span class="o">=</span> <span class="n">scipy_chk</span><span class="p">(</span><span class="n">timeit</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">integration_method</span><span class="o">=</span><span class="n">method</span><span class="p">,</span> <span class="n">absolute_tolerance</span><span class="o">=</span><span class="n">atol</span><span class="p">,</span> <span class="n">relative_tolerance</span><span class="o">=</span><span class="mf">1e-12</span><span class="p">)</span>
+    <span class="n">summary</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="s1">'SciPy '</span><span class="o">+</span><span class="n">method</span><span class="p">,</span> <span class="n">atol</span><span class="p">,</span> <span class="n">err</span><span class="p">,</span> <span class="n">count</span><span class="p">,</span> <span class="n">speed</span><span class="p">))</span>
+    <span class="n">atol</span> <span class="o">*=</span> <span class="mf">10.0</span>
+<span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">summary</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="s1">'Engine'</span><span class="p">,</span> <span class="s1">'atol'</span><span class="p">,</span> <span class="s1">'Error (m)'</span><span class="p">,</span> <span class="s1">'Integration Steps'</span><span class="p">,</span> <span class="s1">'Speed (s)'</span><span class="p">])</span>
+<span class="n">display</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="n">df</span><span class="o">.</span><span class="n">Engine</span> <span class="o">==</span> <span class="s1">'SciPy '</span><span class="o">+</span><span class="n">method</span><span class="p">]</span><span class="o">.</span><span class="n">style</span><span class="o">.</span><span class="n">format</span><span class="p">({</span><span class="s1">'atol'</span><span class="p">:</span> <span class="s1">'</span><span class="si">{:.0e}</span><span class="s1">'</span><span class="p">,</span> <span class="s1">'Error (m)'</span><span class="p">:</span> <span class="s1">'</span><span class="si">{:.10f}</span><span class="s1">'</span><span class="p">}))</span>
+</code></pre></div>
+<div class="language-text highlight"><pre><span></span><code>37.8 ms ± 828 μs per loop (mean ± std. dev. of 7 runs, 10 loops each)
+
+
+34.3 ms ± 3.05 ms per loop (mean ± std. dev. of 7 runs, 10 loops each)
+
+
+27.3 ms ± 469 μs per loop (mean ± std. dev. of 7 runs, 10 loops each)
+
+
+22.6 ms ± 434 μs per loop (mean ± std. dev. of 7 runs, 10 loops each)
+
+
+18.2 ms ± 442 μs per loop (mean ± std. dev. of 7 runs, 100 loops each)
+
+
+11.8 ms ± 111 μs per loop (mean ± std. dev. of 7 runs, 100 loops each)
+
+
+6.87 ms ± 68.3 μs per loop (mean ± std. dev. of 7 runs, 100 loops each)
+
+
+3.89 ms ± 21.1 μs per loop (mean ± std. dev. of 7 runs, 100 loops each)
+
+
+2.28 ms ± 43.1 μs per loop (mean ± std. dev. of 7 runs, 100 loops each)
+
+
+1.4 ms ± 46.6 μs per loop (mean ± std. dev. of 7 runs, 1,000 loops each)
+</code></pre></div>
+<style type="text/css">
+</style>
+<table id="T_8c76f">
+<thead>
+<tr>
+<th class="blank level0"> </th>
+<th class="col_heading level0 col0" id="T_8c76f_level0_col0">Engine</th>
+<th class="col_heading level0 col1" id="T_8c76f_level0_col1">atol</th>
+<th class="col_heading level0 col2" id="T_8c76f_level0_col2">Error (m)</th>
+<th class="col_heading level0 col3" id="T_8c76f_level0_col3">Integration Steps</th>
+<th class="col_heading level0 col4" id="T_8c76f_level0_col4">Speed (s)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<th class="row_heading level0 row0" id="T_8c76f_level0_row0">10</th>
+<td class="data row0 col0" id="T_8c76f_row0_col0">SciPy LSODA</td>
+<td class="data row0 col1" id="T_8c76f_row0_col1">1e-10</td>
+<td class="data row0 col2" id="T_8c76f_row0_col2">0.0000000045</td>
+<td class="data row0 col3" id="T_8c76f_row0_col3">2860</td>
+<td class="data row0 col4" id="T_8c76f_row0_col4">0.037802</td>
+</tr>
+<tr>
+<th class="row_heading level0 row1" id="T_8c76f_level0_row1">11</th>
+<td class="data row1 col0" id="T_8c76f_row1_col0">SciPy LSODA</td>
+<td class="data row1 col1" id="T_8c76f_row1_col1">1e-09</td>
+<td class="data row1 col2" id="T_8c76f_row1_col2">0.0000000045</td>
+<td class="data row1 col3" id="T_8c76f_row1_col3">2633</td>
+<td class="data row1 col4" id="T_8c76f_row1_col4">0.034269</td>
+</tr>
+<tr>
+<th class="row_heading level0 row2" id="T_8c76f_level0_row2">12</th>
+<td class="data row2 col0" id="T_8c76f_row2_col0">SciPy LSODA</td>
+<td class="data row2 col1" id="T_8c76f_row2_col1">1e-08</td>
+<td class="data row2 col2" id="T_8c76f_row2_col2">0.0000000275</td>
+<td class="data row2 col3" id="T_8c76f_row2_col3">2241</td>
+<td class="data row2 col4" id="T_8c76f_row2_col4">0.027256</td>
+</tr>
+<tr>
+<th class="row_heading level0 row3" id="T_8c76f_level0_row3">13</th>
+<td class="data row3 col0" id="T_8c76f_row3_col0">SciPy LSODA</td>
+<td class="data row3 col1" id="T_8c76f_row3_col1">1e-07</td>
+<td class="data row3 col2" id="T_8c76f_row3_col2">0.0000003746</td>
+<td class="data row3 col3" id="T_8c76f_row3_col3">1829</td>
+<td class="data row3 col4" id="T_8c76f_row3_col4">0.022597</td>
+</tr>
+<tr>
+<th class="row_heading level0 row4" id="T_8c76f_level0_row4">14</th>
+<td class="data row4 col0" id="T_8c76f_row4_col0">SciPy LSODA</td>
+<td class="data row4 col1" id="T_8c76f_row4_col1">1e-06</td>
+<td class="data row4 col2" id="T_8c76f_row4_col2">0.0000023065</td>
+<td class="data row4 col3" id="T_8c76f_row4_col3">1534</td>
+<td class="data row4 col4" id="T_8c76f_row4_col4">0.018242</td>
+</tr>
+<tr>
+<th class="row_heading level0 row5" id="T_8c76f_level0_row5">15</th>
+<td class="data row5 col0" id="T_8c76f_row5_col0">SciPy LSODA</td>
+<td class="data row5 col1" id="T_8c76f_row5_col1">1e-05</td>
+<td class="data row5 col2" id="T_8c76f_row5_col2">0.0000147336</td>
+<td class="data row5 col3" id="T_8c76f_row5_col3">1013</td>
+<td class="data row5 col4" id="T_8c76f_row5_col4">0.011801</td>
+</tr>
+<tr>
+<th class="row_heading level0 row6" id="T_8c76f_level0_row6">16</th>
+<td class="data row6 col0" id="T_8c76f_row6_col0">SciPy LSODA</td>
+<td class="data row6 col1" id="T_8c76f_row6_col1">1e-04</td>
+<td class="data row6 col2" id="T_8c76f_row6_col2">0.0000636292</td>
+<td class="data row6 col3" id="T_8c76f_row6_col3">563</td>
+<td class="data row6 col4" id="T_8c76f_row6_col4">0.006874</td>
+</tr>
+<tr>
+<th class="row_heading level0 row7" id="T_8c76f_level0_row7">17</th>
+<td class="data row7 col0" id="T_8c76f_row7_col0">SciPy LSODA</td>
+<td class="data row7 col1" id="T_8c76f_row7_col1">1e-03</td>
+<td class="data row7 col2" id="T_8c76f_row7_col2">0.0011555979</td>
+<td class="data row7 col3" id="T_8c76f_row7_col3">301</td>
+<td class="data row7 col4" id="T_8c76f_row7_col4">0.003892</td>
+</tr>
+<tr>
+<th class="row_heading level0 row8" id="T_8c76f_level0_row8">18</th>
+<td class="data row8 col0" id="T_8c76f_row8_col0">SciPy LSODA</td>
+<td class="data row8 col1" id="T_8c76f_row8_col1">1e-02</td>
+<td class="data row8 col2" id="T_8c76f_row8_col2">0.0035434989</td>
+<td class="data row8 col3" id="T_8c76f_row8_col3">161</td>
+<td class="data row8 col4" id="T_8c76f_row8_col4">0.002283</td>
+</tr>
+<tr>
+<th class="row_heading level0 row9" id="T_8c76f_level0_row9">19</th>
+<td class="data row9 col0" id="T_8c76f_row9_col0">SciPy LSODA</td>
+<td class="data row9 col1" id="T_8c76f_row9_col1">1e-01</td>
+<td class="data row9 col2" id="T_8c76f_row9_col2">0.0040488917</td>
+<td class="data row9 col3" id="T_8c76f_row9_col3">82</td>
+<td class="data row9 col4" id="T_8c76f_row9_col4">0.001396</td>
+</tr>
+</tbody>
+</table>
+<h2 id="other-engines">Other engines<a class="headerlink" href="#other-engines" title="Permanent link">¶</a></h2>
+<div class="language-python highlight"><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">chk_engine</span><span class="p">(</span><span class="n">engine_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">timeit</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n">step_multiplier</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.0</span><span class="p">):</span>
+    <span class="n">config</span> <span class="o">=</span> <span class="n">BaseEngineConfigDict</span><span class="p">(</span>
+        <span class="n">cStepMultiplier</span><span class="o">=</span><span class="n">step_multiplier</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">calc</span> <span class="o">=</span> <span class="n">Calculator</span><span class="p">(</span><span class="n">config</span><span class="o">=</span><span class="n">config</span><span class="p">,</span> <span class="n">engine</span><span class="o">=</span><span class="n">engine_name</span><span class="p">)</span>
+    <span class="n">hit</span> <span class="o">=</span> <span class="n">calc</span><span class="o">.</span><span class="n">fire</span><span class="p">(</span><span class="n">shot</span><span class="o">=</span><span class="n">baseline_shot</span><span class="p">,</span> <span class="n">trajectory_range</span><span class="o">=</span><span class="nb">range</span><span class="p">,</span> <span class="n">trajectory_step</span><span class="o">=</span><span class="n">reference_distance</span><span class="p">,</span> <span class="n">raise_range_error</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">err</span> <span class="o">=</span> <span class="n">check_error</span><span class="p">(</span><span class="n">hit</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+    <span class="n">stats_engine</span> <span class="o">=</span> <span class="n">calc</span><span class="o">.</span><span class="n">_engine_instance</span>
+    <span class="n">stats_engine</span><span class="o">.</span><span class="n">integrate</span><span class="p">(</span><span class="n">baseline_shot</span><span class="p">,</span> <span class="nb">range</span><span class="p">,</span> <span class="n">reference_distance</span><span class="p">)</span>
+    <span class="n">evals</span> <span class="o">=</span> <span class="n">stats_engine</span><span class="o">.</span><span class="n">integration_step_count</span>
+    <span class="k">if</span> <span class="n">timeit</span><span class="p">:</span>
+        <span class="n">speed</span> <span class="o">=</span> <span class="o">%</span><span class="n">timeit</span> <span class="o">-</span><span class="n">o</span> <span class="n">calc</span><span class="o">.</span><span class="n">fire</span><span class="p">(</span><span class="n">shot</span><span class="o">=</span><span class="n">baseline_shot</span><span class="p">,</span> <span class="n">trajectory_range</span><span class="o">=</span><span class="nb">range</span><span class="p">,</span> <span class="n">trajectory_step</span><span class="o">=</span><span class="n">reference_distance</span><span class="p">,</span> <span class="n">raise_range_error</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">err</span><span class="p">,</span> <span class="n">evals</span><span class="p">,</span> <span class="n">speed</span><span class="o">.</span><span class="n">average</span>
+    <span class="k">return</span> <span class="n">err</span><span class="p">,</span> <span class="n">evals</span>
+</code></pre></div>
+<h2 id="rk4">RK4<a class="headerlink" href="#rk4" title="Permanent link">¶</a></h2>
+<p>The Runge-Kutta 4th-order solver essentially evaluates 4 points per integration step.  To facilitate comparison with the other engines we'll set its base time step to 1ms.</p>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">py_ballisticcalc.engines</span><span class="w"> </span><span class="kn">import</span> <span class="n">RK4IntegrationEngine</span>
+<span class="n">rk_time_step</span> <span class="o">=</span> <span class="n">RK4IntegrationEngine</span><span class="o">.</span><span class="n">DEFAULT_TIME_STEP</span> <span class="o">=</span> <span class="mf">0.001</span>
+</code></pre></div>
+<div class="language-python highlight"><pre><span></span><code><span class="n">step</span> <span class="o">=</span> <span class="mf">5.0</span>
+<span class="n">multiplier</span> <span class="o">=</span> <span class="mf">1.0</span><span class="o">/</span><span class="n">step</span><span class="o">**</span><span class="mi">2</span>
+<span class="k">while</span> <span class="n">multiplier</span> <span class="o">&lt;=</span> <span class="mf">1000.0</span><span class="p">:</span>
+    <span class="n">err</span><span class="p">,</span> <span class="n">count</span><span class="p">,</span> <span class="n">speed</span> <span class="o">=</span> <span class="n">chk_engine</span><span class="p">(</span><span class="s1">'python.rk4'</span><span class="p">,</span> <span class="n">timeit</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">step_multiplier</span><span class="o">=</span><span class="n">multiplier</span><span class="p">)</span>
+    <span class="n">summary</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="s1">'RK4'</span><span class="p">,</span> <span class="n">multiplier</span><span class="o">*</span><span class="n">rk_time_step</span><span class="p">,</span> <span class="n">err</span><span class="p">,</span> <span class="n">count</span><span class="p">,</span> <span class="n">speed</span><span class="p">))</span>
+    <span class="n">multiplier</span> <span class="o">*=</span> <span class="n">step</span>
+<span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">summary</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="s1">'Engine'</span><span class="p">,</span> <span class="s1">'Step (s)'</span><span class="p">,</span> <span class="s1">'Error (m)'</span><span class="p">,</span> <span class="s1">'Integration Steps'</span><span class="p">,</span> <span class="s1">'Speed (s)'</span><span class="p">])</span>
+<span class="n">df</span><span class="p">[</span><span class="n">df</span><span class="o">.</span><span class="n">Engine</span> <span class="o">==</span> <span class="s1">'RK4'</span><span class="p">]</span>
+</code></pre></div>
+<div class="language-text highlight"><pre><span></span><code>3.02 s ± 18.3 ms per loop (mean ± std. dev. of 7 runs, 1 loop each)
+
+
+610 ms ± 2.93 ms per loop (mean ± std. dev. of 7 runs, 1 loop each)
+
+
+124 ms ± 2.01 ms per loop (mean ± std. dev. of 7 runs, 10 loops each)
+
+
+25.3 ms ± 547 μs per loop (mean ± std. dev. of 7 runs, 10 loops each)
+
+
+5.25 ms ± 165 μs per loop (mean ± std. dev. of 7 runs, 100 loops each)
+
+
+1.37 ms ± 10.4 μs per loop (mean ± std. dev. of 7 runs, 1,000 loops each)
+
+
+573 μs ± 2.6 μs per loop (mean ± std. dev. of 7 runs, 1,000 loops each)
+</code></pre></div>
+<div>
+<style scoped="">
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+<thead>
+<tr style="text-align: right;">
+<th></th>
+<th>Engine</th>
+<th>Step (s)</th>
+<th>Error (m)</th>
+<th>Integration Steps</th>
+<th>Speed (s)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<th>20</th>
+<td>RK4</td>
+<td>0.00004</td>
+<td>0.000119</td>
+<td>154729</td>
+<td>3.015828</td>
+</tr>
+<tr>
+<th>21</th>
+<td>RK4</td>
+<td>0.00020</td>
+<td>0.000602</td>
+<td>30946</td>
+<td>0.609673</td>
+</tr>
+<tr>
+<th>22</th>
+<td>RK4</td>
+<td>0.00100</td>
+<td>0.002981</td>
+<td>6190</td>
+<td>0.123576</td>
+</tr>
+<tr>
+<th>23</th>
+<td>RK4</td>
+<td>0.00500</td>
+<td>0.015094</td>
+<td>1238</td>
+<td>0.025279</td>
+</tr>
+<tr>
+<th>24</th>
+<td>RK4</td>
+<td>0.02500</td>
+<td>0.073270</td>
+<td>248</td>
+<td>0.005253</td>
+</tr>
+<tr>
+<th>25</th>
+<td>RK4</td>
+<td>0.12500</td>
+<td>0.303006</td>
+<td>50</td>
+<td>0.001370</td>
+</tr>
+<tr>
+<th>26</th>
+<td>RK4</td>
+<td>0.62500</td>
+<td>3.319578</td>
+<td>10</td>
+<td>0.000573</td>
+</tr>
+</tbody>
+</table>
+</div>
+<h2 id="verlet">Verlet<a class="headerlink" href="#verlet" title="Permanent link">¶</a></h2>
+<p>Our velocity Verlet solver has a base time step of 1ms:</p>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">py_ballisticcalc.engines</span><span class="w"> </span><span class="kn">import</span> <span class="n">VelocityVerletIntegrationEngine</span>
+<span class="n">verlet_time_step</span> <span class="o">=</span> <span class="n">VelocityVerletIntegrationEngine</span><span class="o">.</span><span class="n">DEFAULT_TIME_STEP</span>
+</code></pre></div>
+<div class="language-python highlight"><pre><span></span><code><span class="n">step</span> <span class="o">=</span> <span class="mf">5.0</span>
+<span class="n">multiplier</span> <span class="o">=</span> <span class="mf">1.0</span><span class="o">/</span><span class="n">step</span><span class="o">**</span><span class="mi">2</span>
+<span class="k">while</span> <span class="n">multiplier</span> <span class="o">&lt;=</span> <span class="mf">500.0</span><span class="p">:</span>
+    <span class="n">err</span><span class="p">,</span> <span class="n">count</span><span class="p">,</span> <span class="n">speed</span> <span class="o">=</span> <span class="n">chk_engine</span><span class="p">(</span><span class="s1">'python.verlet'</span><span class="p">,</span> <span class="n">timeit</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">step_multiplier</span><span class="o">=</span><span class="n">multiplier</span><span class="p">)</span>
+    <span class="n">summary</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="s1">'Verlet'</span><span class="p">,</span> <span class="n">multiplier</span><span class="o">*</span><span class="n">verlet_time_step</span><span class="p">,</span> <span class="n">err</span><span class="p">,</span> <span class="n">count</span><span class="p">,</span> <span class="n">speed</span><span class="p">))</span>
+    <span class="n">multiplier</span> <span class="o">*=</span> <span class="n">step</span>
+<span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">summary</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="s1">'Engine'</span><span class="p">,</span> <span class="s1">'Step (s)'</span><span class="p">,</span> <span class="s1">'Error (m)'</span><span class="p">,</span> <span class="s1">'Integration Steps'</span><span class="p">,</span> <span class="s1">'Speed (s)'</span><span class="p">])</span>
+<span class="n">df</span><span class="p">[</span><span class="n">df</span><span class="o">.</span><span class="n">Engine</span> <span class="o">==</span> <span class="s1">'Verlet'</span><span class="p">]</span>
+</code></pre></div>
+<div class="language-text highlight"><pre><span></span><code>1.57 s ± 16.1 ms per loop (mean ± std. dev. of 7 runs, 1 loop each)
+
+
+311 ms ± 1.08 ms per loop (mean ± std. dev. of 7 runs, 1 loop each)
+
+
+63.8 ms ± 770 μs per loop (mean ± std. dev. of 7 runs, 10 loops each)
+
+
+13.6 ms ± 259 μs per loop (mean ± std. dev. of 7 runs, 100 loops each)
+
+
+3 ms ± 53.7 μs per loop (mean ± std. dev. of 7 runs, 100 loops each)
+
+
+941 μs ± 34.1 μs per loop (mean ± std. dev. of 7 runs, 1,000 loops each)
+</code></pre></div>
+<div>
+<style scoped="">
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+<thead>
+<tr style="text-align: right;">
+<th></th>
+<th>Engine</th>
+<th>Step (s)</th>
+<th>Error (m)</th>
+<th>Integration Steps</th>
+<th>Speed (s)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<th>27</th>
+<td>Verlet</td>
+<td>0.00004</td>
+<td>0.000012</td>
+<td>154729</td>
+<td>1.574731</td>
+</tr>
+<tr>
+<th>28</th>
+<td>Verlet</td>
+<td>0.00020</td>
+<td>0.000050</td>
+<td>30946</td>
+<td>0.310670</td>
+</tr>
+<tr>
+<th>29</th>
+<td>Verlet</td>
+<td>0.00100</td>
+<td>0.000241</td>
+<td>6190</td>
+<td>0.063818</td>
+</tr>
+<tr>
+<th>30</th>
+<td>Verlet</td>
+<td>0.00500</td>
+<td>0.000004</td>
+<td>1238</td>
+<td>0.013595</td>
+</tr>
+<tr>
+<th>31</th>
+<td>Verlet</td>
+<td>0.02500</td>
+<td>0.023883</td>
+<td>248</td>
+<td>0.002999</td>
+</tr>
+<tr>
+<th>32</th>
+<td>Verlet</td>
+<td>0.12500</td>
+<td>0.735923</td>
+<td>50</td>
+<td>0.000941</td>
+</tr>
+</tbody>
+</table>
+</div>
+<h2 id="euler">Euler<a class="headerlink" href="#euler" title="Permanent link">¶</a></h2>
+<p>Our Euler integrator uses a base "step" of 0.5ft, which it then converts to a time step by dividing by <code>max(1.0, velocity)</code> (where velocity is in fps).  This makes the algorithm to take smaller steps when things are changing more quickly, which should produce lower error for the same total number of steps than it would if step size were held constant.</p>
+<div class="language-python highlight"><pre><span></span><code><span class="n">step</span> <span class="o">=</span> <span class="mf">5.0</span>
+<span class="n">multiplier</span> <span class="o">=</span> <span class="mf">1.0</span><span class="o">/</span><span class="n">step</span><span class="o">**</span><span class="mi">2</span>
+<span class="k">while</span> <span class="n">multiplier</span> <span class="o">&lt;=</span> <span class="mf">1000.0</span><span class="p">:</span>
+    <span class="n">err</span><span class="p">,</span> <span class="n">count</span><span class="p">,</span> <span class="n">speed</span> <span class="o">=</span> <span class="n">chk_engine</span><span class="p">(</span><span class="s1">'python.euler'</span><span class="p">,</span> <span class="n">timeit</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">step_multiplier</span><span class="o">=</span><span class="n">multiplier</span><span class="p">)</span>
+    <span class="n">summary</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="s1">'Euler'</span><span class="p">,</span> <span class="n">multiplier</span><span class="p">,</span> <span class="n">err</span><span class="p">,</span> <span class="n">count</span><span class="p">,</span> <span class="n">speed</span><span class="p">))</span>
+    <span class="n">multiplier</span> <span class="o">*=</span> <span class="n">step</span>
+<span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">summary</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="s1">'Engine'</span><span class="p">,</span> <span class="s1">'Multiplier'</span><span class="p">,</span> <span class="s1">'Error (m)'</span><span class="p">,</span> <span class="s1">'Integration Steps'</span><span class="p">,</span> <span class="s1">'Speed (s)'</span><span class="p">])</span>
+<span class="n">df</span><span class="p">[</span><span class="n">df</span><span class="o">.</span><span class="n">Engine</span> <span class="o">==</span> <span class="s1">'Euler'</span><span class="p">]</span>
+</code></pre></div>
+<div class="language-text highlight"><pre><span></span><code>2.5 s ± 62.1 ms per loop (mean ± std. dev. of 7 runs, 1 loop each)
+
+
+503 ms ± 17.1 ms per loop (mean ± std. dev. of 7 runs, 1 loop each)
+
+
+99.5 ms ± 2.18 ms per loop (mean ± std. dev. of 7 runs, 10 loops each)
+
+
+20 ms ± 161 μs per loop (mean ± std. dev. of 7 runs, 10 loops each)
+
+
+4.66 ms ± 302 μs per loop (mean ± std. dev. of 7 runs, 100 loops each)
+
+
+1.25 ms ± 60.8 μs per loop (mean ± std. dev. of 7 runs, 1,000 loops each)
+
+
+585 μs ± 17 μs per loop (mean ± std. dev. of 7 runs, 1,000 loops each)
+</code></pre></div>
+<div>
+<style scoped="">
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+<thead>
+<tr style="text-align: right;">
+<th></th>
+<th>Engine</th>
+<th>Multiplier</th>
+<th>Error (m)</th>
+<th>Integration Steps</th>
+<th>Speed (s)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<th>33</th>
+<td>Euler</td>
+<td>0.04</td>
+<td>0.002060</td>
+<td>328732</td>
+<td>2.501272</td>
+</tr>
+<tr>
+<th>34</th>
+<td>Euler</td>
+<td>0.20</td>
+<td>0.010299</td>
+<td>65748</td>
+<td>0.502751</td>
+</tr>
+<tr>
+<th>35</th>
+<td>Euler</td>
+<td>1.00</td>
+<td>0.051508</td>
+<td>13151</td>
+<td>0.099452</td>
+</tr>
+<tr>
+<th>36</th>
+<td>Euler</td>
+<td>5.00</td>
+<td>0.257775</td>
+<td>2632</td>
+<td>0.020027</td>
+</tr>
+<tr>
+<th>37</th>
+<td>Euler</td>
+<td>25.00</td>
+<td>1.295271</td>
+<td>528</td>
+<td>0.004657</td>
+</tr>
+<tr>
+<th>38</th>
+<td>Euler</td>
+<td>125.00</td>
+<td>6.627878</td>
+<td>107</td>
+<td>0.001249</td>
+</tr>
+<tr>
+<th>39</th>
+<td>Euler</td>
+<td>625.00</td>
+<td>38.002109</td>
+<td>23</td>
+<td>0.000585</td>
+</tr>
+</tbody>
+</table>
+</div>
+<h2 id="euler-constant-step">Euler constant step<a class="headerlink" href="#euler-constant-step" title="Permanent link">¶</a></h2>
+<p>Here we monkey-patch the <code>EulerIntegrationEngine</code> to use a constant time step to see if that has any effect on performance.  (It does not.)</p>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">py_ballisticcalc.engines.euler</span><span class="w"> </span><span class="kn">import</span> <span class="n">EulerIntegrationEngine</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">time_step</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">base_step</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">velocity</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+    <span class="k">return</span> <span class="n">base_step</span> <span class="o">/</span> <span class="mf">500.0</span>  <span class="c1"># Set a constant time step of 1ms for Euler engine</span>
+<span class="n">EulerIntegrationEngine</span><span class="o">.</span><span class="n">time_step</span> <span class="o">=</span> <span class="n">time_step</span>
+<span class="n">step</span> <span class="o">=</span> <span class="mf">5.0</span>
+<span class="n">multiplier</span> <span class="o">=</span> <span class="mf">1.0</span><span class="o">/</span><span class="n">step</span><span class="o">**</span><span class="mi">2</span>
+<span class="k">while</span> <span class="n">multiplier</span> <span class="o">&lt;=</span> <span class="mf">500.0</span><span class="p">:</span>
+    <span class="n">err</span><span class="p">,</span> <span class="n">count</span><span class="p">,</span> <span class="n">speed</span> <span class="o">=</span> <span class="n">chk_engine</span><span class="p">(</span><span class="s1">'python.euler'</span><span class="p">,</span> <span class="n">step_multiplier</span><span class="o">=</span><span class="n">multiplier</span><span class="p">,</span> <span class="n">timeit</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">summary</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="s1">'Euler const'</span><span class="p">,</span> <span class="n">multiplier</span><span class="o">*</span><span class="mf">0.001</span><span class="p">,</span> <span class="n">err</span><span class="p">,</span> <span class="n">count</span><span class="p">,</span> <span class="n">speed</span><span class="p">))</span>
+    <span class="n">multiplier</span> <span class="o">*=</span> <span class="n">step</span>
+<span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">summary</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="s1">'Engine'</span><span class="p">,</span> <span class="s1">'Step (s)'</span><span class="p">,</span> <span class="s1">'Error (m)'</span><span class="p">,</span> <span class="s1">'Integration Steps'</span><span class="p">,</span> <span class="s1">'Speed (s)'</span><span class="p">])</span>
+<span class="n">df</span><span class="p">[</span><span class="n">df</span><span class="o">.</span><span class="n">Engine</span> <span class="o">==</span> <span class="s1">'Euler const'</span><span class="p">]</span>
+</code></pre></div>
+<div class="language-text highlight"><pre><span></span><code>1.15 s ± 17 ms per loop (mean ± std. dev. of 7 runs, 1 loop each)
+
+
+231 ms ± 1.56 ms per loop (mean ± std. dev. of 7 runs, 1 loop each)
+
+
+46.8 ms ± 184 μs per loop (mean ± std. dev. of 7 runs, 10 loops each)
+
+
+9.9 ms ± 229 μs per loop (mean ± std. dev. of 7 runs, 100 loops each)
+
+
+2.32 ms ± 64.2 μs per loop (mean ± std. dev. of 7 runs, 100 loops each)
+
+
+776 μs ± 5.8 μs per loop (mean ± std. dev. of 7 runs, 1,000 loops each)
+</code></pre></div>
+<div>
+<style scoped="">
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+<thead>
+<tr style="text-align: right;">
+<th></th>
+<th>Engine</th>
+<th>Step (s)</th>
+<th>Error (m)</th>
+<th>Integration Steps</th>
+<th>Speed (s)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<th>40</th>
+<td>Euler const</td>
+<td>0.00004</td>
+<td>0.005765</td>
+<td>154732</td>
+<td>1.152659</td>
+</tr>
+<tr>
+<th>41</th>
+<td>Euler const</td>
+<td>0.00020</td>
+<td>0.028818</td>
+<td>30949</td>
+<td>0.230610</td>
+</tr>
+<tr>
+<th>42</th>
+<td>Euler const</td>
+<td>0.00100</td>
+<td>0.144194</td>
+<td>6193</td>
+<td>0.046799</td>
+</tr>
+<tr>
+<th>43</th>
+<td>Euler const</td>
+<td>0.00500</td>
+<td>0.722641</td>
+<td>1241</td>
+<td>0.009897</td>
+</tr>
+<tr>
+<th>44</th>
+<td>Euler const</td>
+<td>0.02500</td>
+<td>3.662860</td>
+<td>251</td>
+<td>0.002321</td>
+</tr>
+<tr>
+<th>45</th>
+<td>Euler const</td>
+<td>0.12500</td>
+<td>19.717513</td>
+<td>53</td>
+<td>0.000776</td>
+</tr>
+</tbody>
+</table>
+</div>
+<h2 id="rk4-compiled">RK4 Compiled<a class="headerlink" href="#rk4-compiled" title="Permanent link">¶</a></h2>
+<div class="language-python highlight"><pre><span></span><code><span class="n">step</span> <span class="o">=</span> <span class="mf">5.0</span>
+<span class="n">multiplier</span> <span class="o">=</span> <span class="mf">1.0</span><span class="o">/</span><span class="n">step</span><span class="o">**</span><span class="mi">2</span>
+<span class="k">while</span> <span class="n">multiplier</span> <span class="o">&lt;=</span> <span class="mf">1000.0</span><span class="p">:</span>
+    <span class="c1"># To get same step as other engines without recompiling, check the base step size in python.rk4.pyx</span>
+    <span class="n">err</span><span class="p">,</span> <span class="n">count</span><span class="p">,</span> <span class="n">speed</span> <span class="o">=</span> <span class="n">chk_engine</span><span class="p">(</span><span class="s1">'cython.rk4'</span><span class="p">,</span> <span class="n">timeit</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">step_multiplier</span><span class="o">=</span><span class="n">multiplier</span><span class="o">*</span><span class="p">(</span><span class="mf">2.0</span><span class="o">/</span><span class="mf">3.0</span><span class="p">))</span>
+    <span class="n">summary</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="s1">'RK4 Cython'</span><span class="p">,</span> <span class="n">multiplier</span><span class="p">,</span> <span class="n">err</span><span class="p">,</span> <span class="n">count</span><span class="p">,</span> <span class="n">speed</span><span class="p">))</span>
+    <span class="n">multiplier</span> <span class="o">*=</span> <span class="n">step</span>
+<span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">summary</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="s1">'Engine'</span><span class="p">,</span> <span class="s1">'Multiplier'</span><span class="p">,</span> <span class="s1">'Error (m)'</span><span class="p">,</span> <span class="s1">'Integration Steps'</span><span class="p">,</span> <span class="s1">'Speed (s)'</span><span class="p">])</span>
+<span class="n">df</span><span class="p">[</span><span class="n">df</span><span class="o">.</span><span class="n">Engine</span> <span class="o">==</span> <span class="s1">'RK4 Cython'</span><span class="p">]</span>
+</code></pre></div>
+<div class="language-text highlight"><pre><span></span><code>9.07 ms ± 133 μs per loop (mean ± std. dev. of 7 runs, 100 loops each)
+
+
+1.89 ms ± 40 μs per loop (mean ± std. dev. of 7 runs, 1,000 loops each)
+
+
+437 μs ± 7.98 μs per loop (mean ± std. dev. of 7 runs, 1,000 loops each)
+
+
+148 μs ± 513 ns per loop (mean ± std. dev. of 7 runs, 10,000 loops each)
+
+
+95.4 μs ± 2.46 μs per loop (mean ± std. dev. of 7 runs, 10,000 loops each)
+
+
+83.5 μs ± 2.54 μs per loop (mean ± std. dev. of 7 runs, 10,000 loops each)
+
+
+82.3 μs ± 1.56 μs per loop (mean ± std. dev. of 7 runs, 10,000 loops each)
+</code></pre></div>
+<div>
+<style scoped="">
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+<thead>
+<tr style="text-align: right;">
+<th></th>
+<th>Engine</th>
+<th>Multiplier</th>
+<th>Error (m)</th>
+<th>Integration Steps</th>
+<th>Speed (s)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<th>46</th>
+<td>RK4 Cython</td>
+<td>0.04</td>
+<td>0.000202</td>
+<td>92838</td>
+<td>0.009075</td>
+</tr>
+<tr>
+<th>47</th>
+<td>RK4 Cython</td>
+<td>0.20</td>
+<td>0.001014</td>
+<td>18568</td>
+<td>0.001889</td>
+</tr>
+<tr>
+<th>48</th>
+<td>RK4 Cython</td>
+<td>1.00</td>
+<td>0.005006</td>
+<td>3714</td>
+<td>0.000437</td>
+</tr>
+<tr>
+<th>49</th>
+<td>RK4 Cython</td>
+<td>5.00</td>
+<td>0.024963</td>
+<td>743</td>
+<td>0.000148</td>
+</tr>
+<tr>
+<th>50</th>
+<td>RK4 Cython</td>
+<td>25.00</td>
+<td>0.118445</td>
+<td>149</td>
+<td>0.000095</td>
+</tr>
+<tr>
+<th>51</th>
+<td>RK4 Cython</td>
+<td>125.00</td>
+<td>0.384353</td>
+<td>30</td>
+<td>0.000083</td>
+</tr>
+<tr>
+<th>52</th>
+<td>RK4 Cython</td>
+<td>625.00</td>
+<td>2.607684</td>
+<td>6</td>
+<td>0.000082</td>
+</tr>
+</tbody>
+</table>
+</div>
+<h2 id="cash-karp-compiled">Cash-Karp Compiled<a class="headerlink" href="#cash-karp-compiled" title="Permanent link">¶</a></h2>
+<p>Cash-Karp is an adaptive compiled RK45 engine.  <code>cStepMultiplier</code> supplies its base step; the engine adapts around it using its default relative tolerance.</p>
+<div class="language-python highlight"><pre><span></span><code><span class="n">step</span> <span class="o">=</span> <span class="mf">5.0</span>
+<span class="n">multiplier</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="n">step</span><span class="o">**</span><span class="mi">2</span>
+<span class="k">while</span> <span class="n">multiplier</span> <span class="o">&lt;=</span> <span class="mf">1000.0</span><span class="p">:</span>
+    <span class="n">err</span><span class="p">,</span> <span class="n">count</span><span class="p">,</span> <span class="n">speed</span> <span class="o">=</span> <span class="n">chk_engine</span><span class="p">(</span><span class="s1">'cython.rkck'</span><span class="p">,</span> <span class="n">timeit</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">step_multiplier</span><span class="o">=</span><span class="n">multiplier</span><span class="p">)</span>
+    <span class="n">summary</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="s1">'Cash-Karp Cython'</span><span class="p">,</span> <span class="n">multiplier</span><span class="p">,</span> <span class="n">err</span><span class="p">,</span> <span class="n">count</span><span class="p">,</span> <span class="n">speed</span><span class="p">))</span>
+    <span class="n">multiplier</span> <span class="o">*=</span> <span class="n">step</span>
+<span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">summary</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="s1">'Engine'</span><span class="p">,</span> <span class="s1">'Multiplier'</span><span class="p">,</span> <span class="s1">'Error (m)'</span><span class="p">,</span> <span class="s1">'Integration Steps'</span><span class="p">,</span> <span class="s1">'Speed (s)'</span><span class="p">])</span>
+<span class="n">df</span><span class="p">[</span><span class="n">df</span><span class="o">.</span><span class="n">Engine</span> <span class="o">==</span> <span class="s1">'Cash-Karp Cython'</span><span class="p">]</span>
+</code></pre></div>
+<div class="language-text highlight"><pre><span></span><code>335 μs ± 6.06 μs per loop (mean ± std. dev. of 7 runs, 1,000 loops each)
+
+
+129 μs ± 3.35 μs per loop (mean ± std. dev. of 7 runs, 10,000 loops each)
+
+
+92.7 μs ± 4.81 μs per loop (mean ± std. dev. of 7 runs, 10,000 loops each)
+
+
+83.2 μs ± 1.09 μs per loop (mean ± std. dev. of 7 runs, 10,000 loops each)
+
+
+84.1 μs ± 1.56 μs per loop (mean ± std. dev. of 7 runs, 10,000 loops each)
+
+
+82.4 μs ± 1.18 μs per loop (mean ± std. dev. of 7 runs, 10,000 loops each)
+
+
+89.4 μs ± 2.03 μs per loop (mean ± std. dev. of 7 runs, 10,000 loops each)
+</code></pre></div>
+<div>
+<style scoped="">
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+<thead>
+<tr style="text-align: right;">
+<th></th>
+<th>Engine</th>
+<th>Multiplier</th>
+<th>Error (m)</th>
+<th>Integration Steps</th>
+<th>Speed (s)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<th>53</th>
+<td>Cash-Karp Cython</td>
+<td>0.04</td>
+<td>0.000056</td>
+<td>970</td>
+<td>0.000335</td>
+</tr>
+<tr>
+<th>54</th>
+<td>Cash-Karp Cython</td>
+<td>0.20</td>
+<td>0.000407</td>
+<td>196</td>
+<td>0.000129</td>
+</tr>
+<tr>
+<th>55</th>
+<td>Cash-Karp Cython</td>
+<td>1.00</td>
+<td>0.000340</td>
+<td>44</td>
+<td>0.000093</td>
+</tr>
+<tr>
+<th>56</th>
+<td>Cash-Karp Cython</td>
+<td>5.00</td>
+<td>0.002822</td>
+<td>22</td>
+<td>0.000083</td>
+</tr>
+<tr>
+<th>57</th>
+<td>Cash-Karp Cython</td>
+<td>25.00</td>
+<td>0.000149</td>
+<td>23</td>
+<td>0.000084</td>
+</tr>
+<tr>
+<th>58</th>
+<td>Cash-Karp Cython</td>
+<td>125.00</td>
+<td>0.001733</td>
+<td>19</td>
+<td>0.000082</td>
+</tr>
+<tr>
+<th>59</th>
+<td>Cash-Karp Cython</td>
+<td>625.00</td>
+<td>0.000043</td>
+<td>18</td>
+<td>0.000089</td>
+</tr>
+</tbody>
+</table>
+</div>
+<h1 id="summary">Summary<a class="headerlink" href="#summary" title="Permanent link">¶</a></h1>
+<p>The following chart shows that the highly adaptive SciPy solvers are in a class of their own: They produce the smallest errors, and can do so with an order of magnitude less compute.  Certainly part of this is thanks to their compiled back-end.  The compiled version of our RK4 solver is – despite a constant time step – even faster, and with the smallest multiplier setting its error is under 1 millimeter at almost 2km.</p>
+<p>The poor showing by the velocity Verlet engine is striking but not unexpected: It is a second-order integrator, but one of its notable design advantages is conservation of energy. However, a ballistic trajectory with air resistance is a <em>dissipative</em> system: The drag force varies with velocity, and this breaks the time-reversibility that the Verlet formulas were designed to exploit.  The result, as we see here, is that the Verlet's performance is reduced to that of the simpler, first-order Euler method.</p>
+<h2 id="chart_1">Chart<a class="headerlink" href="#chart_1" title="Permanent link">¶</a></h2>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">matplotlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">pyplot</span> <span class="k">as</span> <span class="n">plt</span>
+<span class="n">dfplot</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">summary</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="s1">'Engine'</span><span class="p">,</span> <span class="s1">'Multiplier'</span><span class="p">,</span> <span class="s1">'Error (m)'</span><span class="p">,</span> <span class="s1">'Integration Steps'</span><span class="p">,</span> <span class="s1">'Speed'</span><span class="p">])</span>
+<span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="mi">6</span><span class="p">))</span>
+<span class="k">for</span> <span class="n">engine</span><span class="p">,</span> <span class="n">group</span> <span class="ow">in</span> <span class="n">dfplot</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="s1">'Engine'</span><span class="p">):</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">group</span><span class="p">[</span><span class="s1">'Speed'</span><span class="p">],</span> <span class="n">group</span><span class="p">[</span><span class="s1">'Error (m)'</span><span class="p">],</span> <span class="n">marker</span><span class="o">=</span><span class="s1">'o'</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="n">engine</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s1">'Speed (s)'</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s1">'Error (m)'</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_xscale</span><span class="p">(</span><span class="s1">'log'</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_yscale</span><span class="p">(</span><span class="s1">'log'</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s1">'Log Error vs Log Speed by Engine'</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="n">title</span><span class="o">=</span><span class="s1">'Engine'</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">grid</span><span class="p">(</span><span class="kc">True</span><span class="p">,</span> <span class="n">which</span><span class="o">=</span><span class="s1">'major'</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.3</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</code></pre></div>
+<p><img alt="png" src="../BenchmarkEngines_40_0.png"/></p>
+<h2 id="data">Data<a class="headerlink" href="#data" title="Permanent link">¶</a></h2>
+<div class="language-python highlight"><pre><span></span><code><span class="n">display</span><span class="p">(</span><span class="n">dfplot</span><span class="o">.</span><span class="n">style</span><span class="o">.</span><span class="n">format</span><span class="p">({</span><span class="s1">'Multiplier'</span><span class="p">:</span> <span class="s1">'</span><span class="si">{:.10f}</span><span class="s1">'</span><span class="p">,</span> <span class="s1">'Error (m)'</span><span class="p">:</span> <span class="s1">'</span><span class="si">{:.12f}</span><span class="s1">'</span><span class="p">}))</span>
+</code></pre></div>
+<style type="text/css">
+</style>
+<table id="T_f866a">
+<thead>
+<tr>
+<th class="blank level0"> </th>
+<th class="col_heading level0 col0" id="T_f866a_level0_col0">Engine</th>
+<th class="col_heading level0 col1" id="T_f866a_level0_col1">Multiplier</th>
+<th class="col_heading level0 col2" id="T_f866a_level0_col2">Error (m)</th>
+<th class="col_heading level0 col3" id="T_f866a_level0_col3">Integration Steps</th>
+<th class="col_heading level0 col4" id="T_f866a_level0_col4">Speed</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<th class="row_heading level0 row0" id="T_f866a_level0_row0">0</th>
+<td class="data row0 col0" id="T_f866a_row0_col0">SciPy RK45</td>
+<td class="data row0 col1" id="T_f866a_row0_col1">0.0000000001</td>
+<td class="data row0 col2" id="T_f866a_row0_col2">0.000000007332</td>
+<td class="data row0 col3" id="T_f866a_row0_col3">2786</td>
+<td class="data row0 col4" id="T_f866a_row0_col4">0.027407</td>
+</tr>
+<tr>
+<th class="row_heading level0 row1" id="T_f866a_level0_row1">1</th>
+<td class="data row1 col0" id="T_f866a_row1_col0">SciPy RK45</td>
+<td class="data row1 col1" id="T_f866a_row1_col1">0.0000000010</td>
+<td class="data row1 col2" id="T_f866a_row1_col2">0.000000050593</td>
+<td class="data row1 col3" id="T_f866a_row1_col3">2348</td>
+<td class="data row1 col4" id="T_f866a_row1_col4">0.022587</td>
+</tr>
+<tr>
+<th class="row_heading level0 row2" id="T_f866a_level0_row2">2</th>
+<td class="data row2 col0" id="T_f866a_row2_col0">SciPy RK45</td>
+<td class="data row2 col1" id="T_f866a_row2_col1">0.0000000100</td>
+<td class="data row2 col2" id="T_f866a_row2_col2">0.000000288875</td>
+<td class="data row2 col3" id="T_f866a_row2_col3">1844</td>
+<td class="data row2 col4" id="T_f866a_row2_col4">0.018157</td>
+</tr>
+<tr>
+<th class="row_heading level0 row3" id="T_f866a_level0_row3">3</th>
+<td class="data row3 col0" id="T_f866a_row3_col0">SciPy RK45</td>
+<td class="data row3 col1" id="T_f866a_row3_col1">0.0000001000</td>
+<td class="data row3 col2" id="T_f866a_row3_col2">0.000000604253</td>
+<td class="data row3 col3" id="T_f866a_row3_col3">1412</td>
+<td class="data row3 col4" id="T_f866a_row3_col4">0.013582</td>
+</tr>
+<tr>
+<th class="row_heading level0 row4" id="T_f866a_level0_row4">4</th>
+<td class="data row4 col0" id="T_f866a_row4_col0">SciPy RK45</td>
+<td class="data row4 col1" id="T_f866a_row4_col1">0.0000010000</td>
+<td class="data row4 col2" id="T_f866a_row4_col2">0.000031202795</td>
+<td class="data row4 col3" id="T_f866a_row4_col3">932</td>
+<td class="data row4 col4" id="T_f866a_row4_col4">0.009044</td>
+</tr>
+<tr>
+<th class="row_heading level0 row5" id="T_f866a_level0_row5">5</th>
+<td class="data row5 col0" id="T_f866a_row5_col0">SciPy RK45</td>
+<td class="data row5 col1" id="T_f866a_row5_col1">0.0000100000</td>
+<td class="data row5 col2" id="T_f866a_row5_col2">0.000027311551</td>
+<td class="data row5 col3" id="T_f866a_row5_col3">500</td>
+<td class="data row5 col4" id="T_f866a_row5_col4">0.005128</td>
+</tr>
+<tr>
+<th class="row_heading level0 row6" id="T_f866a_level0_row6">6</th>
+<td class="data row6 col0" id="T_f866a_row6_col0">SciPy RK45</td>
+<td class="data row6 col1" id="T_f866a_row6_col1">0.0001000000</td>
+<td class="data row6 col2" id="T_f866a_row6_col2">0.000326934419</td>
+<td class="data row6 col3" id="T_f866a_row6_col3">230</td>
+<td class="data row6 col4" id="T_f866a_row6_col4">0.002695</td>
+</tr>
+<tr>
+<th class="row_heading level0 row7" id="T_f866a_level0_row7">7</th>
+<td class="data row7 col0" id="T_f866a_row7_col0">SciPy RK45</td>
+<td class="data row7 col1" id="T_f866a_row7_col1">0.0010000000</td>
+<td class="data row7 col2" id="T_f866a_row7_col2">0.001480574110</td>
+<td class="data row7 col3" id="T_f866a_row7_col3">140</td>
+<td class="data row7 col4" id="T_f866a_row7_col4">0.001839</td>
+</tr>
+<tr>
+<th class="row_heading level0 row8" id="T_f866a_level0_row8">8</th>
+<td class="data row8 col0" id="T_f866a_row8_col0">SciPy RK45</td>
+<td class="data row8 col1" id="T_f866a_row8_col1">0.0100000000</td>
+<td class="data row8 col2" id="T_f866a_row8_col2">0.019872584902</td>
+<td class="data row8 col3" id="T_f866a_row8_col3">98</td>
+<td class="data row8 col4" id="T_f866a_row8_col4">0.001498</td>
+</tr>
+<tr>
+<th class="row_heading level0 row9" id="T_f866a_level0_row9">9</th>
+<td class="data row9 col0" id="T_f866a_row9_col0">SciPy RK45</td>
+<td class="data row9 col1" id="T_f866a_row9_col1">0.1000000000</td>
+<td class="data row9 col2" id="T_f866a_row9_col2">0.369493325892</td>
+<td class="data row9 col3" id="T_f866a_row9_col3">62</td>
+<td class="data row9 col4" id="T_f866a_row9_col4">0.001102</td>
+</tr>
+<tr>
+<th class="row_heading level0 row10" id="T_f866a_level0_row10">10</th>
+<td class="data row10 col0" id="T_f866a_row10_col0">SciPy LSODA</td>
+<td class="data row10 col1" id="T_f866a_row10_col1">0.0000000001</td>
+<td class="data row10 col2" id="T_f866a_row10_col2">0.000000004455</td>
+<td class="data row10 col3" id="T_f866a_row10_col3">2860</td>
+<td class="data row10 col4" id="T_f866a_row10_col4">0.037802</td>
+</tr>
+<tr>
+<th class="row_heading level0 row11" id="T_f866a_level0_row11">11</th>
+<td class="data row11 col0" id="T_f866a_row11_col0">SciPy LSODA</td>
+<td class="data row11 col1" id="T_f866a_row11_col1">0.0000000010</td>
+<td class="data row11 col2" id="T_f866a_row11_col2">0.000000004482</td>
+<td class="data row11 col3" id="T_f866a_row11_col3">2633</td>
+<td class="data row11 col4" id="T_f866a_row11_col4">0.034269</td>
+</tr>
+<tr>
+<th class="row_heading level0 row12" id="T_f866a_level0_row12">12</th>
+<td class="data row12 col0" id="T_f866a_row12_col0">SciPy LSODA</td>
+<td class="data row12 col1" id="T_f866a_row12_col1">0.0000000100</td>
+<td class="data row12 col2" id="T_f866a_row12_col2">0.000000027545</td>
+<td class="data row12 col3" id="T_f866a_row12_col3">2241</td>
+<td class="data row12 col4" id="T_f866a_row12_col4">0.027256</td>
+</tr>
+<tr>
+<th class="row_heading level0 row13" id="T_f866a_level0_row13">13</th>
+<td class="data row13 col0" id="T_f866a_row13_col0">SciPy LSODA</td>
+<td class="data row13 col1" id="T_f866a_row13_col1">0.0000001000</td>
+<td class="data row13 col2" id="T_f866a_row13_col2">0.000000374560</td>
+<td class="data row13 col3" id="T_f866a_row13_col3">1829</td>
+<td class="data row13 col4" id="T_f866a_row13_col4">0.022597</td>
+</tr>
+<tr>
+<th class="row_heading level0 row14" id="T_f866a_level0_row14">14</th>
+<td class="data row14 col0" id="T_f866a_row14_col0">SciPy LSODA</td>
+<td class="data row14 col1" id="T_f866a_row14_col1">0.0000010000</td>
+<td class="data row14 col2" id="T_f866a_row14_col2">0.000002306537</td>
+<td class="data row14 col3" id="T_f866a_row14_col3">1534</td>
+<td class="data row14 col4" id="T_f866a_row14_col4">0.018242</td>
+</tr>
+<tr>
+<th class="row_heading level0 row15" id="T_f866a_level0_row15">15</th>
+<td class="data row15 col0" id="T_f866a_row15_col0">SciPy LSODA</td>
+<td class="data row15 col1" id="T_f866a_row15_col1">0.0000100000</td>
+<td class="data row15 col2" id="T_f866a_row15_col2">0.000014733562</td>
+<td class="data row15 col3" id="T_f866a_row15_col3">1013</td>
+<td class="data row15 col4" id="T_f866a_row15_col4">0.011801</td>
+</tr>
+<tr>
+<th class="row_heading level0 row16" id="T_f866a_level0_row16">16</th>
+<td class="data row16 col0" id="T_f866a_row16_col0">SciPy LSODA</td>
+<td class="data row16 col1" id="T_f866a_row16_col1">0.0001000000</td>
+<td class="data row16 col2" id="T_f866a_row16_col2">0.000063629234</td>
+<td class="data row16 col3" id="T_f866a_row16_col3">563</td>
+<td class="data row16 col4" id="T_f866a_row16_col4">0.006874</td>
+</tr>
+<tr>
+<th class="row_heading level0 row17" id="T_f866a_level0_row17">17</th>
+<td class="data row17 col0" id="T_f866a_row17_col0">SciPy LSODA</td>
+<td class="data row17 col1" id="T_f866a_row17_col1">0.0010000000</td>
+<td class="data row17 col2" id="T_f866a_row17_col2">0.001155597860</td>
+<td class="data row17 col3" id="T_f866a_row17_col3">301</td>
+<td class="data row17 col4" id="T_f866a_row17_col4">0.003892</td>
+</tr>
+<tr>
+<th class="row_heading level0 row18" id="T_f866a_level0_row18">18</th>
+<td class="data row18 col0" id="T_f866a_row18_col0">SciPy LSODA</td>
+<td class="data row18 col1" id="T_f866a_row18_col1">0.0100000000</td>
+<td class="data row18 col2" id="T_f866a_row18_col2">0.003543498855</td>
+<td class="data row18 col3" id="T_f866a_row18_col3">161</td>
+<td class="data row18 col4" id="T_f866a_row18_col4">0.002283</td>
+</tr>
+<tr>
+<th class="row_heading level0 row19" id="T_f866a_level0_row19">19</th>
+<td class="data row19 col0" id="T_f866a_row19_col0">SciPy LSODA</td>
+<td class="data row19 col1" id="T_f866a_row19_col1">0.1000000000</td>
+<td class="data row19 col2" id="T_f866a_row19_col2">0.004048891655</td>
+<td class="data row19 col3" id="T_f866a_row19_col3">82</td>
+<td class="data row19 col4" id="T_f866a_row19_col4">0.001396</td>
+</tr>
+<tr>
+<th class="row_heading level0 row20" id="T_f866a_level0_row20">20</th>
+<td class="data row20 col0" id="T_f866a_row20_col0">RK4</td>
+<td class="data row20 col1" id="T_f866a_row20_col1">0.0000400000</td>
+<td class="data row20 col2" id="T_f866a_row20_col2">0.000118551171</td>
+<td class="data row20 col3" id="T_f866a_row20_col3">154729</td>
+<td class="data row20 col4" id="T_f866a_row20_col4">3.015828</td>
+</tr>
+<tr>
+<th class="row_heading level0 row21" id="T_f866a_level0_row21">21</th>
+<td class="data row21 col0" id="T_f866a_row21_col0">RK4</td>
+<td class="data row21 col1" id="T_f866a_row21_col1">0.0002000000</td>
+<td class="data row21 col2" id="T_f866a_row21_col2">0.000602039536</td>
+<td class="data row21 col3" id="T_f866a_row21_col3">30946</td>
+<td class="data row21 col4" id="T_f866a_row21_col4">0.609673</td>
+</tr>
+<tr>
+<th class="row_heading level0 row22" id="T_f866a_level0_row22">22</th>
+<td class="data row22 col0" id="T_f866a_row22_col0">RK4</td>
+<td class="data row22 col1" id="T_f866a_row22_col1">0.0010000000</td>
+<td class="data row22 col2" id="T_f866a_row22_col2">0.002980614002</td>
+<td class="data row22 col3" id="T_f866a_row22_col3">6190</td>
+<td class="data row22 col4" id="T_f866a_row22_col4">0.123576</td>
+</tr>
+<tr>
+<th class="row_heading level0 row23" id="T_f866a_level0_row23">23</th>
+<td class="data row23 col0" id="T_f866a_row23_col0">RK4</td>
+<td class="data row23 col1" id="T_f866a_row23_col1">0.0050000000</td>
+<td class="data row23 col2" id="T_f866a_row23_col2">0.015093791222</td>
+<td class="data row23 col3" id="T_f866a_row23_col3">1238</td>
+<td class="data row23 col4" id="T_f866a_row23_col4">0.025279</td>
+</tr>
+<tr>
+<th class="row_heading level0 row24" id="T_f866a_level0_row24">24</th>
+<td class="data row24 col0" id="T_f866a_row24_col0">RK4</td>
+<td class="data row24 col1" id="T_f866a_row24_col1">0.0250000000</td>
+<td class="data row24 col2" id="T_f866a_row24_col2">0.073269834360</td>
+<td class="data row24 col3" id="T_f866a_row24_col3">248</td>
+<td class="data row24 col4" id="T_f866a_row24_col4">0.005253</td>
+</tr>
+<tr>
+<th class="row_heading level0 row25" id="T_f866a_level0_row25">25</th>
+<td class="data row25 col0" id="T_f866a_row25_col0">RK4</td>
+<td class="data row25 col1" id="T_f866a_row25_col1">0.1250000000</td>
+<td class="data row25 col2" id="T_f866a_row25_col2">0.303006366225</td>
+<td class="data row25 col3" id="T_f866a_row25_col3">50</td>
+<td class="data row25 col4" id="T_f866a_row25_col4">0.001370</td>
+</tr>
+<tr>
+<th class="row_heading level0 row26" id="T_f866a_level0_row26">26</th>
+<td class="data row26 col0" id="T_f866a_row26_col0">RK4</td>
+<td class="data row26 col1" id="T_f866a_row26_col1">0.6250000000</td>
+<td class="data row26 col2" id="T_f866a_row26_col2">3.319577823522</td>
+<td class="data row26 col3" id="T_f866a_row26_col3">10</td>
+<td class="data row26 col4" id="T_f866a_row26_col4">0.000573</td>
+</tr>
+<tr>
+<th class="row_heading level0 row27" id="T_f866a_level0_row27">27</th>
+<td class="data row27 col0" id="T_f866a_row27_col0">Verlet</td>
+<td class="data row27 col1" id="T_f866a_row27_col1">0.0000400000</td>
+<td class="data row27 col2" id="T_f866a_row27_col2">0.000012269333</td>
+<td class="data row27 col3" id="T_f866a_row27_col3">154729</td>
+<td class="data row27 col4" id="T_f866a_row27_col4">1.574731</td>
+</tr>
+<tr>
+<th class="row_heading level0 row28" id="T_f866a_level0_row28">28</th>
+<td class="data row28 col0" id="T_f866a_row28_col0">Verlet</td>
+<td class="data row28 col1" id="T_f866a_row28_col1">0.0002000000</td>
+<td class="data row28 col2" id="T_f866a_row28_col2">0.000050449060</td>
+<td class="data row28 col3" id="T_f866a_row28_col3">30946</td>
+<td class="data row28 col4" id="T_f866a_row28_col4">0.310670</td>
+</tr>
+<tr>
+<th class="row_heading level0 row29" id="T_f866a_level0_row29">29</th>
+<td class="data row29 col0" id="T_f866a_row29_col0">Verlet</td>
+<td class="data row29 col1" id="T_f866a_row29_col1">0.0010000000</td>
+<td class="data row29 col2" id="T_f866a_row29_col2">0.000241336720</td>
+<td class="data row29 col3" id="T_f866a_row29_col3">6190</td>
+<td class="data row29 col4" id="T_f866a_row29_col4">0.063818</td>
+</tr>
+<tr>
+<th class="row_heading level0 row30" id="T_f866a_level0_row30">30</th>
+<td class="data row30 col0" id="T_f866a_row30_col0">Verlet</td>
+<td class="data row30 col1" id="T_f866a_row30_col1">0.0050000000</td>
+<td class="data row30 col2" id="T_f866a_row30_col2">0.000003985103</td>
+<td class="data row30 col3" id="T_f866a_row30_col3">1238</td>
+<td class="data row30 col4" id="T_f866a_row30_col4">0.013595</td>
+</tr>
+<tr>
+<th class="row_heading level0 row31" id="T_f866a_level0_row31">31</th>
+<td class="data row31 col0" id="T_f866a_row31_col0">Verlet</td>
+<td class="data row31 col1" id="T_f866a_row31_col1">0.0250000000</td>
+<td class="data row31 col2" id="T_f866a_row31_col2">0.023882865062</td>
+<td class="data row31 col3" id="T_f866a_row31_col3">248</td>
+<td class="data row31 col4" id="T_f866a_row31_col4">0.002999</td>
+</tr>
+<tr>
+<th class="row_heading level0 row32" id="T_f866a_level0_row32">32</th>
+<td class="data row32 col0" id="T_f866a_row32_col0">Verlet</td>
+<td class="data row32 col1" id="T_f866a_row32_col1">0.1250000000</td>
+<td class="data row32 col2" id="T_f866a_row32_col2">0.735922948233</td>
+<td class="data row32 col3" id="T_f866a_row32_col3">50</td>
+<td class="data row32 col4" id="T_f866a_row32_col4">0.000941</td>
+</tr>
+<tr>
+<th class="row_heading level0 row33" id="T_f866a_level0_row33">33</th>
+<td class="data row33 col0" id="T_f866a_row33_col0">Euler</td>
+<td class="data row33 col1" id="T_f866a_row33_col1">0.0400000000</td>
+<td class="data row33 col2" id="T_f866a_row33_col2">0.002059623450</td>
+<td class="data row33 col3" id="T_f866a_row33_col3">328732</td>
+<td class="data row33 col4" id="T_f866a_row33_col4">2.501272</td>
+</tr>
+<tr>
+<th class="row_heading level0 row34" id="T_f866a_level0_row34">34</th>
+<td class="data row34 col0" id="T_f866a_row34_col0">Euler</td>
+<td class="data row34 col1" id="T_f866a_row34_col1">0.2000000000</td>
+<td class="data row34 col2" id="T_f866a_row34_col2">0.010299381457</td>
+<td class="data row34 col3" id="T_f866a_row34_col3">65748</td>
+<td class="data row34 col4" id="T_f866a_row34_col4">0.502751</td>
+</tr>
+<tr>
+<th class="row_heading level0 row35" id="T_f866a_level0_row35">35</th>
+<td class="data row35 col0" id="T_f866a_row35_col0">Euler</td>
+<td class="data row35 col1" id="T_f866a_row35_col1">1.0000000000</td>
+<td class="data row35 col2" id="T_f866a_row35_col2">0.051507639619</td>
+<td class="data row35 col3" id="T_f866a_row35_col3">13151</td>
+<td class="data row35 col4" id="T_f866a_row35_col4">0.099452</td>
+</tr>
+<tr>
+<th class="row_heading level0 row36" id="T_f866a_level0_row36">36</th>
+<td class="data row36 col0" id="T_f866a_row36_col0">Euler</td>
+<td class="data row36 col1" id="T_f866a_row36_col1">5.0000000000</td>
+<td class="data row36 col2" id="T_f866a_row36_col2">0.257775038851</td>
+<td class="data row36 col3" id="T_f866a_row36_col3">2632</td>
+<td class="data row36 col4" id="T_f866a_row36_col4">0.020027</td>
+</tr>
+<tr>
+<th class="row_heading level0 row37" id="T_f866a_level0_row37">37</th>
+<td class="data row37 col0" id="T_f866a_row37_col0">Euler</td>
+<td class="data row37 col1" id="T_f866a_row37_col1">25.0000000000</td>
+<td class="data row37 col2" id="T_f866a_row37_col2">1.295271256964</td>
+<td class="data row37 col3" id="T_f866a_row37_col3">528</td>
+<td class="data row37 col4" id="T_f866a_row37_col4">0.004657</td>
+</tr>
+<tr>
+<th class="row_heading level0 row38" id="T_f866a_level0_row38">38</th>
+<td class="data row38 col0" id="T_f866a_row38_col0">Euler</td>
+<td class="data row38 col1" id="T_f866a_row38_col1">125.0000000000</td>
+<td class="data row38 col2" id="T_f866a_row38_col2">6.627878300976</td>
+<td class="data row38 col3" id="T_f866a_row38_col3">107</td>
+<td class="data row38 col4" id="T_f866a_row38_col4">0.001249</td>
+</tr>
+<tr>
+<th class="row_heading level0 row39" id="T_f866a_level0_row39">39</th>
+<td class="data row39 col0" id="T_f866a_row39_col0">Euler</td>
+<td class="data row39 col1" id="T_f866a_row39_col1">625.0000000000</td>
+<td class="data row39 col2" id="T_f866a_row39_col2">38.002108570496</td>
+<td class="data row39 col3" id="T_f866a_row39_col3">23</td>
+<td class="data row39 col4" id="T_f866a_row39_col4">0.000585</td>
+</tr>
+<tr>
+<th class="row_heading level0 row40" id="T_f866a_level0_row40">40</th>
+<td class="data row40 col0" id="T_f866a_row40_col0">Euler const</td>
+<td class="data row40 col1" id="T_f866a_row40_col1">0.0000400000</td>
+<td class="data row40 col2" id="T_f866a_row40_col2">0.005764850606</td>
+<td class="data row40 col3" id="T_f866a_row40_col3">154732</td>
+<td class="data row40 col4" id="T_f866a_row40_col4">1.152659</td>
+</tr>
+<tr>
+<th class="row_heading level0 row41" id="T_f866a_level0_row41">41</th>
+<td class="data row41 col0" id="T_f866a_row41_col0">Euler const</td>
+<td class="data row41 col1" id="T_f866a_row41_col1">0.0002000000</td>
+<td class="data row41 col2" id="T_f866a_row41_col2">0.028817953114</td>
+<td class="data row41 col3" id="T_f866a_row41_col3">30949</td>
+<td class="data row41 col4" id="T_f866a_row41_col4">0.230610</td>
+</tr>
+<tr>
+<th class="row_heading level0 row42" id="T_f866a_level0_row42">42</th>
+<td class="data row42 col0" id="T_f866a_row42_col0">Euler const</td>
+<td class="data row42 col1" id="T_f866a_row42_col1">0.0010000000</td>
+<td class="data row42 col2" id="T_f866a_row42_col2">0.144193936297</td>
+<td class="data row42 col3" id="T_f866a_row42_col3">6193</td>
+<td class="data row42 col4" id="T_f866a_row42_col4">0.046799</td>
+</tr>
+<tr>
+<th class="row_heading level0 row43" id="T_f866a_level0_row43">43</th>
+<td class="data row43 col0" id="T_f866a_row43_col0">Euler const</td>
+<td class="data row43 col1" id="T_f866a_row43_col1">0.0050000000</td>
+<td class="data row43 col2" id="T_f866a_row43_col2">0.722640576986</td>
+<td class="data row43 col3" id="T_f866a_row43_col3">1241</td>
+<td class="data row43 col4" id="T_f866a_row43_col4">0.009897</td>
+</tr>
+<tr>
+<th class="row_heading level0 row44" id="T_f866a_level0_row44">44</th>
+<td class="data row44 col0" id="T_f866a_row44_col0">Euler const</td>
+<td class="data row44 col1" id="T_f866a_row44_col1">0.0250000000</td>
+<td class="data row44 col2" id="T_f866a_row44_col2">3.662860263820</td>
+<td class="data row44 col3" id="T_f866a_row44_col3">251</td>
+<td class="data row44 col4" id="T_f866a_row44_col4">0.002321</td>
+</tr>
+<tr>
+<th class="row_heading level0 row45" id="T_f866a_level0_row45">45</th>
+<td class="data row45 col0" id="T_f866a_row45_col0">Euler const</td>
+<td class="data row45 col1" id="T_f866a_row45_col1">0.1250000000</td>
+<td class="data row45 col2" id="T_f866a_row45_col2">19.717513101530</td>
+<td class="data row45 col3" id="T_f866a_row45_col3">53</td>
+<td class="data row45 col4" id="T_f866a_row45_col4">0.000776</td>
+</tr>
+<tr>
+<th class="row_heading level0 row46" id="T_f866a_level0_row46">46</th>
+<td class="data row46 col0" id="T_f866a_row46_col0">RK4 Cython</td>
+<td class="data row46 col1" id="T_f866a_row46_col1">0.0400000000</td>
+<td class="data row46 col2" id="T_f866a_row46_col2">0.000202119085</td>
+<td class="data row46 col3" id="T_f866a_row46_col3">92838</td>
+<td class="data row46 col4" id="T_f866a_row46_col4">0.009075</td>
+</tr>
+<tr>
+<th class="row_heading level0 row47" id="T_f866a_level0_row47">47</th>
+<td class="data row47 col0" id="T_f866a_row47_col0">RK4 Cython</td>
+<td class="data row47 col1" id="T_f866a_row47_col1">0.2000000000</td>
+<td class="data row47 col2" id="T_f866a_row47_col2">0.001013902411</td>
+<td class="data row47 col3" id="T_f866a_row47_col3">18568</td>
+<td class="data row47 col4" id="T_f866a_row47_col4">0.001889</td>
+</tr>
+<tr>
+<th class="row_heading level0 row48" id="T_f866a_level0_row48">48</th>
+<td class="data row48 col0" id="T_f866a_row48_col0">RK4 Cython</td>
+<td class="data row48 col1" id="T_f866a_row48_col1">1.0000000000</td>
+<td class="data row48 col2" id="T_f866a_row48_col2">0.005005850916</td>
+<td class="data row48 col3" id="T_f866a_row48_col3">3714</td>
+<td class="data row48 col4" id="T_f866a_row48_col4">0.000437</td>
+</tr>
+<tr>
+<th class="row_heading level0 row49" id="T_f866a_level0_row49">49</th>
+<td class="data row49 col0" id="T_f866a_row49_col0">RK4 Cython</td>
+<td class="data row49 col1" id="T_f866a_row49_col1">5.0000000000</td>
+<td class="data row49 col2" id="T_f866a_row49_col2">0.024963369589</td>
+<td class="data row49 col3" id="T_f866a_row49_col3">743</td>
+<td class="data row49 col4" id="T_f866a_row49_col4">0.000148</td>
+</tr>
+<tr>
+<th class="row_heading level0 row50" id="T_f866a_level0_row50">50</th>
+<td class="data row50 col0" id="T_f866a_row50_col0">RK4 Cython</td>
+<td class="data row50 col1" id="T_f866a_row50_col1">25.0000000000</td>
+<td class="data row50 col2" id="T_f866a_row50_col2">0.118445044799</td>
+<td class="data row50 col3" id="T_f866a_row50_col3">149</td>
+<td class="data row50 col4" id="T_f866a_row50_col4">0.000095</td>
+</tr>
+<tr>
+<th class="row_heading level0 row51" id="T_f866a_level0_row51">51</th>
+<td class="data row51 col0" id="T_f866a_row51_col0">RK4 Cython</td>
+<td class="data row51 col1" id="T_f866a_row51_col1">125.0000000000</td>
+<td class="data row51 col2" id="T_f866a_row51_col2">0.384352784305</td>
+<td class="data row51 col3" id="T_f866a_row51_col3">30</td>
+<td class="data row51 col4" id="T_f866a_row51_col4">0.000083</td>
+</tr>
+<tr>
+<th class="row_heading level0 row52" id="T_f866a_level0_row52">52</th>
+<td class="data row52 col0" id="T_f866a_row52_col0">RK4 Cython</td>
+<td class="data row52 col1" id="T_f866a_row52_col1">625.0000000000</td>
+<td class="data row52 col2" id="T_f866a_row52_col2">2.607683844753</td>
+<td class="data row52 col3" id="T_f866a_row52_col3">6</td>
+<td class="data row52 col4" id="T_f866a_row52_col4">0.000082</td>
+</tr>
+<tr>
+<th class="row_heading level0 row53" id="T_f866a_level0_row53">53</th>
+<td class="data row53 col0" id="T_f866a_row53_col0">Cash-Karp Cython</td>
+<td class="data row53 col1" id="T_f866a_row53_col1">0.0400000000</td>
+<td class="data row53 col2" id="T_f866a_row53_col2">0.000055764009</td>
+<td class="data row53 col3" id="T_f866a_row53_col3">970</td>
+<td class="data row53 col4" id="T_f866a_row53_col4">0.000335</td>
+</tr>
+<tr>
+<th class="row_heading level0 row54" id="T_f866a_level0_row54">54</th>
+<td class="data row54 col0" id="T_f866a_row54_col0">Cash-Karp Cython</td>
+<td class="data row54 col1" id="T_f866a_row54_col1">0.2000000000</td>
+<td class="data row54 col2" id="T_f866a_row54_col2">0.000407179848</td>
+<td class="data row54 col3" id="T_f866a_row54_col3">196</td>
+<td class="data row54 col4" id="T_f866a_row54_col4">0.000129</td>
+</tr>
+<tr>
+<th class="row_heading level0 row55" id="T_f866a_level0_row55">55</th>
+<td class="data row55 col0" id="T_f866a_row55_col0">Cash-Karp Cython</td>
+<td class="data row55 col1" id="T_f866a_row55_col1">1.0000000000</td>
+<td class="data row55 col2" id="T_f866a_row55_col2">0.000340291867</td>
+<td class="data row55 col3" id="T_f866a_row55_col3">44</td>
+<td class="data row55 col4" id="T_f866a_row55_col4">0.000093</td>
+</tr>
+<tr>
+<th class="row_heading level0 row56" id="T_f866a_level0_row56">56</th>
+<td class="data row56 col0" id="T_f866a_row56_col0">Cash-Karp Cython</td>
+<td class="data row56 col1" id="T_f866a_row56_col1">5.0000000000</td>
+<td class="data row56 col2" id="T_f866a_row56_col2">0.002821984118</td>
+<td class="data row56 col3" id="T_f866a_row56_col3">22</td>
+<td class="data row56 col4" id="T_f866a_row56_col4">0.000083</td>
+</tr>
+<tr>
+<th class="row_heading level0 row57" id="T_f866a_level0_row57">57</th>
+<td class="data row57 col0" id="T_f866a_row57_col0">Cash-Karp Cython</td>
+<td class="data row57 col1" id="T_f866a_row57_col1">25.0000000000</td>
+<td class="data row57 col2" id="T_f866a_row57_col2">0.000148650625</td>
+<td class="data row57 col3" id="T_f866a_row57_col3">23</td>
+<td class="data row57 col4" id="T_f866a_row57_col4">0.000084</td>
+</tr>
+<tr>
+<th class="row_heading level0 row58" id="T_f866a_level0_row58">58</th>
+<td class="data row58 col0" id="T_f866a_row58_col0">Cash-Karp Cython</td>
+<td class="data row58 col1" id="T_f866a_row58_col1">125.0000000000</td>
+<td class="data row58 col2" id="T_f866a_row58_col2">0.001732840263</td>
+<td class="data row58 col3" id="T_f866a_row58_col3">19</td>
+<td class="data row58 col4" id="T_f866a_row58_col4">0.000082</td>
+</tr>
+<tr>
+<th class="row_heading level0 row59" id="T_f866a_level0_row59">59</th>
+<td class="data row59 col0" id="T_f866a_row59_col0">Cash-Karp Cython</td>
+<td class="data row59 col1" id="T_f866a_row59_col1">625.0000000000</td>
+<td class="data row59 col2" id="T_f866a_row59_col2">0.000043438630</td>
+<td class="data row59 col3" id="T_f866a_row59_col3">18</td>
+<td class="data row59 col4" id="T_f866a_row59_col4">0.000089</td>
+</tr>
+</tbody>
+</table>
+<form class="md-feedback" hidden="" name="feedback">
+<fieldset>
+<legend class="md-feedback__title">
+        Was this page helpful?
+      </legend>
+<div class="md-feedback__inner">
+<div class="md-feedback__list">
+<button class="md-feedback__icon md-icon" data-md-value="1" title="This page was helpful" type="submit">
+<svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M5 9v12H1V9zm4 12a2 2 0 0 1-2-2V9c0-.55.22-1.05.59-1.41L14.17 1l1.06 1.06c.27.27.44.64.44 1.05l-.03.32L14.69 8H21a2 2 0 0 1 2 2v2c0 .26-.05.5-.14.73l-3.02 7.05C19.54 20.5 18.83 21 18 21zm0-2h9.03L21 12v-2h-8.79l1.13-5.32L9 9.03z"></path></svg>
+</button>
+<button class="md-feedback__icon md-icon" data-md-value="0" title="This page could be improved" type="submit">
+<svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M19 15V3h4v12zM15 3a2 2 0 0 1 2 2v10c0 .55-.22 1.05-.59 1.41L9.83 23l-1.06-1.06c-.27-.27-.44-.64-.44-1.06l.03-.31.95-4.57H3a2 2 0 0 1-2-2v-2c0-.26.05-.5.14-.73l3.02-7.05C4.46 3.5 5.17 3 6 3zm0 2H5.97L3 12v2h8.78l-1.13 5.32L15 14.97z"></path></svg>
+</button>
+</div>
+<div class="md-feedback__note">
+<div data-md-value="1" hidden="">
+              
+              
+                
+              
+              
+              
+                
+                
+              
+              Thanks for your feedback!
+            </div>
+<div data-md-value="0" hidden="">
+              
+              
+                
+              
+              
+              
+                
+                
+              
+              Thanks for your feedback!
+            </div>
+</div>
+</div>
+</fieldset>
+</form>
+<!-- <script src="/flarelytics/client.js"></script> -->
+</article>
+</div>
+<script>var tabs=__md_get("__tabs");if(Array.isArray(tabs))e:for(var set of document.querySelectorAll(".tabbed-set")){var labels=set.querySelector(".tabbed-labels");for(var tab of tabs)for(var label of labels.getElementsByTagName("label"))if(label.innerText.trim()===tab){var input=document.getElementById(label.htmlFor);input.checked=!0;continue e}}</script>
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+</div>
+<button class="md-top md-icon" data-md-component="top" hidden="" type="button">
+<svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"></path></svg>
+  Back to top
+</button>
+</main>
+<footer class="md-footer">
+<div class="md-footer-meta md-typeset">
+<div class="md-footer-meta__inner md-grid">
+<div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" rel="noopener" target="_blank">
+      Material for MkDocs
+    </a>
+</div>
+</div>
+</div>
+</footer>
+</div>
+<div class="md-dialog" data-md-component="dialog">
+<div class="md-dialog__inner md-typeset"></div>
+</div>
+<div class="md-progress" data-md-component="progress" role="progressbar"></div>
+<script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["content.tabs.link", "content.code.annotate", "content.code.copy", "mermaid", "navigation.tabs", "navigation.instant", "navigation.instant.prefetch", "navigation.instant.preview", "navigation.instant.progress", "navigation.path", "navigation.expand", "navigation.top", "navigation.tracking", "search.suggest", "toc.follow"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
+<script src="../../assets/javascripts/bundle.d7400e89.min.js"></script>
+<script src="../../extra/feedback.js"></script>
+<script src="../../extra/katex/katex.min.js"></script>
+<script src="../../extra/katex/contrib/auto-render.min.js"></script>
+<script src="../../extra/katex-init.js"></script>
+<script src="../../extra/mkdocstrings-tweaks.js"></script>
+<script src="https://samuelcolvin.github.io/mkdocs-run-code/run_code_main.js"></script>
+</body>
+</html>
