@@ -7,6 +7,49 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.0.0] - 2026-10-03
+
+Stable release, covering the whole arc from 2.3.1 through 3.0.0-rc.4. Highlights below; full details are in
+the beta/rc entries beneath this one. Built against [bclibc v2.0.0](https://github.com/ballistics-lab/bclibc/releases/tag/v2.0.0),
+itself the stable release of the same noexcept/`BCLIBC_Result` rework rc.4 already pinned.
+
+### Changed
+- **New entry point model.** Engines register in groups `py_ballisticcalc.engines.<engine>` (`python`, `cython`,
+  `scipy`) and are selected as `<engine>+<method>`/`<engine>.<method>` (e.g. `Calculator(engine="cython+rk4")`).
+  The old flat `py_ballisticcalc` group (`euler_engine`, `cythonized_*_engine`, ...) still loads, but now emits
+  a `DeprecationWarning`.
+- **BREAKING: `HitResult` reads from `records`, not the old `trajectory` table.** `__len__`/`__iter__`/
+  `__getitem__`, `dataframe()` and `plot()` now walk the exact chronological event stream (every ZERO/MACH/APEX/MRT
+  row in its own position) instead of folding event flags onto the nearest scheduled sample. The old fixed-cardinality
+  presentation view is still available, renamed to `samples`; `HitResult.trajectory` is kept as a deprecated alias
+  for `records`.
+- `py_ballisticcalc.exts`'s Cython bindings follow bclibc's exception-free `BCLIBC_Result`/`BCLIBC_Error` API; the
+  `try`/`except +` shims are gone, replaced by one `raise_engine_error()`. Python-visible exception types and
+  messages are unchanged.
+- `bclibc` pinned through its whole noexcept rework, up to [v2.0.0](https://github.com/ballistics-lab/bclibc/releases/tag/v2.0.0).
+
+### Added
+- Three new adaptive Cython engines: `cython+rkck` (Cash-Karp), `cython+dopri` (Dormand-Prince 5(4)) and
+  `cython+tsitouras` (Tsitouras 5(4)) — each owns its own tolerances/step counts per instance (no shared
+  thread-local state), 2-14x faster than `cython+rk4` on the standard benchmark shot depending on method and call.
+- SciPy factory engines (`scipy+rk23`/`rk45`/`dop853`/`radau`/`bdf`/`lsoda`) via `SciPyIntegrationEngineFactory`.
+- `examples/tiny_bclibc_ctypes`: single/double-precision engines driving bclibc's `tiny_bclibc` C engine over
+  ctypes, including a filtered-trajectory-streaming API so filtering and derived fields run in the compiled
+  library, not per-step in Python.
+
+### Fixed
+- `HitResult.samples` no longer folds an event's flag onto the *nearest* scheduled sample unconditionally — only
+  onto one judged the same instant within a relative tolerance, so a coarse sampling schedule no longer produces
+  nonsensical combined flags on an unrelated row.
+- `BaseIntegrationEngine._zero_angle`'s per-iteration convergence check now honors a configured
+  `cZeroFindingAccuracy` instead of a hardcoded constant two lines above it.
+- `interpolate()`/`index_at_distance()`/`get_at_distance()`/`get_at_time()` now search the exact `records` stream
+  instead of the old presentation table, so they can no longer miss or misattribute an event-only row.
+
+### Removed
+- `examples/tiny_bclibc_wasm`, moved to the standalone [tiny-bclibc-wasm-py](https://github.com/ballistics-lab/tiny-bclibc-wasm-py)
+  package, which now registers and tests its own engines.
+
 ## [3.0.0-rc.4] - 2026-10-01
 
 ### Changed
@@ -1037,7 +1080,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Issue #141
 - Trajectories that bend backwards
 
-[Unreleased]: https://github.com/o-murphy/py-ballisticcalc/compare/v3.0.0-rc.4...HEAD
+[Unreleased]: https://github.com/o-murphy/py-ballisticcalc/compare/v3.0.0...HEAD
+[3.0.0]: https://github.com/o-murphy/py-ballisticcalc/releases/tag/v3.0.0
 [3.0.0-rc.4]: https://github.com/o-murphy/py-ballisticcalc/releases/tag/v3.0.0-rc.4
 [3.0.0-rc.3]: https://github.com/o-murphy/py-ballisticcalc/releases/tag/v3.0.0-rc.3
 [3.0.0-rc.2]: https://github.com/o-murphy/py-ballisticcalc/releases/tag/v3.0.0-rc.2
