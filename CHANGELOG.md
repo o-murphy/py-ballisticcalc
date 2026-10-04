@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- `py_ballisticcalc.exts` is now compiled with C++ exceptions disabled (`-fno-exceptions`, `/EHs-c-` on MSVC) and
+  `-O3` on GCC/Clang, matching bclibc's noexcept API. The `.pxd` declarations use `noexcept` instead of `except +`,
+  and a few `libcpp` calls that made Cython emit `try`/`catch` were replaced (`vector` iteration by index;
+  `reserve`/`resize`/`emplace_back` via small `noexcept` shims; `libc.math` instead of `libcpp.cmath`).
+  RTTI stays enabled: the Cash-Karp/Dormand-Prince/Tsitouras engines recover their integrator via
+  `std::function::target<T>()`. Behavior change: an allocation failure (`std::bad_alloc`) in these paths now aborts
+  instead of raising `MemoryError`.
+
 ## [3.0.0] - 2026-10-03
 
 Stable release, covering the whole arc from 2.3.1 through 3.0.0-rc.4. Highlights below; full details are in
