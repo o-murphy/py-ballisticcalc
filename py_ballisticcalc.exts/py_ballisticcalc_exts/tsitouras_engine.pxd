@@ -13,7 +13,7 @@ cdef extern from "include/bclibc/tsitouras.hpp" namespace "bclibc" nogil:
     # Stateful functor: owns its own tolerances/step-counts per instance,
     # replacing the old thread-local free-function API.
     cdef cppclass BCLIBC_TsitourasIntegrator:
-        BCLIBC_TsitourasIntegrator() except +
+        BCLIBC_TsitourasIntegrator() noexcept
         BCLIBC_Result[monostate] operator()(
             BCLIBC_BaseEngine &, BCLIBC_BaseTrajDataHandlerInterface &, BCLIBC_TerminationReason &) noexcept
         void get_stats(int &, int &) const

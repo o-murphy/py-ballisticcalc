@@ -13,7 +13,7 @@ cdef extern from "include/bclibc/dormand_prince.hpp" namespace "bclibc" nogil:
     # Stateful functor: owns its own tolerances/step-counts per instance,
     # replacing the old thread-local free-function API.
     cdef cppclass BCLIBC_DormandPrinceIntegrator:
-        BCLIBC_DormandPrinceIntegrator() except +
+        BCLIBC_DormandPrinceIntegrator() noexcept
         BCLIBC_Result[monostate] operator()(
             BCLIBC_BaseEngine &, BCLIBC_BaseTrajDataHandlerInterface &, BCLIBC_TerminationReason &) noexcept
         void get_stats(int &, int &) const

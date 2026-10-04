@@ -23,6 +23,21 @@ from py_ballisticcalc_exts.v3d cimport BCLIBC_V3dT
 from py_ballisticcalc_exts.result cimport BCLIBC_Result, raise_std_error
 from py_ballisticcalc_exts.traj_data cimport BCLIBC_BaseTrajData_InterpKey
 
+# libcpp.vector declares reserve()/resize()/emplace_back() with `except +`, which makes Cython emit try/catch
+# (not compilable with -fno-exceptions). These shims call them without exception translation.
+cdef extern from * nogil:
+    '''
+    template <class V> static inline void bclibc_reserve(V &v, size_t n) noexcept { v.reserve(n); }
+    template <class V> static inline void bclibc_resize(V &v, size_t n) noexcept { v.resize(n); }
+    template <class V>
+    static inline void bclibc_emplace_back4(V &v, double a, double b, double c, double d) noexcept {
+        v.emplace_back(a, b, c, d);
+    }
+    '''
+    void bclibc_reserve[V](V &v, size_t n) noexcept
+    void bclibc_resize[V](V &v, size_t n) noexcept
+    void bclibc_emplace_back4[V](V &v, double a, double b, double c, double d) noexcept
+
 from py_ballisticcalc.vector import Vector
 
 
@@ -140,10 +155,11 @@ cdef BCLIBC_WindSock BCLIBC_WindSock_from_pytuple(tuple[object] winds_py_tuple):
         return BCLIBC_WindSock()
 
     cdef vector[BCLIBC_Wind] winds_vec
-    winds_vec.reserve(n)
+    bclibc_reserve(winds_vec, n)
 
     for w in winds_py_tuple:
-        winds_vec.emplace_back(
+        bclibc_emplace_back4(
+            winds_vec,
             <double>w.velocity._fps,
             <double>w.direction_from._rad,
             <double>w.until_distance._feet,
@@ -182,8 +198,8 @@ cdef BCLIBC_ShotProps BCLIBC_ShotProps_from_pyobject(object shot_info, double ca
     cdef size_t n_drag = len(table_data)
     cdef vector[double] mach_vec
     cdef vector[double] cd_vec
-    mach_vec.resize(n_drag)
-    cd_vec.resize(n_drag)
+    bclibc_resize(mach_vec, n_drag)
+    bclibc_resize(cd_vec, n_drag)
     cdef size_t i
     for i in range(n_drag):
         mach_vec[i] = table_data[i].Mach
@@ -192,9 +208,10 @@ cdef BCLIBC_ShotProps BCLIBC_ShotProps_from_pyobject(object shot_info, double ca
     # Extract winds into BCLIBC_Wind vector (non-owning pointer passed to BCLIBC_Shot)
     cdef size_t n_winds = len(winds_py)
     cdef vector[BCLIBC_Wind] winds_vec
-    winds_vec.reserve(n_winds)
+    bclibc_reserve(winds_vec, n_winds)
     for w in winds_py:
-        winds_vec.emplace_back(
+        bclibc_emplace_back4(
+            winds_vec,
             <double>w.velocity._fps,
             <double>w.direction_from._rad,
             <double>w.until_distance._feet,

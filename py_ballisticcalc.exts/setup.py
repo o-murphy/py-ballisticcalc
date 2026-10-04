@@ -201,7 +201,7 @@ is_macos = platform.system() == "Darwin"
 if is_msvc:
     # MSVC-specific flags
     c_compile_args = ["/O2", "/W3"]
-    cpp_compile_args = ["/O2", "/W3", "/std:c++17", "/EHs-c-", "/GR-"]
+    cpp_compile_args = ["/O2", "/W3", "/std:c++17", "/GR-"]
     cpp_extra_link_args = []
     # Crucial for MSVC on ARM
     if platform.machine().startswith("ARM"):

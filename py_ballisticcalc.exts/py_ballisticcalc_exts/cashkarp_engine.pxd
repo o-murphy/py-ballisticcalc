@@ -20,7 +20,7 @@ cdef extern from "include/bclibc/cash_karp.hpp" namespace "bclibc" nogil:
     # (each field a std::atomic on the C++ side), replacing the old
     # thread-local free-function API (BCLIBC_cashKarpGetStats/Set*Tolerance).
     cdef cppclass BCLIBC_CashKarpIntegrator:
-        BCLIBC_CashKarpIntegrator() except +
+        BCLIBC_CashKarpIntegrator() noexcept
         BCLIBC_Result[monostate] operator()(
             BCLIBC_BaseEngine &eng,
             BCLIBC_BaseTrajDataHandlerInterface &handler,
