@@ -1,6 +1,7 @@
 # cython: freethreading_compatible=True
 from libcpp.vector cimport vector
 from py_ballisticcalc_exts.std_math cimport quiet_NaN
+from py_ballisticcalc_exts.std_vector cimport bclibc_reserve, bclibc_resize, bclibc_emplace_back4
 from cython cimport final
 from cpython.object cimport PyObject
 from py_ballisticcalc_exts.base_types cimport (
@@ -22,21 +23,6 @@ from py_ballisticcalc.unit import (
 from py_ballisticcalc_exts.v3d cimport BCLIBC_V3dT
 from py_ballisticcalc_exts.result cimport BCLIBC_Result, raise_std_error
 from py_ballisticcalc_exts.traj_data cimport BCLIBC_BaseTrajData_InterpKey
-
-# libcpp.vector declares reserve()/resize()/emplace_back() with `except +`, which makes Cython emit try/catch
-# (not compilable with -fno-exceptions). These shims call them without exception translation.
-cdef extern from * nogil:
-    '''
-    template <class V> static inline void bclibc_reserve(V &v, size_t n) noexcept { v.reserve(n); }
-    template <class V> static inline void bclibc_resize(V &v, size_t n) noexcept { v.resize(n); }
-    template <class V>
-    static inline void bclibc_emplace_back4(V &v, double a, double b, double c, double d) noexcept {
-        v.emplace_back(a, b, c, d);
-    }
-    '''
-    void bclibc_reserve[V](V &v, size_t n) noexcept
-    void bclibc_resize[V](V &v, size_t n) noexcept
-    void bclibc_emplace_back4[V](V &v, double a, double b, double c, double d) noexcept
 
 from py_ballisticcalc.vector import Vector
 
