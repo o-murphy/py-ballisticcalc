@@ -1,7 +1,7 @@
 # cython: freethreading_compatible=True
 from libcpp.vector cimport vector
 from py_ballisticcalc_exts.std_math cimport quiet_NaN
-from py_ballisticcalc_exts.std_vector cimport bclibc_reserve, bclibc_resize, bclibc_emplace_back4
+from py_ballisticcalc_exts.std_vector cimport vector_reserve, vector_resize, vector_emplace_back4
 from cython cimport final
 from cpython.object cimport PyObject
 from py_ballisticcalc_exts.base_types cimport (
@@ -141,10 +141,10 @@ cdef BCLIBC_WindSock BCLIBC_WindSock_from_pytuple(tuple[object] winds_py_tuple):
         return BCLIBC_WindSock()
 
     cdef vector[BCLIBC_Wind] winds_vec
-    bclibc_reserve(winds_vec, n)
+    vector_reserve(winds_vec, n)
 
     for w in winds_py_tuple:
-        bclibc_emplace_back4(
+        vector_emplace_back4(
             winds_vec,
             <double>w.velocity._fps,
             <double>w.direction_from._rad,
@@ -184,8 +184,8 @@ cdef BCLIBC_ShotProps BCLIBC_ShotProps_from_pyobject(object shot_info, double ca
     cdef size_t n_drag = len(table_data)
     cdef vector[double] mach_vec
     cdef vector[double] cd_vec
-    bclibc_resize(mach_vec, n_drag)
-    bclibc_resize(cd_vec, n_drag)
+    vector_resize(mach_vec, n_drag)
+    vector_resize(cd_vec, n_drag)
     cdef size_t i
     for i in range(n_drag):
         mach_vec[i] = table_data[i].Mach
@@ -194,9 +194,9 @@ cdef BCLIBC_ShotProps BCLIBC_ShotProps_from_pyobject(object shot_info, double ca
     # Extract winds into BCLIBC_Wind vector (non-owning pointer passed to BCLIBC_Shot)
     cdef size_t n_winds = len(winds_py)
     cdef vector[BCLIBC_Wind] winds_vec
-    bclibc_reserve(winds_vec, n_winds)
+    vector_reserve(winds_vec, n_winds)
     for w in winds_py:
-        bclibc_emplace_back4(
+        vector_emplace_back4(
             winds_vec,
             <double>w.velocity._fps,
             <double>w.direction_from._rad,
