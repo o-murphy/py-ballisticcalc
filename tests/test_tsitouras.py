@@ -27,7 +27,7 @@ def _integrate(engine):
 class TestTsitouras:
     @pytest.fixture(autouse=True)
     def _require_tsitouras(self, loaded_engine_instance):
-        if (loaded_engine_instance.__module__ != "py_ballisticcalc_exts.tsitouras_engine"
+        if (loaded_engine_instance.__module__ != "py_ballisticcalc_exts.engines"
                 or loaded_engine_instance.__name__ != "CythonizedTsitourasIntegrationEngine"):
             pytest.skip("Tsitouras-specific test; run with --engine=cython+tsitouras")
         import py_ballisticcalc_exts as exts

@@ -23,7 +23,7 @@ def test_import_traj_data_extension():
 @pytest.mark.parametrize("module_name", ENGINE_MODULES)
 def test_import_individual_extensions(module_name):
     class_name, _ = ENGINE_MODULES[module_name]
-    module = importlib.import_module(f"py_ballisticcalc_exts.{module_name}")
+    module = importlib.import_module("py_ballisticcalc_exts.engines")
     assert hasattr(module, class_name)
 
 
@@ -31,7 +31,7 @@ def test_import_individual_extensions(module_name):
 def test_engine_entry_points_resolve(module_name):
     """Every extension engine is reachable via `cython+<method>` and `cython.<method>` entry points."""
     class_name, engine_id = ENGINE_MODULES[module_name]
-    module = importlib.import_module(f"py_ballisticcalc_exts.{module_name}")
+    module = importlib.import_module("py_ballisticcalc_exts.engines")
     expected = getattr(module, class_name)
     assert _EngineLoader.load(engine_id) is expected
     assert _EngineLoader.load(engine_id.replace("+", ".")) is expected

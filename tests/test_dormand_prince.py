@@ -27,7 +27,7 @@ def _integrate(engine):
 class TestDormandPrince:
     @pytest.fixture(autouse=True)
     def _require_dopri(self, loaded_engine_instance):
-        if (loaded_engine_instance.__module__ != "py_ballisticcalc_exts.dopri_engine"
+        if (loaded_engine_instance.__module__ != "py_ballisticcalc_exts.engines"
                 or loaded_engine_instance.__name__ != "CythonizedDormandPrinceIntegrationEngine"):
             pytest.skip("DOPRI-specific test; run with --engine=cython+dopri")
         import py_ballisticcalc_exts as exts

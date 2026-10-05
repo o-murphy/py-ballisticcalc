@@ -9,12 +9,14 @@ __credits__ = ["o-murphy", "dbookstaber"]
 
 from .traj_data import CythonizedBaseTrajData, CythonizedBaseTrajSeq
 from .base_engine import CythonizedBaseIntegrationEngine
-from .euler_engine import CythonizedEulerIntegrationEngine
-from .rk4_engine import CythonizedRK4IntegrationEngine
-from .velocity_verlet_engine import CythonizedVelocityVerletIntegrationEngine
-from .cashkarp_engine import CythonizedCashKarpIntegrationEngine
-from .dopri_engine import CythonizedDormandPrinceIntegrationEngine
-from .tsitouras_engine import CythonizedTsitourasIntegrationEngine
+from .engines import (
+    CythonizedEulerIntegrationEngine,
+    CythonizedRK4IntegrationEngine,
+    CythonizedVelocityVerletIntegrationEngine,
+    CythonizedCashKarpIntegrationEngine,
+    CythonizedDormandPrinceIntegrationEngine,
+    CythonizedTsitourasIntegrationEngine,
+)
 
 
 # Version matching guard
