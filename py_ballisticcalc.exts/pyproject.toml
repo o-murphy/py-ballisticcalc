@@ -100,10 +100,10 @@ build = "cp311-* cp314t-* cp315t-*"
 enable = ["cpython-prerelease"]
 
 [tool.cibuildwheel.android]
-build = "cp313-android_* cp314-android_*"
+build = "cp313-android_* cp314-android_* cp315-android_*"
 
 [tool.cibuildwheel.pyodide]
-build = "cp313-pyodide_* cp314-pyodide_*"
+build = "cp313-pyodide_* cp314-pyodide_* cp315-pyodide_*"
 
 [tool.pytest.ini_options]
 minversion = "7.0"
