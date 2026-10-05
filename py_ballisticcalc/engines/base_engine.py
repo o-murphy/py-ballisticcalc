@@ -40,7 +40,7 @@ from abc import ABC, abstractmethod
 from collections.abc import Callable, Sequence
 from dataclasses import asdict, dataclass
 from enum import Enum, auto
-from typing import Concatenate, NamedTuple, ParamSpec, TypedDict, TypeVar
+from typing import Concatenate, NamedTuple, TypedDict
 
 from py_ballisticcalc.conditions import Wind
 from py_ballisticcalc.constants import cGravityImperial
@@ -438,20 +438,13 @@ class ZeroFindingProps(NamedTuple):
     start_height_ft: float | None = None
 
 
-_P = ParamSpec("_P")
-_R = TypeVar("_R")
-
-
-_Self = TypeVar("_Self", bound="BaseIntegrationEngine")
-
-
-def with_no_minimum_velocity(
-    method: Callable[Concatenate[_Self, _P], _R],
-) -> Callable[Concatenate[_Self, _P], _R]:
+def with_no_minimum_velocity[S: BaseIntegrationEngine, **P, R](
+    method: Callable[Concatenate[S, P], R],
+) -> Callable[Concatenate[S, P], R]:
     """Decorator to temporarily set minimum velocity to zero."""
 
     @functools.wraps(method)
-    def wrapper(self: _Self, *args: _P.args, **kwargs: _P.kwargs) -> _R:
+    def wrapper(self: S, *args: P.args, **kwargs: P.kwargs) -> R:
         restore = None
         if self._config.cMinimumVelocity != 0:
             restore = self._config.cMinimumVelocity
@@ -465,13 +458,13 @@ def with_no_minimum_velocity(
     return wrapper
 
 
-def with_max_drop_zero(
-    method: Callable[Concatenate[_Self, _P], _R],
-) -> Callable[Concatenate[_Self, _P], _R]:
+def with_max_drop_zero[S: BaseIntegrationEngine, **P, R](
+    method: Callable[Concatenate[S, P], R],
+) -> Callable[Concatenate[S, P], R]:
     """Decorator to temporarily set maximum drop to zero."""
 
     @functools.wraps(method)
-    def wrapper(self: _Self, *args: _P.args, **kwargs: _P.kwargs) -> _R:
+    def wrapper(self: S, *args: P.args, **kwargs: P.kwargs) -> R:
         restore = None
         if self._config.cMaximumDrop != 0:
             restore = self._config.cMaximumDrop

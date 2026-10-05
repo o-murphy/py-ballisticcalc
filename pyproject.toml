@@ -118,14 +118,7 @@ extend-exclude = [
 line-length = 120
 
 [tool.ruff.lint]
-ignore = [
-    "F403",
-    "F405",
-    # PEP 695 (`type X = ...`, `def f[T]()`) suggestions, new with requires-python >= 3.12. Not applied: `type` aliases
-    # are lazy `TypeAliasType` objects, so runtime uses such as `get_args(SightFocalPlane)` would break.
-    "UP040",
-    "UP047",
-]
+ignore = ["F403", "F405"]
 
 [tool.pylint.main]
 ignore = ["CVS", "setup.py", "tests.py"]

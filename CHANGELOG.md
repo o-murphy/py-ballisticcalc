@@ -8,7 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
-- Python 3.15 support: the `cp311-abi3` wheels cover it, and a free-threaded `cp315t` wheel is built alongside
+- Python 3.15 support: the `cp312-abi3` wheels cover it, and a free-threaded `cp315t` wheel is built alongside
   `cp314t`. Android (`cp315-android_*`) and Pyodide (`cp315-pyodide_*`) wheels are added to the build targets too.
   CI runs the RK4 engines on 3.15 and 3.15t. The Stable ABI for free-threaded builds (`abi3t`, PEP 803) is not used
   yet, as Cython does not support it in a release (cython/cython#7399).

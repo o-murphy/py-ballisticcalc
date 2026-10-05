@@ -65,7 +65,6 @@ from typing import (
     Self,
     SupportsFloat,
     SupportsInt,
-    TypeAlias,
     TypeVar,
     override,
     runtime_checkable,
@@ -75,7 +74,7 @@ from typing import (
 from py_ballisticcalc.exceptions import UnitAliasError, UnitConversionError, UnitTypeError
 from py_ballisticcalc.logger import logger
 
-Number: TypeAlias = float | int
+type Number = float | int
 MAX_ITERATIONS: int = 1_000_000  # Prevent runaway Unit.counter()
 
 
@@ -615,7 +614,7 @@ UnitPropsDict: Mapping[Unit, UnitProps] = {
 }
 # --8<-- [end:UnitPropsDict]
 
-UnitAliasesType: TypeAlias = Mapping[tuple[str, ...], Unit]
+type UnitAliasesType = Mapping[tuple[str, ...], Unit]
 
 # mkdocs.pymdown.snippet marker: --8<-- [start:UnitAliases]
 UnitAliases: UnitAliasesType = {
