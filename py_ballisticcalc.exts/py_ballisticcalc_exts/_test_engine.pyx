@@ -5,6 +5,7 @@ Provides direct C-layer accessors for parity tests without modifying production
 engine modules. Not part of the public API.
 """
 from cython cimport final
+from py_ballisticcalc_exts.std_math cimport sin, cos
 from py_ballisticcalc_exts.result cimport BCLIBC_Result, monostate
 from py_ballisticcalc_exts.rk4_engine cimport CythonizedRK4IntegrationEngine
 from py_ballisticcalc_exts.traj_data cimport CythonizedBaseTrajSeq, BCLIBC_BaseTrajData
@@ -13,10 +14,6 @@ from py_ballisticcalc_exts.base_types cimport (
     BCLIBC_calculateOgw,
 )
 
-# std::sin/std::cos without libcpp.cmath's `except +` (which makes Cython emit try/catch).
-cdef extern from "<cmath>" namespace "std" nogil:
-    double sin(double x) noexcept
-    double cos(double x) noexcept
 
 __all__ = ["CythonEngineTestHarness"]
 

@@ -1,6 +1,6 @@
 # cython: freethreading_compatible=True
 """Compiled adaptive Tsitouras 5(4) ("Tsit5") engine."""
-import math
+from py_ballisticcalc_exts.std_math cimport isfinite
 from py_ballisticcalc_exts.base_types cimport BCLIBC_ShotProps
 from py_ballisticcalc_exts.base_engine cimport CythonizedBaseIntegrationEngine
 from py_ballisticcalc_exts.result cimport BCLIBC_Result, monostate, raise_std_error
@@ -34,7 +34,7 @@ cdef class CythonizedTsitourasIntegrationEngine(CythonizedBaseIntegrationEngine)
 
     @relative_tolerance.setter
     def relative_tolerance(self, double value):
-        if not math.isfinite(value) or value <= 0:
+        if not isfinite(value) or value <= 0:
             raise ValueError('relative_tolerance must be finite and positive')
         self._relative_tolerance = value
 
@@ -44,7 +44,7 @@ cdef class CythonizedTsitourasIntegrationEngine(CythonizedBaseIntegrationEngine)
 
     @absolute_tolerance.setter
     def absolute_tolerance(self, double value):
-        if not math.isfinite(value) or value < 0:
+        if not isfinite(value) or value < 0:
             raise ValueError('absolute_tolerance must be finite and non-negative')
         self._absolute_tolerance = value
 

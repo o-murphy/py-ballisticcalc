@@ -6,8 +6,8 @@ Accepted intervals are streamed directly to trajectory handlers. Scheduled
 samples and exact physical events are reconstructed from endpoint-Hermite
 interpolation, so adaptive step spacing does not define public output rows.
 """
-import math
 
+from py_ballisticcalc_exts.std_math cimport isfinite
 from py_ballisticcalc_exts.base_types cimport BCLIBC_ShotProps
 from py_ballisticcalc_exts.base_engine cimport CythonizedBaseIntegrationEngine
 from py_ballisticcalc_exts.result cimport BCLIBC_Result, monostate, raise_std_error
@@ -70,7 +70,7 @@ cdef class CythonizedCashKarpIntegrationEngine(CythonizedBaseIntegrationEngine):
 
     @relative_tolerance.setter
     def relative_tolerance(self, double tolerance):
-        if not math.isfinite(tolerance) or tolerance <= 0.0:
+        if not isfinite(tolerance) or tolerance <= 0.0:
             raise ValueError("relative_tolerance must be finite and positive")
         self._relative_tolerance = tolerance
 
@@ -85,7 +85,7 @@ cdef class CythonizedCashKarpIntegrationEngine(CythonizedBaseIntegrationEngine):
 
     @absolute_tolerance.setter
     def absolute_tolerance(self, double tolerance):
-        if not math.isfinite(tolerance) or tolerance < 0.0:
+        if not isfinite(tolerance) or tolerance < 0.0:
             raise ValueError("absolute_tolerance must be finite and non-negative")
         self._absolute_tolerance = tolerance
 
