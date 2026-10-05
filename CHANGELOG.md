@@ -13,6 +13,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   CI runs the RK4 engines on 3.15 and 3.15t. The Stable ABI for free-threaded builds (`abi3t`, PEP 803) is not used
   yet, as Cython does not support it in a release (cython/cython#7399).
 
+### Removed
+- **Breaking:** Python 3.11 is no longer supported; the minimum is now Python 3.12 (`requires-python = ">=3.12"`).
+  The stable-ABI wheels of `py_ballisticcalc.exts` are now built against `Py_LIMITED_API=0x030C0000` and tagged
+  `cp312-abi3-*` instead of `cp311-abi3-*`. The `typing_extensions` dependency is dropped (`typing.override` is used).
+
 ### Changed
 - The six Cython integration engines (Euler, RK4, Velocity Verlet, Cash-Karp, Dormand-Prince, Tsitouras) now live in a
   single extension module, `py_ballisticcalc_exts.engines`, instead of one module each. The type stubs are merged into

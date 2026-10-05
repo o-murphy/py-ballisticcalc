@@ -39,8 +39,7 @@ See Also:
 
 import math
 import warnings
-
-from typing_extensions import override
+from typing import override
 
 from py_ballisticcalc.engines.base_engine import (
     BaseEngineConfigDict,

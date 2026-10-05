@@ -18,7 +18,7 @@ authors = [
 ]
 description = "LGPL library for small arms ballistic calculations (Python 3)"
 readme = "README.md"
-requires-python = ">=3.11"
+requires-python = ">=3.12"
 keywords = ["py_ballisticcalc", "ballistics", "Cython", "ballistic calculator", "python", "ballistic solver"]
 license = { file = "LICENSE" }
 classifiers = [
@@ -28,7 +28,6 @@ classifiers = [
     "Topic :: Software Development :: Libraries :: Python Modules",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3 :: Only",
-    "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
     "Programming Language :: Python :: 3.14",
@@ -37,7 +36,6 @@ classifiers = [
     "Programming Language :: Python :: Implementation :: CPython",
 ]
 dependencies = [
-    "typing_extensions>= 4.15.0",
     "Deprecated>=1.3.1",
 ]
 
@@ -120,12 +118,19 @@ extend-exclude = [
 line-length = 120
 
 [tool.ruff.lint]
-ignore = ["F403", "F405"]
+ignore = [
+    "F403",
+    "F405",
+    # PEP 695 (`type X = ...`, `def f[T]()`) suggestions, new with requires-python >= 3.12. Not applied: `type` aliases
+    # are lazy `TypeAliasType` objects, so runtime uses such as `get_args(SightFocalPlane)` would break.
+    "UP040",
+    "UP047",
+]
 
 [tool.pylint.main]
 ignore = ["CVS", "setup.py", "tests.py"]
 fail-under = 9.0
-py-version = 3.11
+py-version = 3.12
 
 [tool.pylint.design]
 max-positional-arguments = 6
@@ -167,25 +172,19 @@ exts = ["py_ballisticcalc.exts=={version}"]
 charts = [
     "matplotlib>=3.10.9",
     "pandas>=3.0.2",
-    "numpy>=2.5.0; python_version>='3.12'",
-    "numpy>=2.4.6; python_version<'3.12'",
-    "scipy>=1.18.0; python_version>='3.12'",
-    "scipy>=1.17.1; python_version<'3.12'",
+    "numpy>=2.5.0",
+    "scipy>=1.18.0",
 ]
 scipy = [
-    "numpy>=2.5.0; python_version>='3.12'",
-    "numpy>=2.4.6; python_version<'3.12'",
-    "scipy>=1.18.0; python_version>='3.12'",
-    "scipy>=1.17.1; python_version<'3.12'",
+    "numpy>=2.5.0",
+    "scipy>=1.18.0",
 ]
 dev = [
     # math and data
     "matplotlib>=3.10.9",
     "pandas>=3.0.2",
-    "numpy>=2.5.0; python_version>='3.12'",
-    "numpy>=2.4.6; python_version<'3.12'",
-    "scipy>=1.18.0; python_version>='3.12'",
-    "scipy>=1.17.1; python_version<'3.12'",
+    "numpy>=2.5.0",
+    "scipy>=1.18.0",
 
     # jupyter
     "ipykernel>=7.3.0",
@@ -201,8 +200,7 @@ dev = [
     "pre-commit>=4.6.0",
 
     # stubs
-    "scipy-stubs>=1.18.0.0; python_version>='3.12'",
-    "scipy-stubs>=1.17.1.5; python_version<'3.12'",
+    "scipy-stubs>=1.18.0.0",
 
     "types-deprecated>=1.3.1.20260520",
     "pandas-stubs>=3.0.3.260530",
@@ -229,10 +227,8 @@ dev = [
     # math and data
     "matplotlib>=3.10.9",
     "pandas>=3.0.3",
-    "numpy>=2.5.0; python_version>='3.12'",
-    "numpy>=2.4.6; python_version<'3.12'",
-    "scipy>=1.18.0; python_version>='3.12'",
-    "scipy>=1.17.1; python_version<'3.12'",
+    "numpy>=2.5.0",
+    "scipy>=1.18.0",
 
     # jupyter
     "ipykernel>=7.3.0",
@@ -248,8 +244,7 @@ dev = [
     "pre-commit>=4.6.1",
 
     # stubs
-    "scipy-stubs>=1.18.0.0; python_version>='3.12'",
-    "scipy-stubs>=1.17.1.5; python_version<'3.12'",
+    "scipy-stubs>=1.18.0.0",
 
     "types-deprecated>=1.3.1.20260520",
     "pandas-stubs>=3.0.3.260530",

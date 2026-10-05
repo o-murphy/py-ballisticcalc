@@ -92,7 +92,7 @@ IS_EMSCRIPTEN = "emscripten" in _SYSCONFIG_PLATFORM
 IS_ANDROID = "android" in _SYSCONFIG_PLATFORM
 IS_IOS = "ios" in _SYSCONFIG_PLATFORM
 
-# Stable ABI target: build once per platform, compatible with Python 3.11+.
+# Stable ABI target: build once per platform, compatible with Python 3.12+.
 # Disabled when:
 #   - coverage tracing is requested (CYTHON_TRACE uses internal CPython APIs)
 #   - building on free-threaded Python (Py_GIL_DISABLED conflicts with Py_LIMITED_API)
@@ -107,12 +107,12 @@ IS_IOS = "ios" in _SYSCONFIG_PLATFORM
 #     hardcodes a runtime dependency on one specific CPython point release
 #     regardless of the abi3 tag on the wheel, so stable ABI buys nothing
 #     here and only hides a real version pin (confirmed empirically: a
-#     cp311-abi3-android wheel built against the cp313 Android crossenv
+#     cp312-abi3-android wheel built against the cp313 Android crossenv
 #     failed to import on a 3.14 runtime with
 #     "library libpython3.13.so not found").
 #   - targeting iOS: same rationale as Android, app runtimes typically embed
 #     one specific CPython build.
-PY_LIMITED_API_HEX = "0x030B0000"  # CPython 3.11
+PY_LIMITED_API_HEX = "0x030C0000"  # CPython 3.12
 _GIL_DISABLED = bool(sysconfig.get_config_var("Py_GIL_DISABLED"))
 USE_LIMITED_API = (
     not ENABLE_CYTHON_COVERAGE and not _GIL_DISABLED and not IS_EMSCRIPTEN and not IS_ANDROID and not IS_IOS
@@ -354,7 +354,7 @@ if USE_LIMITED_API:
     class _bdist_wheel_abi3(bdist_wheel):
         def finalize_options(self):
             super().finalize_options()
-            self.py_limited_api = "cp311"
+            self.py_limited_api = "cp312"
 
     cmdclass["bdist_wheel"] = _bdist_wheel_abi3
 

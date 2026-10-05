@@ -67,10 +67,9 @@ from typing import (
     SupportsInt,
     TypeAlias,
     TypeVar,
+    override,
     runtime_checkable,
 )
-
-from typing_extensions import override
 
 # Local imports
 from py_ballisticcalc.exceptions import UnitAliasError, UnitConversionError, UnitTypeError

@@ -41,7 +41,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest]
-        python-version: ["3.11"]
+        python-version: ["3.12"]
         engine: ["python+euler"]
 
     uses: ./.github/workflows/pytest-reusable.yml
