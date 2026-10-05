@@ -229,3 +229,10 @@ CPython [issue #111506](https://github.com/python/cpython/issues/111506). The bu
 detects `Py_GIL_DISABLED` at build time (`setup.py`) and automatically disables `Py_LIMITED_API`
 for free-threaded builds. Those wheels are tagged `cp313t-cp313t-*` / `cp314t-cp314t-*` rather
 than `cp311-abi3-*`.
+
+Python 3.15 adds the Stable ABI for free-threaded builds (`abi3t`, PEP 803), which would let one wheel serve both
+regular and free-threaded interpreters. It is **not** used here: it needs the `PyModExport_*` module entry point
+and opaque object layouts, which Cython has not released yet (see
+[cython/cython#7399](https://github.com/cython/cython/issues/7399)), and attribute access to `cdef class`
+members inside `nogil` blocks is a known limitation of it with module state
+([#7905](https://github.com/cython/cython/issues/7905)). So 3.15 is covered by `cp311-abi3` plus a separate `cp315t` wheel.
