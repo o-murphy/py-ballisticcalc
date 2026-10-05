@@ -20,7 +20,7 @@
 
 ### 4. Integration engines
 - Engines implement [EngineProtocol][py_ballisticcalc.interface.EngineProtocol] (see `py_ballisticcalc.generics.engine`).
-- Cython engines are compiled in `py_ballisticcalc.exts/py_ballisticcalc_exts` for performance.  See `rk4_engine.pyx` and `euler_engine.pyx` implementations.
+- Cython engines are compiled in `py_ballisticcalc.exts/py_ballisticcalc_exts` for performance.  See `engines.pyx` for the engine implementations.
   
 ### 5. Trajectory data and events
 - `py_ballisticcalc.trajectory_data.py` defines [`TrajFlag`][py_ballisticcalc.trajectory_data.TrajFlag], [`BaseTrajData`][py_ballisticcalc.trajectory_data.BaseTrajData], [`TrajectoryData`][py_ballisticcalc.trajectory_data.TrajectoryData], and [`HitResult`][py_ballisticcalc.trajectory_data.HitResult].

@@ -23,7 +23,7 @@ __all__ = ('CythonizedBaseTrajSeq', 'CythonizedBaseTrajData')
 
 
 # @final is safe with abi3: no other Cython module subclasses this type.
-# If you need to subclass it from another .pyx, remove @final — see rk4_engine.pyx for context.
+# If you need to subclass it from another .pyx, remove @final — see engines.pyx for context.
 @final
 cdef class CythonizedBaseTrajSeq:
     """Contiguous C buffer of BCLIBC_BaseTrajData points with fast append and interpolation.
@@ -102,7 +102,7 @@ cdef class CythonizedBaseTrajSeq:
 
 
 # @final is safe with abi3: no other Cython module subclasses this type.
-# If you need to subclass it from another .pyx, remove @final — see rk4_engine.pyx for context.
+# If you need to subclass it from another .pyx, remove @final — see engines.pyx for context.
 @final
 cdef class CythonizedBaseTrajData:
     __slots__ = ('time', 'position', 'velocity', 'mach')  # for pure python mirror consistency

@@ -8,6 +8,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Changed
+- The six Cython integration engines (Euler, RK4, Velocity Verlet, Cash-Karp, Dormand-Prince, Tsitouras) now live in a
+  single extension module, `py_ballisticcalc_exts.engines`, instead of one module each. The type stubs are merged into
+  `engines.pyi`. Import the classes from `py_ballisticcalc_exts` as before; the per-engine submodules
+  (`py_ballisticcalc_exts.rk4_engine`, etc.) no longer exist. The unused `std::function::target[T]()` declaration
+  is removed from `base_engine.pxd`.
 - `py_ballisticcalc.exts` is now compiled with C++ exceptions disabled (`-fno-exceptions`, `/EHs-c-` on MSVC) and
   `-O3` on GCC/Clang, matching bclibc's noexcept API. The `.pxd` declarations use `noexcept` instead of `except +`,
   and a few `libcpp` calls that made Cython emit `try`/`catch` were replaced (`vector` iteration by index;

@@ -36,7 +36,7 @@ cdef class CythonizedRK4IntegrationEngine(CythonizedBaseIntegrationEngine):
 
 # @final intentionally omitted: with Py_LIMITED_API (abi3), PyType_FromSpec() enforces
 # Py_TPFLAGS_BASETYPE and blocks cross-module Cython subclassing.
-# This class may be subclassed in the future — see rk4_engine.pyx for full context.
+# This class may be subclassed in the future — see engines.pyx for full context.
 cdef class CythonizedEulerIntegrationEngine(CythonizedBaseIntegrationEngine):
     """Cythonized Euler integration engine for ballistic calculations."""
 
@@ -47,7 +47,7 @@ cdef class CythonizedEulerIntegrationEngine(CythonizedBaseIntegrationEngine):
 
 # @final intentionally omitted: with Py_LIMITED_API (abi3), PyType_FromSpec() enforces
 # Py_TPFLAGS_BASETYPE and blocks cross-module Cython subclassing.
-# This class may be subclassed in the future — see rk4_engine.pyx for full context.
+# This class may be subclassed in the future — see engines.pyx for full context.
 cdef class CythonizedVelocityVerletIntegrationEngine(CythonizedBaseIntegrationEngine):
     """Cythonized Velocity Verlet integration engine for ballistic calculations."""
 

@@ -32,15 +32,6 @@ cdef extern from "<functional>" namespace "std":
         # (e.g. BCLIBC_CashKarpIntegrator) directly, by value.
         function[F]& operator=[U](U u) noexcept
         bint operator bool() const
-        # Pointer to std::function's own internal copy of the callable it
-        # holds, if it was constructed/assigned as exactly T (nullptr
-        # otherwise). Used to get back at a stateful integrator's tolerances
-        # and accepted/rejected-step counters *after* assigning it into
-        # integrate_func by value above -- std::function copies whatever
-        # it's given, so this is the one way to reach that specific copy
-        # (the one actually driving integration) rather than some other
-        # instance the caller might separately be holding.
-        T* target[T]()
 
 
 cdef extern from "include/bclibc/engine.hpp" namespace "bclibc" nogil:
