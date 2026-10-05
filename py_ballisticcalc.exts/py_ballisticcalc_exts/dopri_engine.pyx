@@ -1,7 +1,8 @@
 # cython: freethreading_compatible=True
 """Compiled adaptive Dormand--Prince 5(4) engine."""
-import math
+from py_ballisticcalc_exts.std_math cimport isfinite
 from py_ballisticcalc_exts.base_types cimport BCLIBC_ShotProps
+from py_ballisticcalc_exts.std_functional cimport function_assign_ref
 from py_ballisticcalc_exts.base_engine cimport CythonizedBaseIntegrationEngine
 from py_ballisticcalc_exts.result cimport BCLIBC_Result, monostate, raise_std_error
 
@@ -13,10 +14,9 @@ cdef class CythonizedDormandPrinceIntegrationEngine(CythonizedBaseIntegrationEng
         self._DEFAULT_TIME_STEP = 0.0025
         self._relative_tolerance = 1e-6
         self._absolute_tolerance = 1e-6
-        # See cashkarp_engine.pyx's __cinit__: integrate_func takes its own
-        # copy, target() hands back a pointer at that copy.
-        self._this.integrate_func = BCLIBC_DormandPrinceIntegrator()
-        self._integrator = self._this.integrate_func.target[BCLIBC_DormandPrinceIntegrator]()
+        # integrate_func refers to this instance's own integrator (a cdef attribute) by std::reference_wrapper;
+        # no std::function::target<T>() needed, so this builds with -fno-rtti.
+        function_assign_ref(self._this.integrate_func, self._integrator)
 
     def __init__(self, object config):
         base_config = config
@@ -34,7 +34,7 @@ cdef class CythonizedDormandPrinceIntegrationEngine(CythonizedBaseIntegrationEng
 
     @relative_tolerance.setter
     def relative_tolerance(self, double value):
-        if not math.isfinite(value) or value <= 0:
+        if not isfinite(value) or value <= 0:
             raise ValueError('relative_tolerance must be finite and positive')
         self._relative_tolerance = value
 
@@ -44,15 +44,15 @@ cdef class CythonizedDormandPrinceIntegrationEngine(CythonizedBaseIntegrationEng
 
     @absolute_tolerance.setter
     def absolute_tolerance(self, double value):
-        if not math.isfinite(value) or value < 0:
+        if not isfinite(value) or value < 0:
             raise ValueError('absolute_tolerance must be finite and non-negative')
         self._absolute_tolerance = value
 
     cdef BCLIBC_ShotProps* _init_trajectory(self, object shot_info):
-        cdef BCLIBC_Result[monostate] res = self._integrator[0].set_relative_tolerance(self._relative_tolerance)
+        cdef BCLIBC_Result[monostate] res = self._integrator.set_relative_tolerance(self._relative_tolerance)
         if not res.has_value():
             raise_std_error(res.error())
-        res = self._integrator[0].set_absolute_tolerance(self._absolute_tolerance)
+        res = self._integrator.set_absolute_tolerance(self._absolute_tolerance)
         if not res.has_value():
             raise_std_error(res.error())
         return CythonizedBaseIntegrationEngine._init_trajectory(self, shot_info)

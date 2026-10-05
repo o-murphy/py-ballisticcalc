@@ -5,14 +5,15 @@ Provides direct C-layer accessors for parity tests without modifying production
 engine modules. Not part of the public API.
 """
 from cython cimport final
+from py_ballisticcalc_exts.std_math cimport sin, cos
 from py_ballisticcalc_exts.result cimport BCLIBC_Result, monostate
-from libcpp.cmath cimport sin, cos
 from py_ballisticcalc_exts.rk4_engine cimport CythonizedRK4IntegrationEngine
 from py_ballisticcalc_exts.traj_data cimport CythonizedBaseTrajSeq, BCLIBC_BaseTrajData
 from py_ballisticcalc_exts.base_types cimport (
     BCLIBC_calculateEnergy,
     BCLIBC_calculateOgw,
 )
+
 
 __all__ = ["CythonEngineTestHarness"]
 

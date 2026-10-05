@@ -13,7 +13,7 @@ cdef extern from "include/bclibc/dormand_prince.hpp" namespace "bclibc" nogil:
     # Stateful functor: owns its own tolerances/step-counts per instance,
     # replacing the old thread-local free-function API.
     cdef cppclass BCLIBC_DormandPrinceIntegrator:
-        BCLIBC_DormandPrinceIntegrator() except +
+        BCLIBC_DormandPrinceIntegrator() noexcept
         BCLIBC_Result[monostate] operator()(
             BCLIBC_BaseEngine &, BCLIBC_BaseTrajDataHandlerInterface &, BCLIBC_TerminationReason &) noexcept
         void get_stats(int &, int &) const
@@ -24,8 +24,9 @@ cdef extern from "include/bclibc/dormand_prince.hpp" namespace "bclibc" nogil:
 cdef class CythonizedDormandPrinceIntegrationEngine(CythonizedBaseIntegrationEngine):
     cdef double _relative_tolerance
     cdef double _absolute_tolerance
-    # Points at this instance's own integrator living inside
-    # self._this.integrate_func (see __cinit__).
-    cdef BCLIBC_DormandPrinceIntegrator* _integrator
+    # This instance's own integrator, held by value (its tolerances/stats are exclusively this engine's).
+    # self._this.integrate_func stores a std::reference_wrapper to it (see __cinit__), so it must stay
+    # in place for the engine's life -- true for a cdef-class attribute.
+    cdef BCLIBC_DormandPrinceIntegrator _integrator
     cdef int _last_accepted
     cdef int _last_rejected

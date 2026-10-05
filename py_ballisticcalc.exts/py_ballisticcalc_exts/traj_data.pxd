@@ -34,7 +34,7 @@ cdef extern from "include/bclibc/traj_data.hpp" namespace "bclibc" nogil:
         double vz
         double mach
 
-        BCLIBC_BaseTrajData() except +
+        BCLIBC_BaseTrajData() noexcept
         BCLIBC_BaseTrajData(
             double time,
             double px,
@@ -44,14 +44,14 @@ cdef extern from "include/bclibc/traj_data.hpp" namespace "bclibc" nogil:
             double vy,
             double vz,
             double mach
-        ) except +
+        ) noexcept
 
         BCLIBC_BaseTrajData(
             double time,
             const BCLIBC_V3dT &position,
             const BCLIBC_V3dT &velocity,
             double mach
-        ) except +
+        ) noexcept
 
         BCLIBC_V3dT position() const
         BCLIBC_V3dT velocity() const
@@ -72,22 +72,22 @@ cdef extern from "include/bclibc/traj_data.hpp" namespace "bclibc" nogil:
     cdef cppclass BCLIBC_BaseTrajDataHandlerInterface:
         BCLIBC_Result[monostate] handle(const BCLIBC_BaseTrajData &data) noexcept
         void insert_handler(vector[BCLIBC_BaseTrajDataHandlerInterface*].iterator position,
-                            BCLIBC_BaseTrajDataHandlerInterface *handler) except +
+                            BCLIBC_BaseTrajDataHandlerInterface *handler) noexcept
         vector[BCLIBC_BaseTrajDataHandlerInterface*].iterator begin()
         vector[BCLIBC_BaseTrajDataHandlerInterface*].iterator end()
 
     cdef cppclass BCLIBC_BaseTrajDataHandlerCompositor(BCLIBC_BaseTrajDataHandlerInterface):
-        BCLIBC_BaseTrajDataHandlerCompositor() except +
+        BCLIBC_BaseTrajDataHandlerCompositor() noexcept
         BCLIBC_Result[monostate] handle(const BCLIBC_BaseTrajData& data) noexcept
-        void add_handler(BCLIBC_BaseTrajDataHandlerInterface* handler) except +
+        void add_handler(BCLIBC_BaseTrajDataHandlerInterface* handler) noexcept
 
     cdef cppclass BCLIBC_BaseTrajSeq(BCLIBC_BaseTrajDataHandlerInterface):
 
-        BCLIBC_BaseTrajSeq() except +
+        BCLIBC_BaseTrajSeq() noexcept
 
         void append(
             const BCLIBC_BaseTrajData &data
-        ) except +
+        ) noexcept
         Py_ssize_t get_length() const
         Py_ssize_t get_capacity() const
         BCLIBC_Result[monostate] interpolate_at(
@@ -137,7 +137,7 @@ cdef extern from "include/bclibc/traj_data.hpp" namespace "bclibc" nogil:
         double ogw_lb
         BCLIBC_TrajFlag flag
 
-        BCLIBC_TrajectoryData() except +
+        BCLIBC_TrajectoryData() noexcept
 
         @staticmethod
         BCLIBC_Result[BCLIBC_TrajectoryData] from_base(

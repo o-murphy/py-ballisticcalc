@@ -1,6 +1,7 @@
 # cython: freethreading_compatible=True
 from libcpp.vector cimport vector
-from libc.math cimport NAN
+from py_ballisticcalc_exts.std_math cimport quiet_NaN
+from py_ballisticcalc_exts.std_vector cimport vector_reserve, vector_resize, vector_emplace_back4
 from cython cimport final
 from cpython.object cimport PyObject
 from py_ballisticcalc_exts.base_types cimport (
@@ -118,9 +119,9 @@ cdef BCLIBC_Coriolis BCLIBC_Coriolis_from_lat_az(
     Both provided  → full 3D Coriolis.
     """
     return BCLIBC_Coriolis.from_lat_az(
-        NAN if latitude is None else <double>latitude,
+        quiet_NaN() if latitude is None else <double>latitude,
         muzzle_velocity_fps,
-        NAN if azimuth is None else <double>azimuth,
+        quiet_NaN() if azimuth is None else <double>azimuth,
     )
 
 
@@ -140,10 +141,11 @@ cdef BCLIBC_WindSock BCLIBC_WindSock_from_pytuple(tuple[object] winds_py_tuple):
         return BCLIBC_WindSock()
 
     cdef vector[BCLIBC_Wind] winds_vec
-    winds_vec.reserve(n)
+    vector_reserve(winds_vec, n)
 
     for w in winds_py_tuple:
-        winds_vec.emplace_back(
+        vector_emplace_back4(
+            winds_vec,
             <double>w.velocity._fps,
             <double>w.direction_from._rad,
             <double>w.until_distance._feet,
@@ -182,8 +184,8 @@ cdef BCLIBC_ShotProps BCLIBC_ShotProps_from_pyobject(object shot_info, double ca
     cdef size_t n_drag = len(table_data)
     cdef vector[double] mach_vec
     cdef vector[double] cd_vec
-    mach_vec.resize(n_drag)
-    cd_vec.resize(n_drag)
+    vector_resize(mach_vec, n_drag)
+    vector_resize(cd_vec, n_drag)
     cdef size_t i
     for i in range(n_drag):
         mach_vec[i] = table_data[i].Mach
@@ -192,9 +194,10 @@ cdef BCLIBC_ShotProps BCLIBC_ShotProps_from_pyobject(object shot_info, double ca
     # Extract winds into BCLIBC_Wind vector (non-owning pointer passed to BCLIBC_Shot)
     cdef size_t n_winds = len(winds_py)
     cdef vector[BCLIBC_Wind] winds_vec
-    winds_vec.reserve(n_winds)
+    vector_reserve(winds_vec, n_winds)
     for w in winds_py:
-        winds_vec.emplace_back(
+        vector_emplace_back4(
+            winds_vec,
             <double>w.velocity._fps,
             <double>w.direction_from._rad,
             <double>w.until_distance._feet,
@@ -224,8 +227,8 @@ cdef BCLIBC_ShotProps BCLIBC_ShotProps_from_pyobject(object shot_info, double ca
     shot.barrel_elevation_rad = shot_info.barrel_elevation._rad
     shot.barrel_azimuth_rad = shot_info.barrel_azimuth._rad
     shot.cant_angle_rad = shot_info.cant_angle._rad
-    shot.latitude_deg = NAN if shot_info.latitude is None else <double>shot_info.latitude
-    shot.azimuth_deg = NAN if shot_info.azimuth is None else <double>shot_info.azimuth
+    shot.latitude_deg = quiet_NaN() if shot_info.latitude is None else <double>shot_info.latitude
+    shot.azimuth_deg = quiet_NaN() if shot_info.azimuth is None else <double>shot_info.azimuth
     shot.calc_step = calc_step
 
     # All physics conversion happens inside C++

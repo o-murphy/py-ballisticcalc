@@ -21,16 +21,16 @@ from py_ballisticcalc_exts.traj_data cimport (
 
 cdef extern from "<functional>" namespace "std":
     cdef cppclass function[F]:
-        function() except +
-        function(F *f_ptr) except +
-        function(const function[F]& other) except +
+        function() noexcept
+        function(F *f_ptr) noexcept
+        function(const function[F]& other) noexcept
         function(function[F]&& other)
-        function[F]& operator=(F *f_ptr) except +
-        function[F]& operator=(const function[F]& other) except +
+        function[F]& operator=(F *f_ptr) noexcept
+        function[F]& operator=(const function[F]& other) noexcept
         function[F]& operator=(function[F]&& other)
         # Lets integrate_func be assigned a stateful integrator functor
         # (e.g. BCLIBC_CashKarpIntegrator) directly, by value.
-        function[F]& operator=[U](U u) except +
+        function[F]& operator=[U](U u) noexcept
         bint operator bool() const
         # Pointer to std::function's own internal copy of the callable it
         # holds, if it was constructed/assigned as exactly T (nullptr
@@ -87,7 +87,7 @@ cdef extern from "include/bclibc/engine.hpp" namespace "bclibc" nogil:
         BCLIBC_ShotProps shot
         BCLIBC_IntegrateCallable integrate_func
 
-        BCLIBC_BaseEngine() except+
+        BCLIBC_BaseEngine() noexcept
 
         BCLIBC_Result[monostate] integrate(
             double range_limit_ft,
