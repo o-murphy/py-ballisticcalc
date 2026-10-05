@@ -34,12 +34,10 @@ cdef extern from "include/bclibc/cash_karp.hpp" namespace "bclibc" nogil:
 cdef class CythonizedCashKarpIntegrationEngine(CythonizedBaseIntegrationEngine):
     cdef double _relative_tolerance
     cdef double _absolute_tolerance
-    # Points at this instance's own integrator living *inside*
-    # self._this.integrate_func (set via std::function::target() in
-    # __cinit__, once integrate_func has been assigned a BCLIBC_CashKarpIntegrator
-    # by value) -- so its tolerances/stats are exclusively this engine's, no
-    # longer shared thread-local state.
-    cdef BCLIBC_CashKarpIntegrator* _integrator
+    # This instance's own integrator, held by value (its tolerances/stats are exclusively this engine's).
+    # self._this.integrate_func stores a std::reference_wrapper to it (see __cinit__), so it must stay
+    # in place for the engine's life -- true for a cdef-class attribute.
+    cdef BCLIBC_CashKarpIntegrator _integrator
     # Snapshot of self._integrator.get_stats(), taken right after this
     # engine's own integrate() call returns.
     cdef int _last_accepted
