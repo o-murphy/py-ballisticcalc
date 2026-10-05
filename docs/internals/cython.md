@@ -216,10 +216,10 @@ import time — raises `TypeError: type '...' is not an acceptable base type`.
 
 ### Current exceptions
 
-`CythonizedRK4IntegrationEngine` (`rk4_engine.pyx`) and `CythonizedEulerIntegrationEngine`
-(`euler_engine.pyx`) intentionally omit `@final`: the RK4 engine is subclassed by
-`CythonEngineTestHarness` in `_test_engine.pyx`, and the Euler engine is kept consistent
-as it may also be subclassed in the future.
+`CythonizedRK4IntegrationEngine`, `CythonizedEulerIntegrationEngine` and
+`CythonizedVelocityVerletIntegrationEngine` (all in `engines.pyx`) intentionally omit `@final`:
+the RK4 engine is subclassed by `CythonEngineTestHarness` in `_test_engine.pyx`, and the other two
+are kept consistent as they may also be subclassed in the future.
 All other `cdef class` types in this package keep `@final` and are safe.
 
 ### Free-threaded Python (`Py_GIL_DISABLED`)

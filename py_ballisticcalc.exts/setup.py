@@ -170,6 +170,14 @@ _CASH_KARP_DEPS = {*_ENGINE_DEPS, "cash_karp"}
 _DORMAND_PRINCE_DEPS = {*_ENGINE_DEPS, "dormand_prince"}
 _TSITOURAS_DEPS = {*_ENGINE_DEPS, "tsitouras"}
 _VELOCITY_VERLET_DEPS = {*_ENGINE_DEPS, "velocity_verlet"}
+_ENGINES_DEPS = {
+    *_RK4_DEPS,
+    *_EULER_DEPS,
+    *_CASH_KARP_DEPS,
+    *_DORMAND_PRINCE_DEPS,
+    *_TSITOURAS_DEPS,
+    *_VELOCITY_VERLET_DEPS,
+}
 _TEST_DEPS = {*_ENGINE_DEPS, *_RK4_DEPS, *_EULER_DEPS, *_VELOCITY_VERLET_DEPS}
 
 C_EXTENSION_DEPS = {
@@ -180,12 +188,7 @@ CPP_EXTENSION_DEPS = {
     "bind": _BIND_DEPS,
     "traj_data": _TRAJ_DATA_DEPS,
     "base_engine": _ENGINE_DEPS,
-    "rk4_engine": _RK4_DEPS,
-    "euler_engine": _EULER_DEPS,
-    "cashkarp_engine": _CASH_KARP_DEPS,
-    "dopri_engine": _DORMAND_PRINCE_DEPS,
-    "tsitouras_engine": _TSITOURAS_DEPS,
-    "velocity_verlet_engine": _VELOCITY_VERLET_DEPS,
+    "engines": _ENGINES_DEPS,
     # Test modules (expose internal C++ functions for tests only)
     "_test_helpers": _TEST_DEPS,
     "_test_engine": _TEST_DEPS,

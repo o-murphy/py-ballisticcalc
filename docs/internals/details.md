@@ -49,7 +49,7 @@ Development dependencies and reproducible developer/CI installs are pinned in `u
     - `drag_model.py`, `drag_tables.py` — drag lookup and interpolation.
 - `py_ballisticcalc.exts/` — Cython subproject.
     - `py_ballisticcalc_exts/base_engine.pyx` — Cython wrapper that orchestrates C/C++-layer stepping and defers event logic to Python.
-    - `py_ballisticcalc_exts/` `rk4_engine.pyx`, `euler_engine.pyx` — Cython engine implementations.
+    - `py_ballisticcalc_exts/engines.pyx` — Cython integration engines (Euler, RK4, Velocity Verlet, Cash-Karp, Dormand-Prince, Tsitouras) in one extension module.
     - `py_ballisticcalc_exts/*.pyx/*.pxd` — helper functions and bridging helpers for C/C++ structs.
 
 ## How engines are wired

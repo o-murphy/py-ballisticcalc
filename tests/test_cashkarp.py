@@ -38,12 +38,12 @@ class TestCashKarp:
     @pytest.fixture(autouse=True)
     def _require_cashkarp_engine(self, loaded_engine_instance):
         if (
-            loaded_engine_instance.__module__ != "py_ballisticcalc_exts.cashkarp_engine"
+            loaded_engine_instance.__module__ != "py_ballisticcalc_exts.engines"
             or loaded_engine_instance.__name__ != "CythonizedCashKarpIntegrationEngine"
         ):
             pytest.skip(
                 "Cash-Karp-specific test; run with "
-                "--engine=py_ballisticcalc_exts.cashkarp_engine:CythonizedCashKarpIntegrationEngine"
+                "--engine=py_ballisticcalc_exts.engines:CythonizedCashKarpIntegrationEngine"
             )
         # Only import once --engine has already proven this module loadable
         # (loaded_engine_instance succeeded), never as this file's own
