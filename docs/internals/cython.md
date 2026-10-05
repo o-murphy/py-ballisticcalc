@@ -8,7 +8,7 @@ It explains naming, error handling, Global Interpreter Lock (GIL) usage, and why
 - Keep hot numerical work free of the Python GIL to maximize throughput.
 - Provide Python-friendly, well-tested public APIs while preserving C/C++-level performance.
 - Build universal wheels using the Python stable ABI (`abi3`): one binary per platform/architecture
-  works on Python 3.11 and all later standard CPython releases, without recompiling per interpreter
+  works on Python 3.12 and all later standard CPython releases, without recompiling per interpreter
   version. Free-threaded Python (3.13t+) is built separately as it is incompatible with `Py_LIMITED_API`.
 
 ## GIL and `nogil`
@@ -194,8 +194,8 @@ pattern is confirmed or a corruption (crash, inconsistent data) is suspected.
 
 ## `@final` and the abi3 (stable ABI) constraint
 
-The wheels for this package are built against the Python stable ABI (`Py_LIMITED_API=0x030B0000`,
-producing `cp311-abi3-*` wheels). This interacts with Cython's `@final` decorator on `cdef class`
+The wheels for this package are built against the Python stable ABI (`Py_LIMITED_API=0x030C0000`,
+producing `cp312-abi3-*` wheels). This interacts with Cython's `@final` decorator on `cdef class`
 types in a non-obvious way.
 
 ### How it breaks
@@ -228,4 +228,11 @@ All other `cdef class` types in this package keep `@final` and are safe.
 CPython [issue #111506](https://github.com/python/cpython/issues/111506). The build system
 detects `Py_GIL_DISABLED` at build time (`setup.py`) and automatically disables `Py_LIMITED_API`
 for free-threaded builds. Those wheels are tagged `cp313t-cp313t-*` / `cp314t-cp314t-*` rather
-than `cp311-abi3-*`.
+than `cp312-abi3-*`.
+
+Python 3.15 adds the Stable ABI for free-threaded builds (`abi3t`, PEP 803), which would let one wheel serve both
+regular and free-threaded interpreters. It is **not** used here: it needs the `PyModExport_*` module entry point
+and opaque object layouts, which Cython has not released yet (see
+[cython/cython#7399](https://github.com/cython/cython/issues/7399)), and attribute access to `cdef class`
+members inside `nogil` blocks is a known limitation of it with module state
+([#7905](https://github.com/cython/cython/issues/7905)). So 3.15 is covered by `cp312-abi3` plus a separate `cp315t` wheel.

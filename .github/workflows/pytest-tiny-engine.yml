@@ -41,7 +41,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest]
-        python-version: ["3.11"]
+        python-version: ["3.12"]
         include:
           - engine-alias: tiny_bclibc_ctypes
             engine: tiny_bclibc_ctypes:TinyBclibcDoubleIntegrationEngine

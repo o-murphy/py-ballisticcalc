@@ -24,7 +24,7 @@ from dataclasses import dataclass
 from functools import cache
 from importlib.metadata import EntryPoint, entry_points
 from types import TracebackType
-from typing import Any, Self, TypeAlias, TypeVar, overload
+from typing import Any, Self, TypeVar, overload
 
 from py_ballisticcalc.engines import RK4IntegrationEngine
 from py_ballisticcalc.generics.engine import EngineFactoryProtocol, EngineProtocol
@@ -35,8 +35,8 @@ from py_ballisticcalc.unit import Angular, Distance, PreferredUnits
 
 ConfigT = TypeVar("ConfigT")
 
-EngineFactoryProtocolType: TypeAlias = EngineFactoryProtocol[Any]
-EngineFactoryProtocolEntry: TypeAlias = str | EngineFactoryProtocolType | None
+type EngineFactoryProtocolType = EngineFactoryProtocol[Any]
+type EngineFactoryProtocolEntry = str | EngineFactoryProtocolType | None
 
 _CALL_VALUE_RE = re.compile(r"^(?P<target>[^()\s]+)\((?P<args>[^()]*)\)$")
 

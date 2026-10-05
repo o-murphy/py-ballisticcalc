@@ -36,7 +36,7 @@ Examples:
 
 import math
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Literal, NamedTuple, TypeAlias, get_args
+from typing import TYPE_CHECKING, Literal, NamedTuple, get_args
 
 from py_ballisticcalc.drag_model import DragModel
 from py_ballisticcalc.unit import Angular, Distance, PreferredUnits, Temperature, Velocity
@@ -44,7 +44,7 @@ from py_ballisticcalc.unit import Angular, Distance, PreferredUnits, Temperature
 if TYPE_CHECKING:
     from py_ballisticcalc.trajectory_data import TrajectoryData
 
-SightFocalPlane: TypeAlias = Literal["FFP", "SFP", "LWIR"]
+type SightFocalPlane = Literal["FFP", "SFP", "LWIR"]
 
 
 class SightReticleStep(NamedTuple):
@@ -158,7 +158,7 @@ class Sight:
             )
             ```
         """
-        if focal_plane not in get_args(SightFocalPlane):
+        if focal_plane not in get_args(SightFocalPlane.__value__):
             raise ValueError("Wrong focal plane")
 
         if not scale_factor and focal_plane == "SFP":

@@ -25,7 +25,7 @@ If applicable, add screenshots to help explain your problem.
 
 **Environment: **
  - OS: [e.g. iOS]
- - Python3 version: [e.g. 3.11, 3.12]
+ - Python3 version: [e.g. 3.12, 3.13]
  - Release [e.g. 1.0.12]
 
 **Additional context**

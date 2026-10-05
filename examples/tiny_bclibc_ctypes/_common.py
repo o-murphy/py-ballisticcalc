@@ -31,9 +31,7 @@ import ctypes
 import math
 import os
 from functools import lru_cache
-from typing import Any, NamedTuple
-
-from typing_extensions import override
+from typing import Any, NamedTuple, override
 
 from py_ballisticcalc.engines.base_engine import (
     BaseEngineConfigDict,

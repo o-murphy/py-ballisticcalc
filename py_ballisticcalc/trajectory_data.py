@@ -56,7 +56,7 @@ from bisect import bisect_left
 from collections.abc import Callable
 from dataclasses import dataclass, field
 from functools import cached_property
-from typing import TYPE_CHECKING, Any, Final, Literal, NamedTuple, TypeAlias
+from typing import TYPE_CHECKING, Any, Final, Literal, NamedTuple
 
 from deprecated import deprecated
 
@@ -190,7 +190,7 @@ class TrajFlag(int):
         return "|".join(parts) if parts else "UNKNOWN"
 
 
-BaseTrajDataAttribute: TypeAlias = Literal[
+type BaseTrajDataAttribute = Literal[
     "time", "position.x", "position.y", "position.z", "velocity.x", "velocity.y", "velocity.z", "mach"
 ]
 
@@ -409,7 +409,7 @@ class TrajectoryStep:
         return data._replace(position=data.position._replace(x=target_x))
 
 
-TrajectoryDataAttribute: TypeAlias = Literal[
+type TrajectoryDataAttribute = Literal[
     "time",
     "distance",
     "velocity",
