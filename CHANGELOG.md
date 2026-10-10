@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.1.0] - 2026-10-11
+
+No changes since [3.1.0b1]
+
 ## [3.1.0b1] - 2026-10-06
 
 ### Added
@@ -1109,7 +1113,8 @@ itself the stable release of the same noexcept/`BCLIBC_Result` rework rc.4 alrea
 - Issue #141
 - Trajectories that bend backwards
 
-[Unreleased]: https://github.com/o-murphy/py-ballisticcalc/compare/v3.1.0b1...HEAD
+[Unreleased]: https://github.com/o-murphy/py-ballisticcalc/compare/v3.1.0...HEAD
+[3.1.0]: https://github.com/o-murphy/py-ballisticcalc/releases/tag/v3.1.0
 [3.1.0b1]: https://github.com/o-murphy/py-ballisticcalc/releases/tag/v3.1.0b1
 [3.0.0]: https://github.com/o-murphy/py-ballisticcalc/releases/tag/v3.0.0
 [3.0.0-rc.4]: https://github.com/o-murphy/py-ballisticcalc/releases/tag/v3.0.0-rc.4
