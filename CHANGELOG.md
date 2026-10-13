@@ -7,9 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [3.1.0] - 2026-10-11
+## [3.1.0] - 2026-10-13
 
-No changes since [3.1.0b1]
+Stable release, promoting [3.1.0b1] with no code changes. Python 3.15 is now released, so the 3.15 support added in
+the beta is no longer prerelease-only. Highlights below; full details are in the 3.1.0b1 entry beneath this one.
+
+### Added
+- Python 3.15 support, now against the final 3.15 release: `cp312-abi3` wheels cover it, plus free-threaded `cp315t`,
+  Android (`cp315-android_*`) and Pyodide (`cp315-pyodide_*`) wheels. CI runs the RK4 engines on 3.15 and 3.15t.
+
+### Removed
+- **Breaking:** Python 3.11 is no longer supported; the minimum is now Python 3.12. Supported versions are 3.12–3.15.
+
+### Changed
+- The six Cython integration engines now live in one extension module, `py_ballisticcalc_exts.engines`; the
+  per-engine submodules (`py_ballisticcalc_exts.rk4_engine`, etc.) no longer exist. Import the classes from
+  `py_ballisticcalc_exts` as before.
+- `py_ballisticcalc.exts` is compiled without C++ exceptions and RTTI. An allocation failure (`std::bad_alloc`) in
+  the affected paths now aborts instead of raising `MemoryError`.
 
 ## [3.1.0b1] - 2026-10-06
 
