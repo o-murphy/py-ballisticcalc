@@ -61,7 +61,9 @@ from bisect import bisect_right
 from collections.abc import Callable, Sequence
 from dataclasses import asdict, dataclass
 from functools import wraps
-from typing import TYPE_CHECKING, Any, Literal, override
+from typing import TYPE_CHECKING, Any, Literal
+
+from typing_extensions import override
 
 if TYPE_CHECKING:
     # Unconditional for the type checker: numpy/scipy are optional at runtime

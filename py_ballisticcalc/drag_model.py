@@ -22,6 +22,7 @@ allow for custom drag functions based on Mach number vs drag coefficient data.
 # Standard library imports
 import math
 from dataclasses import dataclass, field
+from typing import TypeAlias
 
 # Local imports
 from py_ballisticcalc.constants import cDegreesCtoK, cSpeedOfSoundMetric, cStandardTemperatureC
@@ -43,7 +44,7 @@ class DragDataPoint:
 
 
 # Type alias for drag table data formats
-type DragTableDataType = list[DragTablePointDictType] | list[DragDataPoint]
+DragTableDataType: TypeAlias = list[DragTablePointDictType] | list[DragDataPoint]
 
 
 class DragModel:
