@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- Restored Python 3.11 support (`requires-python = ">=3.11"`), reverting the removal in 3.1.0. Supported versions are
+  3.11–3.15. The stable-ABI wheels of `py_ballisticcalc.exts` are again built against `Py_LIMITED_API=0x030B0000` and
+  tagged `cp311-abi3-*`, and the `typing_extensions` dependency is back. Python 3.15 support is kept.
+
 ## [3.1.0] - 2026-10-13
 
 Stable release, promoting [3.1.0b1] with no code changes. Python 3.15 is now released, so the 3.15 support added in
