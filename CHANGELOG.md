@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.1.1] - 2026-10-16
+
 ### Fixed
 - Restored Python 3.11 support (`requires-python = ">=3.11"`), reverting the removal in 3.1.0. Supported versions are
   3.11–3.15. The stable-ABI wheels of `py_ballisticcalc.exts` are again built against `Py_LIMITED_API=0x030B0000` and
@@ -1133,7 +1135,8 @@ itself the stable release of the same noexcept/`BCLIBC_Result` rework rc.4 alrea
 - Issue #141
 - Trajectories that bend backwards
 
-[Unreleased]: https://github.com/o-murphy/py-ballisticcalc/compare/v3.1.0...HEAD
+[Unreleased]: https://github.com/o-murphy/py-ballisticcalc/compare/v3.1.1...HEAD
+[3.1.1]: https://github.com/o-murphy/py-ballisticcalc/releases/tag/v3.1.1
 [3.1.0]: https://github.com/o-murphy/py-ballisticcalc/releases/tag/v3.1.0
 [3.1.0b1]: https://github.com/o-murphy/py-ballisticcalc/releases/tag/v3.1.0b1
 [3.0.0]: https://github.com/o-murphy/py-ballisticcalc/releases/tag/v3.0.0
