@@ -113,6 +113,7 @@ IS_IOS = "ios" in _SYSCONFIG_PLATFORM
 #   - targeting iOS: same rationale as Android, app runtimes typically embed
 #     one specific CPython build.
 PY_LIMITED_API_HEX = "0x030B0000"  # CPython 3.11
+PY_LIMITED_API_TAG = "cp311"  # wheel tag matching PY_LIMITED_API_HEX
 _GIL_DISABLED = bool(sysconfig.get_config_var("Py_GIL_DISABLED"))
 USE_LIMITED_API = (
     not ENABLE_CYTHON_COVERAGE and not _GIL_DISABLED and not IS_EMSCRIPTEN and not IS_ANDROID and not IS_IOS
@@ -344,18 +345,9 @@ class _parallel_build_ext(_build_ext):
 
 cmdclass["build_ext"] = _parallel_build_ext
 
-if USE_LIMITED_API:
-    from setuptools.command.bdist_wheel import bdist_wheel
+# py_limited_api=True on the Extension above tells Cython to generate stable-ABI code
+# and setuptools to use the .abi3 suffix; the wheel tag (cp311-abi3-*) is set
+# separately through bdist_wheel's py_limited_api option.
+options = {"bdist_wheel": {"py_limited_api": PY_LIMITED_API_TAG}} if USE_LIMITED_API else {}
 
-    # In setuptools 36+, py_limited_api is a bdist_wheel command option, not an
-    # Extension attribute. Subclass to set it so the wheel is tagged cpXY-abi3-*.
-    # py_limited_api=True on the Extension above tells Cython to generate
-    # PyType_FromSpec-based code; this subclass handles the wheel filename tag.
-    class _bdist_wheel_abi3(bdist_wheel):
-        def finalize_options(self):
-            super().finalize_options()
-            self.py_limited_api = "cp311"
-
-    cmdclass["bdist_wheel"] = _bdist_wheel_abi3
-
-setup(ext_modules=extensions, cmdclass=cmdclass)
+setup(ext_modules=extensions, cmdclass=cmdclass, options=options)
