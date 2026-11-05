@@ -112,9 +112,7 @@ To force a rebuild: `uv sync --extra exts --reinstall-package py-ballisticcalc-e
 
 To check the extensions for memory leaks (requires `valgrind`, Linux only):
 ```bash
-ulimit -n 65536
-valgrind --tool=memcheck --leak-check=full --show-leak-kinds=all --track-origins=yes \
-    -- uv run pytest -m stress ./py_ballisticcalc.exts/tests 2> valgrind.log
+scripts/test-leaks.sh
 ```
 
 
