@@ -110,6 +110,18 @@ minversion = "7.0"
 addopts = "-m 'not stress'"
 markers = ["stress: long-running or resource-intensive tests, opt-in only"]
 
+# uv rebuilds this package only when one of these files changes (replaces the defaults,
+# so build config files are listed explicitly). Paths are relative to this directory.
+[tool.uv]
+cache-keys = [
+    { file = "pyproject.toml" },
+    { file = "setup.py" },
+    { file = "py_ballisticcalc_exts/**/*.{pyx,pxd,pyi,py}" },
+    { file = "py_ballisticcalc_exts/src/**/*.{cpp,hpp,h}" },
+    { file = "py_ballisticcalc_exts/include/**/*.{cpp,hpp,h}" },
+    { file = "py_ballisticcalc_exts/external/**/*.{cpp,hpp,h}" },
+]
+
 [tool.setuptools_scm]
 root = ".."  # required for valid .git repo root detect for subpackage in monorepo
 fallback_version = "0.0.0.dev0"
