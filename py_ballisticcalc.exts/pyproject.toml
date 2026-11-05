@@ -120,6 +120,11 @@ cache-keys = [
     { file = "py_ballisticcalc_exts/src/**/*.{cpp,hpp,h}" },
     { file = "py_ballisticcalc_exts/include/**/*.{cpp,hpp,h}" },
     { file = "py_ballisticcalc_exts/external/**/*.{cpp,hpp,h}" },
+    # build flags read by setup.py
+    { env = "CYTHON_COVERAGE" },
+    { env = "CYTHON_SAFETY" },
+    { env = "CYTHON_FORCE_REGEN" },
+    { env = "DISABLE_SHARED_STRIP" },
 ]
 
 [tool.setuptools_scm]

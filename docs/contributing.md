@@ -106,6 +106,17 @@ If you want to contribute to cythonized extensions you can also install them in 
     uv sync --extra exts
     ```
 
+`uv` rebuilds the extensions automatically when their sources (`.pyx`, `.pxd`, `.cpp`, `.hpp`, ...)
+or the build-flag environment variables (`CYTHON_COVERAGE`, `CYTHON_SAFETY`, ...) change.
+To force a rebuild: `uv sync --extra exts --reinstall-package py-ballisticcalc-exts`.
+
+To check the extensions for memory leaks (requires `valgrind`, Linux only):
+```bash
+ulimit -n 65536
+valgrind --tool=memcheck --leak-check=full --show-leak-kinds=all --track-origins=yes \
+    -- uv run pytest -m stress ./py_ballisticcalc.exts/tests 2> valgrind.log
+```
+
 
 ### Setup pre-commit hooks
 

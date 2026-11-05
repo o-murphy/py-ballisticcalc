@@ -3,7 +3,7 @@
 VENV_DIR = .venv
 
 .PHONY: sync-dev sync-exts build-exts clean-exts clean \
-        test-dev test-exts test-leaks bench-dev bench-exts
+        test-dev test-exts bench-dev bench-exts
 
 # -------------------------------------------------------------
 # ENVIRONMENT TARGETS
@@ -69,13 +69,6 @@ test-exts: build-exts
 	@echo "--- Testing Cythonized engine ---"
 	uv run pytest py_ballisticcalc.exts --engine="cython.rk4"
 	uv run pytest --engine="cython.rk4"
-
-# Memory leak tests with valgrind (stress suite).
-test-leaks: build-exts
-	@echo "--- Valgrind memory leak check ---"
-	ulimit -n 65536 && \
-	valgrind --tool=memcheck --leak-check=full --show-leak-kinds=all --track-origins=yes \
-		-- uv run pytest -m stress ./py_ballisticcalc.exts 2> valgrind.log
 
 # -------------------------------------------------------------
 # BENCHMARKING TARGETS
