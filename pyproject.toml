@@ -151,6 +151,14 @@ disable = [
     "too-few-public-methods",
 ]
 
+[tool.uv]
+# `uv` re-installs this package on every commit so its setuptools-scm version always matches the exts package
+cache-keys = [
+    { file = "pyproject.toml" },
+    { file = "setup.py" },
+    { git = { commit = true } },
+]
+
 [tool.uv.sources]
 "py_ballisticcalc.exts" = { path = "./py_ballisticcalc.exts" }  # required for `uv sync`
 

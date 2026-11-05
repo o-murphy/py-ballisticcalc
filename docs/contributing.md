@@ -109,7 +109,7 @@ If you want to contribute to cythonized extensions you can also install them in 
 `uv` rebuilds the extensions automatically when their sources (`.pyx`, `.pxd`, `.cpp`, `.hpp`, ...)
 or the build-flag environment variables (`CYTHON_COVERAGE`, `CYTHON_SAFETY`, ...) change.
 To force a rebuild: `uv sync --extra exts --reinstall-package py-ballisticcalc-exts`.
-To remove build artifacts first: `scripts/clean.sh` (add `--all` to also remove `.venv` and `__pycache__`).
+To remove build artifacts first: `python scripts/clean.py` (add `--all` to also remove `.venv` and `__pycache__`).
 
 To check the extensions for memory leaks (requires `valgrind`, Linux only):
 ```bash

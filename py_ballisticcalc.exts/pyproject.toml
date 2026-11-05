@@ -125,6 +125,8 @@ cache-keys = [
     { env = "CYTHON_SAFETY" },
     { env = "CYTHON_FORCE_REGEN" },
     { env = "DISABLE_SHARED_STRIP" },
+    # version (setuptools-scm) must match the core package, which is re-resolved on every commit
+    { git = { commit = true } },
 ]
 
 [tool.setuptools_scm]

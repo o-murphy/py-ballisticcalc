@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- `uv sync --extra exts` now rebuilds `py_ballisticcalc.exts` only when it is needed: `[tool.uv] cache-keys` in
+  `py_ballisticcalc.exts/pyproject.toml` track the extension sources (`.pyx`, `.pxd`, `.pyi`, `.cpp`, `.hpp`, `.h`,
+  including the `bclibc` submodule), the build config, the build-flag environment variables (`CYTHON_COVERAGE`,
+  `CYTHON_SAFETY`, `CYTHON_FORCE_REGEN`, `DISABLE_SHARED_STRIP`) and the git commit. The root `pyproject.toml` tracks
+  the git commit too, so both packages keep the same `setuptools-scm` version (the exts package refuses to import on a
+  version mismatch). `--reinstall-package` is no longer needed, and was removed from the `uv-sync` pre-commit hook.
+
+### Removed
+- `Makefile`. Its targets are plain `uv sync` / `uv run` commands, now documented in `docs/contributing.md`; the
+  remaining helpers became scripts: `scripts/clean.py` (remove extension build artifacts, `--all` also removes `.venv`
+  and `__pycache__`) and `scripts/test-leaks.sh` (stress tests under Valgrind).
+
 ## [3.1.1] - 2026-10-16
 
 ### Fixed
