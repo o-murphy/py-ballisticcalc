@@ -204,6 +204,18 @@ Notes:
 - The extension test suite enables `faulthandler` for better tracebacks on crashes.
 - Stress tests are marked with `@pytest.mark.stress` and are excluded by default.
 
+#### Benchmarks
+
+```bash
+# Pure Python engine
+uv run python scripts/benchmark.py --engine="python.rk4" -w 100 -r 1000
+
+# Cythonized engine (requires `uv sync --extra exts`)
+uv run python scripts/benchmark.py --engine="cython.rk4" -w 100 -r 1000
+```
+
+`-w` is the number of warm-up runs and `-r` the number of measured runs.
+
 ### Build Documentation
 
 If you have made any changes affecting the documentation (including changes to function signatures, class definitions, or docstrings that will appear in the API documentation), make sure the documentation builds successfully.
