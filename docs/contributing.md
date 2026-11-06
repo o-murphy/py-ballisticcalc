@@ -106,6 +106,20 @@ If you want to contribute to cythonized extensions you can also install them in 
     uv sync --extra exts
     ```
 
+`uv` rebuilds the extensions automatically when their sources (`.pyx`, `.pxd`, `.cpp`, `.hpp`, ...)
+or the build-flag environment variables (`CYTHON_COVERAGE`, `CYTHON_SAFETY`, ...) change.
+The core and the extensions packages take their version from git (`setuptools-scm`) and refuse to import if the versions differ,
+so both are re-installed after every commit. Always pass `--extra exts` to `uv sync` / `uv run` when working with the extensions
+(e.g. `uv run --extra exts pytest --engine="cython+rk4"`); a plain `uv run` re-installs only the core package, which leaves
+the extensions on an older version and fails with `AssertionError: Incompatible versions`. If that happens, run `uv sync --extra exts`.
+To force a rebuild: `uv sync --extra exts --reinstall-package py-ballisticcalc-exts`.
+To remove build artifacts first: `python scripts/clean.py` (add `--all` to also remove `.venv` and `__pycache__`).
+
+To check the extensions for memory leaks (requires `valgrind`, Linux only):
+```bash
+scripts/test-leaks.sh
+```
+
 
 ### Setup pre-commit hooks
 
@@ -193,6 +207,18 @@ Notes:
 - Safety build toggles bounds checking, wraparound, initialization checks, None checks, disables cdivision, and adds overflow checks; it trades speed for correctness to surface bugs.
 - The extension test suite enables `faulthandler` for better tracebacks on crashes.
 - Stress tests are marked with `@pytest.mark.stress` and are excluded by default.
+
+#### Benchmarks
+
+```bash
+# Pure Python engine
+uv run python scripts/benchmark.py --engine="python.rk4" -w 100 -r 1000
+
+# Cythonized engine (requires `uv sync --extra exts`)
+uv run --extra exts python scripts/benchmark.py --engine="cython.rk4" -w 100 -r 1000
+```
+
+`-w` is the number of warm-up runs and `-r` the number of measured runs.
 
 ### Build Documentation
 

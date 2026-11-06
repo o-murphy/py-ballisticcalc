@@ -3,7 +3,7 @@
 
 [build-system]
 requires = [
-    "setuptools",
+    "setuptools>=84.0",
     "setuptools-scm",
     "setuptools_dynamic_dependencies",
 ]
@@ -149,6 +149,14 @@ disable = [
     "too-many-arguments",
     "too-many-branches",
     "too-few-public-methods",
+]
+
+[tool.uv]
+# `uv` re-installs this package on every commit so its setuptools-scm version always matches the exts package
+cache-keys = [
+    { file = "pyproject.toml" },
+    { file = "setup.py" },
+    { git = { commit = true } },
 ]
 
 [tool.uv.sources]

@@ -3,7 +3,7 @@
 
 [build-system]
 requires = [
-    "setuptools",
+    "setuptools>=84.0",
     "setuptools-scm",
     "cython>=3.2.9"
 ]
@@ -109,6 +109,25 @@ build = "cp313-pyodide_* cp314-pyodide_* cp315-pyodide_*"
 minversion = "7.0"
 addopts = "-m 'not stress'"
 markers = ["stress: long-running or resource-intensive tests, opt-in only"]
+
+# uv rebuilds this package only when one of these files changes (replaces the defaults,
+# so build config files are listed explicitly). Paths are relative to this directory.
+[tool.uv]
+cache-keys = [
+    { file = "pyproject.toml" },
+    { file = "setup.py" },
+    { file = "py_ballisticcalc_exts/**/*.{pyx,pxd,pyi,py}" },
+    { file = "py_ballisticcalc_exts/src/**/*.{cpp,hpp,h}" },
+    { file = "py_ballisticcalc_exts/include/**/*.{cpp,hpp,h}" },
+    { file = "py_ballisticcalc_exts/external/**/*.{cpp,hpp,h}" },
+    # build flags read by setup.py
+    { env = "CYTHON_COVERAGE" },
+    { env = "CYTHON_SAFETY" },
+    { env = "CYTHON_FORCE_REGEN" },
+    { env = "DISABLE_SHARED_STRIP" },
+    # version (setuptools-scm) must match the core package, which is re-resolved on every commit
+    { git = { commit = true } },
+]
 
 [tool.setuptools_scm]
 root = ".."  # required for valid .git repo root detect for subpackage in monorepo
