@@ -25,7 +25,6 @@ import gc
 import json
 import statistics
 import subprocess
-import sys
 from dataclasses import dataclass, asdict
 from pathlib import Path
 from collections.abc import Sequence
@@ -278,7 +277,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             except Exception as exc:  # pragma: no cover
                 print(f"[WARN] Failed benchmark {case.name} on {engine}: {exc}")
     if not results:
-        parser.error("No results produced", file=sys.stderr)
+        parser.error("No results produced")
 
     _persist(results)
     if ns.format == "markdown":
