@@ -1,0 +1,331 @@
+from libc.stdint cimport int32_t
+
+cdef extern from "bclibc/ffi/bclibc_ffi.h" nogil:
+
+    ctypedef BCLIBCFFI_BaseTrajData BCLIBCFFI_DenseStep
+
+
+
+
+
+
+
+
+
+
+    cdef enum BCLIBCFFI_Status:
+        BCLIBCFFI_OK
+        BCLIBCFFI_ERR_SOLVER_RUNTIME
+        BCLIBCFFI_ERR_OUT_OF_RANGE
+        BCLIBCFFI_ERR_ZERO_FINDING
+        BCLIBCFFI_ERR_INTERCEPTION
+        BCLIBCFFI_ERR_GENERIC
+
+    cdef enum BCLIBCFFI_TrajFlag:
+        BCLIBCFFI_TRAJ_FLAG_NONE
+        BCLIBCFFI_TRAJ_FLAG_ZERO_UP
+        BCLIBCFFI_TRAJ_FLAG_ZERO_DOWN
+        BCLIBCFFI_TRAJ_FLAG_ZERO
+        BCLIBCFFI_TRAJ_FLAG_MACH
+        BCLIBCFFI_TRAJ_FLAG_RANGE
+        BCLIBCFFI_TRAJ_FLAG_APEX
+        BCLIBCFFI_TRAJ_FLAG_ALL
+        BCLIBCFFI_TRAJ_FLAG_MRT
+
+    cdef enum BCLIBCFFI_TerminationReason:
+        BCLIBCFFI_TERM_NO_TERMINATE
+        BCLIBCFFI_TERM_TARGET_RANGE_REACHED
+        BCLIBCFFI_TERM_MINIMUM_VELOCITY_REACHED
+        BCLIBCFFI_TERM_MAXIMUM_DROP_REACHED
+        BCLIBCFFI_TERM_MINIMUM_ALTITUDE_REACHED
+        BCLIBCFFI_TERM_HANDLER_REQUESTED_STOP
+
+    cdef enum BCLIBCFFI_BaseTrajInterpKey:
+        BCLIBCFFI_INTERP_KEY_TIME
+        BCLIBCFFI_INTERP_KEY_MACH
+        BCLIBCFFI_INTERP_KEY_POS_X
+        BCLIBCFFI_INTERP_KEY_POS_Y
+        BCLIBCFFI_INTERP_KEY_POS_Z
+        BCLIBCFFI_INTERP_KEY_VEL_X
+        BCLIBCFFI_INTERP_KEY_VEL_Y
+        BCLIBCFFI_INTERP_KEY_VEL_Z
+
+    cdef enum BCLIBCFFI_IntegrationMethod:
+        BCLIBCFFI_INTEGRATION_RK4
+        BCLIBCFFI_INTEGRATION_EULER
+        BCLIBCFFI_INTEGRATION_VELOCITY_VERLET
+        BCLIBCFFI_INTEGRATION_CASH_KARP
+        BCLIBCFFI_INTEGRATION_DORMAND_PRINCE
+        BCLIBCFFI_INTEGRATION_TSITOURAS
+
+    cdef enum BCLIBCFFI_TrajectoryInterpKey:
+        BCLIBCFFI_TRAJ_KEY_TIME
+        BCLIBCFFI_TRAJ_KEY_DISTANCE
+        BCLIBCFFI_TRAJ_KEY_VELOCITY
+        BCLIBCFFI_TRAJ_KEY_MACH
+        BCLIBCFFI_TRAJ_KEY_HEIGHT
+        BCLIBCFFI_TRAJ_KEY_SLANT_HEIGHT
+        BCLIBCFFI_TRAJ_KEY_DROP_ANGLE
+        BCLIBCFFI_TRAJ_KEY_WINDAGE
+        BCLIBCFFI_TRAJ_KEY_WINDAGE_ANGLE
+        BCLIBCFFI_TRAJ_KEY_SLANT_DISTANCE
+        BCLIBCFFI_TRAJ_KEY_ANGLE
+        BCLIBCFFI_TRAJ_KEY_DENSITY_RATIO
+        BCLIBCFFI_TRAJ_KEY_DRAG
+        BCLIBCFFI_TRAJ_KEY_ENERGY
+        BCLIBCFFI_TRAJ_KEY_OGW
+        BCLIBCFFI_TRAJ_KEY_FLAG
+
+    cdef enum BCLIBCFFI_InterpMethod:
+        BCLIBCFFI_INTERP_PCHIP
+        BCLIBCFFI_INTERP_LINEAR
+
+    cdef enum BCLIBCFFI_ZeroInitStatus:
+        BCLIBCFFI_ZERO_INIT_CONTINUE
+        BCLIBCFFI_ZERO_INIT_DONE
+
+
+    ctypedef struct BCLIBCFFI_Error:
+        int32_t code
+        char message[512]
+        double f64_0
+        double f64_1
+        double f64_2
+        int32_t i32_0
+
+    ctypedef struct BCLIBCFFI_Config:
+        double cStepMultiplier
+        double cZeroFindingAccuracy
+        double cMinimumVelocity
+        double cMaximumDrop
+        int32_t cMaxIterations
+        double cGravityConstant
+        double cMinimumAltitude
+
+    ctypedef struct BCLIBCFFI_Atmosphere:
+        double t0
+        double a0
+        double p0
+        double mach
+        double density_ratio
+        double cLowestTempC
+
+    ctypedef struct BCLIBCFFI_Coriolis:
+        double sin_lat
+        double cos_lat
+        double sin_az
+        double cos_az
+        double range_east
+        double range_north
+        double cross_east
+        double cross_north
+        int32_t flat_fire_only
+        double muzzle_velocity_fps
+
+    ctypedef struct BCLIBCFFI_Wind:
+        double velocity_fps
+        double direction_from_rad
+        double until_distance_ft
+        double max_distance_ft
+
+    ctypedef struct BCLIBCFFI_DragPoint:
+        double Mach
+        double CD
+
+    ctypedef struct BCLIBCFFI_TrajectoryRequest:
+        double range_limit_ft
+        double range_step_ft
+        double time_step
+        int32_t filter_flags
+
+    ctypedef struct BCLIBCFFI_BaseTrajData:
+        double time
+        double px
+        double py
+        double pz
+        double vx
+        double vy
+        double vz
+        double mach
+
+    ctypedef struct BCLIBCFFI_TrajectoryData:
+        double time
+        double distance_ft
+        double velocity_fps
+        double mach
+        double height_ft
+        double slant_height_ft
+        double drop_angle_rad
+        double windage_ft
+        double windage_angle_rad
+        double slant_distance_ft
+        double angle_rad
+        double density_ratio
+        double drag
+        double energy_ft_lb
+        double ogw_lb
+        int32_t flag
+
+    ctypedef struct BCLIBCFFI_MaxRangeResult:
+        double max_range_ft
+        double angle_at_max_rad
+
+    ctypedef struct BCLIBCFFI_StepStats:
+        int32_t accepted
+        int32_t rejected
+
+    ctypedef struct BCLIBCFFI_ZeroInit:
+        int32_t status
+        int32_t reserved
+        double look_angle_rad
+        double slant_range_ft
+        double target_x_ft
+        double target_y_ft
+        double start_height_ft
+
+    ctypedef struct BCLIBCFFI_Shot:
+        double bc
+        double weight_grain
+        double diameter_inch
+        double length_inch
+        double muzzle_velocity_fps
+        double sight_height_ft
+        double twist_inch
+        double temp_c
+        double pressure_hpa
+        double altitude_ft
+        double humidity
+        const double* mach_data
+        const double* cd_data
+        int32_t drag_table_size
+        const BCLIBCFFI_Wind* winds
+        int32_t wind_count
+        double look_angle_rad
+        double barrel_elevation_rad
+        double barrel_azimuth_rad
+        double cant_angle_rad
+        double latitude_deg
+        double azimuth_deg
+        BCLIBCFFI_Config config
+        BCLIBCFFI_IntegrationMethod method
+
+    ctypedef struct BCLIBCFFI_ShotProps:
+        double bc
+        double look_angle_rad
+        double twist_inch
+        double length_inch
+        double diameter_inch
+        double weight_grain
+        double barrel_elevation_rad
+        double barrel_azimuth_rad
+        double sight_height_ft
+        double cant_angle_rad
+        double alt0_ft
+        double muzzle_velocity_fps
+        BCLIBCFFI_Atmosphere atmo
+        BCLIBCFFI_Coriolis coriolis
+        BCLIBCFFI_Config config
+        BCLIBCFFI_IntegrationMethod method
+        const BCLIBCFFI_DragPoint* drag_table
+        int32_t drag_table_count
+        const BCLIBCFFI_Wind* winds
+        int32_t wind_count
+
+    ctypedef struct BCLIBCFFI_ZeroPointResult:
+        double angle_rad
+        BCLIBCFFI_TrajectoryData point
+
+    ctypedef struct BCLIBCFFI_Interception:
+        BCLIBCFFI_BaseTrajData raw_data
+        BCLIBCFFI_TrajectoryData full_data
+
+
+    const char* BCLIBCFFI_get_version()
+
+    int32_t BCLIBCFFI_find_apex(const BCLIBCFFI_ShotProps* props, BCLIBCFFI_TrajectoryData* out, BCLIBCFFI_Error* err)
+
+    int32_t BCLIBCFFI_find_max_range(const BCLIBCFFI_ShotProps* props, double low_angle_deg, double high_angle_deg, BCLIBCFFI_MaxRangeResult* out, BCLIBCFFI_Error* err)
+
+    int32_t BCLIBCFFI_find_zero_angle(const BCLIBCFFI_ShotProps* props, double distance_ft, double* out_angle_rad, BCLIBCFFI_Error* err)
+
+    int32_t BCLIBCFFI_find_zero_point(const BCLIBCFFI_ShotProps* props, double distance_ft, BCLIBCFFI_ZeroPointResult* out, BCLIBCFFI_Error* err)
+
+    int32_t BCLIBCFFI_integrate(const BCLIBCFFI_ShotProps* props, const BCLIBCFFI_TrajectoryRequest* request, BCLIBCFFI_TrajectoryData** out_records, int32_t* out_count, int32_t* out_reason, BCLIBCFFI_Error* err)
+
+    void BCLIBCFFI_free_trajectory(BCLIBCFFI_TrajectoryData* records)
+
+    int32_t BCLIBCFFI_integrate_at(const BCLIBCFFI_ShotProps* props, int32_t key, double target_value, BCLIBCFFI_Interception* out, BCLIBCFFI_Error* err)
+
+    int32_t BCLIBCFFI_find_apex_shot(const BCLIBCFFI_Shot* shot, BCLIBCFFI_TrajectoryData* out, BCLIBCFFI_Error* err)
+
+    int32_t BCLIBCFFI_find_max_range_shot(const BCLIBCFFI_Shot* shot, double low_angle_deg, double high_angle_deg, BCLIBCFFI_MaxRangeResult* out, BCLIBCFFI_Error* err)
+
+    int32_t BCLIBCFFI_find_zero_angle_shot(const BCLIBCFFI_Shot* shot, double distance_ft, double* out_angle_rad, BCLIBCFFI_Error* err)
+
+    int32_t BCLIBCFFI_find_zero_point_shot(const BCLIBCFFI_Shot* shot, double distance_ft, BCLIBCFFI_ZeroPointResult* out, BCLIBCFFI_Error* err)
+
+    int32_t BCLIBCFFI_integrate_shot(const BCLIBCFFI_Shot* shot, const BCLIBCFFI_TrajectoryRequest* request, BCLIBCFFI_TrajectoryData** out_records, int32_t* out_count, int32_t* out_reason, BCLIBCFFI_Error* err)
+
+    int32_t BCLIBCFFI_integrate_at_shot(const BCLIBCFFI_Shot* shot, int32_t key, double target_value, BCLIBCFFI_Interception* out, BCLIBCFFI_Error* err)
+
+    double BCLIBCFFI_get_correction(double distance_ft, double offset_ft)
+
+    double BCLIBCFFI_calculate_energy(double bullet_weight_grain, double velocity_fps)
+
+    double BCLIBCFFI_calculate_ogw(double bullet_weight_grain, double velocity_fps)
+
+    double BCLIBCFFI_hermite(double x, double xk, double xk1, double yk, double yk1, double mk, double mk1)
+
+    double BCLIBCFFI_interpolate_3pt(double x, double x0, double x1, double x2, double y0, double y1, double y2)
+
+    int32_t BCLIBCFFI_interpolate_2pt(double x, double x0, double y0, double x1, double y1, double* out, BCLIBCFFI_Error* err)
+
+    int32_t BCLIBCFFI_interpolate_trajectory_data(int32_t key, double value, const BCLIBCFFI_TrajectoryData* t0, const BCLIBCFFI_TrajectoryData* t1, const BCLIBCFFI_TrajectoryData* t2, int32_t flag, int32_t method, BCLIBCFFI_TrajectoryData* out, BCLIBCFFI_Error* err)
+
+    int32_t BCLIBCFFI_integrate_adaptive_shot(const BCLIBCFFI_Shot* shot, int32_t method, double relative_tolerance, double absolute_tolerance, const BCLIBCFFI_TrajectoryRequest* request, int32_t want_dense, BCLIBCFFI_TrajectoryData** out_records, int32_t* out_count, BCLIBCFFI_DenseStep** out_dense, int32_t* out_dense_count, int32_t* out_reason, BCLIBCFFI_StepStats* out_stats, BCLIBCFFI_Error* err)
+
+    void BCLIBCFFI_free_base_trajectory(BCLIBCFFI_DenseStep* steps)
+
+    int32_t BCLIBCFFI_find_zero_angle_adaptive_shot(const BCLIBCFFI_Shot* shot, int32_t method, double relative_tolerance, double absolute_tolerance, double distance_ft, double* out_angle_rad, BCLIBCFFI_StepStats* out_stats, BCLIBCFFI_Error* err)
+
+    int32_t BCLIBCFFI_find_zero_point_adaptive_shot(const BCLIBCFFI_Shot* shot, int32_t method, double relative_tolerance, double absolute_tolerance, double distance_ft, BCLIBCFFI_ZeroPointResult* out, BCLIBCFFI_StepStats* out_stats, BCLIBCFFI_Error* err)
+
+    int32_t BCLIBCFFI_find_max_range_adaptive_shot(const BCLIBCFFI_Shot* shot, int32_t method, double relative_tolerance, double absolute_tolerance, double low_angle_deg, double high_angle_deg, BCLIBCFFI_MaxRangeResult* out, BCLIBCFFI_StepStats* out_stats, BCLIBCFFI_Error* err)
+
+    int32_t BCLIBCFFI_find_apex_adaptive_shot(const BCLIBCFFI_Shot* shot, int32_t method, double relative_tolerance, double absolute_tolerance, BCLIBCFFI_TrajectoryData* out, BCLIBCFFI_StepStats* out_stats, BCLIBCFFI_Error* err)
+
+    int32_t BCLIBCFFI_integrate_dense_shot(const BCLIBCFFI_Shot* shot, const BCLIBCFFI_TrajectoryRequest* request, int32_t want_dense, BCLIBCFFI_TrajectoryData** out_records, int32_t* out_count, BCLIBCFFI_DenseStep** out_dense, int32_t* out_dense_count, int32_t* out_reason, BCLIBCFFI_Error* err)
+
+    int32_t BCLIBCFFI_find_zero_angle_lofted_shot(const BCLIBCFFI_Shot* shot, double distance_ft, int32_t lofted, double* out_angle_rad, BCLIBCFFI_Error* err)
+
+    int32_t BCLIBCFFI_find_zero_point_lofted_shot(const BCLIBCFFI_Shot* shot, double distance_ft, int32_t lofted, BCLIBCFFI_ZeroPointResult* out, BCLIBCFFI_Error* err)
+
+    int32_t BCLIBCFFI_find_zero_angle_lofted_adaptive_shot(const BCLIBCFFI_Shot* shot, int32_t method, double relative_tolerance, double absolute_tolerance, double distance_ft, int32_t lofted, double* out_angle_rad, BCLIBCFFI_StepStats* out_stats, BCLIBCFFI_Error* err)
+
+    int32_t BCLIBCFFI_find_zero_point_lofted_adaptive_shot(const BCLIBCFFI_Shot* shot, int32_t method, double relative_tolerance, double absolute_tolerance, double distance_ft, int32_t lofted, BCLIBCFFI_ZeroPointResult* out, BCLIBCFFI_StepStats* out_stats, BCLIBCFFI_Error* err)
+
+    int32_t BCLIBCFFI_integrate_at_adaptive_shot(const BCLIBCFFI_Shot* shot, int32_t method, double relative_tolerance, double absolute_tolerance, int32_t key, double target_value, BCLIBCFFI_Interception* out, BCLIBCFFI_StepStats* out_stats, BCLIBCFFI_Error* err)
+
+    int32_t BCLIBCFFI_error_at_distance_shot(const BCLIBCFFI_Shot* shot, double angle_rad, double target_x_ft, double target_y_ft, double* out_error_ft, BCLIBCFFI_BaseTrajData* out_hit, BCLIBCFFI_Error* err)
+
+    int32_t BCLIBCFFI_error_at_distance_adaptive_shot(const BCLIBCFFI_Shot* shot, int32_t method, double relative_tolerance, double absolute_tolerance, double angle_rad, double target_x_ft, double target_y_ft, double* out_error_ft, BCLIBCFFI_BaseTrajData* out_hit, BCLIBCFFI_StepStats* out_stats, BCLIBCFFI_Error* err)
+
+    int32_t BCLIBCFFI_range_for_angle_shot(const BCLIBCFFI_Shot* shot, double angle_rad, double* out_slant_range_ft, BCLIBCFFI_Error* err)
+
+    int32_t BCLIBCFFI_range_for_angle_adaptive_shot(const BCLIBCFFI_Shot* shot, int32_t method, double relative_tolerance, double absolute_tolerance, double angle_rad, double* out_slant_range_ft, BCLIBCFFI_StepStats* out_stats, BCLIBCFFI_Error* err)
+
+    int32_t BCLIBCFFI_find_zero_angle_newton_shot(const BCLIBCFFI_Shot* shot, double distance_ft, double* out_angle_rad, BCLIBCFFI_Error* err)
+
+    int32_t BCLIBCFFI_find_zero_angle_newton_adaptive_shot(const BCLIBCFFI_Shot* shot, int32_t method, double relative_tolerance, double absolute_tolerance, double distance_ft, double* out_angle_rad, BCLIBCFFI_StepStats* out_stats, BCLIBCFFI_Error* err)
+
+    int32_t BCLIBCFFI_zero_init_shot(const BCLIBCFFI_Shot* shot, double distance_ft, BCLIBCFFI_ZeroInit* out, BCLIBCFFI_Error* err)
+
+    int32_t BCLIBCFFI_zero_init_adaptive_shot(const BCLIBCFFI_Shot* shot, int32_t method, double relative_tolerance, double absolute_tolerance, double distance_ft, BCLIBCFFI_ZeroInit* out, BCLIBCFFI_StepStats* out_stats, BCLIBCFFI_Error* err)
+
+    int32_t BCLIBCFFI_dense_get_at(const BCLIBCFFI_DenseStep* steps, int32_t count, int32_t key, double value, double start_from_time, BCLIBCFFI_DenseStep* out, BCLIBCFFI_Error* err)
+
+    int32_t BCLIBCFFI_dense_get_at_slant_height(const BCLIBCFFI_DenseStep* steps, int32_t count, double look_angle_rad, double value, BCLIBCFFI_DenseStep* out, BCLIBCFFI_Error* err)
+
+    int32_t BCLIBCFFI_trajectory_data_from_step_shot(const BCLIBCFFI_Shot* shot, const BCLIBCFFI_DenseStep* step, int32_t flag, BCLIBCFFI_TrajectoryData* out, BCLIBCFFI_Error* err)
+
+    int32_t BCLIBCFFI_get_layout(int32_t* out, int32_t out_len)
