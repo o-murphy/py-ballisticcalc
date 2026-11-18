@@ -126,9 +126,9 @@ jobs:
           # GraalPy has a job of its own on each platform it runs on: a crash or a hang there (pytest-xdist workers of GraalPy
           # died all at once on macOS Intel) must not take the CPython and PyPy wheels of the platform with it. The time limit
           # makes a hang a failure after an hour, not after the default six.
-          # Only GraalPy 3.13 (gp313_253): the ssl module of GraalPy 3.12 (gp312_250, 25.0.3) cannot make a context on macOS (pip
-          # fails with "Can't create an SSLContext object without an ssl module"), so no wheel is built or tested with it anywhere.
-          # GraalPy 3.13 has no macOS Intel build (gp312_250 is the only GraalPy identifier there): no GraalPy job for macOS Intel.
+          # GraalPy 3.12 (gp312_250, 25.0.3) is built on Linux only: on macOS its ssl module cannot make a context (pip fails with
+          # "Can't create an SSLContext object without an ssl module"), on Windows its tests hang (`skip` of the package). GraalPy 3.13
+          # (gp313_253) is built everywhere it exists, and has no macOS Intel build: no GraalPy job for macOS Intel.
           # On Windows GraalPy runs the tests without pytest-xdist (cibw_run_engines.py).
           - name: GraalPy Linux x64
             artifact_key: graalpy-linux-x64
@@ -136,7 +136,7 @@ jobs:
             cibw_archs: "x86_64"
             cibw_platform: linux
             needs_qemu: false
-            build: "gp313_253-*"
+            build: "gp3*"
             timeout_minutes: 60
 
           - name: GraalPy Linux ARM64
@@ -145,7 +145,7 @@ jobs:
             cibw_archs: "aarch64"
             cibw_platform: linux
             needs_qemu: false
-            build: "gp313_253-*"
+            build: "gp3*"
             timeout_minutes: 60
 
           - name: GraalPy Windows x64
