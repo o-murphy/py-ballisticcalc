@@ -58,6 +58,9 @@ LIB_PATTERNS = ("libbclibc_ffi*.so*", "libbclibc_ffi*.dylib", "bclibc_ffi*.dll")
 def _target_kind() -> str:
     """The target (not the host): a cross-build sets _PYTHON_HOST_PLATFORM (cibuildwheel for macOS universal2)."""
     host = os.environ.get("_PYTHON_HOST_PLATFORM", "")
+    # pyodide-build runs setup.py with the host interpreter and patches sysconfig to describe the target
+    if "emscripten" in host or "emscripten" in sysconfig.get_platform():
+        return "emscripten"
     if sys.platform == "darwin" or "macosx" in host or sysconfig.get_platform().startswith("macosx"):
         return "macos"
     if sys.platform == "win32":
@@ -108,7 +111,7 @@ def _compile_and_link(out_dir: Path) -> Path:
         ffi_macros = [("BCLIBC_FFI_EXPORT", None), ("_WINDLL", None), ("NOMINMAX", None)]
     else:
         # the C++ driver compiles and links; CFLAGS/CXXFLAGS/LDFLAGS from the build environment are kept
-        cxx = os.environ.get("CXX") or ("clang++" if kind == "macos" else "c++")
+        cxx = os.environ.get("CXX") or {"macos": "clang++", "emscripten": "em++"}.get(kind, "c++")
         env_compile = shlex.split(os.environ.get("CFLAGS", "")) + shlex.split(os.environ.get("CXXFLAGS", ""))
         env_link = shlex.split(os.environ.get("LDFLAGS", ""))
         if kind == "macos":  # cibuildwheel selects the architecture(s), universal2 included, with ARCHFLAGS
@@ -126,7 +129,14 @@ def _compile_and_link(out_dir: Path) -> Path:
             list(cc.linker_exe),
         )
         ffi_macros = []
-        if kind == "macos":
+        if kind == "emscripten":
+            # a WebAssembly side module (Pyodide loads it with dlopen through ctypes). pyodide-build puts its own flags
+            # (-O, -fPIC, -fwasm-exceptions, -sSUPPORT_LONGJMP=wasm) in CFLAGS/CXXFLAGS/LDFLAGS, which are kept above; there is
+            # no version script or strip for wasm-ld, and the C++ runtime goes into the module
+            lib_name = "libbclibc_ffi.so"
+            compile_args = ["-std=c++17", "-fno-exceptions", "-fno-rtti", "-ffp-contract=off", "-fPIC"]
+            link_args = ["-sSIDE_MODULE=1"]
+        elif kind == "macos":
             lib_name = "libbclibc_ffi.dylib"
             compile_args = [
                 "-O3", "-std=c++17", "-fno-exceptions", "-fno-rtti", "-stdlib=libc++", "-ffp-contract=off",

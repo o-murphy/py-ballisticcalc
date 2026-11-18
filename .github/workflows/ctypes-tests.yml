@@ -2,7 +2,7 @@ name: Tests (ctypes)
 run-name: "ctypes: ${{ github.event_name == 'workflow_dispatch' && 'by hand' || github.ref_name }}"
 
 # Builds the ctypes package (py_ballisticcalc.ctypes) with cibuildwheel and tests each wheel: the engines through ctypes for
-# what the Cython wheels do not serve (PyPy, GraalPy, ppc64le, s390x, riscv64) and, as a second variant, for Android. One
+# what the Cython wheels do not serve (PyPy, GraalPy, ppc64le, s390x, riscv64) and, as a second variant, for Android and Pyodide. One
 # py3-none wheel per platform, built by one interpreter; the PyPy and GraalPy entries build (and so test) it under those
 # interpreters. Each QEMU architecture is a job of its own (glibc and musl in it), so the three run in parallel. It does not run, or wait for, the Cython jobs (cibuildwheel-tests.yml).
 #
@@ -115,6 +115,13 @@ jobs:
             cibw_platform: android
             needs_qemu: false
             build: "cp3*-android_*"
+
+          - name: Pyodide WebAssembly
+            artifact_key: pyodide-wasm32
+            os: ubuntu-latest
+            cibw_archs: "wasm32"
+            cibw_platform: pyodide
+            needs_qemu: false
 
     uses: ./.github/workflows/cibuildwheel-reusable.yml
     with:

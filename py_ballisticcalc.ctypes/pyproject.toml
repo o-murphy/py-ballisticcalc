@@ -156,7 +156,7 @@ test-command = "python cibw_run_engines.py cython"
 
 # No scipy wheels for these (see py_ballisticcalc.exts): the group without numpy and scipy, the scipy engines are left out
 [[tool.cibuildwheel.overrides]]
-select = ["*_i686", "*_armv7l", "*_ppc64le", "*_s390x", "*_riscv64", "*-win32", "pp*", "gp*"]
+select = ["*_i686", "*_armv7l", "*_ppc64le", "*_s390x", "*_riscv64", "*-win32", "*-pyodide_*", "pp*", "gp*"]
 test-groups = ["test-noscipy"]
 
 [tool.cibuildwheel.linux]
@@ -173,6 +173,12 @@ build-frontend = "build"
 [[tool.cibuildwheel.overrides]]
 select = "gp*"
 build-frontend = "build"
+
+# Pyodide: the library is built by setup.py as a WebAssembly side module (with the toolchain pyodide-build sets) and loaded through
+# ctypes. The wheel is py3-none, but its platform tag names one Pyodide ABI (pyemscripten_2026_0 for Python 3.14, and so on), so
+# one wheel is built for each Python the Cython wheels of py_ballisticcalc.exts are built for.
+[tool.cibuildwheel.pyodide]
+build = "cp313-pyodide_* cp314-pyodide_* cp315-pyodide_*"
 
 [tool.cibuildwheel.android]
 build = "cp313-android_*"
