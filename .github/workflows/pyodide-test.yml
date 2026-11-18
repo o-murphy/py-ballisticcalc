@@ -1,31 +1,98 @@
 # .github/workflows/pyodide-test.yml
 name: Pyodide Test
 
-run-name: "Pyodide test: ${{ inputs.channel }}"
+run-name: "Pyodide Test: ${{ github.event_name == 'pull_request' && 'PR' || github.ref_name }}"
 
 on:
+  push:
+    branches:
+      - "*"
+    paths:
+      - "pyproject.toml"
+      - "py_ballisticcalc/**"
+      - "tests/**"
+      - "py_ballisticcalc.exts/**"
+      - ".github/workflows/pyodide-test.yml"
+  pull_request:
+    branches:
+      - "*"
+    paths:
+      - "pyproject.toml"
+      - "py_ballisticcalc/**"
+      - "tests/**"
+      - "py_ballisticcalc.exts/**"
+      - ".github/workflows/pyodide-test.yml"
   workflow_dispatch:
-    inputs:
-      channel:
-        description: "Pyodide channel: next (315.0.0a2) or latest (314.0.8)"
-        required: true
-        type: choice
-        default: next
-        options:
-          - next
-          - latest
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
-  next:
-    if: inputs.channel == 'next'
-    uses: ./.github/workflows/pyodide-reusable.yml
-    with:
-      xbuildenv_url: "https://github.com/pyodide/pyodide/releases/download/315.0.0a2/xbuildenv-315.0.0a2.tar.gz"
-      xbuildenv_version: "315.0.0a2"
+  pyodide_tests:
+    name: Pyodide ${{ matrix.xbuildenv_version }}
+    # push runs the next channel only; pull requests and manual runs run both channels
+    if: github.event_name != 'push' || matrix.channel == 'next'
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
 
-  latest:
-    if: inputs.channel == 'latest'
-    uses: ./.github/workflows/pyodide-reusable.yml
-    with:
-      xbuildenv_url: "https://github.com/pyodide/pyodide/releases/download/314.0.8/xbuildenv-314.0.8.tar.gz"
-      xbuildenv_version: "314.0.8"
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - channel: next
+            xbuildenv_version: "315.0.0a2"
+            xbuildenv_url: "https://github.com/pyodide/pyodide/releases/download/315.0.0a2/xbuildenv-315.0.0a2.tar.gz"
+          - channel: latest
+            xbuildenv_version: "314.0.8"
+            xbuildenv_url: "https://github.com/pyodide/pyodide/releases/download/314.0.8/xbuildenv-314.0.8.tar.gz"
+
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0 # setuptools-scm needs history
+          submodules: recursive
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2
+        with:
+          github-token: ${{ github.token }}
+
+      - name: Host Python 3.15 (pyodide-build and the Pyodide Python are 3.15)
+        run: uv python install 3.15
+
+      - name: Install the Pyodide cross-build environment
+        run: |
+          uv venv --python 3.15 .pyodide-tools
+          uv pip install --python .pyodide-tools pyodide-build
+          .pyodide-tools/bin/pyodide xbuildenv install -f \
+            --path "$GITHUB_WORKSPACE/.xbuildenv" \
+            --url "${{ matrix.xbuildenv_url }}" "${{ matrix.xbuildenv_version }}"
+          PYO=$(find "$GITHUB_WORKSPACE/.xbuildenv" -path '*pyodide-root/dist/python' -type f | head -1)
+          test -n "$PYO" || { echo "no Pyodide Python in the xbuildenv"; exit 1; }
+          echo "PYODIDE_PYTHON=$PYO" >> "$GITHUB_ENV"
+          "$PYO" -c "import sys; print('Pyodide Python', sys.version.split()[0])"
+        shell: bash
+
+      - name: Build the core wheel and the Pyodide extension wheel
+        run: |
+          uv build --wheel --out-dir dist .
+          VER=$(basename dist/py_ballisticcalc-*.whl | sed -E 's/^py_ballisticcalc-([^-]+)-.*/\1/')
+          SETUPTOOLS_SCM_PRETEND_VERSION=$VER uv run --python 3.15 --with pyodide-build \
+            pyodide build --outdir dist-pyodide py_ballisticcalc.exts
+        shell: bash
+
+      - name: Create the Pyodide venv and install with uv
+        run: |
+          uv venv --python "$PYODIDE_PYTHON" .venv-pyodide
+          uv pip install --python .venv-pyodide/bin/python --no-deps \
+            dist/*.whl dist-pyodide/*.whl \
+            typing_extensions deprecated wrapt \
+            pytest pluggy iniconfig pygments packaging
+        shell: bash
+
+      - name: Run the tests in Pyodide
+        run: |
+          PYTHONPATH="$GITHUB_WORKSPACE/.venv-pyodide/lib/python3.15/site-packages" \
+            "$PYODIDE_PYTHON" -m pytest tests -q -p no:cacheprovider --engine=cython+rk4
+        shell: bash
