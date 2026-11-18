@@ -17,12 +17,12 @@ py-ballisticcalc provides various calculation engines with identical public sema
 | **[`python+rk4`][py_ballisticcalc.engines.RK4IntegrationEngine]**                                      | Baseline (1x)                                 |        None; default        | Runge-Kutta 4th-order integration                 |
 | [`python+euler`][py_ballisticcalc.engines.EulerIntegrationEngine]                                      | :material-arrow-down: 0.6x / 0.6x (slower)    |            None             | Euler 1st-order integration                       |
 | [`python+verlet`][py_ballisticcalc.engines.VelocityVerletIntegrationEngine]                            | :material-arrow-down: 0.8x / 0.8x (slower)    |            None             | Verlet 2nd-order symplectic integration           |
-| [`cython+rk4`][py_ballisticcalc_exts.CythonizedRK4IntegrationEngine]                        | :material-arrow-up: 205x / 129x (faster)      | [`[exts]`](#cython-engines) or `[ctypes]` | Compiled Runge-Kutta 4th-order                    |
-| [`cython+euler`][py_ballisticcalc_exts.CythonizedEulerIntegrationEngine]                    | :material-arrow-up: 54x / 44x (faster)        | [`[exts]`](#cython-engines) or `[ctypes]` | Compiled Euler integration                        |
-| [`cython+verlet`][py_ballisticcalc_exts.CythonizedVelocityVerletIntegrationEngine]          | :material-arrow-up:   130x / 99x (faster)     | [`[exts]`](#cython-engines) or `[ctypes]` | Compiled Verlet 2nd-order symplectic              |
-| [`cython+rkck`][py_ballisticcalc_exts.CythonizedCashKarpIntegrationEngine][^adaptive]       | :material-arrow-up: 2567x / 326x (faster)     | [`[exts]`](#cython-engines) or `[ctypes]` | Compiled Cash-Karp adaptive RK45                  |
-| [`cython+dopri`][py_ballisticcalc_exts.CythonizedDormandPrinceIntegrationEngine][^adaptive] | :material-arrow-up: 2567x / 326x (faster)     | [`[exts]`](#cython-engines) or `[ctypes]` | Dormand--Prince 5(4), SciPy RK45-style controller |
-| [`cython+tsitouras`][py_ballisticcalc_exts.CythonizedTsitourasIntegrationEngine][^adaptive] | :material-arrow-up: 2567x / 326x (faster)     | [`[exts]`](#cython-engines) or `[ctypes]` | Tsitouras 5(4), SciPy RK45-style controller       |
+| [`cython+rk4`][py_ballisticcalc_exts.CythonizedRK4IntegrationEngine]                        | :material-arrow-up: 205x / 129x (faster)      | [`[exts]`](#cython-engines) | Compiled Runge-Kutta 4th-order                    |
+| [`cython+euler`][py_ballisticcalc_exts.CythonizedEulerIntegrationEngine]                    | :material-arrow-up: 54x / 44x (faster)        | [`[exts]`](#cython-engines) | Compiled Euler integration                        |
+| [`cython+verlet`][py_ballisticcalc_exts.CythonizedVelocityVerletIntegrationEngine]          | :material-arrow-up:   130x / 99x (faster)     | [`[exts]`](#cython-engines) | Compiled Verlet 2nd-order symplectic              |
+| [`cython+rkck`][py_ballisticcalc_exts.CythonizedCashKarpIntegrationEngine][^adaptive]       | :material-arrow-up: 2567x / 326x (faster)     | [`[exts]`](#cython-engines) | Compiled Cash-Karp adaptive RK45                  |
+| [`cython+dopri`][py_ballisticcalc_exts.CythonizedDormandPrinceIntegrationEngine][^adaptive] | :material-arrow-up: 2567x / 326x (faster)     | [`[exts]`](#cython-engines) | Dormand--Prince 5(4), SciPy RK45-style controller |
+| [`cython+tsitouras`][py_ballisticcalc_exts.CythonizedTsitourasIntegrationEngine][^adaptive] | :material-arrow-up: 2567x / 326x (faster)     | [`[exts]`](#cython-engines) | Tsitouras 5(4), SciPy RK45-style controller       |
 | [`scipy+rk23`][py_ballisticcalc.engines.SciPyIntegrationEngineFactory] | :material-arrow-up: 3.4x / 3.2x (faster) |          `[scipy]`          | SciPy `solve_ivp` RK23 — Bogacki–Shampine 3(2), lowest order: cheap steps, loose accuracy |
 | [`scipy+rk45`][py_ballisticcalc.engines.SciPyIntegrationEngineFactory] | :material-arrow-up: 5.4x / 9.8x (faster)      |          `[scipy]`          | SciPy `solve_ivp` RK45 — Dormand–Prince 5(4), SciPy default: general-purpose |
 | [`scipy+dop853`][py_ballisticcalc.engines.SciPyIntegrationEngineFactory] | :material-arrow-up: 1.8x / 4.8x (faster) |          `[scipy]`          | SciPy `solve_ivp` DOP853 — Dormand–Prince 8(5,3), high order: for tight tolerances |
@@ -55,8 +55,9 @@ just the Cython engines directly.
 * For maximum speed use the [`cython+rk4`][py_ballisticcalc_exts.CythonizedRK4IntegrationEngine] (or one of the adaptive engines — [`cython+rkck`][py_ballisticcalc_exts.CythonizedCashKarpIntegrationEngine], [`cython+dopri`][py_ballisticcalc_exts.CythonizedDormandPrinceIntegrationEngine], [`cython+tsitouras`][py_ballisticcalc_exts.CythonizedTsitourasIntegrationEngine] — for repeated/zero-finding-heavy workloads; they measure in the same performance class as each other, so pick by compatibility/controller preference, not expected speed — see below).
 
 Engines are addressed as `<engine>+<method>` (or `<engine>.<method>`), where `<engine>` is the backend group
-(`python`, `cython`, `scipy`) and `<method>` the integration method: `python+euler`, `python+rk4`, `python+verlet`,
-`cython+euler`, `cython+rk4`, `cython+verlet`, `cython+rkck`, `cython+dopri`, `cython+tsitouras`,
+(`python`, `cython`, `ctypes`, `scipy`) and `<method>` the integration method: `python+euler`, `python+rk4`, `python+verlet`,
+`cython+euler`, `cython+rk4`, `cython+verlet`, `cython+rkck`, `cython+dopri`, `cython+tsitouras` (the same six as `ctypes+<method>`
+when the `[ctypes]` package is installed instead of `[exts]`),
 `scipy+rk23`, `scipy+rk45`, `scipy+dop853`, `scipy+radau`, `scipy+bdf`, `scipy+lsoda`.
 The old flat names (`rk4_engine`, `cythonized_rk4_engine`, `scipy_engine`, ...) still work but are **deprecated**
 and emit a `DeprecationWarning`.
@@ -86,9 +87,10 @@ Cythonized engines are compiled for maximum performance.  Include the `[exts]` o
 
 Where the Cython extensions are not available (PyPy, GraalPy, ppc64le, s390x, riscv64), or as an alternative to them, the same
 engines come from the `[ctypes]` option (a shared library loaded through `ctypes`; see
-[`py_ballisticcalc.ctypes`](https://github.com/o-murphy/py-ballisticcalc/tree/master/py_ballisticcalc.ctypes)). The engine names are the
-same (`cython+rk4`, ...), so the code does not change. `[native]` picks one of the two for the interpreter and the machine. Install one
-of the two packages, not both.
+[`py_ballisticcalc.ctypes`](https://github.com/o-murphy/py-ballisticcalc/tree/master/py_ballisticcalc.ctypes)). They are named
+`ctypes+euler`, `ctypes+rk4`, `ctypes+verlet`, `ctypes+rkck`, `ctypes+dopri` and `ctypes+tsitouras`, so the code asks for them by their own
+name (`Calculator(engine="ctypes+dopri")`) and both packages can be installed. `[native]` installs one of the two for the interpreter and
+the machine.
 
 ## Adaptive integration
 

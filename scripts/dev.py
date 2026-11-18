@@ -22,8 +22,8 @@ def main() -> None:
     repo = Path(__file__).resolve().parents[1]
     venv = repo / ".venv"
     py = os.environ.get("PYTHON", "3.12")
-    # the engines `cython+*` come from one of two packages, never both: the Cython extensions (default) or the same through
-    # ctypes (EXTRA=ctypes; the bclibc_ffi library is compiled, a C++ compiler is needed)
+    # the compiled engines come from the Cython extensions (default, `cython+*`) or the same through ctypes (EXTRA=ctypes,
+    # `ctypes+*`; the bclibc_ffi library is compiled, a C++ compiler is needed)
     extra = os.environ.get("EXTRA", "exts")
     if extra not in {"exts", "ctypes"}:
         raise SystemExit("EXTRA must be exts or ctypes")

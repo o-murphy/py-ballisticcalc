@@ -4,7 +4,7 @@
 # disabled for this file only, so the rest of the package is still checked.
 """ctypes engines over the bclibc C-ABI library.
 
-The engines of py_ballisticcalc.exts with the same public surface, registered under the same entry-point names (cython+rk4, ...);
+The engines of py_ballisticcalc.exts with the same public surface, registered as ctypes+rk4, ... (the Cython ones are cython+rk4, ...);
 the classes are named Native<Method>IntegrationEngine. Structs follow include/bclibc/ffi/bclibc_ffi.h.
 The library is loaded lazily on first engine use.
 

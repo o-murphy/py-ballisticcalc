@@ -64,16 +64,9 @@ dependencies = []
 #   version: will be calculated with setuptools-scm, the same as the main package and the extensions
 dynamic = ["version"]
 
-# The same engines as the Cython extensions (py_ballisticcalc.exts), under the same names, through ctypes. Install one of the two.
-[project.entry-points.py_ballisticcalc]
-cythonized_euler_engine = "py_ballisticcalc_ctypes:NativeEulerIntegrationEngine"
-cythonized_rk4_engine = "py_ballisticcalc_ctypes:NativeRK4IntegrationEngine"
-cythonized_verlet_engine = "py_ballisticcalc_ctypes:NativeVelocityVerletIntegrationEngine"
-cythonized_rkck_engine = "py_ballisticcalc_ctypes:NativeCashKarpIntegrationEngine"
-cythonized_dopri_engine = "py_ballisticcalc_ctypes:NativeDormandPrinceIntegrationEngine"
-cythonized_tsitouras_engine = "py_ballisticcalc_ctypes:NativeTsitourasIntegrationEngine"
-
-[project.entry-points."py_ballisticcalc.engines.cython"]
+# The same engines as the Cython extensions (py_ballisticcalc.exts), through ctypes: the ids are ctypes+<method>, the Cython ones
+# are cython+<method>, so the two packages can be installed together and one engine is always picked by its own name.
+[project.entry-points."py_ballisticcalc.engines.ctypes"]
 euler = "py_ballisticcalc_ctypes:NativeEulerIntegrationEngine"
 rk4 = "py_ballisticcalc_ctypes:NativeRK4IntegrationEngine"
 verlet = "py_ballisticcalc_ctypes:NativeVelocityVerletIntegrationEngine"
@@ -157,7 +150,7 @@ skip = ["gp312_250-macosx_*", "gp312_250-win_*"]
 # tests/ is the tests of the package (the struct reading of its engines): the runner runs it in the session of every engine, after the core suite
 test-sources = ["cibw_stage", "cibw_run_engines.py", "tests"]
 test-groups = ["test"]
-test-command = "python cibw_run_engines.py cython"
+test-command = "python cibw_run_engines.py ctypes"
 
 # No scipy wheels for these (see py_ballisticcalc.exts): the group without numpy and scipy, the scipy engines are left out
 [[tool.cibuildwheel.overrides]]
@@ -188,7 +181,7 @@ build = "cp313-pyodide_* cp314-pyodide_* cp315-pyodide_*"
 [tool.cibuildwheel.android]
 build = "cp313-android_*"
 # Android accepts only a test command that starts with "python" and contains -m or -c: start the runner through runpy
-test-command = "python -c \"import runpy,sys; sys.argv=['cibw_run_engines.py','cython']; runpy.run_path('cibw_run_engines.py', run_name='__main__')\""
+test-command = "python -c \"import runpy,sys; sys.argv=['cibw_run_engines.py','ctypes']; runpy.run_path('cibw_run_engines.py', run_name='__main__')\""
 # no scipy wheels for Android
 test-groups = ["test-noscipy"]
 # there is no arm64 emulator on the runners: that wheel is built, not tested

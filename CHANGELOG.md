@@ -8,7 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
-- `py_ballisticcalc.ctypes`: the bclibc engines (`cython+*`) through ctypes: the only backend where the Cython extensions do not
+- `py_ballisticcalc.ctypes`: the bclibc engines (`ctypes+*`) through ctypes: the only backend where the Cython extensions do not
   work (PyPy and GraalPy: the Cython extension does not build on PyPy, and on GraalPy it builds but crashes on import) and on the
   architectures they are not built for (ppc64le, s390x, riscv64); on the others (CPython on Linux, macOS, Windows incl. x86 and ARM64,
   Android, Pyodide) it is the second variant next to Cython. iOS is not built. The package ships the `bclibc_ffi` shared library (a C ABI,
@@ -24,7 +24,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   trajectory takes about 5-20% longer than with the Cython engine.
 - Classifiers of the three packages: license (LGPLv3), audience, topic (Physics), `Typing :: Typed`; PyPy and GraalPy for the core; the languages (C++, Cython),
   the operating systems the wheels are built for, and free-threading (3 - Stable) for the extensions and the ctypes package.
-- `py_ballisticcalc.ctypes` registers the engines as entry points (`cython+euler`, `rk4`, `verlet`, `rkck`, `dopri`, `tsitouras`) and
+- `py_ballisticcalc.ctypes` registers the engines as entry points of the `py_ballisticcalc.engines.ctypes` group (`ctypes+euler`, `rk4`, `verlet`, `rkck`, `dopri`, `tsitouras`: the Cython ones keep `cython+<method>`, so both packages can be installed) and
   refuses a library that does not match the bindings' bclibc version; the main test suite passes on CPython, PyPy and GraalPy.
 - Extras: `ctypes` (the ctypes package) next to `exts` (Cython) is an explicit choice of the backend; `native` picks one of
   them by environment markers (`exts` on CPython, `ctypes` on PyPy, GraalPy, ppc64le, s390x and riscv64).
@@ -71,7 +71,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   environment is the `test` dependency group of the package's `pyproject.toml` (`test-noscipy` where PyPI has no scipy wheel, picked by
   `[[tool.cibuildwheel.overrides]]`).
 - The tests of each package (`py_ballisticcalc.exts/tests`, `py_ballisticcalc.ctypes/tests`) run in every cibuildwheel job through
-  `test-sources` in its `pyproject.toml`: `cibw_run_engines.py` runs them in the session of every engine, after the core suite.
+  `test-sources` in its `pyproject.toml`: `cibw_run_engines.py` runs them in the session of every engine, after the core suite. The runner's group argument is `cython` for exts and `ctypes` for ctypes, and a wheel whose group registered no engine is a failure.
 - `.github/scripts/cibw_run_engines.py` runs the engines one after another, found from the entry points (no probe); the
   arguments pick groups (`cython`, `python`, `scipy`) or engines (`python+rk4`). cibuildwheel tests the `cython` group. On
   Pyodide, iOS and Android, where there is no subprocess (`sys.executable` is empty on Android), the sessions run in this

@@ -3,9 +3,9 @@
 The package carries the ``bclibc_ffi`` shared library (``_native_lib/``), which setup.py builds from the bclibc
 sources. Importing this module does not load it.
 
-The engines are registered as the entry points ``cython+euler``, ``cython+rk4``, ``cython+verlet``, ``cython+rkck``,
-``cython+dopri`` and ``cython+tsitouras`` (the names of the Cython engines of ``py_ballisticcalc.exts``: install one of the two
-packages) and are imported on first access of the ``Native<Method>IntegrationEngine`` names. :func:`check_versions` requires the
+The engines are registered as the entry points ``ctypes+euler``, ``ctypes+rk4``, ``ctypes+verlet``, ``ctypes+rkck``,
+``ctypes+dopri`` and ``ctypes+tsitouras`` (the Cython engines of ``py_ballisticcalc.exts`` are ``cython+<method>``, so both packages
+can be installed) and are imported on first access of the ``Native<Method>IntegrationEngine`` names. :func:`check_versions` requires the
 main package to have the same version.
 """
 

@@ -17,15 +17,15 @@ The core wheel is unpacked and put on the import path instead of being installed
 platform (Android installs binary wheels only, iOS and Pyodide have no pip to call). The exts wheel under test is
 already installed by cibuildwheel; its runtime dependencies come from test-requires.
 
-The arguments on the command line pick which engines run: a group (``cython``, ``python``, ``scipy``: the part of the
-engine name before the ``+``) or one engine (``python+rk4``); none given means all of them. cibuildwheel tests only ``cython``: the other engines do not depend on the
+The arguments on the command line pick which engines run: a group (``cython``, ``ctypes``, ``python``, ``scipy``: the part of the
+engine name before the ``+``) or one engine (``python+rk4``); none given means all of them. cibuildwheel tests only the native group of the package (``cython`` for exts, ``ctypes`` for ctypes): the other engines do not depend on the
 wheel under test, they are run once per Python version elsewhere (cibuildwheel-tests.yml).
 
 The engines are not listed here and are not probed: they are what the engine loader's entry points name in this
-environment (the core wheel's and the exts wheel's), and every one of them is run, so one that cannot load fails
+environment (the core wheel's and the wheel under test's), and every one of them is run, so one that cannot load fails
 loudly. The only thing left out is a group whose dependency the environment does not have, decided by the
 test-requires in pyproject.toml (scipy has no wheels on some platforms and Python versions): it is reported as skipped.
-And the exts wheel is the thing under test: if it registered no ``cython+`` engine at all, that is a failure, not a
+And the wheel is the thing under test: if the native group asked for registered no engine at all, that is a failure, not a
 smaller run.
 
 Each engine is one pytest session (``--engine`` takes one name). A session is a subprocess where there are
@@ -137,9 +137,15 @@ def main() -> int:
     print(f"engines ({len(engines)}): {' '.join(engines) or '-'}")
     for engine in left_out:
         print(f"::notice::SKIP {engine}: its dependency is not installed in this environment")
-    if (not groups or "cython" in groups) and not any(e.startswith("cython+") for e in engines):
+    # the wheel under test is what a native group (cython: py_ballisticcalc.exts, ctypes: py_ballisticcalc.ctypes) comes from: if
+    # the group that was asked for registered no engine at all, that is a failure, not a skip
+    for native in ("cython", "ctypes"):
+        if native in groups and not any(e.startswith(f"{native}+") for e in engines):
+            print(f"::error::no {native}+ engine is registered: the wheel under test is not the one in use", flush=True)
+            return 1
+    if not groups and not any(e.startswith(("cython+", "ctypes+")) for e in engines):
         print(
-            "::error::no cython+ engine is registered: the exts or ctypes wheel under test is not the one in use",
+            "::error::no cython+ or ctypes+ engine is registered: the wheel under test is not the one in use",
             flush=True,
         )
         return 1

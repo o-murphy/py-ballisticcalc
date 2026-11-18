@@ -116,7 +116,7 @@ jobs:
   # The ctypes engines: the Python side of py_ballisticcalc_ctypes (the engines, the glue over the shared library) is measured, like
   # the pure-Python side of the package for the Cython engines; the library itself is C++ and is not line-traced. The package is
   # installed editable (the library is built by setup.py into the source tree), so the report maps to the files of the repository;
-  # `uv run --no-sync` keeps it from being removed. The ids `cython+<method>` are the Cython ones, so the engines are named by class.
+  # `uv run --no-sync` keeps it from being removed. The engines are named by class (`py_ballisticcalc_ctypes:Native<Method>IntegrationEngine`), as `ctypes+<method>` would do.
   test-ctypes:
     if: github.actor != 'dependabot[bot]'
     runs-on: ubuntu-latest

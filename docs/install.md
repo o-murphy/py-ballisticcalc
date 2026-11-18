@@ -31,7 +31,7 @@ If you have Python 3.11+ and `pip` installed, you're good to go.
 py-ballisticcalc has the following optional dependencies:
 
 * **[`exts`](internals/cython.md):** Cython based implementation of some classes to increase performance. [py_ballisticcalc.exts](https://pypi.org/project/py_ballisticcalc.exts) package.
-* **`ctypes`:** The same compiled engines (`cython+*`) through ctypes: a `py3-none` wheel with the `bclibc_ffi` shared library. Use it on PyPy, GraalPy, ppc64le, s390x and riscv64, where `exts` is not available; elsewhere it is an alternative to `exts` (install one of the two). [py_ballisticcalc.ctypes](https://pypi.org/project/py_ballisticcalc.ctypes) package.
+* **`ctypes`:** The same compiled engines (`ctypes+*`) through ctypes: a `py3-none` wheel with the `bclibc_ffi` shared library. Use it on PyPy, GraalPy, ppc64le, s390x and riscv64, where `exts` is not available; elsewhere it is an alternative to `exts` (the engines have their own names, `ctypes+<method>` and `cython+<method>`). [py_ballisticcalc.ctypes](https://pypi.org/project/py_ballisticcalc.ctypes) package.
 * **`native`:** Installs `exts` or `ctypes`, whichever fits the interpreter and the machine.
 * **`charts`:** Includes [matplotlib](https://matplotlib.org/) for creating [`charts`][py_ballisticcalc.trajectory_data.HitResult.plot] and [pandas](https://pandas.pydata.org/) for creating [`DataFrame tables`][py_ballisticcalc.trajectory_data.HitResult.dataframe].
 * **[`scipy`](https://scipy.org/):** Installs support for the `SciPyIntegrationEngine`.

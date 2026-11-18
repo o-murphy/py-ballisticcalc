@@ -7,7 +7,7 @@
 
 `cython+dopri` selects
 `CythonizedDormandPrinceIntegrationEngine` when the optional compiled package
-is installed (with the ctypes package, `NativeDormandPrinceIntegrationEngine`, the same engine through ctypes). `relative_tolerance` and `absolute_tolerance` default to `1e-6`;
+is installed (`ctypes+dopri` selects `NativeDormandPrinceIntegrationEngine` of the ctypes package, the same engine through ctypes). `relative_tolerance` and `absolute_tolerance` default to `1e-6`;
 `get_step_stats()` returns accepted and rejected steps. Its controller follows
 SciPy RK45 semantics, unlike compatibility-preserving Cash--Karp.
 
@@ -79,7 +79,7 @@ coefficient; see [benchmarks](../../concepts/benchmarks.md#dormand-prince-and-ts
         members:
 
 The same engines through ctypes, from the `py_ballisticcalc.ctypes` package (`pip install "py-ballisticcalc[ctypes]"`), are registered under the
-same names (`cython+rk4`, ...). The methods are those of the base engine, run by the native `bclibc_ffi` library.
+names `ctypes+rk4`, ... (the Cython ones are `cython+rk4`, ...). The methods are those of the base engine, run by the native `bclibc_ffi` library.
 
 ::: py_ballisticcalc_ctypes._native.NativeEulerIntegrationEngine
     options:

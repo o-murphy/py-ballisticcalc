@@ -11,15 +11,14 @@ pip install py_ballisticcalc[exts]     # the Cython variant
 pip install py_ballisticcalc[native]   # one of the two for the interpreter and the machine (ctypes on PyPy, GraalPy, ppc64le, s390x, riscv64)
 ```
 
-Install one of the two, not both: they register the same engine names.
+The engines of the two packages have different names (`cython+rk4` and `ctypes+rk4`), so both can be installed.
 
 ## Engines
 
-`cython+euler`, `cython+rk4`, `cython+verlet`, `cython+rkck`, `cython+dopri` and `cython+tsitouras` (entry points of the
-`py_ballisticcalc.engines.cython` group; the classes are `py_ballisticcalc_ctypes.Native<Method>IntegrationEngine`). The names are those of the
-Cython engines, so `Calculator(engine="cython+dopri")` works with either package. On the benchmark of this repository (Linux x86-64,
-CPython 3.13, Dormand-Prince) a full trajectory takes about 5-20% longer than with the Cython engine; it was not measured on the other
-platforms.
+`ctypes+euler`, `ctypes+rk4`, `ctypes+verlet`, `ctypes+rkck`, `ctypes+dopri` and `ctypes+tsitouras` (entry points of the
+`py_ballisticcalc.engines.ctypes` group; the classes are `py_ballisticcalc_ctypes.Native<Method>IntegrationEngine`), the same engines as
+the Cython ones (`cython+<method>`): `Calculator(engine="ctypes+dopri")`. On the benchmark of this repository (Linux x86-64, CPython 3.13,
+Dormand-Prince) a full trajectory takes about 5-20% longer than with the Cython engine; it was not measured on the other platforms.
 
 ## The wheel
 
@@ -38,7 +37,7 @@ module does not work on macOS and its tests hang on Windows).
 
 ```bash
 uv sync --extra ctypes                       # builds the library with setup.py (the bclibc submodule must be initialised)
-pytest --engine="cython+dopri"               # the main test suite on the ctypes engine, from the repository root
+pytest --engine="ctypes+dopri"               # the main test suite on the ctypes engine, from the repository root
 pytest py_ballisticcalc.ctypes/tests         # the tests of the package
 ```
 
