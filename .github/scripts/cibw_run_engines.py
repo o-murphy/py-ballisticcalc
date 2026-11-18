@@ -2,7 +2,7 @@
 
 cibuildwheel's test-command runs this from the directory the test sources were copied to:
 
-    python cibw_stage/cibw_run_engines.py
+    python cibw_stage/cibw_run_engines.py [group ...]
 
 Expected next to this file (the workflow stages them, nothing here is committed):
 
@@ -12,6 +12,10 @@ Expected next to this file (the workflow stages them, nothing here is committed)
 The core wheel is unpacked and put on the import path instead of being installed: that works the same on every
 platform (Android installs binary wheels only, iOS and Pyodide have no pip to call). The exts wheel under test is
 already installed by cibuildwheel; its runtime dependencies come from test-requires.
+
+The groups on the command line (``cython``, ``python``, ``scipy``: the part of the engine name before the ``+``) pick
+which engines run; none given means all of them. cibuildwheel tests only ``cython``: the other engines do not depend on the
+wheel under test, they are run once per Python version elsewhere (cibuildwheel-tests.yml).
 
 The engines are not listed here and are not probed: they are what the engine loader's entry points name in this
 environment (the core wheel's and the exts wheel's), and every one of them is run, so one that cannot load fails
@@ -102,12 +106,20 @@ def main() -> int:
     parallel = can_fork_workers()
     print(f"python {sys.version.split()[0]} on {sys.platform}; xdist: {parallel}")
 
+    groups = sys.argv[1:]
     engines, left_out = discover_engines()
+    if groups:
+        engines = [e for e in engines if e.split("+", 1)[0] in groups]
+        left_out = [e for e in left_out if e.split("+", 1)[0] in groups]
+    print(f"groups: {' '.join(groups) or 'all'}")
     print(f"engines ({len(engines)}): {' '.join(engines) or '-'}")
     for engine in left_out:
         print(f"::notice::SKIP {engine}: its dependency is not installed in this environment")
-    if not any(e.startswith("cython+") for e in engines):
+    if (not groups or "cython" in groups) and not any(e.startswith("cython+") for e in engines):
         print("::error::no cython+ engine is registered: the exts wheel under test is not the one in use", flush=True)
+        return 1
+    if not engines:
+        print("::error::no engine to run", flush=True)
         return 1
 
     passed, failed = [], []

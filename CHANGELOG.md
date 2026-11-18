@@ -27,12 +27,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   and `test_skip` (`CIBW_BUILD`, `CIBW_SKIP`, `CIBW_TEST_SKIP`, several selectors separated by commas), `platform`, `archs`,
   `version` / `no_local_version`, `artifact_name` and `retention_days`. SciPy and NumPy come through `test-requires` in
   `py_ballisticcalc.exts/pyproject.toml`, left out by `[[tool.cibuildwheel.overrides]]` where PyPI has no scipy wheel.
-- `.github/workflows/cibuildwheel-tests.yml`: every pull request builds the exts wheels and tests each of them on its
-  own platform (Linux x86-64 / i686 / aarch64 / armv7l, Windows x64 / x86 / ARM64, macOS arm64 / universal2 / Intel,
-  the iOS simulators, Android x86-64, Pyodide; the arm64 Android wheel has no emulator and is only built); a push to a
-  branch runs one Linux job.
-- `pypi-publish.yml` builds its wheels through `cibuildwheel-reusable.yml` too, without tests (`test_skip`: they run on
-  the pull request), and also builds the iOS device wheel.
+- `.github/workflows/cibuildwheel-tests.yml`: every pull request builds the exts wheels and tests the Cython engines on
+  each of them, on its own platform (Linux x86-64 / i686 / aarch64 / armv7l, Windows x64 / x86 / ARM64, macOS arm64 /
+  universal2 / Intel, the iOS simulators, Android x86-64, Pyodide; the arm64 Android wheel has no emulator and is only
+  built); a push to a branch runs one Linux job. The pure-Python and SciPy engines, which do not depend on the wheel and
+  take minutes each, run once per Python version (3.11, 3.14t, 3.15t) in `pure-engines-reusable.yml`, called from there.
+- `pypi-publish.yml` builds its wheels through `cibuildwheel-reusable.yml` too, without tests (`test_skip`: they run on the
+  pull request), also builds the iOS device wheel, and runs the pure-Python and SciPy engines once per Python version
+  (`pure-engines-reusable.yml`) before it publishes.
 - The per-engine workflows `pytest-{,cythonized-}{euler,rk4,verlet,ck,dopri,tsitouras,scipy}-engine.yml` are removed;
   `pytest-reusable.yml`, `pytest-manual.yml` and `pytest-tiny-engine.yml` stay.
 

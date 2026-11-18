@@ -4,8 +4,9 @@ run-name: >
   ${{ github.event.pull_request.number || github.ref_name }}
 
 # Builds the exts wheels with cibuildwheel and tests each of them on its own platform: every engine, one after another
-# (cibuildwheel-reusable.yml, .github/scripts/cibw_run_engines.py). A pull request runs every platform; a push to a
-# branch runs one Linux job. The release (pypi-publish.yml) builds the same wheels without tests: they run here.
+# (cibuildwheel-reusable.yml, .github/scripts/cibw_run_engines.py): the Cython ones, which depend on the wheel; the
+# pure-Python and SciPy engines run once per Python version in a job of their own. A pull request runs every platform; a
+# push to a branch runs one Linux job. The release (pypi-publish.yml) builds the same wheels without tests: they run here.
 on:
   pull_request:
     branches:
@@ -18,6 +19,7 @@ on:
       - ".gitmodules"
       - ".github/workflows/cibuildwheel-tests.yml"
       - ".github/workflows/cibuildwheel-reusable.yml"
+      - ".github/workflows/pure-engines-reusable.yml"
       - ".github/scripts/cibw_run_engines.py"
   push:
     branches:
@@ -30,6 +32,7 @@ on:
       - ".gitmodules"
       - ".github/workflows/cibuildwheel-tests.yml"
       - ".github/workflows/cibuildwheel-reusable.yml"
+      - ".github/workflows/pure-engines-reusable.yml"
       - ".github/scripts/cibw_run_engines.py"
   workflow_dispatch:
 
@@ -128,6 +131,19 @@ jobs:
       qemu: ${{ matrix.needs_qemu }}
       artifact_name: tests-wheels-${{ matrix.artifact_key }}
       retention_days: 1
+
+  # The pure-Python and SciPy engines do not depend on the wheel under test, and each of their runs takes minutes (the Cython
+  # ones, seconds): so they run once per Python version, on the core wheel, not again for every wheel above.
+  pure:
+    name: Python and SciPy engines, Python ${{ matrix.python }}
+    if: github.event_name != 'push'
+    strategy:
+      fail-fast: false
+      matrix:
+        python: ["3.11", "3.14t", "3.15t"]
+    uses: ./.github/workflows/pure-engines-reusable.yml
+    with:
+      python: ${{ matrix.python }}
 
   # Minimal matrix: pushes to a branch
   minimal:

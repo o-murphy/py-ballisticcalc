@@ -1,0 +1,60 @@
+name: Pure-Python and SciPy engines (reusable)
+
+# The engines that do not depend on a wheel under test (python+*, scipy+*) are run here, once for a Python version, on the
+# core wheel built from this checkout: each run takes minutes (the Cython engines, which cibuildwheel tests, seconds).
+# The runner is .github/scripts/cibw_run_engines.py, the dependencies are the `test` group of py_ballisticcalc.exts, and no
+# extension is built.
+on:
+  workflow_call:
+    inputs:
+      python:
+        description: 'Python version for uv, e.g. "3.11" or "3.14t" (free-threaded)'
+        required: true
+        type: string
+      timeout_minutes:
+        description: "Job timeout in minutes"
+        required: false
+        type: number
+        default: 120
+
+permissions:
+  contents: read
+
+jobs:
+  engines:
+    name: Python and SciPy engines, Python ${{ inputs.python }}
+    runs-on: ubuntu-latest
+    timeout-minutes: ${{ inputs.timeout_minutes }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0 # setuptools-scm needs history
+          submodules: recursive
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2
+        with:
+          github-token: ${{ github.token }}
+
+      # What the runner expects next to it: the tests and the core wheel (see .github/scripts/cibw_run_engines.py)
+      - name: Build the core wheel and stage the test inputs
+        run: |
+          STAGE="$RUNNER_TEMP/stage"
+          mkdir -p "$STAGE/core-wheel"
+          uv build --wheel --out-dir "$STAGE/core-wheel" .
+          cp -R tests "$STAGE/tests"
+          cp .github/scripts/cibw_run_engines.py "$STAGE/"
+          echo "STAGE=$STAGE" >> "$GITHUB_ENV"
+        shell: bash
+
+      # The same dependency group the wheels are tested with (numpy and scipy included), no extension is built
+      - name: Install the test dependencies
+        run: |
+          uv venv --python ${{ inputs.python }} .venv-pure
+          uv pip install --python .venv-pure/bin/python --group py_ballisticcalc.exts/pyproject.toml:test
+        shell: bash
+
+      - name: Run the python and scipy engines
+        working-directory: ${{ env.STAGE }}
+        run: ${{ github.workspace }}/.venv-pure/bin/python cibw_run_engines.py python scipy
+        shell: bash
