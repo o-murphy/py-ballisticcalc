@@ -34,8 +34,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### CI
 - `cibuildwheel-reusable.yml` has a `project` input (`py_ballisticcalc.exts` by default, or `py_ballisticcalc.ctypes`) and
-  stages the bclibc sources into a package that needs them. `cibuildwheel-tests.yml` builds and tests the ctypes package
-  by hand only (`workflow_dispatch` with `ctypes`), once the Cython jobs have passed: Linux (glibc, musl, ppc64le, s390x,
+  stages the bclibc sources into a package that needs them. `ctypes-tests.yml` builds and tests the ctypes package, by hand only (`workflow_dispatch`; it does not run the Cython jobs of
+  `cibuildwheel-tests.yml`): Linux (glibc, musl, ppc64le, s390x,
   riscv64 under QEMU), macOS, Windows, Android, and under PyPy and GraalPy.
 - `.github/workflows/cibuildwheel-reusable.yml`: builds the exts wheels with cibuildwheel, tests each of them on its own
   platform and uploads them as a named artifact. Runs by hand (`workflow_dispatch`) or is called (`workflow_call`) with
