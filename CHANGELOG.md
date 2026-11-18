@@ -44,6 +44,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   and `__pycache__`) and `scripts/test-leaks.sh` (stress tests under Valgrind).
 
 ### Fixed
+- `_EngineLoader.load("module:Factory(key=value)")` on Python 3.15: `importlib.metadata.EntryPoint` checks its value when it
+  is created since 3.15, and the call syntax is not a valid object reference, so the direct path raised `ValueError`. Only the
+  target before the parentheses is made an `EntryPoint` now (`_resolve_value`, `_load_value`). The test that covers it
+  (`test_call_syntax_entry`) is skipped without scipy, and no 3.15 job had scipy before.
 - `examples/config_load.py` (a `Path` stopped being a context manager in Python 3.13: `importlib.resources.as_file()`),
   `examples/ukrop_338lm_300gr_smk_unit_parse.py` (`Unit.parse()` replaces the private `_parse_value` / `_parse_unit`) and
   `examples/zero_stress_tests.py` (keyword-only `Calculator`, `fire(..., raise_range_error=False)`, no `_engine_instance`; it takes
