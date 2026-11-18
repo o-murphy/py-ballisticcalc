@@ -16,8 +16,8 @@ The core wheel is unpacked and put on the import path instead of being installed
 platform (Android installs binary wheels only, iOS and Pyodide have no pip to call). The exts wheel under test is
 already installed by cibuildwheel; its runtime dependencies come from test-requires.
 
-The groups on the command line (``cython``, ``python``, ``scipy``: the part of the engine name before the ``+``) pick
-which engines run; none given means all of them. cibuildwheel tests only ``cython``: the other engines do not depend on the
+The arguments on the command line pick which engines run: a group (``cython``, ``python``, ``scipy``: the part of the
+engine name before the ``+``) or one engine (``python+rk4``); none given means all of them. cibuildwheel tests only ``cython``: the other engines do not depend on the
 wheel under test, they are run once per Python version elsewhere (cibuildwheel-tests.yml).
 
 The engines are not listed here and are not probed: they are what the engine loader's entry points name in this
@@ -83,6 +83,13 @@ def discover_engines() -> tuple[list[str], list[str]]:
     return found, left_out
 
 
+def select(engines: list[str], wanted: list[str]) -> list[str]:
+    """The engines named by the arguments, as groups or as engine names; all of them when there are none."""
+    if not wanted:
+        return engines
+    return [e for e in engines if e in wanted or e.split("+", 1)[0] in wanted]
+
+
 def can_fork_workers() -> bool:
     """pytest-xdist needs subprocesses: not available where there are none."""
     if sys.platform in NO_SUBPROCESS:
@@ -115,9 +122,7 @@ def main() -> int:
 
     groups = sys.argv[1:]
     engines, left_out = discover_engines()
-    if groups:
-        engines = [e for e in engines if e.split("+", 1)[0] in groups]
-        left_out = [e for e in left_out if e.split("+", 1)[0] in groups]
+    engines, left_out = select(engines, groups), select(left_out, groups)
     print(f"groups: {' '.join(groups) or 'all'}")
     print(f"engines ({len(engines)}): {' '.join(engines) or '-'}")
     for engine in left_out:

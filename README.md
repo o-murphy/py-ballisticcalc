@@ -18,6 +18,7 @@ LGPL library for small arms ballistic calculations based on point-mass (3 DoF) p
 [![powered by pyodide]][Pyodide]
 
 [![Pre-commit](https://github.com/o-murphy/py-ballisticcalc/actions/workflows/pre-commit.yml/badge.svg)](https://github.com/o-murphy/py-ballisticcalc/actions/workflows/pre-commit.yml)
+[![Tests](https://github.com/o-murphy/py-ballisticcalc/actions/workflows/cibuildwheel-tests.yml/badge.svg)](https://github.com/o-murphy/py-ballisticcalc/actions/workflows/cibuildwheel-tests.yml)
 
 ### Contents
 

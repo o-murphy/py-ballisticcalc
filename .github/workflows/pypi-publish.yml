@@ -73,9 +73,8 @@ jobs:
           path: ./dist
           retention-days: 14
 
-  # One job per matrix entry: cibuildwheel-reusable.yml builds the exts wheels and uploads them as the artifact below. The
-  # wheels are not tested here (test_skip): they are on every pull request, by cibuildwheel-tests.yml. The engines that do not
-  # depend on a wheel run once per Python version in the `pure` job below.
+  # One job per matrix entry: cibuildwheel-reusable.yml builds the exts wheels and uploads them as the artifact below. They
+  # are not tested here (test_skip): the same wheels are built and tested on every pull request, by cibuildwheel-tests.yml.
   build:
     name: Build wheels on ${{ matrix.os }} / ${{ matrix.name }}
     strategy:
@@ -168,20 +167,8 @@ jobs:
       # PyPI and TestPyPI reject local version segments (+g<hash>); build-only runs keep it for traceability
       no_local_version: ${{ github.event_name == 'push' || inputs.testpypi }}
 
-  # The pure-Python and SciPy engines, once for each Python version that is built (the wheels themselves are tested on the
-  # pull request, see test_skip above): a failure here stops the release as well.
-  pure:
-    name: Python and SciPy engines / Python ${{ matrix.python }}
-    strategy:
-      fail-fast: false
-      matrix:
-        python: ["3.11", "3.14t", "3.15t"]
-    uses: ./.github/workflows/pure-engines-reusable.yml
-    with:
-      python: ${{ matrix.python }}
-
   publish:
-    needs: [build-sdist, build, pure]
+    needs: [build-sdist, build]
     runs-on: ubuntu-latest
     # requires manual approval in repo Settings → Environments
     environment: ${{ github.event_name == 'push' && 'pypi' || inputs.testpypi && 'testpypi' || 'build' }}

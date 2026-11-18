@@ -11,6 +11,21 @@ on:
         description: 'Python version for uv, e.g. "3.11" or "3.14t" (free-threaded)'
         required: true
         type: string
+      os:
+        description: "Runner (runs-on)"
+        required: false
+        type: string
+        default: ubuntu-latest
+      core_wheel_artifact:
+        description: "Artifact (of this run) holding the core wheel, a py_ballisticcalc-*.whl; empty: build it here"
+        required: false
+        type: string
+        default: ""
+      groups:
+        description: 'Engines to run, separated by spaces: groups (python, scipy) or engine names (python+rk4)'
+        required: false
+        type: string
+        default: "python scipy"
       timeout_minutes:
         description: "Job timeout in minutes"
         required: false
@@ -22,8 +37,8 @@ permissions:
 
 jobs:
   engines:
-    name: Python and SciPy engines, Python ${{ inputs.python }}
-    runs-on: ubuntu-latest
+    name: Python and SciPy engines, Python ${{ inputs.python }}, ${{ inputs.os }}
+    runs-on: ${{ inputs.os }}
     timeout-minutes: ${{ inputs.timeout_minutes }}
     steps:
       - uses: actions/checkout@v7
@@ -37,24 +52,46 @@ jobs:
           github-token: ${{ github.token }}
 
       # What the runner expects next to it: the tests and the core wheel (see .github/scripts/cibw_run_engines.py)
-      - name: Build the core wheel and stage the test inputs
+      - name: Stage dir
+        run: echo "STAGE=$RUNNER_TEMP/stage" >> "$GITHUB_ENV"
+        shell: bash
+
+      # The core wheel is pure Python, the same for every Python and OS: the caller builds it once and the jobs take it
+      - name: Get the core wheel
+        if: ${{ inputs.core_wheel_artifact != '' }}
+        uses: actions/download-artifact@v8
+        with:
+          name: ${{ inputs.core_wheel_artifact }}
+          path: ${{ env.STAGE }}/cibw_stage/core-wheel
+
+      - name: Build the core wheel
+        if: ${{ inputs.core_wheel_artifact == '' }}
+        run: uv build --wheel --out-dir "$STAGE/cibw_stage/core-wheel" .
+        shell: bash
+
+      - name: Stage the tests and the runner
         run: |
-          STAGE="$RUNNER_TEMP/stage"
-          mkdir -p "$STAGE/cibw_stage/core-wheel"
-          uv build --wheel --out-dir "$STAGE/cibw_stage/core-wheel" .
           cp -R tests "$STAGE/cibw_stage/tests"
           cp .github/scripts/cibw_run_engines.py "$STAGE/"
-          echo "STAGE=$STAGE" >> "$GITHUB_ENV"
+          ls "$STAGE/cibw_stage/core-wheel"
         shell: bash
 
       # The same dependency group the wheels are tested with (numpy and scipy included), no extension is built
       - name: Install the test dependencies
         run: |
           uv venv --python ${{ inputs.python }} .venv-pure
-          uv pip install --python .venv-pure/bin/python --group py_ballisticcalc.exts/pyproject.toml:test
+          # the interpreter of the venv: Scripts/ on Windows, bin/ elsewhere
+          if [ "$RUNNER_OS" = "Windows" ]; then VENV_PYTHON=".venv-pure/Scripts/python.exe"; else VENV_PYTHON=".venv-pure/bin/python"; fi
+          uv pip install --python "$VENV_PYTHON" --group py_ballisticcalc.exts/pyproject.toml:test
+          echo "VENV_PYTHON=$GITHUB_WORKSPACE/$VENV_PYTHON" >> "$GITHUB_ENV"
         shell: bash
 
-      - name: Run the python and scipy engines
+      # Variables, not ${{ }}, in the command: on Windows the paths have backslashes, which bash would take for escapes
+      - name: Run the engines
         working-directory: ${{ env.STAGE }}
-        run: ${{ github.workspace }}/.venv-pure/bin/python cibw_run_engines.py python scipy
+        env:
+          GROUPS_TO_RUN: ${{ inputs.groups }}
+        run: |
+          # shellcheck disable=SC2086 -- the groups are a list separated by spaces
+          "$VENV_PYTHON" cibw_run_engines.py $GROUPS_TO_RUN
         shell: bash

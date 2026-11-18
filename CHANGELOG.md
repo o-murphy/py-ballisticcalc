@@ -21,23 +21,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   version mismatch). `--reinstall-package` is no longer needed, and was removed from the `uv-sync` pre-commit hook.
 
 ### CI
-- `.github/workflows/cibuildwheel-reusable.yml`: builds the exts wheels with cibuildwheel and tests each of them (every
-  engine, one after another, found from the entry points: `.github/scripts/cibw_run_engines.py`) on its own platform, then
-  uploads them as a named artifact. Runs by hand (`workflow_dispatch`) or is called (`workflow_call`) with `build`, `skip`
-  and `test_skip` (`CIBW_BUILD`, `CIBW_SKIP`, `CIBW_TEST_SKIP`, several selectors separated by commas), `platform`, `archs`,
-  `version` / `no_local_version`, `artifact_name` and `retention_days`. SciPy and NumPy come through `test-requires` in
-  `py_ballisticcalc.exts/pyproject.toml`, left out by `[[tool.cibuildwheel.overrides]]` where PyPI has no scipy wheel.
+- `.github/workflows/cibuildwheel-reusable.yml`: builds the exts wheels with cibuildwheel, tests each of them on its own
+  platform and uploads them as a named artifact. Runs by hand (`workflow_dispatch`) or is called (`workflow_call`) with
+  `build`, `skip` and `test_skip` (`CIBW_BUILD`, `CIBW_SKIP`, `CIBW_TEST_SKIP`, several selectors separated by commas),
+  `platform`, `archs`, `version` / `no_local_version`, `artifact_name` and `retention_days`. The test environment is the
+  `test` dependency group of `py_ballisticcalc.exts/pyproject.toml` (`test-noscipy` where PyPI has no scipy wheel, picked by
+  `[[tool.cibuildwheel.overrides]]`).
+- `.github/scripts/cibw_run_engines.py` runs the engines one after another, found from the entry points (no probe); the
+  arguments pick groups (`cython`, `python`, `scipy`) or engines (`python+rk4`). cibuildwheel tests the `cython` group. On
+  Pyodide, iOS and Android, where there is no subprocess (`sys.executable` is empty on Android), the sessions run in this
+  process.
 - `.github/workflows/cibuildwheel-tests.yml`: every pull request builds the exts wheels and tests the Cython engines on
   each of them, on its own platform (Linux x86-64 / i686 / aarch64 / armv7l, Windows x64 / x86 / ARM64, macOS arm64 /
-  universal2 / Intel, the iOS arm64 device and simulator wheels (the device one without tests) and the Intel simulator, Android x86-64,
-  Pyodide; the arm64 Android wheel has no emulator and is only
-  built); a push to a branch runs one Linux job. The pure-Python and SciPy engines, which do not depend on the wheel and
-  take minutes each, run once per Python version (3.11, 3.14t, 3.15t) in `pure-engines-reusable.yml`, called from there.
+  universal2 / Intel, the iOS simulators, Android x86-64, Pyodide). The arm64 Android wheel (no emulator) and the iOS device
+  wheel are built without tests. A push to a branch runs one Linux job.
+- `.github/workflows/pure-engines-reusable.yml`: the pure-Python and SciPy engines do not depend on the wheel and take
+  minutes each, so they run on the core wheel (built once by a `core-wheel` job and shared as an artifact), once for each
+  of Python 3.11, 3.14t and 3.15t on Linux, and `python+rk4` with the SciPy engines once more on Windows and on macOS
+  (3.11). Called from `cibuildwheel-tests.yml`.
 - `pypi-publish.yml` builds its wheels through `cibuildwheel-reusable.yml` too, without tests (`test_skip`: they run on the
-  pull request), builds the iOS device and simulator wheels, and runs the pure-Python and SciPy engines once per Python version
-  (`pure-engines-reusable.yml`) before it publishes.
+  pull request), and builds the iOS device and simulator wheels.
 - The per-engine workflows `pytest-{,cythonized-}{euler,rk4,verlet,ck,dopri,tsitouras,scipy}-engine.yml` are removed;
-  `pytest-reusable.yml`, `pytest-manual.yml` and `pytest-tiny-engine.yml` stay.
+  `pytest-reusable.yml`, `pytest-manual.yml` and `pytest-tiny-engine.yml` stay. The badges of the engines in the README
+  point to `cibuildwheel-tests.yml`, and there is a `Tests` badge in its header.
 
 ### Removed
 - `Makefile`. Its targets are plain `uv sync` / `uv run` commands, now documented in `docs/contributing.md`; the
@@ -45,6 +51,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   and `__pycache__`) and `scripts/test-leaks.sh` (stress tests under Valgrind).
 
 ### Fixed
+- `py_ballisticcalc.exts/setup.py`: a Python built for Android before 3.13 reports `linux` in `sysconfig.get_platform()`, so the
+  build was not recognised as Android and kept the stable ABI (abi3), which cannot be imported there; `sys.platform` and
+  `sys.getandroidapilevel()` are checked as well.
 - `_EngineLoader.load("module:Factory(key=value)")` on Python 3.15: `importlib.metadata.EntryPoint` checks its value when it
   is created since 3.15, and the call syntax is not a valid object reference, so the direct path raised `ValueError`. Only the
   target before the parentheses is made an `EntryPoint` now (`_resolve_value`, `_load_value`). The test that covers it
