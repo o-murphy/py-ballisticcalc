@@ -3,8 +3,8 @@ run-name: "ctypes: ${{ github.event_name == 'workflow_dispatch' && 'by hand' || 
 
 # Builds the ctypes package (py_ballisticcalc.ctypes) with cibuildwheel and tests each wheel: the engines through ctypes for
 # what the Cython wheels do not serve (PyPy, GraalPy, ppc64le, s390x, riscv64) and, as a second variant, for Android and Pyodide. One
-# py3-none wheel per platform, built by one interpreter; the PyPy and GraalPy entries build (and so test) it under those
-# interpreters. Each QEMU architecture is a job of its own (glibc and musl in it), so the three run in parallel. It does not run, or wait for, the Cython jobs (cibuildwheel-tests.yml).
+# py3-none wheel per platform, built by one interpreter; the PyPy entries build (and so test) it under PyPy, and GraalPy has jobs of its own
+# (see below). Each QEMU architecture is a job of its own (glibc and musl in it), so the three run in parallel. It does not run, or wait for, the Cython jobs (cibuildwheel-tests.yml).
 #
 # By hand (workflow_dispatch); GitHub starts a workflow by hand only when its file is on the default branch, so until this
 # one is merged it also starts on a push to a feat/ctypes-* branch (remove that trigger afterwards).
@@ -42,7 +42,7 @@ jobs:
             cibw_archs: "x86_64,i686"
             cibw_platform: linux
             needs_qemu: false
-            build: "cp3*, pp3*, gp3*"
+            build: "cp3*, pp3*"
 
           - name: Linux ARM64 / ARMv7 (glibc, musl)
             artifact_key: linux-arm64-armv7
@@ -50,7 +50,7 @@ jobs:
             cibw_archs: "aarch64,armv7l"
             cibw_platform: linux
             needs_qemu: false
-            build: "cp3*, pp3*, gp3*"
+            build: "cp3*, pp3*"
 
           - name: Linux ppc64le (QEMU, glibc and musl)
             artifact_key: linux-ppc64le
@@ -82,7 +82,7 @@ jobs:
             cibw_archs: "x86,AMD64"
             cibw_platform: windows
             needs_qemu: false
-            build: "cp3*, pp3*, gp3*"
+            build: "cp3*, pp3*"
 
           - name: Windows ARM64
             artifact_key: windows-arm64
@@ -98,7 +98,7 @@ jobs:
             cibw_archs: "arm64,universal2"
             cibw_platform: macos
             needs_qemu: false
-            build: "cp3*, pp3*, gp3*"
+            build: "cp3*, pp3*"
 
           - name: macOS Intel
             artifact_key: macos-x86_64
@@ -106,7 +106,7 @@ jobs:
             cibw_archs: "x86_64"
             cibw_platform: macos
             needs_qemu: false
-            build: "cp3*, pp3*, gp3*"
+            build: "cp3*, pp3*"
 
           - name: Android (x86-64 emulator, arm64 build)
             artifact_key: android
@@ -123,6 +123,54 @@ jobs:
             cibw_platform: pyodide
             needs_qemu: false
 
+          # GraalPy has a job of its own on each platform it runs on: a crash or a hang there (pytest-xdist workers of GraalPy
+          # died all at once on macOS Intel) must not take the CPython and PyPy wheels of the platform with it. The time limit
+          # makes a hang a failure after an hour, not after the default six.
+          - name: GraalPy Linux x64
+            artifact_key: graalpy-linux-x64
+            os: ubuntu-latest
+            cibw_archs: "x86_64"
+            cibw_platform: linux
+            needs_qemu: false
+            build: "gp3*"
+            timeout_minutes: 60
+
+          - name: GraalPy Linux ARM64
+            artifact_key: graalpy-linux-arm64
+            os: ubuntu-24.04-arm
+            cibw_archs: "aarch64"
+            cibw_platform: linux
+            needs_qemu: false
+            build: "gp3*"
+            timeout_minutes: 60
+
+          - name: GraalPy Windows x64
+            artifact_key: graalpy-windows-x64
+            os: windows-latest
+            cibw_archs: "AMD64"
+            cibw_platform: windows
+            needs_qemu: false
+            build: "gp3*"
+            timeout_minutes: 60
+
+          - name: GraalPy macOS Apple Silicon
+            artifact_key: graalpy-macos-arm64
+            os: macos-26
+            cibw_archs: "arm64"
+            cibw_platform: macos
+            needs_qemu: false
+            build: "gp3*"
+            timeout_minutes: 60
+
+          - name: GraalPy macOS Intel
+            artifact_key: graalpy-macos-x86_64
+            os: macos-26-intel
+            cibw_archs: "x86_64"
+            cibw_platform: macos
+            needs_qemu: false
+            build: "gp3*"
+            timeout_minutes: 60
+
     uses: ./.github/workflows/cibuildwheel-reusable.yml
     with:
       project: py_ballisticcalc.ctypes
@@ -131,5 +179,6 @@ jobs:
       archs: ${{ matrix.cibw_archs }}
       build: ${{ matrix.build || '' }}
       qemu: ${{ matrix.needs_qemu }}
+      timeout_minutes: ${{ matrix.timeout_minutes || 360 }}
       artifact_name: ctypes-wheels-${{ matrix.artifact_key }}
       retention_days: 1
