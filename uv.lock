@@ -2500,6 +2500,9 @@ charts = [
     { name = "scipy", version = "1.17.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.12'" },
     { name = "scipy", version = "1.18.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.12'" },
 ]
+ctypes = [
+    { name = "py-ballisticcalc-ctypes" },
+]
 dev = [
     { name = "cython-lint" },
     { name = "ipykernel" },
@@ -2537,6 +2540,10 @@ docs = [
 ]
 exts = [
     { name = "py-ballisticcalc-exts" },
+]
+native = [
+    { name = "py-ballisticcalc-ctypes", marker = "platform_machine in 'ppc64le s390x riscv64' or platform_python_implementation != 'CPython'" },
+    { name = "py-ballisticcalc-exts", marker = "platform_machine not in 'ppc64le s390x riscv64' and platform_python_implementation == 'CPython'" },
 ]
 scipy = [
     { name = "numpy", version = "2.4.6", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.12'" },
@@ -2600,6 +2607,9 @@ requires-dist = [
     { name = "pandas", marker = "extra == 'dev'", specifier = ">=3.0.2" },
     { name = "pandas-stubs", marker = "extra == 'dev'", specifier = ">=3.0.3.260530" },
     { name = "pre-commit", marker = "extra == 'dev'", specifier = ">=4.6.0" },
+    { name = "py-ballisticcalc-ctypes", marker = "(platform_machine in 'ppc64le s390x riscv64' and extra == 'native') or (platform_python_implementation != 'CPython' and extra == 'native')", directory = "py_ballisticcalc.ctypes" },
+    { name = "py-ballisticcalc-ctypes", marker = "extra == 'ctypes'", directory = "py_ballisticcalc.ctypes" },
+    { name = "py-ballisticcalc-exts", marker = "platform_machine not in 'ppc64le s390x riscv64' and platform_python_implementation == 'CPython' and extra == 'native'", directory = "py_ballisticcalc.exts" },
     { name = "py-ballisticcalc-exts", marker = "extra == 'exts'", directory = "py_ballisticcalc.exts" },
     { name = "pydocstyle", marker = "extra == 'docs'", specifier = ">=6.3.0" },
     { name = "pylint", marker = "extra == 'dev'", specifier = ">=4.0.6" },
@@ -2619,7 +2629,7 @@ requires-dist = [
     { name = "types-deprecated", marker = "extra == 'dev'", specifier = ">=1.3.1.20260520" },
     { name = "typing-extensions", specifier = ">=4.15.0" },
 ]
-provides-extras = ["exts", "charts", "scipy", "dev", "docs"]
+provides-extras = ["exts", "ctypes", "native", "charts", "scipy", "dev", "docs"]
 
 [package.metadata.requires-dev]
 dev = [
@@ -2647,6 +2657,15 @@ test = [
     { name = "pytest", specifier = ">=9.1.1" },
     { name = "pytest-cov", specifier = ">=7.1.0" },
 ]
+
+[[package]]
+name = "py-ballisticcalc-ctypes"
+source = { directory = "py_ballisticcalc.ctypes" }
+
+[package.metadata]
+
+[package.metadata.requires-dev]
+dev = [{ name = "ctypesgen", specifier = "==1.1.1" }]
 
 [[package]]
 name = "py-ballisticcalc-exts"

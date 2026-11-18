@@ -49,6 +49,12 @@ uv add py-ballisticcalc
 # Using precompiled backend (improves performance)
 uv add py-ballisticcalc[exts]
 
+# The same engines through ctypes (PyPy, GraalPy, ppc64le, s390x, riscv64; on Android as an alternative)
+uv add py-ballisticcalc[ctypes]
+
+# Or let the environment pick the backend: Cython on CPython, ctypes on the rest
+uv add py-ballisticcalc[native]
+
 # Using matplotlib and pandas uses additional dependencies
 uv add py-ballisticcalc[charts]
 
@@ -63,6 +69,12 @@ pip install py-ballisticcalc
 
 # Using precompiled backend (improves performance)
 pip install py-ballisticcalc[exts]
+
+# The same engines through ctypes (PyPy, GraalPy, ppc64le, s390x, riscv64; on Android as an alternative)
+pip install py-ballisticcalc[ctypes]
+
+# Or let the environment pick the backend: Cython on CPython, ctypes on the rest
+pip install py-ballisticcalc[native]
 
 # Using matplotlib and pandas uses additional dependencies
 pip install py-ballisticcalc[charts]
