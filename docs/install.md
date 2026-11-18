@@ -31,6 +31,8 @@ If you have Python 3.11+ and `pip` installed, you're good to go.
 py-ballisticcalc has the following optional dependencies:
 
 * **[`exts`](internals/cython.md):** Cython based implementation of some classes to increase performance. [py_ballisticcalc.exts](https://pypi.org/project/py_ballisticcalc.exts) package.
+* **`ctypes`:** The same compiled engines (`cython+*`) through ctypes: a `py3-none` wheel with the `bclibc_ffi` shared library. Use it on PyPy, GraalPy, ppc64le, s390x and riscv64, where `exts` is not available; elsewhere it is an alternative to `exts` (install one of the two). [py_ballisticcalc.ctypes](https://pypi.org/project/py_ballisticcalc.ctypes) package.
+* **`native`:** Installs `exts` or `ctypes`, whichever fits the interpreter and the machine.
 * **`charts`:** Includes [matplotlib](https://matplotlib.org/) for creating [`charts`][py_ballisticcalc.trajectory_data.HitResult.plot] and [pandas](https://pandas.pydata.org/) for creating [`DataFrame tables`][py_ballisticcalc.trajectory_data.HitResult.dataframe].
 * **[`scipy`](https://scipy.org/):** Installs support for the `SciPyIntegrationEngine`.
 
@@ -44,6 +46,12 @@ To install optional dependencies along with py-ballisticcalc:
     ```
 
     ```bash
+    # the same engines through ctypes (PyPy, GraalPy, ppc64le, s390x, riscv64), or the one that fits the machine:
+    pip install "py-ballisticcalc[ctypes]"
+    pip install "py-ballisticcalc[native]"
+    ```
+
+    ```bash
     # with dependencies for charting:
     pip install "py-ballisticcalc[charts]"
     ```
@@ -53,6 +61,12 @@ To install optional dependencies along with py-ballisticcalc:
     ```bash
     # with the cython extensions:
     uv add "py-ballisticcalc[exts]"
+    ```
+
+    ```bash
+    # the same engines through ctypes (PyPy, GraalPy, ppc64le, s390x, riscv64), or the one that fits the machine:
+    uv add "py-ballisticcalc[ctypes]"
+    uv add "py-ballisticcalc[native]"
     ```
 
     ```bash
@@ -85,6 +99,7 @@ git submodule update --init --recursive
     # from repo root
     py -m pip install -e .[dev]                        # main package editable
     py -m pip install -e ./py_ballisticcalc.exts[dev]  # build/install C extensions (optional)
+    py -m pip install -e ./py_ballisticcalc.ctypes[dev]  # build/install the ctypes library (optional)
     ```
 
 === "uv"
@@ -92,4 +107,5 @@ git submodule update --init --recursive
     # from repo root
     uv sync                        # main package editable
     uv sync --extra exts           # build/install C extensions (optional)
+    uv sync --extra ctypes         # build/install the ctypes library (optional)
     ```

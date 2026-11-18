@@ -2,6 +2,11 @@
 
 The package carries the ``bclibc_ffi`` shared library (``_native_lib/``), which setup.py builds from the bclibc
 sources. Importing this module does not load it.
+
+The engines are registered as the entry points ``cython+euler``, ``cython+rk4``, ``cython+verlet``, ``cython+rkck``,
+``cython+dopri`` and ``cython+tsitouras`` (the names of the Cython engines of ``py_ballisticcalc.exts``: install one of the two
+packages) and are imported on first access of the ``Native<Method>IntegrationEngine`` names. :func:`check_versions` requires the
+main package to have the same version.
 """
 
 from importlib.metadata import PackageNotFoundError, metadata
@@ -47,7 +52,8 @@ def library_path() -> Path:
 
 
 def check_versions(core_version: str, own_version: str) -> None:
-    """The main package and this one are released together and must be the same version (the `exts` extra pins it)."""
+    """The main package and this one are released together and must be the same version
+    (the `ctypes` and `native` extras pin it)."""
     if core_version != own_version:
         raise AssertionError(
             f"Incompatible versions: {CORE_PACKAGE_NAME}@{core_version} "

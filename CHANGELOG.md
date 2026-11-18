@@ -8,15 +8,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
-- `py_ballisticcalc.ctypes`: the bclibc engines (`cython+*`) through ctypes, for every platform the Cython extensions are built for
-  except iOS and Pyodide, and the only backend where they do not work: PyPy and GraalPy (the Cython extension does not build on PyPy, and on
-  GraalPy it builds but crashes on import), ppc64le, s390x and riscv64; on the others (CPython on Linux, macOS, Windows incl. x86 and
-  ARM64, Android) it is the second variant next to Cython. The package ships the `bclibc_ffi` shared library (a C ABI, no dependency
-  on the interpreter), so there is one `py3-none-<platform>` wheel per platform for every Python: `manylinux` (`2_17`, built
-  in `manylinux_2_28`), `musllinux_1_2`, macOS, Windows. The library and the ctypes bindings are built from the one bclibc
-  submodule (`_bclibc.py` stages the sources for an sdist or a container build); the bindings (`_native_gen.py`) are made by
-  ctypesgen, a development dependency, with `regenerate_bindings.py`, and a test fails when they are out of date. A guard
-  checks that the version matches the main package's.
+- `py_ballisticcalc.ctypes`: the bclibc engines (`cython+*`) through ctypes: the only backend where the Cython extensions do not
+  work (PyPy and GraalPy: the Cython extension does not build on PyPy, and on GraalPy it builds but crashes on import) and on the
+  architectures they are not built for (ppc64le, s390x, riscv64); on the others (CPython on Linux, macOS, Windows incl. x86 and ARM64,
+  Android, Pyodide) it is the second variant next to Cython. iOS is not built. The package ships the `bclibc_ffi` shared library (a C ABI,
+  no dependency on the interpreter; the bclibc core is compiled into it, where the Cython modules each have their own copy), so there is
+  one `py3-none-<platform>` wheel per platform for every Python: `manylinux` (glibc 2.17 on x86_64, aarch64, ppc64le and s390x, 2.31 on
+  armv7l, 2.38 on riscv64; built in `manylinux_2_28`), `musllinux_1_2`, macOS, Windows, Android and Pyodide (its platform tag names the
+  Pyodide ABI, `pyemscripten_*`: one wheel for each of Python 3.13, 3.14 and 3.15). The library and the ctypes bindings are built
+  from the one bclibc submodule (`_bclibc.py` stages the sources for an sdist or a container build); the bindings (`_native_gen.py`)
+  are made by ctypesgen, a development dependency, with `regenerate_bindings.py`, and a test fails when they are out of date. A guard
+  checks that the version matches the main package's. On the benchmark (Linux x86-64, CPython 3.13, Dormand-Prince) a full
+  trajectory takes about 5-20% longer than with the Cython engine.
 - Classifiers of the three packages: license (LGPLv3), audience, topic (Physics), `Typing :: Typed`; PyPy and GraalPy for the core; the languages (C++, Cython),
   the operating systems the wheels are built for, and free-threading (3 - Stable) for the extensions and the ctypes package.
 - `py_ballisticcalc.ctypes` registers the engines as entry points (`cython+euler`, `rk4`, `verlet`, `rkck`, `dopri`, `tsitouras`) and
@@ -37,19 +40,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   the git commit too, so both packages keep the same `setuptools-scm` version (the exts package refuses to import on a
   version mismatch). `--reinstall-package` is no longer needed, and was removed from the `uv-sync` pre-commit hook.
 
+- `py_ballisticcalc.exts`: the Cython engines build `TrajectoryData` through `tuple.__new__`, with the unit objects created inline and the
+  `TrajFlag` objects looked up in a dict, instead of the Python `__new__` with sixteen keyword arguments and ten calls of
+  `TrajectoryData._new_feet` and the like (8.7 → 3.4 µs for three records, Linux x86-64, CPython 3.13; the ctypes engines do the same).
+
 ### CI
-- cibuildwheel 4.2.1 → 4.3.0 in `cibuildwheel-reusable.yml` (it knows GraalPy 3.13, `gp313_253`); `ctypes-tests.yml` tests the ctypes wheel on every PyPy version and on GraalPy 3.13 (`pp3*`; GraalPy 3.13, `gp313_253`, everywhere it exists, and GraalPy 3.12, `gp312_250`, on Linux only: on macOS its ssl module does not work, on Windows its tests hang; GraalPy 3.13 has no macOS Intel build, so there is no GraalPy there; in the same jobs as CPython: the wheel is built once per platform, every Python only tests it)
-  on every platform they exist for (GraalPy builds with the plain `build` frontend: uv and GraalPy are incompatible).
-- `cibuildwheel-reusable.yml` has a `project` input (`py_ballisticcalc.exts` by default, or `py_ballisticcalc.ctypes`) and
-  stages the bclibc sources into a package that needs them. `ctypes-tests.yml` builds and tests the ctypes package, by hand only (`workflow_dispatch`; it does not run the Cython jobs of
-  `cibuildwheel-tests.yml`): Linux (glibc, musl, ppc64le, s390x,
-  riscv64 under QEMU), macOS, Windows, Android, and under PyPy and GraalPy.
-- `.github/workflows/cibuildwheel-reusable.yml`: builds the exts wheels with cibuildwheel, tests each of them on its own
+- cibuildwheel 4.2.1 → 4.3.0 in `cibuildwheel-reusable.yml` (it knows GraalPy 3.13, `gp313_253`).
+- `cibuildwheel-reusable.yml` has a `project` input (`py_ballisticcalc.exts` by default, or `py_ballisticcalc.ctypes`) and stages the
+  bclibc sources into a package that needs them. `ctypes-tests.yml` builds and tests the ctypes package by hand
+  (`workflow_dispatch`; until the file is on the default branch also on a push to `feat/ctypes-*`), without the Cython jobs of
+  `cibuildwheel-tests.yml`: Linux x86_64, i686, aarch64 and armv7l (glibc, musl), ppc64le, s390x and riscv64 (QEMU, a job each), macOS
+  arm64 (universal2) and Intel, Windows x64, x86 and ARM64, Android (x86-64 emulator; the arm64 wheel is built, not run), Pyodide, PyPy
+  (`pp3*`) and GraalPy. One CPython builds the `py3-none` wheel of a platform and every other Python only tests it. GraalPy has a job of
+  its own on each platform: GraalPy 3.13 (`gp313_253`) on Linux, Windows and macOS arm64 (there is no macOS Intel build), GraalPy 3.12
+  (`gp312_250`) on Linux only (its ssl module does not work on macOS, and its tests hang on Windows); it builds with the plain
+  `build` frontend (uv and GraalPy are incompatible) and on Windows runs the tests without pytest-xdist.
+- `.github/workflows/cibuildwheel-reusable.yml`: builds the wheels of one package (`project`) with cibuildwheel, tests each of them on its own
   platform and uploads them as a named artifact. Runs by hand (`workflow_dispatch`) or is called (`workflow_call`) with
   `build`, `skip` and `test_skip` (`CIBW_BUILD`, `CIBW_SKIP`, `CIBW_TEST_SKIP`, several selectors separated by commas),
-  `platform`, `archs`, `version` / `no_local_version`, `artifact_name` and `retention_days`. The test environment is the
-  `test` dependency group of `py_ballisticcalc.exts/pyproject.toml` (`test-noscipy` where PyPI has no scipy wheel, picked by
+  `os`, `project`, `platform`, `archs`, `timeout_minutes`, `version` / `no_local_version`, `artifact_name` and `retention_days`. The test
+  environment is the `test` dependency group of the package's `pyproject.toml` (`test-noscipy` where PyPI has no scipy wheel, picked by
   `[[tool.cibuildwheel.overrides]]`).
+- The tests of each package (`py_ballisticcalc.exts/tests`, `py_ballisticcalc.ctypes/tests`) run in every cibuildwheel job through
+  `test-sources` in its `pyproject.toml`: `cibw_run_engines.py` runs them in the session of every engine, after the core suite.
 - `.github/scripts/cibw_run_engines.py` runs the engines one after another, found from the entry points (no probe); the
   arguments pick groups (`cython`, `python`, `scipy`) or engines (`python+rk4`). cibuildwheel tests the `cython` group. On
   Pyodide, iOS and Android, where there is no subprocess (`sys.executable` is empty on Android), the sessions run in this
@@ -85,6 +98,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `examples/ukrop_338lm_300gr_smk_unit_parse.py` (`Unit.parse()` replaces the private `_parse_value` / `_parse_unit`) and
   `examples/zero_stress_tests.py` (keyword-only `Calculator`, `fire(..., raise_range_error=False)`, no `_engine_instance`; it takes
   the engine as an argument, so it also runs on `cython+*`) run again.
+- `cibuildwheel-reusable.yml` could not be started by hand: a number input of a `workflow_dispatch` arrives as a string and
+  `timeout-minutes` refused it (`Unexpected value '360'`); `fromJSON` makes it a number for a start by hand and for a call.
+- `cibuildwheel-reusable.yml` exported an empty `CIBW_SKIP` and `CIBW_TEST_SKIP` when the inputs were empty, which cibuildwheel takes for
+  a value that overrides the `skip` and `test-skip` of the package's `pyproject.toml`; they are not exported when empty. (An empty
+  `CIBW_BUILD` still means every CPython, which the jobs of `cibuildwheel-tests.yml` rely on.)
 
 ## [3.1.1] - 2026-10-16
 

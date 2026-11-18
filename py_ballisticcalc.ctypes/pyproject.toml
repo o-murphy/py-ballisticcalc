@@ -14,11 +14,12 @@ authors = [
     { name="o-murphy", email="thehelixpg@gmail.com" },
     { name="dbookstaber", email="bookstaber@gmail.com"}
 ]
-description = "bclibc engines of py_ballisticcalc through ctypes: for the interpreters the Cython extensions cannot serve (PyPy, GraalPy) and the platforms they are not built for"
+description = "bclibc engines of py_ballisticcalc through ctypes: for the interpreters the Cython extensions cannot serve (PyPy, GraalPy), the architectures they are not built for (ppc64le, s390x, riscv64) and, as a second variant, CPython elsewhere"
 readme = "README.md"
 requires-python = ">=3.11"
 keywords = ["py_ballisticcalc", "ballistics", "ctypes", "ballistic calculator", "python", "python3"]
 classifiers = [
+    "Environment :: WebAssembly :: Emscripten",
     "Intended Audience :: Developers",
     "Intended Audience :: Education",
     "Intended Audience :: Science/Research",

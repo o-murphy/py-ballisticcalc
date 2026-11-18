@@ -191,7 +191,8 @@ fallback_version = "0.0.0.dev0"
 #   we use setuptools_dynamic_dependencies as "before-build hook"
 #   to guarantee strict tie of the `main` and the `exts` packages versions
 #   `exts` is the Cython extensions; `ctypes` is the same engines through ctypes, for PyPy and GraalPy (Cython does not
-#   work there), ppc64le, s390x, riscv64 and, as a second variant, Android. Those two are an explicit choice of the backend.
+#   work there), ppc64le, s390x, riscv64 and, as a second variant, the platforms Cython is built for. Those two are an explicit
+#   choice of the backend.
 #   `native` is the conditional one: environment markers pick exactly one of them for the interpreter and the machine.
 [tool.setuptools_dynamic_dependencies.optional-dependencies]
 exts = ["py_ballisticcalc.exts=={version}"]

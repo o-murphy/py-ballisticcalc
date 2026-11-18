@@ -1,15 +1,17 @@
 name: cibuildwheel (reusable)
 run-name: "cibuildwheel: ${{ inputs.platform }} ${{ inputs.archs }} ${{ inputs.build }}"
 
-# Builds the exts wheels with cibuildwheel and tests every one of them in the same run: the engines are run one after
-# another by .github/scripts/cibw_run_engines.py (the test-command in the pyproject.toml of the package). The wheels are uploaded
-# as a named artifact.
+# Builds the wheels of one package (`project`: py_ballisticcalc.exts or py_ballisticcalc.ctypes) with cibuildwheel and tests every one
+# of them in the same run: the engines are run one after another by .github/scripts/cibw_run_engines.py (the test-command in the
+# pyproject.toml of the package). The wheels are uploaded as a named artifact.
 #
 # Runs by hand (workflow_dispatch) or is called from another workflow (workflow_call) -- the inputs are the same.
 #
 # `build` and `skip` are CIBW_BUILD and CIBW_SKIP: several selectors, separated by commas (or spaces), for example
 #   build: cp311-*, cp314t-*        skip: *-musllinux_*, *-win32
-# Empty `build` means "what [tool.cibuildwheel] selects for the platform"; empty `skip` skips nothing. `test_skip` is
+# An empty `build` is an empty CIBW_BUILD, which cibuildwheel takes as every build of the platform (the `build` of the package's
+# pyproject.toml is not used: every CPython builds and is tested, which cibuildwheel-tests.yml relies on). An empty `skip` and an empty
+# `test_skip` are not exported at all, so the `skip` and `test-skip` of the package's pyproject.toml apply. `test_skip` is
 # CIBW_TEST_SKIP, the same way: builds that are built but not tested (`*` for none of them tested).
 #
 # `artifact_name` must be unique within one run: when a caller starts this workflow several times with the same
@@ -61,7 +63,7 @@ on:
         type: boolean
         default: false
       artifact_name:
-        description: "Name of the wheels artifact (empty: exts-wheels-<platform>-<archs>)"
+        description: "Name of the wheels artifact (empty: <exts|ctypes>-wheels-<platform>-<archs>)"
         required: false
         type: string
         default: ""
@@ -128,7 +130,7 @@ on:
         type: boolean
         default: false
       artifact_name:
-        description: "Name of the wheels artifact (empty: exts-wheels-<platform>-<archs>)"
+        description: "Name of the wheels artifact (empty: <exts|ctypes>-wheels-<platform>-<archs>)"
         required: false
         type: string
         default: ""

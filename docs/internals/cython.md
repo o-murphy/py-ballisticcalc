@@ -3,6 +3,8 @@
 This document records the Cython conventions adopted by the project.
 It explains naming, error handling, Global Interpreter Lock (GIL) usage, and why these choices were made.
 
+For the platforms Cython does not serve (PyPy, GraalPy, ppc64le, s390x, riscv64) there is `py_ballisticcalc.ctypes`: the same engines through ctypes, a `py3-none` wheel with a shared library (no `abi3`; see [Installation](../install.md)).
+
 **Goals**
 
 - Keep hot numerical work free of the Python GIL to maximize throughput.

@@ -138,7 +138,7 @@ def main() -> int:
     for engine in left_out:
         print(f"::notice::SKIP {engine}: its dependency is not installed in this environment")
     if (not groups or "cython" in groups) and not any(e.startswith("cython+") for e in engines):
-        print("::error::no cython+ engine is registered: the exts wheel under test is not the one in use", flush=True)
+        print("::error::no cython+ engine is registered: the exts or ctypes wheel under test is not the one in use", flush=True)
         return 1
     if not engines:
         print("::error::no engine to run", flush=True)

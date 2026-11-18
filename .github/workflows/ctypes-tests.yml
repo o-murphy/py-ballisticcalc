@@ -2,7 +2,7 @@ name: Tests (ctypes)
 run-name: "ctypes: ${{ github.event_name == 'workflow_dispatch' && 'by hand' || github.ref_name }}"
 
 # Builds the ctypes package (py_ballisticcalc.ctypes) with cibuildwheel and tests each wheel: the engines through ctypes for
-# what the Cython wheels do not serve (PyPy, GraalPy, ppc64le, s390x, riscv64) and, as a second variant, for Android and Pyodide. One
+# what the Cython wheels do not serve (PyPy, GraalPy, ppc64le, s390x, riscv64) and, as a second variant, for CPython on Linux, macOS, Windows, Android and Pyodide. One
 # py3-none wheel per platform, built by one interpreter; the PyPy entries build (and so test) it under PyPy, and GraalPy has jobs of its own
 # (see below). Each QEMU architecture is a job of its own (glibc and musl in it), so the three run in parallel. It does not run, or wait for, the Cython jobs (cibuildwheel-tests.yml).
 #
@@ -32,7 +32,7 @@ jobs:
       fail-fast: false
       # `cp3*` selects the CPython identifiers only (the project enables PyPy and GraalPy too): one builds the py3-none wheel, the others
       # reuse it and test it on their Python, as for the abi3 wheels of exts.
-      # GraalPy on Windows is not here: uv 0.13 cannot inspect graalpy.exe (ctypes.ArgumentError in VirtualAlloc), so cibuildwheel cannot make its build environment
+      # GraalPy on Windows (3.13 only) has a job of its own below: it builds with the plain `build` frontend (uv 0.13 cannot inspect graalpy.exe: ctypes.ArgumentError in VirtualAlloc) and runs the tests without pytest-xdist
       max-parallel: 20 # every entry at once; the QEMU ones are the slowest
       matrix:
         include:
