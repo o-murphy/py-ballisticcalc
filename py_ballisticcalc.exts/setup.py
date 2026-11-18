@@ -350,4 +350,67 @@ cmdclass["build_ext"] = _parallel_build_ext
 # separately through bdist_wheel's py_limited_api option.
 options = {"bdist_wheel": {"py_limited_api": PY_LIMITED_API_TAG}} if USE_LIMITED_API else {}
 
+import platform
+import sys
+import sysconfig
+# ---- bclibc core as one shared library, built by its own command before build_ext (experiment) ----
+import shlex as _shlex
+import subprocess as _subprocess
+from setuptools import Command
+from setuptools.command.build import build as _build
+
+BCLIBC_CORE_SOURCES = [BCLIBC_SRC_DIR / f"{name}.cpp" for name in (
+    "interp", "base_types", "traj_data", "traj_filter", "engine", "euler", "rk4",
+    "cash_karp", "dormand_prince", "tsitouras", "velocity_verlet")]
+# Linux only in this experiment; Android, iOS and Pyodide keep the per-extension static sources
+BCLIBC_SHARED = sys.platform.startswith("linux") and not (IS_ANDROID or IS_IOS or IS_EMSCRIPTEN)
+# the library is keyed by arch and libc: a glibc build must never be reused for musl (and vice versa)
+BCLIBC_LIB_DIR = (Path(os.environ.get("BCLIBC_CACHE_DIR") or "build") / "bclibc"
+                  / f"{platform.machine()}-{platform.libc_ver()[0] or 'musl'}")
+
+
+class build_bclibc(Command):
+    """Compiles the bclibc core sources into libbclibc.so once; an existing library in the lib dir is reused."""
+
+    description = "compile the bclibc core into one shared library"
+    user_options = []
+
+    def initialize_options(self):
+        pass
+
+    def finalize_options(self):
+        pass
+
+    def run(self):
+        out = BCLIBC_LIB_DIR / "libbclibc.so"
+        if out.exists():
+            self.announce(f"bclibc: reusing {out}", level=2)
+            return
+        BCLIBC_LIB_DIR.mkdir(parents=True, exist_ok=True)
+        cxx = os.environ.get("CXX", "c++")
+        cflags = _shlex.split(sysconfig.get_config_var("CFLAGS") or "")
+        cmd = [cxx, "-x", "c++", "-std=c++17", "-O3", "-Wall", "-g", "-fno-exceptions", "-fno-rtti", "-fPIC",
+               *cflags, "-shared", "-Wl,-strip-all",
+               f"-I{BCLIBC_INCLUDE_DIR}", f"-I{BCLIBC_INCLUDE_DIR / 'bclibc'}", f"-I{BCLIBC_SRC_DIR}",
+               *map(str, BCLIBC_CORE_SOURCES), "-o", str(out)]
+        self.announce(f"bclibc: compiling {len(BCLIBC_CORE_SOURCES)} sources -> {out}", level=2)
+        _subprocess.check_call(cmd)
+
+
+class build(_build):
+    # build_bclibc runs first, so build_ext can link against its library
+    sub_commands = [("build_bclibc", lambda _cmd: BCLIBC_SHARED)] + _build.sub_commands
+
+
+if BCLIBC_SHARED:
+    _lib_dir = str(BCLIBC_LIB_DIR.resolve())
+    for _e in extensions:
+        _e.sources = [s for s in _e.sources if not str(s).startswith(str(BCLIBC_SRC_DIR))]
+        _e.libraries = list(_e.libraries or []) + ["bclibc"]
+        _e.library_dirs = list(_e.library_dirs or []) + [_lib_dir]
+        _e.runtime_library_dirs = list(_e.runtime_library_dirs or []) + [_lib_dir]
+
+cmdclass["build"] = build
+cmdclass["build_bclibc"] = build_bclibc
+
 setup(ext_modules=extensions, cmdclass=cmdclass, options=options)
