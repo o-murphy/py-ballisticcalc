@@ -350,9 +350,7 @@ cmdclass["build_ext"] = _parallel_build_ext
 # separately through bdist_wheel's py_limited_api option.
 options = {"bdist_wheel": {"py_limited_api": PY_LIMITED_API_TAG}} if USE_LIMITED_API else {}
 
-import hashlib
 import platform
-import re
 import sys
 import sysconfig
 # ---- bclibc core as one shared library, built by its own command before build_ext (experiment) ----
@@ -367,54 +365,9 @@ BCLIBC_CORE_SOURCES = [BCLIBC_SRC_DIR / f"{name}.cpp" for name in (
 # Linux host only (Android is cross-built from Linux and repaired by auditwheel); Pyodide keeps the
 # per-extension static sources
 BCLIBC_SHARED = sys.platform.startswith("linux") and not IS_EMSCRIPTEN
-def _libc_tag() -> str:
-    """The libc of the build image as a wheel platform tag: manylinux_2_28_x86_64 or musllinux_1_2_x86_64.
-
-    glibc comes from platform.libc_ver(); musl from the version line of `ldd --version`.
-    """
-    if IS_ANDROID:
-        return "android"
-    machine = platform.machine()
-    name, version = platform.libc_ver()
-    if name == "glibc" and version:
-        major, minor = version.split(".")[:2]
-        return f"manylinux_{major}_{minor}_{machine}"
-    try:
-        out = _subprocess.run(["ldd", "--version"], capture_output=True, text=True)
-    except OSError:
-        return f"linux_{machine}"
-    m = re.search(r"Version (\d+)\.(\d+)", out.stdout + out.stderr)
-    if m:
-        return f"musllinux_{m.group(1)}_{m.group(2)}_{machine}"
-    return f"linux_{machine}"
-
-
-def _bclibc_cache_key() -> str:
-    """Key of the bclibc library: libc tag of the image, compiler, flags and bclibc sources.
-
-    A new image with another compiler, a new bclibc revision or other flags gives another key, so the cache never
-    hands out a library built for another target.
-    """
-    cxx = os.environ.get("CXX", "c++")
-    cflags = " ".join(_shlex.split(sysconfig.get_config_var("CFLAGS") or ""))
-    try:
-        compiler = _subprocess.run([cxx, "--version"], capture_output=True, text=True).stdout.splitlines()[:1]
-    except OSError:
-        compiler = [cxx]
-    h = hashlib.sha256()
-    h.update(sysconfig.get_platform().encode())  # the target: android-24-arm64_v8a, linux-x86_64, ...
-    for f in sorted([*BCLIBC_CORE_SOURCES, *(BCLIBC_INCLUDE_DIR).rglob("*.h*")]):
-        h.update(f.name.encode())
-        h.update(f.read_bytes())
-    h.update(cflags.encode())
-    h.update("\n".join(compiler).encode())
-    return f"{_libc_tag()}-{h.hexdigest()[:16]}"
-
-
-# the library lives in a folder keyed by arch, libc and version, compiler and bclibc sources
-# computed only where the shared library is used: the key runs the compiler and ldd, which other platforms lack
 def _bclibc_lib_dir() -> Path:
-    return Path(os.environ.get("BCLIBC_CACHE_DIR") or "build") / "bclibc" / _bclibc_cache_key()
+    """The library is rebuilt in every build: one folder per tree, no cache, so the output is always deterministic."""
+    return Path("build") / "bclibc"
 
 
 class build_bclibc(Command):
@@ -432,9 +385,6 @@ class build_bclibc(Command):
     def run(self):
         lib_dir = _bclibc_lib_dir()
         out = lib_dir / "libbclibc.so"
-        if out.exists():
-            self.announce(f"bclibc: reusing {out}", level=2)
-            return
         lib_dir.mkdir(parents=True, exist_ok=True)
         cxx = os.environ.get("CXX", "c++")
         cflags = _shlex.split(sysconfig.get_config_var("CFLAGS") or "")
