@@ -29,6 +29,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Extras: `ctypes` (the ctypes package) next to `exts` (Cython) is an explicit choice of the backend; `native` picks one of
   them by environment markers (`exts` on CPython, `ctypes` on PyPy, GraalPy, ppc64le, s390x and riscv64).
 
+- API documentation of the ctypes engines: the six `Native*IntegrationEngine` classes and their public methods have docstrings and are in
+  `docs/api/calculator/engines.md` (`py_ballisticcalc.ctypes` is in the `paths` of mkdocstrings in `mkdocs.yml`); `docs/install.md`
+  and the engine pages describe the `ctypes` and `native` extras.
 ### Changed
 - Pin `bclibc` to [`v2.1.0`](https://github.com/ballistics-lab/bclibc/releases/tag/v2.1.0): the zero search no longer
   depends on the early-termination limits (`cMaximumDrop`, `cMinimumAltitude`), so `find_zero_angle` with either at `0`, or for a
@@ -47,6 +50,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `TrajectoryData._new_feet` and the like (8.7 → 3.4 µs for three records, Linux x86-64, CPython 3.13; the ctypes engines do the same).
 
 ### CI
+- `coverage.yml` measures the ctypes engines too: a `test-ctypes` job runs the main suite and `py_ballisticcalc.ctypes/tests` on each of the
+  six ctypes engines (the package installed editable, so the report maps to the files of the repository), and the `merge` job combines
+  their data with that of the pure-Python, SciPy and Cython engines into the one report that goes to Codecov. `.coveragerc` lists the
+  package and leaves out the generated bindings (`_ctypesgen`); the C++ library itself is not line-traced.
 - cibuildwheel 4.2.1 → 4.3.0 in `cibuildwheel-reusable.yml` (it knows GraalPy 3.13, `gp313_253`).
 - `cibuildwheel-reusable.yml` has a `project` input (`py_ballisticcalc.exts` by default, or `py_ballisticcalc.ctypes`) and stages the
   bclibc sources into a package that needs them. `ctypes-tests.yml` builds and tests the ctypes package by hand
