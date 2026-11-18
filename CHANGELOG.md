@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - `py_ballisticcalc.ctypes`: the bclibc engines (`cython+*`) through ctypes, for every platform the Cython extensions are built for
-  except iOS, and the only backend where they do not work: PyPy and GraalPy (the Cython extension does not build on PyPy, and on
+  except iOS and Pyodide, and the only backend where they do not work: PyPy and GraalPy (the Cython extension does not build on PyPy, and on
   GraalPy it builds but crashes on import), ppc64le, s390x and riscv64; on the others (CPython on Linux, macOS, Windows incl. x86 and
   ARM64, Android) it is the second variant next to Cython. The package ships the `bclibc_ffi` shared library (a C ABI, no dependency
   on the interpreter), so there is one `py3-none-<platform>` wheel per platform for every Python: `manylinux` (`2_17`, built
