@@ -83,8 +83,65 @@ jobs:
             pytest pluggy iniconfig pygments packaging
         shell: bash
 
-      - name: Run the tests in Pyodide
+      - name: Test python+euler in Pyodide (pure Python)
+        if: always()
+        run: |
+          PYTHONPATH="$GITHUB_WORKSPACE/.venv-pyodide/lib/python3.15/site-packages" \
+            "$PYODIDE_PYTHON" -m pytest tests -q -p no:cacheprovider --engine=python+euler
+        shell: bash
+
+      - name: Test python+rk4 in Pyodide (pure Python)
+        if: always()
+        run: |
+          PYTHONPATH="$GITHUB_WORKSPACE/.venv-pyodide/lib/python3.15/site-packages" \
+            "$PYODIDE_PYTHON" -m pytest tests -q -p no:cacheprovider --engine=python+rk4
+        shell: bash
+
+      - name: Test python+verlet in Pyodide (pure Python)
+        if: always()
+        run: |
+          PYTHONPATH="$GITHUB_WORKSPACE/.venv-pyodide/lib/python3.15/site-packages" \
+            "$PYODIDE_PYTHON" -m pytest tests -q -p no:cacheprovider --engine=python+verlet
+        shell: bash
+
+      - name: Test cython+euler in Pyodide (Cython)
+        if: always()
+        run: |
+          PYTHONPATH="$GITHUB_WORKSPACE/.venv-pyodide/lib/python3.15/site-packages" \
+            "$PYODIDE_PYTHON" -m pytest tests -q -p no:cacheprovider --engine=cython+euler
+        shell: bash
+
+      - name: Test cython+rk4 in Pyodide (Cython)
+        if: always()
         run: |
           PYTHONPATH="$GITHUB_WORKSPACE/.venv-pyodide/lib/python3.15/site-packages" \
             "$PYODIDE_PYTHON" -m pytest tests -q -p no:cacheprovider --engine=cython+rk4
+        shell: bash
+
+      - name: Test cython+verlet in Pyodide (Cython)
+        if: always()
+        run: |
+          PYTHONPATH="$GITHUB_WORKSPACE/.venv-pyodide/lib/python3.15/site-packages" \
+            "$PYODIDE_PYTHON" -m pytest tests -q -p no:cacheprovider --engine=cython+verlet
+        shell: bash
+
+      - name: Test cython+rkck in Pyodide (Cython)
+        if: always()
+        run: |
+          PYTHONPATH="$GITHUB_WORKSPACE/.venv-pyodide/lib/python3.15/site-packages" \
+            "$PYODIDE_PYTHON" -m pytest tests -q -p no:cacheprovider --engine=cython+rkck
+        shell: bash
+
+      - name: Test cython+dopri in Pyodide (Cython)
+        if: always()
+        run: |
+          PYTHONPATH="$GITHUB_WORKSPACE/.venv-pyodide/lib/python3.15/site-packages" \
+            "$PYODIDE_PYTHON" -m pytest tests -q -p no:cacheprovider --engine=cython+dopri
+        shell: bash
+
+      - name: Test cython+tsitouras in Pyodide (Cython)
+        if: always()
+        run: |
+          PYTHONPATH="$GITHUB_WORKSPACE/.venv-pyodide/lib/python3.15/site-packages" \
+            "$PYODIDE_PYTHON" -m pytest tests -q -p no:cacheprovider --engine=cython+tsitouras
         shell: bash
