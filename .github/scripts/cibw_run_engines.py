@@ -2,12 +2,15 @@
 
 cibuildwheel's test-command runs this from the directory the test sources were copied to:
 
-    python cibw_stage/cibw_run_engines.py [group ...]
+    python cibw_run_engines.py [group ...]
 
-Expected next to this file (the workflow stages them, nothing here is committed):
+Expected in cibw_stage/ next to this file (the workflow stages them, nothing here is committed):
 
-    tests/        the core test suite
-    core-wheel/   the pure-Python py_ballisticcalc wheel
+    cibw_stage/tests/        the core test suite
+    cibw_stage/core-wheel/   the pure-Python py_ballisticcalc wheel
+
+cibw_stage is deliberately not a package: pytest would then name the tests cibw_stage.tests and `from tests...` in
+them would not import. The runner itself is a module of its own (iOS starts it as `python -m cibw_run_engines`).
 
 The core wheel is unpacked and put on the import path instead of being installed: that works the same on every
 platform (Android installs binary wheels only, iOS and Pyodide have no pip to call). The exts wheel under test is
@@ -96,8 +99,8 @@ def run_engine(engine: str, tests: Path, parallel: bool) -> int:
 
 
 def main() -> int:
-    tests = HERE / "tests"
-    unpack_core(HERE / "core-wheel")
+    tests = HERE / "cibw_stage" / "tests"
+    unpack_core(HERE / "cibw_stage" / "core-wheel")
 
     import py_ballisticcalc
 

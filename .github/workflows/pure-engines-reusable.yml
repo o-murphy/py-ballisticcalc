@@ -40,9 +40,9 @@ jobs:
       - name: Build the core wheel and stage the test inputs
         run: |
           STAGE="$RUNNER_TEMP/stage"
-          mkdir -p "$STAGE/core-wheel"
-          uv build --wheel --out-dir "$STAGE/core-wheel" .
-          cp -R tests "$STAGE/tests"
+          mkdir -p "$STAGE/cibw_stage/core-wheel"
+          uv build --wheel --out-dir "$STAGE/cibw_stage/core-wheel" .
+          cp -R tests "$STAGE/cibw_stage/tests"
           cp .github/scripts/cibw_run_engines.py "$STAGE/"
           echo "STAGE=$STAGE" >> "$GITHUB_ENV"
         shell: bash

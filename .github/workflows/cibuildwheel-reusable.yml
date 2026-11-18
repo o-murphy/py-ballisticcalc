@@ -242,7 +242,7 @@ jobs:
 
       # cibuildwheel copies test-sources only from inside the project folder (and on Android only into the device's
       # working directory), so the test inputs are staged there: the core tests, the core wheel and the runner.
-      # cibw_stage/ is in .gitignore, nothing of it is committed.
+      # cibw_stage/ and the runner module are in .gitignore, nothing of it is committed.
       - name: Stage the test inputs
         run: |
           STAGE=py_ballisticcalc.exts/cibw_stage
@@ -250,8 +250,8 @@ jobs:
           mkdir -p "$STAGE/core-wheel"
           cp -R tests "$STAGE/tests"
           cp py_ballisticcalc.exts/core-wheel/*.whl "$STAGE/core-wheel/"
-          cp .github/scripts/cibw_run_engines.py "$STAGE/"
-          touch "$STAGE/__init__.py" # iOS starts the runner as a module of this package
+          # the runner is a module of its own next to cibw_stage/, which is not a package (see the runner's docstring)
+          cp .github/scripts/cibw_run_engines.py py_ballisticcalc.exts/cibw_run_engines.py
           rm -rf py_ballisticcalc.exts/core-wheel
           ls -R "$STAGE" | head -n 20
         shell: bash

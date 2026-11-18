@@ -100,12 +100,13 @@ build = "cp311-* cp314t-* cp315t-*"
 enable = ["cpython-prerelease"]
 # Tests: after each wheel is built, cibuildwheel installs it in a clean environment and runs every engine of the core
 # test suite there, one after another (.github/scripts/cibw_run_engines.py). The workflow cibuildwheel-reusable.yml
-# stages cibw_stage/ (the core tests, the core wheel, the runner) in this folder; it is not committed.
-test-sources = ["cibw_stage"]
+# stages cibw_stage/ (the core tests, the core wheel) and the runner module cibw_run_engines.py in this folder; they
+# are not committed.
+test-sources = ["cibw_stage", "cibw_run_engines.py"]
 # The test environment gets the dependency group `test` (below): cibuildwheel installs the wheel under test and the
 # groups of this pyproject, it does not run `uv sync`, and the core package is not there to bring its own extras.
 test-groups = ["test"]
-test-command = "python cibw_stage/cibw_run_engines.py cython"
+test-command = "python cibw_run_engines.py cython"
 
 # No scipy wheels. PyPI has them only for macOS (x86_64, arm64), manylinux and musllinux (x86_64, aarch64) and Windows
 # (AMD64, ARM64), for CPython 3.11 up to 3.15 including the free-threaded builds (checked against scipy 1.17.1 and
@@ -122,7 +123,7 @@ build = "cp313-android_* cp314-android_* cp315-android_*"
 # emulator on the x86-64 runners
 test-skip = "*-android_arm64_v8a"
 # Android accepts only a test command that starts with "python" and contains -m or -c: start the runner through runpy
-test-command = "python -c \"import runpy,sys; sys.argv=['cibw_run_engines.py','cython']; runpy.run_path('cibw_stage/cibw_run_engines.py', run_name='__main__')\""
+test-command = "python -c \"import runpy,sys; sys.argv=['cibw_run_engines.py','cython']; runpy.run_path('cibw_run_engines.py', run_name='__main__')\""
 # no scipy wheels for Android
 test-groups = ["test-noscipy"]
 
@@ -135,8 +136,8 @@ build = "cp313-pyodide_* cp314-pyodide_* cp315-pyodide_*"
 build = "cp313-ios_* cp314-ios_* cp315-ios_*"
 # cibuildwheel refuses build[uv] for iOS ("uv doesn't support iOS"): the plain build frontend here
 build-frontend = "build"
-# iOS runs only `python -m ...` test commands: the runner is started as a module of the staged package (cibw_stage)
-test-command = "python -m cibw_stage.cibw_run_engines cython"
+# iOS runs only `python -m ...` test commands: the runner is started as a module
+test-command = "python -m cibw_run_engines cython"
 # no scipy wheels for iOS
 test-groups = ["test-noscipy"]
 
