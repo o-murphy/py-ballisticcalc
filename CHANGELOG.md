@@ -17,6 +17,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   submodule (`_bclibc.py` stages the sources for an sdist or a container build); the bindings (`_native_gen.py`) are made by
   ctypesgen, a development dependency, with `regenerate_bindings.py`, and a test fails when they are out of date. A guard
   checks that the version matches the main package's.
+- Classifiers of the three packages: license (LGPLv3), audience, topic (Physics), `Typing :: Typed`; PyPy and GraalPy for the core; the languages (C++, Cython),
+  the operating systems the wheels are built for, and free-threading (3 - Stable) for the extensions and the ctypes package.
 - `py_ballisticcalc.ctypes` registers the engines as entry points (`cython+euler`, `rk4`, `verlet`, `rkck`, `dopri`, `tsitouras`) and
   refuses a library that does not match the bindings' bclibc version; the main test suite passes on CPython, PyPy and GraalPy.
 - Extras: `ctypes` (the ctypes package) next to `exts` (Cython) is an explicit choice of the backend; `native` picks one of
