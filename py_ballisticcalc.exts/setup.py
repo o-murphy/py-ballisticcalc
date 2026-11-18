@@ -364,13 +364,16 @@ from setuptools.command.build import build as _build
 BCLIBC_CORE_SOURCES = [BCLIBC_SRC_DIR / f"{name}.cpp" for name in (
     "interp", "base_types", "traj_data", "traj_filter", "engine", "euler", "rk4",
     "cash_karp", "dormand_prince", "tsitouras", "velocity_verlet")]
-# Linux only in this experiment; Android, iOS and Pyodide keep the per-extension static sources
-BCLIBC_SHARED = sys.platform.startswith("linux") and not (IS_ANDROID or IS_IOS or IS_EMSCRIPTEN)
+# Linux host only (Android is cross-built from Linux and repaired by auditwheel); iOS and Pyodide keep the
+# per-extension static sources
+BCLIBC_SHARED = sys.platform.startswith("linux") and not (IS_IOS or IS_EMSCRIPTEN)
 def _libc_tag() -> str:
     """The libc of the build image as a wheel platform tag: manylinux_2_28_x86_64 or musllinux_1_2_x86_64.
 
     glibc comes from platform.libc_ver(); musl from the version line of `ldd --version`.
     """
+    if IS_ANDROID:
+        return "android"
     machine = platform.machine()
     name, version = platform.libc_ver()
     if name == "glibc" and version:
@@ -399,6 +402,7 @@ def _bclibc_cache_key() -> str:
     except OSError:
         compiler = [cxx]
     h = hashlib.sha256()
+    h.update(sysconfig.get_platform().encode())  # the target: android-24-arm64_v8a, linux-x86_64, ...
     for f in sorted([*BCLIBC_CORE_SOURCES, *(BCLIBC_INCLUDE_DIR).rglob("*.h*")]):
         h.update(f.name.encode())
         h.update(f.read_bytes())
