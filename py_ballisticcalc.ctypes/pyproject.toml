@@ -78,6 +78,16 @@ enable = ["pypy", "graalpy"]
 # Until the engines are ported: the wheel installs and loads its library. Android accepts only `python -c` or `python -m`.
 test-command = "python -c \"import py_ballisticcalc_ctypes as p, ctypes; lib = ctypes.CDLL(str(p.library_path())); assert hasattr(lib, 'BCLIBCFFI_get_layout')\""
 
+[tool.cibuildwheel.linux]
+# Docker's default seccomp profile on the Ubuntu runners refuses 32-bit socket calls: uv panics (SIGABRT) in the i686
+# container. Run the Linux containers with seccomp unconfined (the same as py_ballisticcalc.exts).
+container-engine = { name = "docker", create-args = ["--security-opt", "seccomp=unconfined"] }
+
+# uv is not in the musllinux containers of these architectures (`which uv` fails): the plain build frontend there
+[[tool.cibuildwheel.overrides]]
+select = ["*_ppc64le", "*_s390x", "*_riscv64"]
+build-frontend = "build"
+
 [tool.cibuildwheel.android]
 build = "cp313-android_*"
 # there is no arm64 emulator on the runners: that wheel is built, not tested

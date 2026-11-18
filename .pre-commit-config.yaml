@@ -28,6 +28,14 @@ repos:
         pass_filenames: false
         files: '^py_ballisticcalc\.exts/(pyproject\.toml|uv\.lock)$'
 
+      - id: uv-lock-ctypes
+        name: uv lock check (ctypes)
+        entry: uv
+        args: ["lock", "--check", "--project", "py_ballisticcalc.ctypes"]
+        language: system
+        pass_filenames: false
+        files: '^py_ballisticcalc\.ctypes/(pyproject\.toml|uv\.lock)$'
+
       - id: uv-sync
         name: uv sync before hooks
         entry: uv

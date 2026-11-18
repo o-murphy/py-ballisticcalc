@@ -28,11 +28,11 @@ from pathlib import Path
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
 
-import _bclibc  # noqa: E402
-from setuptools import Distribution, setup  # noqa: E402
-from setuptools.command.bdist_wheel import bdist_wheel as _bdist_wheel  # noqa: E402
-from setuptools.command.build_py import build_py as _build_py  # noqa: E402
-from setuptools.command.sdist import sdist as _sdist  # noqa: E402
+import _bclibc
+from setuptools import Distribution, setup
+from setuptools.command.bdist_wheel import bdist_wheel as _bdist_wheel
+from setuptools.command.build_py import build_py as _build_py
+from setuptools.command.sdist import sdist as _sdist
 
 NATIVE_DIR = HERE / "py_ballisticcalc_ctypes" / "_native_lib"
 BUILD_DIR = HERE / "build" / "native"
@@ -119,6 +119,12 @@ def _compile_and_link(out_dir: Path) -> Path:
         cc.compiler_so = [cxx, *env_compile]
         cc.linker_exe = [cxx, *env_link]
         cc.linker_so = [cxx, "-dynamiclib" if kind == "macos" else "-shared", *env_link]
+        # C++ sources go through the *_cxx executables (setuptools 84): their defaults are Python's own, `-bundle ...` on macOS
+        cc.compiler_so_cxx, cc.linker_so_cxx, cc.linker_exe_cxx = (
+            list(cc.compiler_so),
+            list(cc.linker_so),
+            list(cc.linker_exe),
+        )
         ffi_macros = []
         if kind == "macos":
             lib_name = "libbclibc_ffi.dylib"

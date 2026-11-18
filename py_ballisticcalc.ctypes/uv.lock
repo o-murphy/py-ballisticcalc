@@ -1,0 +1,26 @@
+version = 1
+revision = 5
+requires-python = ">=3.11"
+
+[[package]]
+name = "ctypesgen"
+version = "1.1.1"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/85/a3/048c4b4d4d31e2ff0d5266b467db01c2ea76b8276653268b7a25e7eb72fc/ctypesgen-1.1.1.tar.gz", hash = "sha256:deaa2d64a95d90196a2e8a689cf9b952be6f3366f81e835245354bf9dbac92f6", size = 143415, upload-time = "2022-10-19T07:00:54.937Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/07/92/f344ba59f3aeb3bb37d05c445229b2a8c25d7bfa61e2759cde7f14a64d9a/ctypesgen-1.1.1-py3-none-any.whl", hash = "sha256:94cc6c89ccdd93a72a4c915266cde9a82bfe693331d9d880f66fe9d82af1fc87", size = 124193, upload-time = "2022-10-19T07:00:53.227Z" },
+]
+
+[[package]]
+name = "py-ballisticcalc-ctypes"
+source = { editable = "." }
+
+[package.dev-dependencies]
+dev = [
+    { name = "ctypesgen" },
+]
+
+[package.metadata]
+
+[package.metadata.requires-dev]
+dev = [{ name = "ctypesgen", specifier = "==1.1.1" }]
