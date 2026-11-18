@@ -350,6 +350,7 @@ cmdclass["build_ext"] = _parallel_build_ext
 # separately through bdist_wheel's py_limited_api option.
 options = {"bdist_wheel": {"py_limited_api": PY_LIMITED_API_TAG}} if USE_LIMITED_API else {}
 
+import hashlib
 import platform
 import sys
 import sysconfig
@@ -364,9 +365,30 @@ BCLIBC_CORE_SOURCES = [BCLIBC_SRC_DIR / f"{name}.cpp" for name in (
     "cash_karp", "dormand_prince", "tsitouras", "velocity_verlet")]
 # Linux only in this experiment; Android, iOS and Pyodide keep the per-extension static sources
 BCLIBC_SHARED = sys.platform.startswith("linux") and not (IS_ANDROID or IS_IOS or IS_EMSCRIPTEN)
-# the library is keyed by arch and libc: a glibc build must never be reused for musl (and vice versa)
-BCLIBC_LIB_DIR = (Path(os.environ.get("BCLIBC_CACHE_DIR") or "build") / "bclibc"
-                  / f"{platform.machine()}-{platform.libc_ver()[0] or 'musl'}")
+def _bclibc_cache_key() -> str:
+    """Key of the bclibc library: target (cibuildwheel platform part), compiler, flags and bclibc sources.
+
+    A new image with another compiler, a new bclibc revision or other flags gives another key, so the cache never
+    hands out a library built for another target.
+    """
+    cxx = os.environ.get("CXX", "c++")
+    cflags = " ".join(_shlex.split(sysconfig.get_config_var("CFLAGS") or ""))
+    compiler = _subprocess.run([cxx, "--version"], capture_output=True, text=True).stdout.splitlines()[:1]
+    h = hashlib.sha256()
+    for f in sorted([*BCLIBC_CORE_SOURCES, *(BCLIBC_INCLUDE_DIR).rglob("*.h*")]):
+        h.update(f.name.encode())
+        h.update(f.read_bytes())
+    h.update(cflags.encode())
+    h.update("\n".join(compiler).encode())
+    # the platform part of the cibuildwheel identifier (cp311-manylinux_x86_64 -> manylinux_x86_64) names the image
+    # family and arch; the interpreter part is left out so all Python versions of one target share the library
+    identifier = os.environ.get("CIBUILDWHEEL_BUILD_IDENTIFIER", "")
+    target = identifier.split("-", 1)[1] if "-" in identifier else f"{platform.machine()}-{platform.libc_ver()[0] or 'musl'}"
+    return f"{target}-{h.hexdigest()[:16]}"
+
+
+# the library lives in a folder keyed by arch, libc and version, compiler and bclibc sources
+BCLIBC_LIB_DIR = Path(os.environ.get("BCLIBC_CACHE_DIR") or "build") / "bclibc" / _bclibc_cache_key()
 
 
 class build_bclibc(Command):
