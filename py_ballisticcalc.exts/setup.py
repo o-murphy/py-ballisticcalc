@@ -352,6 +352,7 @@ options = {"bdist_wheel": {"py_limited_api": PY_LIMITED_API_TAG}} if USE_LIMITED
 
 import hashlib
 import platform
+import re
 import sys
 import sysconfig
 # ---- bclibc core as one shared library, built by its own command before build_ext (experiment) ----
@@ -365,30 +366,51 @@ BCLIBC_CORE_SOURCES = [BCLIBC_SRC_DIR / f"{name}.cpp" for name in (
     "cash_karp", "dormand_prince", "tsitouras", "velocity_verlet")]
 # Linux only in this experiment; Android, iOS and Pyodide keep the per-extension static sources
 BCLIBC_SHARED = sys.platform.startswith("linux") and not (IS_ANDROID or IS_IOS or IS_EMSCRIPTEN)
+def _libc_tag() -> str:
+    """The libc of the build image as a wheel platform tag: manylinux_2_28_x86_64 or musllinux_1_2_x86_64.
+
+    glibc comes from platform.libc_ver(); musl from the version line of `ldd --version`.
+    """
+    machine = platform.machine()
+    name, version = platform.libc_ver()
+    if name == "glibc" and version:
+        major, minor = version.split(".")[:2]
+        return f"manylinux_{major}_{minor}_{machine}"
+    try:
+        out = _subprocess.run(["ldd", "--version"], capture_output=True, text=True)
+    except OSError:
+        return f"linux_{machine}"
+    m = re.search(r"Version (\d+)\.(\d+)", out.stdout + out.stderr)
+    if m:
+        return f"musllinux_{m.group(1)}_{m.group(2)}_{machine}"
+    return f"linux_{machine}"
+
+
 def _bclibc_cache_key() -> str:
-    """Key of the bclibc library: target (cibuildwheel platform part), compiler, flags and bclibc sources.
+    """Key of the bclibc library: libc tag of the image, compiler, flags and bclibc sources.
 
     A new image with another compiler, a new bclibc revision or other flags gives another key, so the cache never
     hands out a library built for another target.
     """
     cxx = os.environ.get("CXX", "c++")
     cflags = " ".join(_shlex.split(sysconfig.get_config_var("CFLAGS") or ""))
-    compiler = _subprocess.run([cxx, "--version"], capture_output=True, text=True).stdout.splitlines()[:1]
+    try:
+        compiler = _subprocess.run([cxx, "--version"], capture_output=True, text=True).stdout.splitlines()[:1]
+    except OSError:
+        compiler = [cxx]
     h = hashlib.sha256()
     for f in sorted([*BCLIBC_CORE_SOURCES, *(BCLIBC_INCLUDE_DIR).rglob("*.h*")]):
         h.update(f.name.encode())
         h.update(f.read_bytes())
     h.update(cflags.encode())
     h.update("\n".join(compiler).encode())
-    # the platform part of the cibuildwheel identifier (cp311-manylinux_x86_64 -> manylinux_x86_64) names the image
-    # family and arch; the interpreter part is left out so all Python versions of one target share the library
-    identifier = os.environ.get("CIBUILDWHEEL_BUILD_IDENTIFIER", "")
-    target = identifier.split("-", 1)[1] if "-" in identifier else f"{platform.machine()}-{platform.libc_ver()[0] or 'musl'}"
-    return f"{target}-{h.hexdigest()[:16]}"
+    return f"{_libc_tag()}-{h.hexdigest()[:16]}"
 
 
 # the library lives in a folder keyed by arch, libc and version, compiler and bclibc sources
-BCLIBC_LIB_DIR = Path(os.environ.get("BCLIBC_CACHE_DIR") or "build") / "bclibc" / _bclibc_cache_key()
+# computed only where the shared library is used: the key runs the compiler and ldd, which other platforms lack
+def _bclibc_lib_dir() -> Path:
+    return Path(os.environ.get("BCLIBC_CACHE_DIR") or "build") / "bclibc" / _bclibc_cache_key()
 
 
 class build_bclibc(Command):
@@ -404,11 +426,12 @@ class build_bclibc(Command):
         pass
 
     def run(self):
-        out = BCLIBC_LIB_DIR / "libbclibc.so"
+        lib_dir = _bclibc_lib_dir()
+        out = lib_dir / "libbclibc.so"
         if out.exists():
             self.announce(f"bclibc: reusing {out}", level=2)
             return
-        BCLIBC_LIB_DIR.mkdir(parents=True, exist_ok=True)
+        lib_dir.mkdir(parents=True, exist_ok=True)
         cxx = os.environ.get("CXX", "c++")
         cflags = _shlex.split(sysconfig.get_config_var("CFLAGS") or "")
         cmd = [cxx, "-x", "c++", "-std=c++17", "-O3", "-Wall", "-g", "-fno-exceptions", "-fno-rtti", "-fPIC",
@@ -425,7 +448,7 @@ class build(_build):
 
 
 if BCLIBC_SHARED:
-    _lib_dir = str(BCLIBC_LIB_DIR.resolve())
+    _lib_dir = str(_bclibc_lib_dir().resolve())
     for _e in extensions:
         _e.sources = [s for s in _e.sources if not str(s).startswith(str(BCLIBC_SRC_DIR))]
         _e.libraries = list(_e.libraries or []) + ["bclibc"]
