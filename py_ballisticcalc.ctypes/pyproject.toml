@@ -1,0 +1,84 @@
+# Copyright 2023 Dmytro Yaroshenko (https://github.com/o-murphy)
+# Copyright 2024 David Bookstaber (https://github.com/dbookstaber)
+
+[build-system]
+requires = [
+    "setuptools>=84.0",
+    "setuptools-scm",
+]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "py_ballisticcalc.ctypes"
+authors = [
+    { name="o-murphy", email="thehelixpg@gmail.com" },
+    { name="dbookstaber", email="bookstaber@gmail.com"}
+]
+description = "bclibc engines of py_ballisticcalc through ctypes: for the interpreters the Cython extensions cannot serve (PyPy, GraalPy) and the platforms they are not built for"
+readme = "README.md"
+requires-python = ">=3.11"
+keywords = ["py_ballisticcalc", "ballistics", "ctypes", "ballistic calculator", "python", "python3"]
+classifiers = [
+    "Intended Audience :: Developers",
+    "Natural Language :: English",
+    "Programming Language :: Python",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Programming Language :: Python :: 3.15",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: Implementation :: CPython",
+    "Programming Language :: Python :: Implementation :: PyPy",
+    "Programming Language :: Python :: Implementation :: GraalPy",
+]
+dependencies = []
+
+# NOTE:
+#   version: will be calculated with setuptools-scm, the same as the main package and the extensions
+dynamic = ["version"]
+
+[project.urls]
+"Homepage" = "https://github.com/o-murphy/py-ballisticcalc"
+"Documentation" = "https://o-murphy.github.io/py-ballisticcalc"
+"Bug Reports" = "https://github.com/o-murphy/py-ballisticcalc/issues"
+"Source" = "https://github.com/o-murphy/py-ballisticcalc"
+
+[tool.setuptools]
+include-package-data = true
+
+[tool.setuptools.package-data]
+# the native library is built into this directory by setup.py
+py_ballisticcalc_ctypes = ["py.typed", "_native_lib/*"]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["py_ballisticcalc_ctypes*"]
+
+[tool.setuptools_scm]
+root = ".."  # required for valid .git repo root detect for subpackage in monorepo
+fallback_version = "0.0.0.dev0"
+
+[dependency-groups]
+# ctypesgen makes py_ballisticcalc_ctypes/_native_gen.py from bclibc_ffi.h (regenerate_bindings.py); the result is
+# committed, so building the package needs neither ctypesgen nor a C preprocessor. Pinned: the output must be reproducible.
+dev = [
+    "ctypesgen==1.1.1",
+]
+
+# One interpreter builds the wheel: it is py3-none, so the builds for the other Pythons would give the same file. PyPy and
+# GraalPy builds (pp311-*, gp312_250-*) are chosen with the `build` input of the workflow and need `enable`.
+[tool.cibuildwheel]
+build-frontend = "build[uv]"
+build = "cp311-*"
+enable = ["pypy", "graalpy"]
+# Until the engines are ported: the wheel installs and loads its library. Android accepts only `python -c` or `python -m`.
+test-command = "python -c \"import py_ballisticcalc_ctypes as p, ctypes; lib = ctypes.CDLL(str(p.library_path())); assert hasattr(lib, 'BCLIBCFFI_get_layout')\""
+
+[tool.cibuildwheel.android]
+build = "cp313-android_*"
+# there is no arm64 emulator on the runners: that wheel is built, not tested
+test-skip = "*-android_arm64_v8a"

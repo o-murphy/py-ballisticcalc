@@ -1,0 +1,10 @@
+# The bclibc sources are not a submodule of this package: sdist stages them from the repository's one submodule
+# (py_ballisticcalc.exts/py_ballisticcalc_exts/external/bclibc), see setup.py and _bclibc.py.
+include _bclibc.py
+recursive-include py_ballisticcalc_ctypes/external/bclibc/include *.hpp *.h
+recursive-include py_ballisticcalc_ctypes/external/bclibc/src *.cpp *.ipp *.h *.hpp *.version
+include py_ballisticcalc_ctypes/external/bclibc/version.h.in
+include py_ballisticcalc_ctypes/external/bclibc/BCLIBC_VERSION
+include py_ballisticcalc_ctypes/external/bclibc/LICENSE
+include regenerate_bindings.py
+recursive-include ctypesgen_stubs *.h

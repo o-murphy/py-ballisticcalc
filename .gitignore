@@ -35,3 +35,10 @@ compile_flags.txt
 # cibuildwheel test inputs, staged by .github/workflows/cibuildwheel-reusable.yml
 py_ballisticcalc.exts/cibw_stage/
 py_ballisticcalc.exts/cibw_run_engines.py
+
+# py_ballisticcalc.ctypes: the library built by setup.py and the bclibc sources staged for an sdist or a container build
+py_ballisticcalc.ctypes/py_ballisticcalc_ctypes/_native_lib/
+py_ballisticcalc.ctypes/py_ballisticcalc_ctypes/external/
+py_ballisticcalc.ctypes/cibw_stage/
+py_ballisticcalc.ctypes/cibw_run_engines.py
+py_ballisticcalc.ctypes/core-wheel/
