@@ -17,7 +17,7 @@ def test_bindings_cover_every_function_of_the_header():
     header = regen.functions(regen._header().read_text())
     module = regen.functions(regen.OUT.read_text())
     assert header, "no BCLIBCFFI_* functions found in the header"
-    assert header <= module, f"missing from _native_gen.py: {sorted(header - module)}"
+    assert header <= module, f"missing from _ctypesgen/_native_gen.py: {sorted(header - module)}"
 
 
 @pytest.mark.skipif(

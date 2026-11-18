@@ -35,7 +35,7 @@ _libs["bclibc_ffi"] = load_library("bclibc_ffi")
 
 # No modules
 
-# /home/murphy/proj/py-ballisticcalc/py_ballisticcalc.exts/py_ballisticcalc_exts/external/bclibc/include/bclibc/ffi/bclibc_ffi.h: 38
+# bclibc_ffi.h: 38
 for _lib in _libs.values():
     if not _lib.has("BCLIBCFFI_get_version", "cdecl"):
         continue
@@ -44,23 +44,23 @@ for _lib in _libs.values():
     BCLIBCFFI_get_version.restype = c_char_p
     break
 
-enum_BCLIBCFFI_Status = c_int# /home/murphy/proj/py-ballisticcalc/py_ballisticcalc.exts/py_ballisticcalc_exts/external/bclibc/include/bclibc/ffi/bclibc_ffi.h: 52
+enum_BCLIBCFFI_Status = c_int# bclibc_ffi.h: 52
 
-BCLIBCFFI_OK = 0# /home/murphy/proj/py-ballisticcalc/py_ballisticcalc.exts/py_ballisticcalc_exts/external/bclibc/include/bclibc/ffi/bclibc_ffi.h: 52
+BCLIBCFFI_OK = 0# bclibc_ffi.h: 52
 
-BCLIBCFFI_ERR_SOLVER_RUNTIME = 1# /home/murphy/proj/py-ballisticcalc/py_ballisticcalc.exts/py_ballisticcalc_exts/external/bclibc/include/bclibc/ffi/bclibc_ffi.h: 52
+BCLIBCFFI_ERR_SOLVER_RUNTIME = 1# bclibc_ffi.h: 52
 
-BCLIBCFFI_ERR_OUT_OF_RANGE = 2# /home/murphy/proj/py-ballisticcalc/py_ballisticcalc.exts/py_ballisticcalc_exts/external/bclibc/include/bclibc/ffi/bclibc_ffi.h: 52
+BCLIBCFFI_ERR_OUT_OF_RANGE = 2# bclibc_ffi.h: 52
 
-BCLIBCFFI_ERR_ZERO_FINDING = 3# /home/murphy/proj/py-ballisticcalc/py_ballisticcalc.exts/py_ballisticcalc_exts/external/bclibc/include/bclibc/ffi/bclibc_ffi.h: 52
+BCLIBCFFI_ERR_ZERO_FINDING = 3# bclibc_ffi.h: 52
 
-BCLIBCFFI_ERR_INTERCEPTION = 4# /home/murphy/proj/py-ballisticcalc/py_ballisticcalc.exts/py_ballisticcalc_exts/external/bclibc/include/bclibc/ffi/bclibc_ffi.h: 52
+BCLIBCFFI_ERR_INTERCEPTION = 4# bclibc_ffi.h: 52
 
-BCLIBCFFI_ERR_GENERIC = 5# /home/murphy/proj/py-ballisticcalc/py_ballisticcalc.exts/py_ballisticcalc_exts/external/bclibc/include/bclibc/ffi/bclibc_ffi.h: 52
+BCLIBCFFI_ERR_GENERIC = 5# bclibc_ffi.h: 52
 
-BCLIBCFFI_Status = enum_BCLIBCFFI_Status# /home/murphy/proj/py-ballisticcalc/py_ballisticcalc.exts/py_ballisticcalc_exts/external/bclibc/include/bclibc/ffi/bclibc_ffi.h: 52
+BCLIBCFFI_Status = enum_BCLIBCFFI_Status# bclibc_ffi.h: 52
 
-# /home/murphy/proj/py-ballisticcalc/py_ballisticcalc.exts/py_ballisticcalc_exts/external/bclibc/include/bclibc/ffi/bclibc_ffi.h: 64
+# bclibc_ffi.h: 64
 class struct_BCLIBCFFI_Error(Structure):
     pass
 
@@ -81,83 +81,83 @@ struct_BCLIBCFFI_Error._fields_ = [
     ('i32_0', c_int32),
 ]
 
-BCLIBCFFI_Error = struct_BCLIBCFFI_Error# /home/murphy/proj/py-ballisticcalc/py_ballisticcalc.exts/py_ballisticcalc_exts/external/bclibc/include/bclibc/ffi/bclibc_ffi.h: 64
+BCLIBCFFI_Error = struct_BCLIBCFFI_Error# bclibc_ffi.h: 64
 
-enum_BCLIBCFFI_TrajFlag = c_int# /home/murphy/proj/py-ballisticcalc/py_ballisticcalc.exts/py_ballisticcalc_exts/external/bclibc/include/bclibc/ffi/bclibc_ffi.h: 81
+enum_BCLIBCFFI_TrajFlag = c_int# bclibc_ffi.h: 81
 
-BCLIBCFFI_TRAJ_FLAG_NONE = 0# /home/murphy/proj/py-ballisticcalc/py_ballisticcalc.exts/py_ballisticcalc_exts/external/bclibc/include/bclibc/ffi/bclibc_ffi.h: 81
+BCLIBCFFI_TRAJ_FLAG_NONE = 0# bclibc_ffi.h: 81
 
-BCLIBCFFI_TRAJ_FLAG_ZERO_UP = 1# /home/murphy/proj/py-ballisticcalc/py_ballisticcalc.exts/py_ballisticcalc_exts/external/bclibc/include/bclibc/ffi/bclibc_ffi.h: 81
+BCLIBCFFI_TRAJ_FLAG_ZERO_UP = 1# bclibc_ffi.h: 81
 
-BCLIBCFFI_TRAJ_FLAG_ZERO_DOWN = 2# /home/murphy/proj/py-ballisticcalc/py_ballisticcalc.exts/py_ballisticcalc_exts/external/bclibc/include/bclibc/ffi/bclibc_ffi.h: 81
+BCLIBCFFI_TRAJ_FLAG_ZERO_DOWN = 2# bclibc_ffi.h: 81
 
-BCLIBCFFI_TRAJ_FLAG_ZERO = 3# /home/murphy/proj/py-ballisticcalc/py_ballisticcalc.exts/py_ballisticcalc_exts/external/bclibc/include/bclibc/ffi/bclibc_ffi.h: 81
+BCLIBCFFI_TRAJ_FLAG_ZERO = 3# bclibc_ffi.h: 81
 
-BCLIBCFFI_TRAJ_FLAG_MACH = 4# /home/murphy/proj/py-ballisticcalc/py_ballisticcalc.exts/py_ballisticcalc_exts/external/bclibc/include/bclibc/ffi/bclibc_ffi.h: 81
+BCLIBCFFI_TRAJ_FLAG_MACH = 4# bclibc_ffi.h: 81
 
-BCLIBCFFI_TRAJ_FLAG_RANGE = 8# /home/murphy/proj/py-ballisticcalc/py_ballisticcalc.exts/py_ballisticcalc_exts/external/bclibc/include/bclibc/ffi/bclibc_ffi.h: 81
+BCLIBCFFI_TRAJ_FLAG_RANGE = 8# bclibc_ffi.h: 81
 
-BCLIBCFFI_TRAJ_FLAG_APEX = 16# /home/murphy/proj/py-ballisticcalc/py_ballisticcalc.exts/py_ballisticcalc_exts/external/bclibc/include/bclibc/ffi/bclibc_ffi.h: 81
+BCLIBCFFI_TRAJ_FLAG_APEX = 16# bclibc_ffi.h: 81
 
-BCLIBCFFI_TRAJ_FLAG_ALL = 31# /home/murphy/proj/py-ballisticcalc/py_ballisticcalc.exts/py_ballisticcalc_exts/external/bclibc/include/bclibc/ffi/bclibc_ffi.h: 81
+BCLIBCFFI_TRAJ_FLAG_ALL = 31# bclibc_ffi.h: 81
 
-BCLIBCFFI_TRAJ_FLAG_MRT = 32# /home/murphy/proj/py-ballisticcalc/py_ballisticcalc.exts/py_ballisticcalc_exts/external/bclibc/include/bclibc/ffi/bclibc_ffi.h: 81
+BCLIBCFFI_TRAJ_FLAG_MRT = 32# bclibc_ffi.h: 81
 
-BCLIBCFFI_TrajFlag = enum_BCLIBCFFI_TrajFlag# /home/murphy/proj/py-ballisticcalc/py_ballisticcalc.exts/py_ballisticcalc_exts/external/bclibc/include/bclibc/ffi/bclibc_ffi.h: 81
+BCLIBCFFI_TrajFlag = enum_BCLIBCFFI_TrajFlag# bclibc_ffi.h: 81
 
-enum_BCLIBCFFI_TerminationReason = c_int# /home/murphy/proj/py-ballisticcalc/py_ballisticcalc.exts/py_ballisticcalc_exts/external/bclibc/include/bclibc/ffi/bclibc_ffi.h: 91
+enum_BCLIBCFFI_TerminationReason = c_int# bclibc_ffi.h: 91
 
-BCLIBCFFI_TERM_NO_TERMINATE = 0# /home/murphy/proj/py-ballisticcalc/py_ballisticcalc.exts/py_ballisticcalc_exts/external/bclibc/include/bclibc/ffi/bclibc_ffi.h: 91
+BCLIBCFFI_TERM_NO_TERMINATE = 0# bclibc_ffi.h: 91
 
-BCLIBCFFI_TERM_TARGET_RANGE_REACHED = 1# /home/murphy/proj/py-ballisticcalc/py_ballisticcalc.exts/py_ballisticcalc_exts/external/bclibc/include/bclibc/ffi/bclibc_ffi.h: 91
+BCLIBCFFI_TERM_TARGET_RANGE_REACHED = 1# bclibc_ffi.h: 91
 
-BCLIBCFFI_TERM_MINIMUM_VELOCITY_REACHED = 2# /home/murphy/proj/py-ballisticcalc/py_ballisticcalc.exts/py_ballisticcalc_exts/external/bclibc/include/bclibc/ffi/bclibc_ffi.h: 91
+BCLIBCFFI_TERM_MINIMUM_VELOCITY_REACHED = 2# bclibc_ffi.h: 91
 
-BCLIBCFFI_TERM_MAXIMUM_DROP_REACHED = 3# /home/murphy/proj/py-ballisticcalc/py_ballisticcalc.exts/py_ballisticcalc_exts/external/bclibc/include/bclibc/ffi/bclibc_ffi.h: 91
+BCLIBCFFI_TERM_MAXIMUM_DROP_REACHED = 3# bclibc_ffi.h: 91
 
-BCLIBCFFI_TERM_MINIMUM_ALTITUDE_REACHED = 4# /home/murphy/proj/py-ballisticcalc/py_ballisticcalc.exts/py_ballisticcalc_exts/external/bclibc/include/bclibc/ffi/bclibc_ffi.h: 91
+BCLIBCFFI_TERM_MINIMUM_ALTITUDE_REACHED = 4# bclibc_ffi.h: 91
 
-BCLIBCFFI_TERM_HANDLER_REQUESTED_STOP = 5# /home/murphy/proj/py-ballisticcalc/py_ballisticcalc.exts/py_ballisticcalc_exts/external/bclibc/include/bclibc/ffi/bclibc_ffi.h: 91
+BCLIBCFFI_TERM_HANDLER_REQUESTED_STOP = 5# bclibc_ffi.h: 91
 
-BCLIBCFFI_TerminationReason = enum_BCLIBCFFI_TerminationReason# /home/murphy/proj/py-ballisticcalc/py_ballisticcalc.exts/py_ballisticcalc_exts/external/bclibc/include/bclibc/ffi/bclibc_ffi.h: 91
+BCLIBCFFI_TerminationReason = enum_BCLIBCFFI_TerminationReason# bclibc_ffi.h: 91
 
-enum_BCLIBCFFI_BaseTrajInterpKey = c_int# /home/murphy/proj/py-ballisticcalc/py_ballisticcalc.exts/py_ballisticcalc_exts/external/bclibc/include/bclibc/ffi/bclibc_ffi.h: 104
+enum_BCLIBCFFI_BaseTrajInterpKey = c_int# bclibc_ffi.h: 104
 
-BCLIBCFFI_INTERP_KEY_TIME = 0# /home/murphy/proj/py-ballisticcalc/py_ballisticcalc.exts/py_ballisticcalc_exts/external/bclibc/include/bclibc/ffi/bclibc_ffi.h: 104
+BCLIBCFFI_INTERP_KEY_TIME = 0# bclibc_ffi.h: 104
 
-BCLIBCFFI_INTERP_KEY_MACH = 1# /home/murphy/proj/py-ballisticcalc/py_ballisticcalc.exts/py_ballisticcalc_exts/external/bclibc/include/bclibc/ffi/bclibc_ffi.h: 104
+BCLIBCFFI_INTERP_KEY_MACH = 1# bclibc_ffi.h: 104
 
-BCLIBCFFI_INTERP_KEY_POS_X = 2# /home/murphy/proj/py-ballisticcalc/py_ballisticcalc.exts/py_ballisticcalc_exts/external/bclibc/include/bclibc/ffi/bclibc_ffi.h: 104
+BCLIBCFFI_INTERP_KEY_POS_X = 2# bclibc_ffi.h: 104
 
-BCLIBCFFI_INTERP_KEY_POS_Y = 3# /home/murphy/proj/py-ballisticcalc/py_ballisticcalc.exts/py_ballisticcalc_exts/external/bclibc/include/bclibc/ffi/bclibc_ffi.h: 104
+BCLIBCFFI_INTERP_KEY_POS_Y = 3# bclibc_ffi.h: 104
 
-BCLIBCFFI_INTERP_KEY_POS_Z = 4# /home/murphy/proj/py-ballisticcalc/py_ballisticcalc.exts/py_ballisticcalc_exts/external/bclibc/include/bclibc/ffi/bclibc_ffi.h: 104
+BCLIBCFFI_INTERP_KEY_POS_Z = 4# bclibc_ffi.h: 104
 
-BCLIBCFFI_INTERP_KEY_VEL_X = 5# /home/murphy/proj/py-ballisticcalc/py_ballisticcalc.exts/py_ballisticcalc_exts/external/bclibc/include/bclibc/ffi/bclibc_ffi.h: 104
+BCLIBCFFI_INTERP_KEY_VEL_X = 5# bclibc_ffi.h: 104
 
-BCLIBCFFI_INTERP_KEY_VEL_Y = 6# /home/murphy/proj/py-ballisticcalc/py_ballisticcalc.exts/py_ballisticcalc_exts/external/bclibc/include/bclibc/ffi/bclibc_ffi.h: 104
+BCLIBCFFI_INTERP_KEY_VEL_Y = 6# bclibc_ffi.h: 104
 
-BCLIBCFFI_INTERP_KEY_VEL_Z = 7# /home/murphy/proj/py-ballisticcalc/py_ballisticcalc.exts/py_ballisticcalc_exts/external/bclibc/include/bclibc/ffi/bclibc_ffi.h: 104
+BCLIBCFFI_INTERP_KEY_VEL_Z = 7# bclibc_ffi.h: 104
 
-BCLIBCFFI_BaseTrajInterpKey = enum_BCLIBCFFI_BaseTrajInterpKey# /home/murphy/proj/py-ballisticcalc/py_ballisticcalc.exts/py_ballisticcalc_exts/external/bclibc/include/bclibc/ffi/bclibc_ffi.h: 104
+BCLIBCFFI_BaseTrajInterpKey = enum_BCLIBCFFI_BaseTrajInterpKey# bclibc_ffi.h: 104
 
-enum_BCLIBCFFI_IntegrationMethod = c_int# /home/murphy/proj/py-ballisticcalc/py_ballisticcalc.exts/py_ballisticcalc_exts/external/bclibc/include/bclibc/ffi/bclibc_ffi.h: 121
+enum_BCLIBCFFI_IntegrationMethod = c_int# bclibc_ffi.h: 121
 
-BCLIBCFFI_INTEGRATION_RK4 = 0# /home/murphy/proj/py-ballisticcalc/py_ballisticcalc.exts/py_ballisticcalc_exts/external/bclibc/include/bclibc/ffi/bclibc_ffi.h: 121
+BCLIBCFFI_INTEGRATION_RK4 = 0# bclibc_ffi.h: 121
 
-BCLIBCFFI_INTEGRATION_EULER = 1# /home/murphy/proj/py-ballisticcalc/py_ballisticcalc.exts/py_ballisticcalc_exts/external/bclibc/include/bclibc/ffi/bclibc_ffi.h: 121
+BCLIBCFFI_INTEGRATION_EULER = 1# bclibc_ffi.h: 121
 
-BCLIBCFFI_INTEGRATION_VELOCITY_VERLET = 2# /home/murphy/proj/py-ballisticcalc/py_ballisticcalc.exts/py_ballisticcalc_exts/external/bclibc/include/bclibc/ffi/bclibc_ffi.h: 121
+BCLIBCFFI_INTEGRATION_VELOCITY_VERLET = 2# bclibc_ffi.h: 121
 
-BCLIBCFFI_INTEGRATION_CASH_KARP = 3# /home/murphy/proj/py-ballisticcalc/py_ballisticcalc.exts/py_ballisticcalc_exts/external/bclibc/include/bclibc/ffi/bclibc_ffi.h: 121
+BCLIBCFFI_INTEGRATION_CASH_KARP = 3# bclibc_ffi.h: 121
 
-BCLIBCFFI_INTEGRATION_DORMAND_PRINCE = 4# /home/murphy/proj/py-ballisticcalc/py_ballisticcalc.exts/py_ballisticcalc_exts/external/bclibc/include/bclibc/ffi/bclibc_ffi.h: 121
+BCLIBCFFI_INTEGRATION_DORMAND_PRINCE = 4# bclibc_ffi.h: 121
 
-BCLIBCFFI_INTEGRATION_TSITOURAS = 5# /home/murphy/proj/py-ballisticcalc/py_ballisticcalc.exts/py_ballisticcalc_exts/external/bclibc/include/bclibc/ffi/bclibc_ffi.h: 121
+BCLIBCFFI_INTEGRATION_TSITOURAS = 5# bclibc_ffi.h: 121
 
-BCLIBCFFI_IntegrationMethod = enum_BCLIBCFFI_IntegrationMethod# /home/murphy/proj/py-ballisticcalc/py_ballisticcalc.exts/py_ballisticcalc_exts/external/bclibc/include/bclibc/ffi/bclibc_ffi.h: 121
+BCLIBCFFI_IntegrationMethod = enum_BCLIBCFFI_IntegrationMethod# bclibc_ffi.h: 121
 
-# /home/murphy/proj/py-ballisticcalc/py_ballisticcalc.exts/py_ballisticcalc_exts/external/bclibc/include/bclibc/ffi/bclibc_ffi.h: 136
+# bclibc_ffi.h: 136
 class struct_BCLIBCFFI_Config(Structure):
     pass
 
@@ -180,9 +180,9 @@ struct_BCLIBCFFI_Config._fields_ = [
     ('cMinimumAltitude', c_double),
 ]
 
-BCLIBCFFI_Config = struct_BCLIBCFFI_Config# /home/murphy/proj/py-ballisticcalc/py_ballisticcalc.exts/py_ballisticcalc_exts/external/bclibc/include/bclibc/ffi/bclibc_ffi.h: 136
+BCLIBCFFI_Config = struct_BCLIBCFFI_Config# bclibc_ffi.h: 136
 
-# /home/murphy/proj/py-ballisticcalc/py_ballisticcalc.exts/py_ballisticcalc_exts/external/bclibc/include/bclibc/ffi/bclibc_ffi.h: 146
+# bclibc_ffi.h: 146
 class struct_BCLIBCFFI_Atmosphere(Structure):
     pass
 
@@ -203,9 +203,9 @@ struct_BCLIBCFFI_Atmosphere._fields_ = [
     ('cLowestTempC', c_double),
 ]
 
-BCLIBCFFI_Atmosphere = struct_BCLIBCFFI_Atmosphere# /home/murphy/proj/py-ballisticcalc/py_ballisticcalc.exts/py_ballisticcalc_exts/external/bclibc/include/bclibc/ffi/bclibc_ffi.h: 146
+BCLIBCFFI_Atmosphere = struct_BCLIBCFFI_Atmosphere# bclibc_ffi.h: 146
 
-# /home/murphy/proj/py-ballisticcalc/py_ballisticcalc.exts/py_ballisticcalc_exts/external/bclibc/include/bclibc/ffi/bclibc_ffi.h: 160
+# bclibc_ffi.h: 160
 class struct_BCLIBCFFI_Coriolis(Structure):
     pass
 
@@ -234,9 +234,9 @@ struct_BCLIBCFFI_Coriolis._fields_ = [
     ('muzzle_velocity_fps', c_double),
 ]
 
-BCLIBCFFI_Coriolis = struct_BCLIBCFFI_Coriolis# /home/murphy/proj/py-ballisticcalc/py_ballisticcalc.exts/py_ballisticcalc_exts/external/bclibc/include/bclibc/ffi/bclibc_ffi.h: 160
+BCLIBCFFI_Coriolis = struct_BCLIBCFFI_Coriolis# bclibc_ffi.h: 160
 
-# /home/murphy/proj/py-ballisticcalc/py_ballisticcalc.exts/py_ballisticcalc_exts/external/bclibc/include/bclibc/ffi/bclibc_ffi.h: 168
+# bclibc_ffi.h: 168
 class struct_BCLIBCFFI_Wind(Structure):
     pass
 
@@ -253,9 +253,9 @@ struct_BCLIBCFFI_Wind._fields_ = [
     ('max_distance_ft', c_double),
 ]
 
-BCLIBCFFI_Wind = struct_BCLIBCFFI_Wind# /home/murphy/proj/py-ballisticcalc/py_ballisticcalc.exts/py_ballisticcalc_exts/external/bclibc/include/bclibc/ffi/bclibc_ffi.h: 168
+BCLIBCFFI_Wind = struct_BCLIBCFFI_Wind# bclibc_ffi.h: 168
 
-# /home/murphy/proj/py-ballisticcalc/py_ballisticcalc.exts/py_ballisticcalc_exts/external/bclibc/include/bclibc/ffi/bclibc_ffi.h: 174
+# bclibc_ffi.h: 174
 class struct_BCLIBCFFI_DragPoint(Structure):
     pass
 
@@ -268,9 +268,9 @@ struct_BCLIBCFFI_DragPoint._fields_ = [
     ('CD', c_double),
 ]
 
-BCLIBCFFI_DragPoint = struct_BCLIBCFFI_DragPoint# /home/murphy/proj/py-ballisticcalc/py_ballisticcalc.exts/py_ballisticcalc_exts/external/bclibc/include/bclibc/ffi/bclibc_ffi.h: 174
+BCLIBCFFI_DragPoint = struct_BCLIBCFFI_DragPoint# bclibc_ffi.h: 174
 
-# /home/murphy/proj/py-ballisticcalc/py_ballisticcalc.exts/py_ballisticcalc_exts/external/bclibc/include/bclibc/ffi/bclibc_ffi.h: 205
+# bclibc_ffi.h: 205
 class struct_BCLIBCFFI_ShotProps(Structure):
     pass
 
@@ -319,9 +319,9 @@ struct_BCLIBCFFI_ShotProps._fields_ = [
     ('wind_count', c_int32),
 ]
 
-BCLIBCFFI_ShotProps = struct_BCLIBCFFI_ShotProps# /home/murphy/proj/py-ballisticcalc/py_ballisticcalc.exts/py_ballisticcalc_exts/external/bclibc/include/bclibc/ffi/bclibc_ffi.h: 205
+BCLIBCFFI_ShotProps = struct_BCLIBCFFI_ShotProps# bclibc_ffi.h: 205
 
-# /home/murphy/proj/py-ballisticcalc/py_ballisticcalc.exts/py_ballisticcalc_exts/external/bclibc/include/bclibc/ffi/bclibc_ffi.h: 259
+# bclibc_ffi.h: 259
 class struct_BCLIBCFFI_Shot(Structure):
     pass
 
@@ -378,9 +378,9 @@ struct_BCLIBCFFI_Shot._fields_ = [
     ('method', BCLIBCFFI_IntegrationMethod),
 ]
 
-BCLIBCFFI_Shot = struct_BCLIBCFFI_Shot# /home/murphy/proj/py-ballisticcalc/py_ballisticcalc.exts/py_ballisticcalc_exts/external/bclibc/include/bclibc/ffi/bclibc_ffi.h: 259
+BCLIBCFFI_Shot = struct_BCLIBCFFI_Shot# bclibc_ffi.h: 259
 
-# /home/murphy/proj/py-ballisticcalc/py_ballisticcalc.exts/py_ballisticcalc_exts/external/bclibc/include/bclibc/ffi/bclibc_ffi.h: 267
+# bclibc_ffi.h: 267
 class struct_BCLIBCFFI_TrajectoryRequest(Structure):
     pass
 
@@ -397,9 +397,9 @@ struct_BCLIBCFFI_TrajectoryRequest._fields_ = [
     ('filter_flags', c_int32),
 ]
 
-BCLIBCFFI_TrajectoryRequest = struct_BCLIBCFFI_TrajectoryRequest# /home/murphy/proj/py-ballisticcalc/py_ballisticcalc.exts/py_ballisticcalc_exts/external/bclibc/include/bclibc/ffi/bclibc_ffi.h: 267
+BCLIBCFFI_TrajectoryRequest = struct_BCLIBCFFI_TrajectoryRequest# bclibc_ffi.h: 267
 
-# /home/murphy/proj/py-ballisticcalc/py_ballisticcalc.exts/py_ballisticcalc_exts/external/bclibc/include/bclibc/ffi/bclibc_ffi.h: 283
+# bclibc_ffi.h: 283
 class struct_BCLIBCFFI_BaseTrajData(Structure):
     pass
 
@@ -424,9 +424,9 @@ struct_BCLIBCFFI_BaseTrajData._fields_ = [
     ('mach', c_double),
 ]
 
-BCLIBCFFI_BaseTrajData = struct_BCLIBCFFI_BaseTrajData# /home/murphy/proj/py-ballisticcalc/py_ballisticcalc.exts/py_ballisticcalc_exts/external/bclibc/include/bclibc/ffi/bclibc_ffi.h: 283
+BCLIBCFFI_BaseTrajData = struct_BCLIBCFFI_BaseTrajData# bclibc_ffi.h: 283
 
-# /home/murphy/proj/py-ballisticcalc/py_ballisticcalc.exts/py_ballisticcalc_exts/external/bclibc/include/bclibc/ffi/bclibc_ffi.h: 303
+# bclibc_ffi.h: 303
 class struct_BCLIBCFFI_TrajectoryData(Structure):
     pass
 
@@ -467,9 +467,9 @@ struct_BCLIBCFFI_TrajectoryData._fields_ = [
     ('flag', c_int32),
 ]
 
-BCLIBCFFI_TrajectoryData = struct_BCLIBCFFI_TrajectoryData# /home/murphy/proj/py-ballisticcalc/py_ballisticcalc.exts/py_ballisticcalc_exts/external/bclibc/include/bclibc/ffi/bclibc_ffi.h: 303
+BCLIBCFFI_TrajectoryData = struct_BCLIBCFFI_TrajectoryData# bclibc_ffi.h: 303
 
-# /home/murphy/proj/py-ballisticcalc/py_ballisticcalc.exts/py_ballisticcalc_exts/external/bclibc/include/bclibc/ffi/bclibc_ffi.h: 309
+# bclibc_ffi.h: 309
 class struct_BCLIBCFFI_MaxRangeResult(Structure):
     pass
 
@@ -482,9 +482,9 @@ struct_BCLIBCFFI_MaxRangeResult._fields_ = [
     ('angle_at_max_rad', c_double),
 ]
 
-BCLIBCFFI_MaxRangeResult = struct_BCLIBCFFI_MaxRangeResult# /home/murphy/proj/py-ballisticcalc/py_ballisticcalc.exts/py_ballisticcalc_exts/external/bclibc/include/bclibc/ffi/bclibc_ffi.h: 309
+BCLIBCFFI_MaxRangeResult = struct_BCLIBCFFI_MaxRangeResult# bclibc_ffi.h: 309
 
-# /home/murphy/proj/py-ballisticcalc/py_ballisticcalc.exts/py_ballisticcalc_exts/external/bclibc/include/bclibc/ffi/bclibc_ffi.h: 322
+# bclibc_ffi.h: 322
 class struct_BCLIBCFFI_ZeroPointResult(Structure):
     pass
 
@@ -497,9 +497,9 @@ struct_BCLIBCFFI_ZeroPointResult._fields_ = [
     ('point', BCLIBCFFI_TrajectoryData),
 ]
 
-BCLIBCFFI_ZeroPointResult = struct_BCLIBCFFI_ZeroPointResult# /home/murphy/proj/py-ballisticcalc/py_ballisticcalc.exts/py_ballisticcalc_exts/external/bclibc/include/bclibc/ffi/bclibc_ffi.h: 322
+BCLIBCFFI_ZeroPointResult = struct_BCLIBCFFI_ZeroPointResult# bclibc_ffi.h: 322
 
-# /home/murphy/proj/py-ballisticcalc/py_ballisticcalc.exts/py_ballisticcalc_exts/external/bclibc/include/bclibc/ffi/bclibc_ffi.h: 328
+# bclibc_ffi.h: 328
 class struct_BCLIBCFFI_Interception(Structure):
     pass
 
@@ -512,9 +512,9 @@ struct_BCLIBCFFI_Interception._fields_ = [
     ('full_data', BCLIBCFFI_TrajectoryData),
 ]
 
-BCLIBCFFI_Interception = struct_BCLIBCFFI_Interception# /home/murphy/proj/py-ballisticcalc/py_ballisticcalc.exts/py_ballisticcalc_exts/external/bclibc/include/bclibc/ffi/bclibc_ffi.h: 328
+BCLIBCFFI_Interception = struct_BCLIBCFFI_Interception# bclibc_ffi.h: 328
 
-# /home/murphy/proj/py-ballisticcalc/py_ballisticcalc.exts/py_ballisticcalc_exts/external/bclibc/include/bclibc/ffi/bclibc_ffi.h: 338
+# bclibc_ffi.h: 338
 for _lib in _libs.values():
     if not _lib.has("BCLIBCFFI_find_apex", "cdecl"):
         continue
@@ -523,7 +523,7 @@ for _lib in _libs.values():
     BCLIBCFFI_find_apex.restype = c_int32
     break
 
-# /home/murphy/proj/py-ballisticcalc/py_ballisticcalc.exts/py_ballisticcalc_exts/external/bclibc/include/bclibc/ffi/bclibc_ffi.h: 348
+# bclibc_ffi.h: 348
 for _lib in _libs.values():
     if not _lib.has("BCLIBCFFI_find_max_range", "cdecl"):
         continue
@@ -532,7 +532,7 @@ for _lib in _libs.values():
     BCLIBCFFI_find_max_range.restype = c_int32
     break
 
-# /home/murphy/proj/py-ballisticcalc/py_ballisticcalc.exts/py_ballisticcalc_exts/external/bclibc/include/bclibc/ffi/bclibc_ffi.h: 360
+# bclibc_ffi.h: 360
 for _lib in _libs.values():
     if not _lib.has("BCLIBCFFI_find_zero_angle", "cdecl"):
         continue
@@ -541,7 +541,7 @@ for _lib in _libs.values():
     BCLIBCFFI_find_zero_angle.restype = c_int32
     break
 
-# /home/murphy/proj/py-ballisticcalc/py_ballisticcalc.exts/py_ballisticcalc_exts/external/bclibc/include/bclibc/ffi/bclibc_ffi.h: 379
+# bclibc_ffi.h: 379
 for _lib in _libs.values():
     if not _lib.has("BCLIBCFFI_find_zero_point", "cdecl"):
         continue
@@ -550,7 +550,7 @@ for _lib in _libs.values():
     BCLIBCFFI_find_zero_point.restype = c_int32
     break
 
-# /home/murphy/proj/py-ballisticcalc/py_ballisticcalc.exts/py_ballisticcalc_exts/external/bclibc/include/bclibc/ffi/bclibc_ffi.h: 391
+# bclibc_ffi.h: 391
 for _lib in _libs.values():
     if not _lib.has("BCLIBCFFI_integrate", "cdecl"):
         continue
@@ -559,7 +559,7 @@ for _lib in _libs.values():
     BCLIBCFFI_integrate.restype = c_int32
     break
 
-# /home/murphy/proj/py-ballisticcalc/py_ballisticcalc.exts/py_ballisticcalc_exts/external/bclibc/include/bclibc/ffi/bclibc_ffi.h: 400
+# bclibc_ffi.h: 400
 for _lib in _libs.values():
     if not _lib.has("BCLIBCFFI_free_trajectory", "cdecl"):
         continue
@@ -568,7 +568,7 @@ for _lib in _libs.values():
     BCLIBCFFI_free_trajectory.restype = None
     break
 
-# /home/murphy/proj/py-ballisticcalc/py_ballisticcalc.exts/py_ballisticcalc_exts/external/bclibc/include/bclibc/ffi/bclibc_ffi.h: 408
+# bclibc_ffi.h: 408
 for _lib in _libs.values():
     if not _lib.has("BCLIBCFFI_integrate_at", "cdecl"):
         continue
@@ -577,7 +577,7 @@ for _lib in _libs.values():
     BCLIBCFFI_integrate_at.restype = c_int32
     break
 
-# /home/murphy/proj/py-ballisticcalc/py_ballisticcalc.exts/py_ballisticcalc_exts/external/bclibc/include/bclibc/ffi/bclibc_ffi.h: 423
+# bclibc_ffi.h: 423
 for _lib in _libs.values():
     if not _lib.has("BCLIBCFFI_find_apex_shot", "cdecl"):
         continue
@@ -586,7 +586,7 @@ for _lib in _libs.values():
     BCLIBCFFI_find_apex_shot.restype = c_int32
     break
 
-# /home/murphy/proj/py-ballisticcalc/py_ballisticcalc.exts/py_ballisticcalc_exts/external/bclibc/include/bclibc/ffi/bclibc_ffi.h: 428
+# bclibc_ffi.h: 428
 for _lib in _libs.values():
     if not _lib.has("BCLIBCFFI_find_max_range_shot", "cdecl"):
         continue
@@ -595,7 +595,7 @@ for _lib in _libs.values():
     BCLIBCFFI_find_max_range_shot.restype = c_int32
     break
 
-# /home/murphy/proj/py-ballisticcalc/py_ballisticcalc.exts/py_ballisticcalc_exts/external/bclibc/include/bclibc/ffi/bclibc_ffi.h: 435
+# bclibc_ffi.h: 435
 for _lib in _libs.values():
     if not _lib.has("BCLIBCFFI_find_zero_angle_shot", "cdecl"):
         continue
@@ -604,7 +604,7 @@ for _lib in _libs.values():
     BCLIBCFFI_find_zero_angle_shot.restype = c_int32
     break
 
-# /home/murphy/proj/py-ballisticcalc/py_ballisticcalc.exts/py_ballisticcalc_exts/external/bclibc/include/bclibc/ffi/bclibc_ffi.h: 454
+# bclibc_ffi.h: 454
 for _lib in _libs.values():
     if not _lib.has("BCLIBCFFI_find_zero_point_shot", "cdecl"):
         continue
@@ -613,7 +613,7 @@ for _lib in _libs.values():
     BCLIBCFFI_find_zero_point_shot.restype = c_int32
     break
 
-# /home/murphy/proj/py-ballisticcalc/py_ballisticcalc.exts/py_ballisticcalc_exts/external/bclibc/include/bclibc/ffi/bclibc_ffi.h: 460
+# bclibc_ffi.h: 460
 for _lib in _libs.values():
     if not _lib.has("BCLIBCFFI_integrate_shot", "cdecl"):
         continue
@@ -622,7 +622,7 @@ for _lib in _libs.values():
     BCLIBCFFI_integrate_shot.restype = c_int32
     break
 
-# /home/murphy/proj/py-ballisticcalc/py_ballisticcalc.exts/py_ballisticcalc_exts/external/bclibc/include/bclibc/ffi/bclibc_ffi.h: 468
+# bclibc_ffi.h: 468
 for _lib in _libs.values():
     if not _lib.has("BCLIBCFFI_integrate_at_shot", "cdecl"):
         continue
@@ -631,7 +631,7 @@ for _lib in _libs.values():
     BCLIBCFFI_integrate_at_shot.restype = c_int32
     break
 
-# /home/murphy/proj/py-ballisticcalc/py_ballisticcalc.exts/py_ballisticcalc_exts/external/bclibc/include/bclibc/ffi/bclibc_ffi.h: 480
+# bclibc_ffi.h: 480
 for _lib in _libs.values():
     if not _lib.has("BCLIBCFFI_get_correction", "cdecl"):
         continue
@@ -640,7 +640,7 @@ for _lib in _libs.values():
     BCLIBCFFI_get_correction.restype = c_double
     break
 
-# /home/murphy/proj/py-ballisticcalc/py_ballisticcalc.exts/py_ballisticcalc_exts/external/bclibc/include/bclibc/ffi/bclibc_ffi.h: 483
+# bclibc_ffi.h: 483
 for _lib in _libs.values():
     if not _lib.has("BCLIBCFFI_calculate_energy", "cdecl"):
         continue
@@ -649,7 +649,7 @@ for _lib in _libs.values():
     BCLIBCFFI_calculate_energy.restype = c_double
     break
 
-# /home/murphy/proj/py-ballisticcalc/py_ballisticcalc.exts/py_ballisticcalc_exts/external/bclibc/include/bclibc/ffi/bclibc_ffi.h: 486
+# bclibc_ffi.h: 486
 for _lib in _libs.values():
     if not _lib.has("BCLIBCFFI_calculate_ogw", "cdecl"):
         continue
@@ -658,7 +658,7 @@ for _lib in _libs.values():
     BCLIBCFFI_calculate_ogw.restype = c_double
     break
 
-# /home/murphy/proj/py-ballisticcalc/py_ballisticcalc.exts/py_ballisticcalc_exts/external/bclibc/include/bclibc/ffi/bclibc_ffi.h: 493
+# bclibc_ffi.h: 493
 for _lib in _libs.values():
     if not _lib.has("BCLIBCFFI_hermite", "cdecl"):
         continue
@@ -667,7 +667,7 @@ for _lib in _libs.values():
     BCLIBCFFI_hermite.restype = c_double
     break
 
-# /home/murphy/proj/py-ballisticcalc/py_ballisticcalc.exts/py_ballisticcalc_exts/external/bclibc/include/bclibc/ffi/bclibc_ffi.h: 496
+# bclibc_ffi.h: 496
 for _lib in _libs.values():
     if not _lib.has("BCLIBCFFI_interpolate_3pt", "cdecl"):
         continue
@@ -676,7 +676,7 @@ for _lib in _libs.values():
     BCLIBCFFI_interpolate_3pt.restype = c_double
     break
 
-# /home/murphy/proj/py-ballisticcalc/py_ballisticcalc.exts/py_ballisticcalc_exts/external/bclibc/include/bclibc/ffi/bclibc_ffi.h: 502
+# bclibc_ffi.h: 502
 for _lib in _libs.values():
     if not _lib.has("BCLIBCFFI_interpolate_2pt", "cdecl"):
         continue
@@ -685,51 +685,51 @@ for _lib in _libs.values():
     BCLIBCFFI_interpolate_2pt.restype = c_int32
     break
 
-enum_BCLIBCFFI_TrajectoryInterpKey = c_int# /home/murphy/proj/py-ballisticcalc/py_ballisticcalc.exts/py_ballisticcalc_exts/external/bclibc/include/bclibc/ffi/bclibc_ffi.h: 523
+enum_BCLIBCFFI_TrajectoryInterpKey = c_int# bclibc_ffi.h: 523
 
-BCLIBCFFI_TRAJ_KEY_TIME = 0# /home/murphy/proj/py-ballisticcalc/py_ballisticcalc.exts/py_ballisticcalc_exts/external/bclibc/include/bclibc/ffi/bclibc_ffi.h: 523
+BCLIBCFFI_TRAJ_KEY_TIME = 0# bclibc_ffi.h: 523
 
-BCLIBCFFI_TRAJ_KEY_DISTANCE = 1# /home/murphy/proj/py-ballisticcalc/py_ballisticcalc.exts/py_ballisticcalc_exts/external/bclibc/include/bclibc/ffi/bclibc_ffi.h: 523
+BCLIBCFFI_TRAJ_KEY_DISTANCE = 1# bclibc_ffi.h: 523
 
-BCLIBCFFI_TRAJ_KEY_VELOCITY = 2# /home/murphy/proj/py-ballisticcalc/py_ballisticcalc.exts/py_ballisticcalc_exts/external/bclibc/include/bclibc/ffi/bclibc_ffi.h: 523
+BCLIBCFFI_TRAJ_KEY_VELOCITY = 2# bclibc_ffi.h: 523
 
-BCLIBCFFI_TRAJ_KEY_MACH = 3# /home/murphy/proj/py-ballisticcalc/py_ballisticcalc.exts/py_ballisticcalc_exts/external/bclibc/include/bclibc/ffi/bclibc_ffi.h: 523
+BCLIBCFFI_TRAJ_KEY_MACH = 3# bclibc_ffi.h: 523
 
-BCLIBCFFI_TRAJ_KEY_HEIGHT = 4# /home/murphy/proj/py-ballisticcalc/py_ballisticcalc.exts/py_ballisticcalc_exts/external/bclibc/include/bclibc/ffi/bclibc_ffi.h: 523
+BCLIBCFFI_TRAJ_KEY_HEIGHT = 4# bclibc_ffi.h: 523
 
-BCLIBCFFI_TRAJ_KEY_SLANT_HEIGHT = 5# /home/murphy/proj/py-ballisticcalc/py_ballisticcalc.exts/py_ballisticcalc_exts/external/bclibc/include/bclibc/ffi/bclibc_ffi.h: 523
+BCLIBCFFI_TRAJ_KEY_SLANT_HEIGHT = 5# bclibc_ffi.h: 523
 
-BCLIBCFFI_TRAJ_KEY_DROP_ANGLE = 6# /home/murphy/proj/py-ballisticcalc/py_ballisticcalc.exts/py_ballisticcalc_exts/external/bclibc/include/bclibc/ffi/bclibc_ffi.h: 523
+BCLIBCFFI_TRAJ_KEY_DROP_ANGLE = 6# bclibc_ffi.h: 523
 
-BCLIBCFFI_TRAJ_KEY_WINDAGE = 7# /home/murphy/proj/py-ballisticcalc/py_ballisticcalc.exts/py_ballisticcalc_exts/external/bclibc/include/bclibc/ffi/bclibc_ffi.h: 523
+BCLIBCFFI_TRAJ_KEY_WINDAGE = 7# bclibc_ffi.h: 523
 
-BCLIBCFFI_TRAJ_KEY_WINDAGE_ANGLE = 8# /home/murphy/proj/py-ballisticcalc/py_ballisticcalc.exts/py_ballisticcalc_exts/external/bclibc/include/bclibc/ffi/bclibc_ffi.h: 523
+BCLIBCFFI_TRAJ_KEY_WINDAGE_ANGLE = 8# bclibc_ffi.h: 523
 
-BCLIBCFFI_TRAJ_KEY_SLANT_DISTANCE = 9# /home/murphy/proj/py-ballisticcalc/py_ballisticcalc.exts/py_ballisticcalc_exts/external/bclibc/include/bclibc/ffi/bclibc_ffi.h: 523
+BCLIBCFFI_TRAJ_KEY_SLANT_DISTANCE = 9# bclibc_ffi.h: 523
 
-BCLIBCFFI_TRAJ_KEY_ANGLE = 10# /home/murphy/proj/py-ballisticcalc/py_ballisticcalc.exts/py_ballisticcalc_exts/external/bclibc/include/bclibc/ffi/bclibc_ffi.h: 523
+BCLIBCFFI_TRAJ_KEY_ANGLE = 10# bclibc_ffi.h: 523
 
-BCLIBCFFI_TRAJ_KEY_DENSITY_RATIO = 11# /home/murphy/proj/py-ballisticcalc/py_ballisticcalc.exts/py_ballisticcalc_exts/external/bclibc/include/bclibc/ffi/bclibc_ffi.h: 523
+BCLIBCFFI_TRAJ_KEY_DENSITY_RATIO = 11# bclibc_ffi.h: 523
 
-BCLIBCFFI_TRAJ_KEY_DRAG = 12# /home/murphy/proj/py-ballisticcalc/py_ballisticcalc.exts/py_ballisticcalc_exts/external/bclibc/include/bclibc/ffi/bclibc_ffi.h: 523
+BCLIBCFFI_TRAJ_KEY_DRAG = 12# bclibc_ffi.h: 523
 
-BCLIBCFFI_TRAJ_KEY_ENERGY = 13# /home/murphy/proj/py-ballisticcalc/py_ballisticcalc.exts/py_ballisticcalc_exts/external/bclibc/include/bclibc/ffi/bclibc_ffi.h: 523
+BCLIBCFFI_TRAJ_KEY_ENERGY = 13# bclibc_ffi.h: 523
 
-BCLIBCFFI_TRAJ_KEY_OGW = 14# /home/murphy/proj/py-ballisticcalc/py_ballisticcalc.exts/py_ballisticcalc_exts/external/bclibc/include/bclibc/ffi/bclibc_ffi.h: 523
+BCLIBCFFI_TRAJ_KEY_OGW = 14# bclibc_ffi.h: 523
 
-BCLIBCFFI_TRAJ_KEY_FLAG = 15# /home/murphy/proj/py-ballisticcalc/py_ballisticcalc.exts/py_ballisticcalc_exts/external/bclibc/include/bclibc/ffi/bclibc_ffi.h: 523
+BCLIBCFFI_TRAJ_KEY_FLAG = 15# bclibc_ffi.h: 523
 
-BCLIBCFFI_TrajectoryInterpKey = enum_BCLIBCFFI_TrajectoryInterpKey# /home/murphy/proj/py-ballisticcalc/py_ballisticcalc.exts/py_ballisticcalc_exts/external/bclibc/include/bclibc/ffi/bclibc_ffi.h: 523
+BCLIBCFFI_TrajectoryInterpKey = enum_BCLIBCFFI_TrajectoryInterpKey# bclibc_ffi.h: 523
 
-enum_BCLIBCFFI_InterpMethod = c_int# /home/murphy/proj/py-ballisticcalc/py_ballisticcalc.exts/py_ballisticcalc_exts/external/bclibc/include/bclibc/ffi/bclibc_ffi.h: 529
+enum_BCLIBCFFI_InterpMethod = c_int# bclibc_ffi.h: 529
 
-BCLIBCFFI_INTERP_PCHIP = 0# /home/murphy/proj/py-ballisticcalc/py_ballisticcalc.exts/py_ballisticcalc_exts/external/bclibc/include/bclibc/ffi/bclibc_ffi.h: 529
+BCLIBCFFI_INTERP_PCHIP = 0# bclibc_ffi.h: 529
 
-BCLIBCFFI_INTERP_LINEAR = 1# /home/murphy/proj/py-ballisticcalc/py_ballisticcalc.exts/py_ballisticcalc_exts/external/bclibc/include/bclibc/ffi/bclibc_ffi.h: 529
+BCLIBCFFI_INTERP_LINEAR = 1# bclibc_ffi.h: 529
 
-BCLIBCFFI_InterpMethod = enum_BCLIBCFFI_InterpMethod# /home/murphy/proj/py-ballisticcalc/py_ballisticcalc.exts/py_ballisticcalc_exts/external/bclibc/include/bclibc/ffi/bclibc_ffi.h: 529
+BCLIBCFFI_InterpMethod = enum_BCLIBCFFI_InterpMethod# bclibc_ffi.h: 529
 
-# /home/murphy/proj/py-ballisticcalc/py_ballisticcalc.exts/py_ballisticcalc_exts/external/bclibc/include/bclibc/ffi/bclibc_ffi.h: 539
+# bclibc_ffi.h: 539
 for _lib in _libs.values():
     if not _lib.has("BCLIBCFFI_interpolate_trajectory_data", "cdecl"):
         continue
@@ -738,7 +738,7 @@ for _lib in _libs.values():
     BCLIBCFFI_interpolate_trajectory_data.restype = c_int32
     break
 
-# /home/murphy/proj/py-ballisticcalc/py_ballisticcalc.exts/py_ballisticcalc_exts/external/bclibc/include/bclibc/ffi/bclibc_ffi.h: 566
+# bclibc_ffi.h: 566
 class struct_BCLIBCFFI_StepStats(Structure):
     pass
 
@@ -751,11 +751,11 @@ struct_BCLIBCFFI_StepStats._fields_ = [
     ('rejected', c_int32),
 ]
 
-BCLIBCFFI_StepStats = struct_BCLIBCFFI_StepStats# /home/murphy/proj/py-ballisticcalc/py_ballisticcalc.exts/py_ballisticcalc_exts/external/bclibc/include/bclibc/ffi/bclibc_ffi.h: 566
+BCLIBCFFI_StepStats = struct_BCLIBCFFI_StepStats# bclibc_ffi.h: 566
 
-BCLIBCFFI_DenseStep = BCLIBCFFI_BaseTrajData# /home/murphy/proj/py-ballisticcalc/py_ballisticcalc.exts/py_ballisticcalc_exts/external/bclibc/include/bclibc/ffi/bclibc_ffi.h: 569
+BCLIBCFFI_DenseStep = BCLIBCFFI_BaseTrajData# bclibc_ffi.h: 569
 
-# /home/murphy/proj/py-ballisticcalc/py_ballisticcalc.exts/py_ballisticcalc_exts/external/bclibc/include/bclibc/ffi/bclibc_ffi.h: 580
+# bclibc_ffi.h: 580
 for _lib in _libs.values():
     if not _lib.has("BCLIBCFFI_integrate_adaptive_shot", "cdecl"):
         continue
@@ -764,7 +764,7 @@ for _lib in _libs.values():
     BCLIBCFFI_integrate_adaptive_shot.restype = c_int32
     break
 
-# /home/murphy/proj/py-ballisticcalc/py_ballisticcalc.exts/py_ballisticcalc_exts/external/bclibc/include/bclibc/ffi/bclibc_ffi.h: 596
+# bclibc_ffi.h: 596
 for _lib in _libs.values():
     if not _lib.has("BCLIBCFFI_free_base_trajectory", "cdecl"):
         continue
@@ -773,7 +773,7 @@ for _lib in _libs.values():
     BCLIBCFFI_free_base_trajectory.restype = None
     break
 
-# /home/murphy/proj/py-ballisticcalc/py_ballisticcalc.exts/py_ballisticcalc_exts/external/bclibc/include/bclibc/ffi/bclibc_ffi.h: 599
+# bclibc_ffi.h: 599
 for _lib in _libs.values():
     if not _lib.has("BCLIBCFFI_find_zero_angle_adaptive_shot", "cdecl"):
         continue
@@ -782,7 +782,7 @@ for _lib in _libs.values():
     BCLIBCFFI_find_zero_angle_adaptive_shot.restype = c_int32
     break
 
-# /home/murphy/proj/py-ballisticcalc/py_ballisticcalc.exts/py_ballisticcalc_exts/external/bclibc/include/bclibc/ffi/bclibc_ffi.h: 610
+# bclibc_ffi.h: 610
 for _lib in _libs.values():
     if not _lib.has("BCLIBCFFI_find_zero_point_adaptive_shot", "cdecl"):
         continue
@@ -791,7 +791,7 @@ for _lib in _libs.values():
     BCLIBCFFI_find_zero_point_adaptive_shot.restype = c_int32
     break
 
-# /home/murphy/proj/py-ballisticcalc/py_ballisticcalc.exts/py_ballisticcalc_exts/external/bclibc/include/bclibc/ffi/bclibc_ffi.h: 621
+# bclibc_ffi.h: 621
 for _lib in _libs.values():
     if not _lib.has("BCLIBCFFI_find_max_range_adaptive_shot", "cdecl"):
         continue
@@ -800,7 +800,7 @@ for _lib in _libs.values():
     BCLIBCFFI_find_max_range_adaptive_shot.restype = c_int32
     break
 
-# /home/murphy/proj/py-ballisticcalc/py_ballisticcalc.exts/py_ballisticcalc_exts/external/bclibc/include/bclibc/ffi/bclibc_ffi.h: 633
+# bclibc_ffi.h: 633
 for _lib in _libs.values():
     if not _lib.has("BCLIBCFFI_find_apex_adaptive_shot", "cdecl"):
         continue
@@ -809,7 +809,7 @@ for _lib in _libs.values():
     BCLIBCFFI_find_apex_adaptive_shot.restype = c_int32
     break
 
-# /home/murphy/proj/py-ballisticcalc/py_ballisticcalc.exts/py_ballisticcalc_exts/external/bclibc/include/bclibc/ffi/bclibc_ffi.h: 648
+# bclibc_ffi.h: 648
 for _lib in _libs.values():
     if not _lib.has("BCLIBCFFI_integrate_dense_shot", "cdecl"):
         continue
@@ -818,7 +818,7 @@ for _lib in _libs.values():
     BCLIBCFFI_integrate_dense_shot.restype = c_int32
     break
 
-# /home/murphy/proj/py-ballisticcalc/py_ballisticcalc.exts/py_ballisticcalc_exts/external/bclibc/include/bclibc/ffi/bclibc_ffi.h: 663
+# bclibc_ffi.h: 663
 for _lib in _libs.values():
     if not _lib.has("BCLIBCFFI_find_zero_angle_lofted_shot", "cdecl"):
         continue
@@ -827,7 +827,7 @@ for _lib in _libs.values():
     BCLIBCFFI_find_zero_angle_lofted_shot.restype = c_int32
     break
 
-# /home/murphy/proj/py-ballisticcalc/py_ballisticcalc.exts/py_ballisticcalc_exts/external/bclibc/include/bclibc/ffi/bclibc_ffi.h: 674
+# bclibc_ffi.h: 674
 for _lib in _libs.values():
     if not _lib.has("BCLIBCFFI_find_zero_point_lofted_shot", "cdecl"):
         continue
@@ -836,7 +836,7 @@ for _lib in _libs.values():
     BCLIBCFFI_find_zero_point_lofted_shot.restype = c_int32
     break
 
-# /home/murphy/proj/py-ballisticcalc/py_ballisticcalc.exts/py_ballisticcalc_exts/external/bclibc/include/bclibc/ffi/bclibc_ffi.h: 682
+# bclibc_ffi.h: 682
 for _lib in _libs.values():
     if not _lib.has("BCLIBCFFI_find_zero_angle_lofted_adaptive_shot", "cdecl"):
         continue
@@ -845,7 +845,7 @@ for _lib in _libs.values():
     BCLIBCFFI_find_zero_angle_lofted_adaptive_shot.restype = c_int32
     break
 
-# /home/murphy/proj/py-ballisticcalc/py_ballisticcalc.exts/py_ballisticcalc_exts/external/bclibc/include/bclibc/ffi/bclibc_ffi.h: 694
+# bclibc_ffi.h: 694
 for _lib in _libs.values():
     if not _lib.has("BCLIBCFFI_find_zero_point_lofted_adaptive_shot", "cdecl"):
         continue
@@ -854,7 +854,7 @@ for _lib in _libs.values():
     BCLIBCFFI_find_zero_point_lofted_adaptive_shot.restype = c_int32
     break
 
-# /home/murphy/proj/py-ballisticcalc/py_ballisticcalc.exts/py_ballisticcalc_exts/external/bclibc/include/bclibc/ffi/bclibc_ffi.h: 709
+# bclibc_ffi.h: 709
 for _lib in _libs.values():
     if not _lib.has("BCLIBCFFI_integrate_at_adaptive_shot", "cdecl"):
         continue
@@ -863,15 +863,15 @@ for _lib in _libs.values():
     BCLIBCFFI_integrate_at_adaptive_shot.restype = c_int32
     break
 
-enum_BCLIBCFFI_ZeroInitStatus = c_int# /home/murphy/proj/py-ballisticcalc/py_ballisticcalc.exts/py_ballisticcalc_exts/external/bclibc/include/bclibc/ffi/bclibc_ffi.h: 733
+enum_BCLIBCFFI_ZeroInitStatus = c_int# bclibc_ffi.h: 733
 
-BCLIBCFFI_ZERO_INIT_CONTINUE = 0# /home/murphy/proj/py-ballisticcalc/py_ballisticcalc.exts/py_ballisticcalc_exts/external/bclibc/include/bclibc/ffi/bclibc_ffi.h: 733
+BCLIBCFFI_ZERO_INIT_CONTINUE = 0# bclibc_ffi.h: 733
 
-BCLIBCFFI_ZERO_INIT_DONE = 1# /home/murphy/proj/py-ballisticcalc/py_ballisticcalc.exts/py_ballisticcalc_exts/external/bclibc/include/bclibc/ffi/bclibc_ffi.h: 733
+BCLIBCFFI_ZERO_INIT_DONE = 1# bclibc_ffi.h: 733
 
-BCLIBCFFI_ZeroInitStatus = enum_BCLIBCFFI_ZeroInitStatus# /home/murphy/proj/py-ballisticcalc/py_ballisticcalc.exts/py_ballisticcalc_exts/external/bclibc/include/bclibc/ffi/bclibc_ffi.h: 733
+BCLIBCFFI_ZeroInitStatus = enum_BCLIBCFFI_ZeroInitStatus# bclibc_ffi.h: 733
 
-# /home/murphy/proj/py-ballisticcalc/py_ballisticcalc.exts/py_ballisticcalc_exts/external/bclibc/include/bclibc/ffi/bclibc_ffi.h: 745
+# bclibc_ffi.h: 745
 class struct_BCLIBCFFI_ZeroInit(Structure):
     pass
 
@@ -894,9 +894,9 @@ struct_BCLIBCFFI_ZeroInit._fields_ = [
     ('start_height_ft', c_double),
 ]
 
-BCLIBCFFI_ZeroInit = struct_BCLIBCFFI_ZeroInit# /home/murphy/proj/py-ballisticcalc/py_ballisticcalc.exts/py_ballisticcalc_exts/external/bclibc/include/bclibc/ffi/bclibc_ffi.h: 745
+BCLIBCFFI_ZeroInit = struct_BCLIBCFFI_ZeroInit# bclibc_ffi.h: 745
 
-# /home/murphy/proj/py-ballisticcalc/py_ballisticcalc.exts/py_ballisticcalc_exts/external/bclibc/include/bclibc/ffi/bclibc_ffi.h: 762
+# bclibc_ffi.h: 762
 for _lib in _libs.values():
     if not _lib.has("BCLIBCFFI_error_at_distance_shot", "cdecl"):
         continue
@@ -905,7 +905,7 @@ for _lib in _libs.values():
     BCLIBCFFI_error_at_distance_shot.restype = c_int32
     break
 
-# /home/murphy/proj/py-ballisticcalc/py_ballisticcalc.exts/py_ballisticcalc_exts/external/bclibc/include/bclibc/ffi/bclibc_ffi.h: 772
+# bclibc_ffi.h: 772
 for _lib in _libs.values():
     if not _lib.has("BCLIBCFFI_error_at_distance_adaptive_shot", "cdecl"):
         continue
@@ -914,7 +914,7 @@ for _lib in _libs.values():
     BCLIBCFFI_error_at_distance_adaptive_shot.restype = c_int32
     break
 
-# /home/murphy/proj/py-ballisticcalc/py_ballisticcalc.exts/py_ballisticcalc_exts/external/bclibc/include/bclibc/ffi/bclibc_ffi.h: 789
+# bclibc_ffi.h: 789
 for _lib in _libs.values():
     if not _lib.has("BCLIBCFFI_range_for_angle_shot", "cdecl"):
         continue
@@ -923,7 +923,7 @@ for _lib in _libs.values():
     BCLIBCFFI_range_for_angle_shot.restype = c_int32
     break
 
-# /home/murphy/proj/py-ballisticcalc/py_ballisticcalc.exts/py_ballisticcalc_exts/external/bclibc/include/bclibc/ffi/bclibc_ffi.h: 796
+# bclibc_ffi.h: 796
 for _lib in _libs.values():
     if not _lib.has("BCLIBCFFI_range_for_angle_adaptive_shot", "cdecl"):
         continue
@@ -932,7 +932,7 @@ for _lib in _libs.values():
     BCLIBCFFI_range_for_angle_adaptive_shot.restype = c_int32
     break
 
-# /home/murphy/proj/py-ballisticcalc/py_ballisticcalc.exts/py_ballisticcalc_exts/external/bclibc/include/bclibc/ffi/bclibc_ffi.h: 810
+# bclibc_ffi.h: 810
 for _lib in _libs.values():
     if not _lib.has("BCLIBCFFI_find_zero_angle_newton_shot", "cdecl"):
         continue
@@ -941,7 +941,7 @@ for _lib in _libs.values():
     BCLIBCFFI_find_zero_angle_newton_shot.restype = c_int32
     break
 
-# /home/murphy/proj/py-ballisticcalc/py_ballisticcalc.exts/py_ballisticcalc_exts/external/bclibc/include/bclibc/ffi/bclibc_ffi.h: 817
+# bclibc_ffi.h: 817
 for _lib in _libs.values():
     if not _lib.has("BCLIBCFFI_find_zero_angle_newton_adaptive_shot", "cdecl"):
         continue
@@ -950,7 +950,7 @@ for _lib in _libs.values():
     BCLIBCFFI_find_zero_angle_newton_adaptive_shot.restype = c_int32
     break
 
-# /home/murphy/proj/py-ballisticcalc/py_ballisticcalc.exts/py_ballisticcalc_exts/external/bclibc/include/bclibc/ffi/bclibc_ffi.h: 831
+# bclibc_ffi.h: 831
 for _lib in _libs.values():
     if not _lib.has("BCLIBCFFI_zero_init_shot", "cdecl"):
         continue
@@ -959,7 +959,7 @@ for _lib in _libs.values():
     BCLIBCFFI_zero_init_shot.restype = c_int32
     break
 
-# /home/murphy/proj/py-ballisticcalc/py_ballisticcalc.exts/py_ballisticcalc_exts/external/bclibc/include/bclibc/ffi/bclibc_ffi.h: 838
+# bclibc_ffi.h: 838
 for _lib in _libs.values():
     if not _lib.has("BCLIBCFFI_zero_init_adaptive_shot", "cdecl"):
         continue
@@ -968,7 +968,7 @@ for _lib in _libs.values():
     BCLIBCFFI_zero_init_adaptive_shot.restype = c_int32
     break
 
-# /home/murphy/proj/py-ballisticcalc/py_ballisticcalc.exts/py_ballisticcalc_exts/external/bclibc/include/bclibc/ffi/bclibc_ffi.h: 862
+# bclibc_ffi.h: 862
 for _lib in _libs.values():
     if not _lib.has("BCLIBCFFI_dense_get_at", "cdecl"):
         continue
@@ -977,7 +977,7 @@ for _lib in _libs.values():
     BCLIBCFFI_dense_get_at.restype = c_int32
     break
 
-# /home/murphy/proj/py-ballisticcalc/py_ballisticcalc.exts/py_ballisticcalc_exts/external/bclibc/include/bclibc/ffi/bclibc_ffi.h: 872
+# bclibc_ffi.h: 872
 for _lib in _libs.values():
     if not _lib.has("BCLIBCFFI_dense_get_at_slant_height", "cdecl"):
         continue
@@ -986,7 +986,7 @@ for _lib in _libs.values():
     BCLIBCFFI_dense_get_at_slant_height.restype = c_int32
     break
 
-# /home/murphy/proj/py-ballisticcalc/py_ballisticcalc.exts/py_ballisticcalc_exts/external/bclibc/include/bclibc/ffi/bclibc_ffi.h: 886
+# bclibc_ffi.h: 886
 for _lib in _libs.values():
     if not _lib.has("BCLIBCFFI_trajectory_data_from_step_shot", "cdecl"):
         continue
@@ -995,7 +995,7 @@ for _lib in _libs.values():
     BCLIBCFFI_trajectory_data_from_step_shot.restype = c_int32
     break
 
-# /home/murphy/proj/py-ballisticcalc/py_ballisticcalc.exts/py_ballisticcalc_exts/external/bclibc/include/bclibc/ffi/bclibc_ffi.h: 913
+# bclibc_ffi.h: 913
 for _lib in _libs.values():
     if not _lib.has("BCLIBCFFI_get_layout", "cdecl"):
         continue
@@ -1004,37 +1004,37 @@ for _lib in _libs.values():
     BCLIBCFFI_get_layout.restype = c_int32
     break
 
-BCLIBCFFI_Error = struct_BCLIBCFFI_Error# /home/murphy/proj/py-ballisticcalc/py_ballisticcalc.exts/py_ballisticcalc_exts/external/bclibc/include/bclibc/ffi/bclibc_ffi.h: 64
+BCLIBCFFI_Error = struct_BCLIBCFFI_Error# bclibc_ffi.h: 64
 
-BCLIBCFFI_Config = struct_BCLIBCFFI_Config# /home/murphy/proj/py-ballisticcalc/py_ballisticcalc.exts/py_ballisticcalc_exts/external/bclibc/include/bclibc/ffi/bclibc_ffi.h: 136
+BCLIBCFFI_Config = struct_BCLIBCFFI_Config# bclibc_ffi.h: 136
 
-BCLIBCFFI_Atmosphere = struct_BCLIBCFFI_Atmosphere# /home/murphy/proj/py-ballisticcalc/py_ballisticcalc.exts/py_ballisticcalc_exts/external/bclibc/include/bclibc/ffi/bclibc_ffi.h: 146
+BCLIBCFFI_Atmosphere = struct_BCLIBCFFI_Atmosphere# bclibc_ffi.h: 146
 
-BCLIBCFFI_Coriolis = struct_BCLIBCFFI_Coriolis# /home/murphy/proj/py-ballisticcalc/py_ballisticcalc.exts/py_ballisticcalc_exts/external/bclibc/include/bclibc/ffi/bclibc_ffi.h: 160
+BCLIBCFFI_Coriolis = struct_BCLIBCFFI_Coriolis# bclibc_ffi.h: 160
 
-BCLIBCFFI_Wind = struct_BCLIBCFFI_Wind# /home/murphy/proj/py-ballisticcalc/py_ballisticcalc.exts/py_ballisticcalc_exts/external/bclibc/include/bclibc/ffi/bclibc_ffi.h: 168
+BCLIBCFFI_Wind = struct_BCLIBCFFI_Wind# bclibc_ffi.h: 168
 
-BCLIBCFFI_DragPoint = struct_BCLIBCFFI_DragPoint# /home/murphy/proj/py-ballisticcalc/py_ballisticcalc.exts/py_ballisticcalc_exts/external/bclibc/include/bclibc/ffi/bclibc_ffi.h: 174
+BCLIBCFFI_DragPoint = struct_BCLIBCFFI_DragPoint# bclibc_ffi.h: 174
 
-BCLIBCFFI_ShotProps = struct_BCLIBCFFI_ShotProps# /home/murphy/proj/py-ballisticcalc/py_ballisticcalc.exts/py_ballisticcalc_exts/external/bclibc/include/bclibc/ffi/bclibc_ffi.h: 205
+BCLIBCFFI_ShotProps = struct_BCLIBCFFI_ShotProps# bclibc_ffi.h: 205
 
-BCLIBCFFI_Shot = struct_BCLIBCFFI_Shot# /home/murphy/proj/py-ballisticcalc/py_ballisticcalc.exts/py_ballisticcalc_exts/external/bclibc/include/bclibc/ffi/bclibc_ffi.h: 259
+BCLIBCFFI_Shot = struct_BCLIBCFFI_Shot# bclibc_ffi.h: 259
 
-BCLIBCFFI_TrajectoryRequest = struct_BCLIBCFFI_TrajectoryRequest# /home/murphy/proj/py-ballisticcalc/py_ballisticcalc.exts/py_ballisticcalc_exts/external/bclibc/include/bclibc/ffi/bclibc_ffi.h: 267
+BCLIBCFFI_TrajectoryRequest = struct_BCLIBCFFI_TrajectoryRequest# bclibc_ffi.h: 267
 
-BCLIBCFFI_BaseTrajData = struct_BCLIBCFFI_BaseTrajData# /home/murphy/proj/py-ballisticcalc/py_ballisticcalc.exts/py_ballisticcalc_exts/external/bclibc/include/bclibc/ffi/bclibc_ffi.h: 283
+BCLIBCFFI_BaseTrajData = struct_BCLIBCFFI_BaseTrajData# bclibc_ffi.h: 283
 
-BCLIBCFFI_TrajectoryData = struct_BCLIBCFFI_TrajectoryData# /home/murphy/proj/py-ballisticcalc/py_ballisticcalc.exts/py_ballisticcalc_exts/external/bclibc/include/bclibc/ffi/bclibc_ffi.h: 303
+BCLIBCFFI_TrajectoryData = struct_BCLIBCFFI_TrajectoryData# bclibc_ffi.h: 303
 
-BCLIBCFFI_MaxRangeResult = struct_BCLIBCFFI_MaxRangeResult# /home/murphy/proj/py-ballisticcalc/py_ballisticcalc.exts/py_ballisticcalc_exts/external/bclibc/include/bclibc/ffi/bclibc_ffi.h: 309
+BCLIBCFFI_MaxRangeResult = struct_BCLIBCFFI_MaxRangeResult# bclibc_ffi.h: 309
 
-BCLIBCFFI_ZeroPointResult = struct_BCLIBCFFI_ZeroPointResult# /home/murphy/proj/py-ballisticcalc/py_ballisticcalc.exts/py_ballisticcalc_exts/external/bclibc/include/bclibc/ffi/bclibc_ffi.h: 322
+BCLIBCFFI_ZeroPointResult = struct_BCLIBCFFI_ZeroPointResult# bclibc_ffi.h: 322
 
-BCLIBCFFI_Interception = struct_BCLIBCFFI_Interception# /home/murphy/proj/py-ballisticcalc/py_ballisticcalc.exts/py_ballisticcalc_exts/external/bclibc/include/bclibc/ffi/bclibc_ffi.h: 328
+BCLIBCFFI_Interception = struct_BCLIBCFFI_Interception# bclibc_ffi.h: 328
 
-BCLIBCFFI_StepStats = struct_BCLIBCFFI_StepStats# /home/murphy/proj/py-ballisticcalc/py_ballisticcalc.exts/py_ballisticcalc_exts/external/bclibc/include/bclibc/ffi/bclibc_ffi.h: 566
+BCLIBCFFI_StepStats = struct_BCLIBCFFI_StepStats# bclibc_ffi.h: 566
 
-BCLIBCFFI_ZeroInit = struct_BCLIBCFFI_ZeroInit# /home/murphy/proj/py-ballisticcalc/py_ballisticcalc.exts/py_ballisticcalc_exts/external/bclibc/include/bclibc/ffi/bclibc_ffi.h: 745
+BCLIBCFFI_ZeroInit = struct_BCLIBCFFI_ZeroInit# bclibc_ffi.h: 745
 
 # No inserted files
 

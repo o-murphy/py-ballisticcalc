@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
-"""Remove build artifacts of the cythonized extensions.
+"""Remove build artifacts of the cythonized extensions and of the ctypes package (its native library).
 
 Usage: python scripts/clean.py [--all]
 
   --all   also remove .venv and all __pycache__ directories
 
-Afterwards `uv sync --extra exts` rebuilds the extensions.
+Afterwards `uv sync --extra exts` (or `--extra ctypes`) rebuilds them.
 """
 
 from __future__ import annotations
@@ -17,6 +17,8 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 EXTS = ROOT / "py_ballisticcalc.exts"
 PKG = EXTS / "py_ballisticcalc_exts"
+CTYPES = ROOT / "py_ballisticcalc.ctypes"
+CPKG = CTYPES / "py_ballisticcalc_ctypes"
 
 
 def remove(path: Path) -> None:
@@ -32,7 +34,7 @@ def main() -> None:
     ap.add_argument("--all", action="store_true", help="also remove .venv and all __pycache__ directories")
     args = ap.parse_args()
 
-    print("--- Removing extension build artifacts ---")
+    print("--- Removing extension and native library build artifacts ---")
     targets: list[Path] = [
         ROOT / "py_ballisticcalc_exts.egg-info",
         ROOT / "build",
@@ -42,6 +44,17 @@ def main() -> None:
         PKG / "build",
         *EXTS.glob("*.egg-info"),
         *(p for p in PKG.glob("*") if p.is_file() and p.suffix in {".so", ".pyd", ".html"}),
+        # the ctypes package: the library setup.py built, the bclibc sources staged for an sdist or a container build, and
+        # what cibuildwheel and the workflows leave in the project directory
+        CTYPES / "build",
+        CTYPES / "dist",
+        CTYPES / "wheelhouse",
+        CTYPES / "core-wheel",
+        CTYPES / "cibw_stage",
+        CTYPES / "cibw_run_engines.py",
+        CPKG / "_native_lib",
+        CPKG / "external",
+        *CTYPES.glob("*.egg-info"),
     ]
     for target in targets:
         if target.exists() or target.is_symlink():

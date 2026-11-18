@@ -12,6 +12,27 @@ CTYPES_PACKAGE_NAME = "py-ballisticcalc-ctypes"
 
 NATIVE_LIB_DIR = Path(__file__).with_name("_native_lib")
 
+# The engine classes (what the entry points name) live in _native, which needs the main package: they are imported when asked
+# for, so that the package itself, and the library path above, work without it.
+_ENGINES = (
+    "NativeEulerIntegrationEngine",
+    "NativeRK4IntegrationEngine",
+    "NativeVelocityVerletIntegrationEngine",
+    "NativeCashKarpIntegrationEngine",
+    "NativeDormandPrinceIntegrationEngine",
+    "NativeTsitourasIntegrationEngine",
+)
+__all__ = ["NATIVE_LIB_DIR", "library_path", "check_versions", *_ENGINES]
+
+
+def __getattr__(name: str):
+    if name in _ENGINES:
+        from . import _native
+
+        return getattr(_native, name)
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+
+
 # libbclibc_ffi.so (Linux), libbclibc_ffi.dylib (macOS), bclibc_ffi.dll (Windows)
 _LIB_PATTERNS = ("libbclibc_ffi.so", "libbclibc_ffi.dylib", "bclibc_ffi.dll")
 

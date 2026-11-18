@@ -35,11 +35,31 @@ classifiers = [
     "Programming Language :: Python :: Implementation :: PyPy",
     "Programming Language :: Python :: Implementation :: GraalPy",
 ]
+# LGPL-3.0, as the main package and the extensions; the ctypesgen runtime this package ships (_ctypesgen/ctypes_loader.py and
+# ctypes_preamble.py) is BSD-licensed and carries its own license text
+license-files = ["LICENSE", "py_ballisticcalc_ctypes/_ctypesgen/LICENSE"]
 dependencies = []
 
 # NOTE:
 #   version: will be calculated with setuptools-scm, the same as the main package and the extensions
 dynamic = ["version"]
+
+# The same engines as the Cython extensions (py_ballisticcalc.exts), under the same names, through ctypes. Install one of the two.
+[project.entry-points.py_ballisticcalc]
+cythonized_euler_engine = "py_ballisticcalc_ctypes:NativeEulerIntegrationEngine"
+cythonized_rk4_engine = "py_ballisticcalc_ctypes:NativeRK4IntegrationEngine"
+cythonized_verlet_engine = "py_ballisticcalc_ctypes:NativeVelocityVerletIntegrationEngine"
+cythonized_rkck_engine = "py_ballisticcalc_ctypes:NativeCashKarpIntegrationEngine"
+cythonized_dopri_engine = "py_ballisticcalc_ctypes:NativeDormandPrinceIntegrationEngine"
+cythonized_tsitouras_engine = "py_ballisticcalc_ctypes:NativeTsitourasIntegrationEngine"
+
+[project.entry-points."py_ballisticcalc.engines.cython"]
+euler = "py_ballisticcalc_ctypes:NativeEulerIntegrationEngine"
+rk4 = "py_ballisticcalc_ctypes:NativeRK4IntegrationEngine"
+verlet = "py_ballisticcalc_ctypes:NativeVelocityVerletIntegrationEngine"
+rkck = "py_ballisticcalc_ctypes:NativeCashKarpIntegrationEngine"
+dopri = "py_ballisticcalc_ctypes:NativeDormandPrinceIntegrationEngine"
+tsitouras = "py_ballisticcalc_ctypes:NativeTsitourasIntegrationEngine"
 
 [project.urls]
 "Homepage" = "https://github.com/o-murphy/py-ballisticcalc"
@@ -61,6 +81,17 @@ include = ["py_ballisticcalc_ctypes*"]
 [tool.setuptools_scm]
 root = ".."  # required for valid .git repo root detect for subpackage in monorepo
 fallback_version = "0.0.0.dev0"
+
+[tool.uv]
+cache-keys = [
+    { file = "pyproject.toml" },
+    { file = "setup.py" },
+    { file = "_bclibc.py" },
+    { file = "py_ballisticcalc_ctypes/**/*.py" },
+    { file = "py_ballisticcalc_ctypes/external/**/*.{cpp,hpp,h}" },
+    # version (setuptools-scm) must match the core package, which is re-resolved on every commit
+    { git = { commit = true } },
+]
 
 [dependency-groups]
 # ctypesgen makes py_ballisticcalc_ctypes/_native_gen.py from bclibc_ffi.h (regenerate_bindings.py); the result is

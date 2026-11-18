@@ -22,6 +22,11 @@ def main() -> None:
     repo = Path(__file__).resolve().parents[1]
     venv = repo / ".venv"
     py = os.environ.get("PYTHON", "3.12")
+    # the engines `cython+*` come from one of two packages, never both: the Cython extensions (default) or the same through
+    # ctypes (EXTRA=ctypes; the bclibc_ffi library is compiled, a C++ compiler is needed)
+    extra = os.environ.get("EXTRA", "exts")
+    if extra not in {"exts", "ctypes"}:
+        raise SystemExit("EXTRA must be exts or ctypes")
     recreate = os.environ.get("RECREATE", "0") == "1"
 
     if not shutil.which("uv"):
@@ -31,10 +36,10 @@ def main() -> None:
         shutil.rmtree(venv)
 
     # Create/sync env and dependencies using uv. This will create .venv.
-    run(["uv", "sync", f"--python={py}", "--dev", "--extra", "exts"])  # relies on [tool.uv.sources]
+    run(["uv", "sync", f"--python={py}", "--dev", "--extra", extra])  # relies on [tool.uv.sources]
 
     # Force editable installs of local projects into the target venv
-    run(["uv", "pip", "install", "-p", str(venv), "-e", str(repo / "py_ballisticcalc.exts")])
+    run(["uv", "pip", "install", "-p", str(venv), "-e", str(repo / f"py_ballisticcalc.{extra}")])
     run(["uv", "pip", "install", "-p", str(venv), "-e", str(repo)])
 
     print("\nDev environment ready.")
