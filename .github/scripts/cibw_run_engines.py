@@ -7,6 +7,7 @@ cibuildwheel's test-command runs this from the directory the test sources were c
 Expected in cibw_stage/ next to this file (the workflow stages them, nothing here is committed):
 
     cibw_stage/tests/        the core test suite
+    tests/                   the tests of the package under test (its own tests/ folder, when its test-sources list it)
     cibw_stage/core-wheel/   the pure-Python py_ballisticcalc wheel
 
 cibw_stage is deliberately not a package: pytest would then name the tests cibw_stage.tests and `from tests...` in
@@ -42,6 +43,10 @@ import zipfile
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
+
+# The package's own tests: the tests/ folder of its project, which a package gets into the test environment by listing it in
+# its test-sources. They run in the session of every engine, after the core suite, and are told the same --engine.
+PACKAGE_TESTS = HERE / "tests"
 
 # No subprocesses (and so no pytest-xdist): Pyodide and iOS have none, and on Android sys.executable is "" (Python is
 # embedded in the app), so subprocess fails with PermissionError. The sessions run in this process there.
@@ -98,7 +103,8 @@ def can_fork_workers() -> bool:
 
 
 def run_engine(engine: str, tests: Path, parallel: bool) -> int:
-    args = [str(tests), "-q", "-p", "no:cacheprovider", "-m", "not stress", f"--engine={engine}"]
+    own = [str(PACKAGE_TESTS)] if PACKAGE_TESTS.is_dir() else []
+    args = [str(tests), *own, "-q", "-p", "no:cacheprovider", "-m", "not stress", f"--engine={engine}"]
     if parallel:
         args += ["-n", "auto"]
     if sys.platform in NO_SUBPROCESS:  # run the session in this process

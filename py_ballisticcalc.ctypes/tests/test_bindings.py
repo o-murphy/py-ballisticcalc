@@ -10,10 +10,15 @@ import pytest
 HERE = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(HERE))
 
-import regenerate_bindings as regen  # noqa: E402
+
+@pytest.fixture
+def regen():
+    """regenerate_bindings.py (and the bclibc sources it reads) are in a source checkout, not in a built wheel: the tests
+    of the generated bindings are skipped where they are not, the CI runs this folder against the wheel."""
+    return pytest.importorskip("regenerate_bindings", reason="not a source checkout: the bindings are not checked here")
 
 
-def test_bindings_cover_every_function_of_the_header():
+def test_bindings_cover_every_function_of_the_header(regen):
     header = regen.functions(regen._header().read_text())
     module = regen.functions(regen.OUT.read_text())
     assert header, "no BCLIBCFFI_* functions found in the header"
@@ -23,7 +28,7 @@ def test_bindings_cover_every_function_of_the_header():
 @pytest.mark.skipif(
     importlib.util.find_spec("ctypesgen") is None or shutil.which("cpp") is None, reason="needs ctypesgen and cpp"
 )
-def test_bindings_are_up_to_date():
+def test_bindings_are_up_to_date(regen):
     assert regen.main(["--check"]) == 0, "_native_gen.py is stale: run `python regenerate_bindings.py`"
 
 

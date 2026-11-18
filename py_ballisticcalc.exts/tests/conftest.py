@@ -13,12 +13,17 @@ faulthandler.enable()
 
 
 def pytest_addoption(parser):
-    parser.addoption(
-        "--engine",
-        action="store",
-        default=None,
-        help="Specify the engine entry point name",
-    )
+    # the CI runs the core suite and this one in a single session (cibw_run_engines.py), and the core suite's conftest has
+    # registered --engine already: pytest refuses an option twice
+    try:
+        parser.addoption(
+            "--engine",
+            action="store",
+            default=None,
+            help="Specify the engine entry point name",
+        )
+    except ValueError:
+        pass
 
 
 @pytest.fixture(scope="class")

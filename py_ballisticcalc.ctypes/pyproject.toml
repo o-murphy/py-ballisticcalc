@@ -150,7 +150,8 @@ enable = ["pypy", "graalpy"]
 # After each wheel is built, cibuildwheel installs it in a clean environment and runs every engine of the core test suite
 # there (.github/scripts/cibw_run_engines.py); cibuildwheel-reusable.yml stages cibw_stage/ (the core tests, the core
 # wheel) and the runner in this folder, nothing of it is committed. The core wheel is put on the path by the runner.
-test-sources = ["cibw_stage", "cibw_run_engines.py"]
+# tests/ is the tests of the package (the struct reading of its engines): the runner runs it in the session of every engine, after the core suite
+test-sources = ["cibw_stage", "cibw_run_engines.py", "tests"]
 test-groups = ["test"]
 test-command = "python cibw_run_engines.py cython"
 

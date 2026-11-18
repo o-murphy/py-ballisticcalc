@@ -124,7 +124,8 @@ enable = ["cpython-prerelease"]
 # test suite there, one after another (.github/scripts/cibw_run_engines.py). The workflow cibuildwheel-reusable.yml
 # stages cibw_stage/ (the core tests, the core wheel) and the runner module cibw_run_engines.py in this folder; they
 # are not committed.
-test-sources = ["cibw_stage", "cibw_run_engines.py"]
+# tests/ is the Cython-specific tests of the package: the runner runs it in the session of every engine, after the core suite
+test-sources = ["cibw_stage", "cibw_run_engines.py", "tests"]
 # The test environment gets the dependency group `test` (below): cibuildwheel installs the wheel under test and the
 # groups of this pyproject, it does not run `uv sync`, and the core package is not there to bring its own extras.
 test-groups = ["test"]
