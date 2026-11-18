@@ -27,7 +27,10 @@ PYEOF
 
 # the module: pyx -> C (the declarations of the C ABI are in bcffi.pxd)
 (cd "$HERE" && $PY -m cython -3 -I "$HERE" bcy.pyx -o "$OUT/bcy.c")
-gcc -fPIC -O2 -fvisibility=hidden -D__CYTHON__=1 -DPy_LIMITED_API=0x030B0000 -I"$INC" -I"$B/include" -c "$OUT/bcy.c" -o "$OUT/bcy_module.o"
+CDIR="$HERE/../c"
+gcc -fPIC -O2 -fvisibility=hidden -D__CYTHON__=1 -DPy_LIMITED_API=0x030B0000 -I"$INC" -I"$B/include" -I"$CDIR" -c "$OUT/bcy.c" -o "$OUT/bcy_module.o"
+# the functions the C ABI lacks (the buffer and the interpolation of base trajectory points), plain C
+gcc -std=c11 -fPIC -O2 -fvisibility=hidden -I"$B/include" -I"$CDIR" -c "$CDIR/bclibc_ffi_ext.c" -o "$OUT/obj/bclibc_ffi_ext.o"
 
 # the core and the C ABI wrapper, as py_ballisticcalc.ctypes builds them, but with hidden visibility: only PyInit_bcy is exported
 CXXF="-std=c++17 -O3 -fno-exceptions -fno-rtti -ffp-contract=off -fPIC -fvisibility=hidden -fvisibility-inlines-hidden \

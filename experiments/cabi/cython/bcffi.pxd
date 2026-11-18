@@ -1,17 +1,39 @@
-from libc.stdint cimport int32_t
+from libc.stdint cimport int32_t, int64_t
 
-cdef extern from "bclibc/ffi/bclibc_ffi.h" nogil:
+cdef extern from "bclibc_ffi_ext.h" nogil:
 
-    ctypedef BCLIBCFFI_BaseTrajData BCLIBCFFI_DenseStep
+    ctypedef struct BCLIBCFFI_BaseTrajData:
+        double time
+        double px
+        double py
+        double pz
+        double vx
+        double vy
+        double vz
+        double mach
 
+    ctypedef struct BCLIBCFFI_Error:
+        int32_t code
+        char message[512]
+        double f64_0
+        double f64_1
+        double f64_2
+        int32_t i32_0
 
+    ctypedef struct BCLIBCFFI_BaseTrajBuf:
+        BCLIBCFFI_BaseTrajData* data
+        int32_t count
+        int32_t capacity
 
+    void BCLIBCFFI_base_traj_buf_free(BCLIBCFFI_BaseTrajBuf* buf)
 
+    int32_t BCLIBCFFI_base_traj_buf_append(BCLIBCFFI_BaseTrajBuf* buf, const BCLIBCFFI_BaseTrajData* item, BCLIBCFFI_Error* err)
 
+    int32_t BCLIBCFFI_base_traj_interpolate(int32_t key, double value, const BCLIBCFFI_BaseTrajData* p0, const BCLIBCFFI_BaseTrajData* p1, const BCLIBCFFI_BaseTrajData* p2, BCLIBCFFI_BaseTrajData* out, BCLIBCFFI_Error* err)
 
+    int32_t BCLIBCFFI_base_traj_interpolate_at(const BCLIBCFFI_BaseTrajData* steps, int32_t count, int64_t idx, int32_t key, double value, BCLIBCFFI_BaseTrajData* out, BCLIBCFFI_Error* err)
 
-
-
+    const char* BCLIBCFFI_get_version()
 
     cdef enum BCLIBCFFI_Status:
         BCLIBCFFI_OK
@@ -58,41 +80,6 @@ cdef extern from "bclibc/ffi/bclibc_ffi.h" nogil:
         BCLIBCFFI_INTEGRATION_DORMAND_PRINCE
         BCLIBCFFI_INTEGRATION_TSITOURAS
 
-    cdef enum BCLIBCFFI_TrajectoryInterpKey:
-        BCLIBCFFI_TRAJ_KEY_TIME
-        BCLIBCFFI_TRAJ_KEY_DISTANCE
-        BCLIBCFFI_TRAJ_KEY_VELOCITY
-        BCLIBCFFI_TRAJ_KEY_MACH
-        BCLIBCFFI_TRAJ_KEY_HEIGHT
-        BCLIBCFFI_TRAJ_KEY_SLANT_HEIGHT
-        BCLIBCFFI_TRAJ_KEY_DROP_ANGLE
-        BCLIBCFFI_TRAJ_KEY_WINDAGE
-        BCLIBCFFI_TRAJ_KEY_WINDAGE_ANGLE
-        BCLIBCFFI_TRAJ_KEY_SLANT_DISTANCE
-        BCLIBCFFI_TRAJ_KEY_ANGLE
-        BCLIBCFFI_TRAJ_KEY_DENSITY_RATIO
-        BCLIBCFFI_TRAJ_KEY_DRAG
-        BCLIBCFFI_TRAJ_KEY_ENERGY
-        BCLIBCFFI_TRAJ_KEY_OGW
-        BCLIBCFFI_TRAJ_KEY_FLAG
-
-    cdef enum BCLIBCFFI_InterpMethod:
-        BCLIBCFFI_INTERP_PCHIP
-        BCLIBCFFI_INTERP_LINEAR
-
-    cdef enum BCLIBCFFI_ZeroInitStatus:
-        BCLIBCFFI_ZERO_INIT_CONTINUE
-        BCLIBCFFI_ZERO_INIT_DONE
-
-
-    ctypedef struct BCLIBCFFI_Error:
-        int32_t code
-        char message[512]
-        double f64_0
-        double f64_1
-        double f64_2
-        int32_t i32_0
-
     ctypedef struct BCLIBCFFI_Config:
         double cStepMultiplier
         double cZeroFindingAccuracy
@@ -132,56 +119,27 @@ cdef extern from "bclibc/ffi/bclibc_ffi.h" nogil:
         double Mach
         double CD
 
-    ctypedef struct BCLIBCFFI_TrajectoryRequest:
-        double range_limit_ft
-        double range_step_ft
-        double time_step
-        int32_t filter_flags
-
-    ctypedef struct BCLIBCFFI_BaseTrajData:
-        double time
-        double px
-        double py
-        double pz
-        double vx
-        double vy
-        double vz
-        double mach
-
-    ctypedef struct BCLIBCFFI_TrajectoryData:
-        double time
-        double distance_ft
-        double velocity_fps
-        double mach
-        double height_ft
-        double slant_height_ft
-        double drop_angle_rad
-        double windage_ft
-        double windage_angle_rad
-        double slant_distance_ft
-        double angle_rad
-        double density_ratio
-        double drag
-        double energy_ft_lb
-        double ogw_lb
-        int32_t flag
-
-    ctypedef struct BCLIBCFFI_MaxRangeResult:
-        double max_range_ft
-        double angle_at_max_rad
-
-    ctypedef struct BCLIBCFFI_StepStats:
-        int32_t accepted
-        int32_t rejected
-
-    ctypedef struct BCLIBCFFI_ZeroInit:
-        int32_t status
-        int32_t reserved
+    ctypedef struct BCLIBCFFI_ShotProps:
+        double bc
         double look_angle_rad
-        double slant_range_ft
-        double target_x_ft
-        double target_y_ft
-        double start_height_ft
+        double twist_inch
+        double length_inch
+        double diameter_inch
+        double weight_grain
+        double barrel_elevation_rad
+        double barrel_azimuth_rad
+        double sight_height_ft
+        double cant_angle_rad
+        double alt0_ft
+        double muzzle_velocity_fps
+        BCLIBCFFI_Atmosphere atmo
+        BCLIBCFFI_Coriolis coriolis
+        BCLIBCFFI_Config config
+        BCLIBCFFI_IntegrationMethod method
+        const BCLIBCFFI_DragPoint* drag_table
+        int32_t drag_table_count
+        const BCLIBCFFI_Wind* winds
+        int32_t wind_count
 
     ctypedef struct BCLIBCFFI_Shot:
         double bc
@@ -209,27 +167,33 @@ cdef extern from "bclibc/ffi/bclibc_ffi.h" nogil:
         BCLIBCFFI_Config config
         BCLIBCFFI_IntegrationMethod method
 
-    ctypedef struct BCLIBCFFI_ShotProps:
-        double bc
-        double look_angle_rad
-        double twist_inch
-        double length_inch
-        double diameter_inch
-        double weight_grain
-        double barrel_elevation_rad
-        double barrel_azimuth_rad
-        double sight_height_ft
-        double cant_angle_rad
-        double alt0_ft
-        double muzzle_velocity_fps
-        BCLIBCFFI_Atmosphere atmo
-        BCLIBCFFI_Coriolis coriolis
-        BCLIBCFFI_Config config
-        BCLIBCFFI_IntegrationMethod method
-        const BCLIBCFFI_DragPoint* drag_table
-        int32_t drag_table_count
-        const BCLIBCFFI_Wind* winds
-        int32_t wind_count
+    ctypedef struct BCLIBCFFI_TrajectoryRequest:
+        double range_limit_ft
+        double range_step_ft
+        double time_step
+        int32_t filter_flags
+
+    ctypedef struct BCLIBCFFI_TrajectoryData:
+        double time
+        double distance_ft
+        double velocity_fps
+        double mach
+        double height_ft
+        double slant_height_ft
+        double drop_angle_rad
+        double windage_ft
+        double windage_angle_rad
+        double slant_distance_ft
+        double angle_rad
+        double density_ratio
+        double drag
+        double energy_ft_lb
+        double ogw_lb
+        int32_t flag
+
+    ctypedef struct BCLIBCFFI_MaxRangeResult:
+        double max_range_ft
+        double angle_at_max_rad
 
     ctypedef struct BCLIBCFFI_ZeroPointResult:
         double angle_rad
@@ -238,9 +202,6 @@ cdef extern from "bclibc/ffi/bclibc_ffi.h" nogil:
     ctypedef struct BCLIBCFFI_Interception:
         BCLIBCFFI_BaseTrajData raw_data
         BCLIBCFFI_TrajectoryData full_data
-
-
-    const char* BCLIBCFFI_get_version()
 
     int32_t BCLIBCFFI_find_apex(const BCLIBCFFI_ShotProps* props, BCLIBCFFI_TrajectoryData* out, BCLIBCFFI_Error* err)
 
@@ -280,7 +241,35 @@ cdef extern from "bclibc/ffi/bclibc_ffi.h" nogil:
 
     int32_t BCLIBCFFI_interpolate_2pt(double x, double x0, double y0, double x1, double y1, double* out, BCLIBCFFI_Error* err)
 
+    cdef enum BCLIBCFFI_TrajectoryInterpKey:
+        BCLIBCFFI_TRAJ_KEY_TIME
+        BCLIBCFFI_TRAJ_KEY_DISTANCE
+        BCLIBCFFI_TRAJ_KEY_VELOCITY
+        BCLIBCFFI_TRAJ_KEY_MACH
+        BCLIBCFFI_TRAJ_KEY_HEIGHT
+        BCLIBCFFI_TRAJ_KEY_SLANT_HEIGHT
+        BCLIBCFFI_TRAJ_KEY_DROP_ANGLE
+        BCLIBCFFI_TRAJ_KEY_WINDAGE
+        BCLIBCFFI_TRAJ_KEY_WINDAGE_ANGLE
+        BCLIBCFFI_TRAJ_KEY_SLANT_DISTANCE
+        BCLIBCFFI_TRAJ_KEY_ANGLE
+        BCLIBCFFI_TRAJ_KEY_DENSITY_RATIO
+        BCLIBCFFI_TRAJ_KEY_DRAG
+        BCLIBCFFI_TRAJ_KEY_ENERGY
+        BCLIBCFFI_TRAJ_KEY_OGW
+        BCLIBCFFI_TRAJ_KEY_FLAG
+
+    cdef enum BCLIBCFFI_InterpMethod:
+        BCLIBCFFI_INTERP_PCHIP
+        BCLIBCFFI_INTERP_LINEAR
+
     int32_t BCLIBCFFI_interpolate_trajectory_data(int32_t key, double value, const BCLIBCFFI_TrajectoryData* t0, const BCLIBCFFI_TrajectoryData* t1, const BCLIBCFFI_TrajectoryData* t2, int32_t flag, int32_t method, BCLIBCFFI_TrajectoryData* out, BCLIBCFFI_Error* err)
+
+    ctypedef struct BCLIBCFFI_StepStats:
+        int32_t accepted
+        int32_t rejected
+
+    ctypedef BCLIBCFFI_BaseTrajData BCLIBCFFI_DenseStep
 
     int32_t BCLIBCFFI_integrate_adaptive_shot(const BCLIBCFFI_Shot* shot, int32_t method, double relative_tolerance, double absolute_tolerance, const BCLIBCFFI_TrajectoryRequest* request, int32_t want_dense, BCLIBCFFI_TrajectoryData** out_records, int32_t* out_count, BCLIBCFFI_DenseStep** out_dense, int32_t* out_dense_count, int32_t* out_reason, BCLIBCFFI_StepStats* out_stats, BCLIBCFFI_Error* err)
 
@@ -305,6 +294,19 @@ cdef extern from "bclibc/ffi/bclibc_ffi.h" nogil:
     int32_t BCLIBCFFI_find_zero_point_lofted_adaptive_shot(const BCLIBCFFI_Shot* shot, int32_t method, double relative_tolerance, double absolute_tolerance, double distance_ft, int32_t lofted, BCLIBCFFI_ZeroPointResult* out, BCLIBCFFI_StepStats* out_stats, BCLIBCFFI_Error* err)
 
     int32_t BCLIBCFFI_integrate_at_adaptive_shot(const BCLIBCFFI_Shot* shot, int32_t method, double relative_tolerance, double absolute_tolerance, int32_t key, double target_value, BCLIBCFFI_Interception* out, BCLIBCFFI_StepStats* out_stats, BCLIBCFFI_Error* err)
+
+    cdef enum BCLIBCFFI_ZeroInitStatus:
+        BCLIBCFFI_ZERO_INIT_CONTINUE
+        BCLIBCFFI_ZERO_INIT_DONE
+
+    ctypedef struct BCLIBCFFI_ZeroInit:
+        int32_t status
+        int32_t reserved
+        double look_angle_rad
+        double slant_range_ft
+        double target_x_ft
+        double target_y_ft
+        double start_height_ft
 
     int32_t BCLIBCFFI_error_at_distance_shot(const BCLIBCFFI_Shot* shot, double angle_rad, double target_x_ft, double target_y_ft, double* out_error_ft, BCLIBCFFI_BaseTrajData* out_hit, BCLIBCFFI_Error* err)
 

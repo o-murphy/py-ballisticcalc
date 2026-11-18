@@ -2,12 +2,13 @@
 """The bclibc engines as Cython over the C ABI (bclibc_ffi.h), not the C++ API."""
 import math
 import struct
-from collections.abc import Sequence
 
 from cpython.bytes cimport PyBytes_FromStringAndSize
 from libc.math cimport NAN
 from libc.stdint cimport int32_t
+from cython cimport final
 from libc.stdlib cimport free, malloc, realloc
+from libc.string cimport memcpy
 
 from bcffi cimport *
 
@@ -257,31 +258,259 @@ cdef int _raise(const BCLIBCFFI_Error *err) except -1:
     raise SolverRuntimeError(msg)
 
 
-cdef class _DenseSeq:
-    """Dense accepted steps of one integrate() call: owns the array the library allocated, items built on access."""
-    cdef BCLIBCFFI_DenseStep *p
-    cdef int n
+# ---------------------------------------------------------------------------------------------------------------------
+# CythonizedBaseTrajData and CythonizedBaseTrajSeq: the two public buffers of the C++ layer (traj_data.pyx). Only the Python
+# side is here: the buffer, the interpolation and the search are C functions (c/bclibc_ffi_ext.c, bclibc_ffi.h).
+# ---------------------------------------------------------------------------------------------------------------------
 
-    def __dealloc__(self):
-        if self.p != NULL:
-            BCLIBCFFI_free_base_trajectory(self.p)
+cdef int _key_of(str key_attribute) except -1:
+    cdef object k = _KEY.get(key_attribute)
+    if k is None:
+        raise AttributeError(f"Cannot interpolate on '{key_attribute}'")
+    return <int>k
+
+
+cdef int _raise_get(const BCLIBCFFI_Error *err) except -1:
+    """The error of get_at / get_at_slant_height, as the C++ layer raises it: IndexError when the value is outside the stream,
+    ValueError for too few points or a degenerate segment (an empty stream is "too few points").
+
+    The C ABI does not say which of the two it is: setEngineError in bclibc_ffi.cpp makes ERR_GENERIC of every error that is
+    not a Solver* one, an out-of-range and a domain error alike. The message is what tells them apart here (the one text the
+    tests of the C++ layer match on). A kind in BCLIBCFFI_Error would make this a switch on the code."""
+    msg = (<bytes>err.message).decode("utf-8", "replace")
+    if err.code == BCLIBCFFI_ERR_GENERIC or err.code == BCLIBCFFI_ERR_OUT_OF_RANGE or err.code == BCLIBCFFI_ERR_INTERCEPTION:
+        if "outside the trajectory's range" in msg:
+            raise IndexError(msg)
+        raise ValueError(msg)
+    raise RuntimeError(msg)
+
+
+cdef int _raise_seq(const BCLIBCFFI_Error *err) except -1:
+    """What the C++ layer makes of the error of a sequence call: out of range -> IndexError, a degenerate segment or a
+    bad argument -> ValueError, anything else -> RuntimeError."""
+    msg = (<bytes>err.message).decode("utf-8", "replace")
+    if err.code == BCLIBCFFI_ERR_OUT_OF_RANGE or err.code == BCLIBCFFI_ERR_INTERCEPTION:
+        raise IndexError(msg)
+    if err.code == BCLIBCFFI_ERR_GENERIC:
+        raise ValueError(msg)
+    raise RuntimeError(msg)
+
+
+@final
+cdef class CythonizedBaseTrajData:
+    cdef BCLIBCFFI_BaseTrajData _d
+    __slots__ = ('time', 'position', 'velocity', 'mach')  # for pure python mirror consistency
+
+    def __repr__(self):
+        cls_name = self.__class__.__name__
+
+        field_names = self.__slots__
+        field_values = self.__iter__()
+
+        content = ", ".join(
+            f"{name}={repr(value)}"
+            for name, value in zip(field_names, field_values)
+        )
+        return f"{cls_name}({content})"
+
+    def __str__(self):
+        content = ", ".join(repr(value) for value in self)
+        return f"({content})"
 
     def __len__(self):
-        return self.n
+        return len(self.__slots__)
 
-    def __getitem__(self, idx):
-        cdef int i
-        if isinstance(idx, slice):
-            return [self[j] for j in range(*idx.indices(self.n))]
-        i = idx
-        if i < 0:
-            i += self.n
-        if i < 0 or i >= self.n:
-            raise IndexError(idx)
-        return _base(&self.p[i])
+    def __iter__(self):
+        yield self.time
+        yield self.position
+        yield self.velocity
+        yield self.mach
+
+    def __getitem__(self, index):
+        """Access to fields by index: self[0] -> time, self[1] -> position, and so on. Indexes and slices."""
+        if index == 0:
+            return self.time
+        elif index == 1:
+            return self.position
+        elif index == 2:
+            return self.velocity
+        elif index == 3:
+            return self.mach
+
+        # Negative
+        elif index == -4:
+            return self.time
+        elif index == -3:
+            return self.position
+        elif index == -2:
+            return self.velocity
+        elif index == -1:
+            return self.mach
+
+        # Slices
+        elif isinstance(index, slice):
+            return (self.time, self.position, self.velocity, self.mach)[index]
+
+        raise IndexError("TrajData index out of range")
+
+    def __eq__(self, other):
+        if isinstance(other, CythonizedBaseTrajData):
+            return (self.time == other.time and
+                    self.position == other.position and
+                    self.velocity == other.velocity and
+                    self.mach == other.mach)
+
+        elif len(self) == len(other):
+            return all(a == b for a, b in zip(self, other))
+
+        return NotImplemented
+
+    @property
+    def time(self):
+        return self._d.time
+
+    @property
+    def mach(self):
+        return self._d.mach
+
+    @property
+    def position(self):
+        return Vector(self._d.px, self._d.py, self._d.pz)
+
+    @property
+    def velocity(self):
+        return Vector(self._d.vx, self._d.vy, self._d.vz)
+
+    @staticmethod
+    def interpolate(str key_attribute, double key_value,
+                    CythonizedBaseTrajData p0, CythonizedBaseTrajData p1, CythonizedBaseTrajData p2):
+        """PCHIP interpolation of a BaseTrajData point through three points surrounding where key_attribute == value.
+
+        key_attribute: 'time', 'mach' or a component like 'position.x', 'velocity.z' (AttributeError otherwise).
+        ZeroDivisionError when two of the points have the same key.
+        """
+        cdef int key = _key_of(key_attribute)
+        cdef CythonizedBaseTrajData out = CythonizedBaseTrajData()
+        cdef BCLIBCFFI_Error err
+        if BCLIBCFFI_base_traj_interpolate(key, key_value, &p0._d, &p1._d, &p2._d, &out._d, &err) != BCLIBCFFI_OK:
+            raise ZeroDivisionError((<bytes>err.message).decode("utf-8", "replace"))
+        return out
 
 
-Sequence.register(_DenseSeq)
+def make_base_traj_data(double time, double px, double py, double pz, double vx, double vy, double vz, double mach):
+    """A CythonizedBaseTrajData of the eight numbers (the test helper of the C++ layer, of the same name)."""
+    cdef CythonizedBaseTrajData d = CythonizedBaseTrajData()
+    d._d.time = time
+    d._d.px = px
+    d._d.py = py
+    d._d.pz = pz
+    d._d.vx = vx
+    d._d.vy = vy
+    d._d.vz = vz
+    d._d.mach = mach
+    return d
+
+
+@final
+cdef class CythonizedBaseTrajSeq:
+    """Contiguous C buffer of BCLIBCFFI_BaseTrajData points with append and interpolation."""
+    cdef BCLIBCFFI_BaseTrajBuf _buf
+    cdef bint _lib  # the array is the library's own (the dense steps of integrate()): freed by BCLIBCFFI_free_base_trajectory
+
+    def __dealloc__(self):
+        if self._lib:
+            BCLIBCFFI_free_base_trajectory(self._buf.data)
+        else:
+            BCLIBCFFI_base_traj_buf_free(&self._buf)
+
+    cdef void _adopt(self, BCLIBCFFI_DenseStep *steps, int32_t count) noexcept:
+        """Takes the array the library allocated, without copying it."""
+        self._buf.data = steps
+        self._buf.count = count
+        self._buf.capacity = count
+        self._lib = True
+
+    cdef int _own(self) except -1:
+        """Copies the library's array into one the buffer can grow."""
+        cdef BCLIBCFFI_BaseTrajData *mine = <BCLIBCFFI_BaseTrajData *>malloc(self._buf.count * sizeof(BCLIBCFFI_BaseTrajData))
+        if mine == NULL:
+            raise MemoryError()
+        memcpy(mine, self._buf.data, self._buf.count * sizeof(BCLIBCFFI_BaseTrajData))
+        BCLIBCFFI_free_base_trajectory(self._buf.data)
+        self._buf.data = mine
+        self._buf.capacity = self._buf.count
+        self._lib = False
+        return 0
+
+    def append(self, double time, double px, double py, double pz,
+               double vx, double vy, double vz, double mach):
+        """Append a new point to the sequence."""
+        cdef BCLIBCFFI_BaseTrajData item = BCLIBCFFI_BaseTrajData(time, px, py, pz, vx, vy, vz, mach)
+        cdef BCLIBCFFI_Error err
+        if self._lib:
+            self._own()
+        if BCLIBCFFI_base_traj_buf_append(&self._buf, &item, &err) != BCLIBCFFI_OK:
+            raise MemoryError((<bytes>err.message).decode("utf-8", "replace"))
+
+    def reserve(self, int min_capacity):
+        """Ensure capacity is at least min_capacity (no-op if already large enough)."""
+        import warnings
+        warnings.warn("reserve method deprecated due to auto resources manage")
+        if min_capacity < 0:
+            raise ValueError("min_capacity must be non-negative")
+
+    def __len__(self):
+        return self._buf.count
+
+    def __getitem__(self, Py_ssize_t idx):
+        """The point at idx (negative from the end) as CythonizedBaseTrajData."""
+        cdef CythonizedBaseTrajData out
+        if idx < 0:
+            idx += self._buf.count
+        if idx < 0 or idx >= self._buf.count:
+            raise IndexError("Index out of range")
+        out = CythonizedBaseTrajData()
+        out._d = self._buf.data[idx]
+        return out
+
+    def interpolate_at(self, Py_ssize_t idx, str key_attribute, double key_value):
+        """Interpolate using points (idx-1, idx, idx+1) keyed by key_attribute at key_value."""
+        cdef int key = _key_of(key_attribute)
+        cdef CythonizedBaseTrajData out = CythonizedBaseTrajData()
+        cdef BCLIBCFFI_Error err
+        if BCLIBCFFI_base_traj_interpolate_at(self._buf.data, self._buf.count, idx, key, key_value, &out._d, &err) != BCLIBCFFI_OK:
+            _raise_seq(&err)
+        return out
+
+    def get_at(self, str key_attribute, double key_value, object start_from_time=None):
+        """The point where key_attribute == key_value (monotone PCHIP interpolation).
+
+        If start_from_time > 0 the search starts from the first point where time >= start_from_time and goes forward
+        or backward by the local direction, as HitResult.get_at() does.
+        """
+        cdef int key = _key_of(key_attribute)
+        cdef CythonizedBaseTrajData out = CythonizedBaseTrajData()
+        cdef double t0 = 0.0
+        cdef BCLIBCFFI_Error err
+        cdef int32_t rc
+        if start_from_time is not None:
+            t0 = <double>start_from_time
+        with nogil:
+            rc = BCLIBCFFI_dense_get_at(self._buf.data, self._buf.count, key, key_value, t0, &out._d, &err)
+        if rc != BCLIBCFFI_OK:
+            _raise_get(&err)
+        return out
+
+    def get_at_slant_height(self, double look_angle_rad, double value):
+        """The point where value == slant height = position.y*cos(a) - position.x*sin(a)."""
+        cdef CythonizedBaseTrajData out = CythonizedBaseTrajData()
+        cdef BCLIBCFFI_Error err
+        cdef int32_t rc
+        with nogil:
+            rc = BCLIBCFFI_dense_get_at_slant_height(self._buf.data, self._buf.count, look_angle_rad, value, &out._d, &err)
+        if rc != BCLIBCFFI_OK:
+            _raise_get(&err)
+        return out
 
 
 class _Engine(BaseIntegrationEngine):
@@ -328,12 +557,11 @@ class _Engine(BaseIntegrationEngine):
         if count:
             BCLIBCFFI_free_trajectory(scr.recs)
         base_data = None
-        cdef _DenseSeq seq
+        cdef CythonizedBaseTrajSeq seq
         if dense_output:
-            seq = _DenseSeq.__new__(_DenseSeq)
+            seq = CythonizedBaseTrajSeq()
             if scr.dn:
-                seq.p = scr.dense
-                seq.n = scr.dn
+                seq._adopt(scr.dense, scr.dn)
                 scr.dense = NULL
             base_data = seq
         props = ShotProps.from_shot(shot_info)
