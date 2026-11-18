@@ -150,6 +150,11 @@ container-engine = { name = "docker", create-args = ["--security-opt", "seccomp=
 select = ["*_ppc64le", "*_s390x", "*_riscv64"]
 build-frontend = "build"
 
+# GraalPy and uv are incompatible (cibuildwheel documents it; uv fails with an ArgumentError on Windows): the plain build frontend
+[[tool.cibuildwheel.overrides]]
+select = "gp*"
+build-frontend = "build"
+
 [tool.cibuildwheel.android]
 build = "cp313-android_*"
 # Android accepts only a test command that starts with "python" and contains -m or -c: start the runner through runpy

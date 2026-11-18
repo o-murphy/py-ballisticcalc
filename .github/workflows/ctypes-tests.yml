@@ -164,6 +164,14 @@ jobs:
             needs_qemu: false
             build: "gp312_250-manylinux_aarch64"
 
+          - name: GraalPy Windows x64
+            artifact_key: graalpy-windows-amd64
+            os: windows-latest
+            cibw_archs: "AMD64"
+            cibw_platform: windows
+            needs_qemu: false
+            build: "gp312_250-win_amd64"
+
           - name: GraalPy macOS Intel
             artifact_key: graalpy-macos-x86_64
             os: macos-26-intel
