@@ -30,6 +30,8 @@ jobs:
     name: ${{ matrix.name }}
     strategy:
       fail-fast: false
+      # `cp3*` selects the CPython identifiers only (the project enables PyPy and GraalPy too): one builds the py3-none wheel, the others
+      # reuse it and test it on their Python, as for the abi3 wheels of exts.
       # GraalPy on Windows is not here: uv 0.13 cannot inspect graalpy.exe (ctypes.ArgumentError in VirtualAlloc), so cibuildwheel cannot make its build environment
       max-parallel: 20 # every entry at once; the QEMU ones are the slowest
       matrix:
@@ -40,7 +42,7 @@ jobs:
             cibw_archs: "x86_64,i686"
             cibw_platform: linux
             needs_qemu: false
-            build: "cp311-*"
+            build: "cp3*"
 
           - name: Linux ARM64 / ARMv7 (glibc, musl)
             artifact_key: linux-arm64-armv7
@@ -48,7 +50,7 @@ jobs:
             cibw_archs: "aarch64,armv7l"
             cibw_platform: linux
             needs_qemu: false
-            build: "cp311-*"
+            build: "cp3*"
 
           - name: Linux ppc64le (QEMU, glibc and musl)
             artifact_key: linux-ppc64le
@@ -56,7 +58,7 @@ jobs:
             cibw_archs: "ppc64le"
             cibw_platform: linux
             needs_qemu: true
-            build: "cp311-*"
+            build: "cp3*"
 
           - name: Linux s390x (QEMU, glibc and musl)
             artifact_key: linux-s390x
@@ -64,7 +66,7 @@ jobs:
             cibw_archs: "s390x"
             cibw_platform: linux
             needs_qemu: true
-            build: "cp311-*"
+            build: "cp3*"
 
           - name: Linux riscv64 (QEMU, glibc and musl)
             artifact_key: linux-riscv64
@@ -72,7 +74,7 @@ jobs:
             cibw_archs: "riscv64"
             cibw_platform: linux
             needs_qemu: true
-            build: "cp311-*"
+            build: "cp3*"
 
           - name: Windows x64
             artifact_key: windows-x64
@@ -80,7 +82,7 @@ jobs:
             cibw_archs: "AMD64"
             cibw_platform: windows
             needs_qemu: false
-            build: "cp311-*"
+            build: "cp3*"
 
           - name: macOS Apple Silicon (universal2)
             artifact_key: macos-universal2
@@ -88,7 +90,7 @@ jobs:
             cibw_archs: "universal2"
             cibw_platform: macos
             needs_qemu: false
-            build: "cp311-*"
+            build: "cp3*"
 
           - name: macOS Intel
             artifact_key: macos-x86_64
@@ -96,7 +98,7 @@ jobs:
             cibw_archs: "x86_64"
             cibw_platform: macos
             needs_qemu: false
-            build: "cp311-*"
+            build: "cp3*"
 
           - name: Android (x86-64 emulator, arm64 build)
             artifact_key: android
@@ -104,7 +106,7 @@ jobs:
             cibw_archs: "arm64_v8a,x86_64"
             cibw_platform: android
             needs_qemu: false
-            build: "cp313-android_*"
+            build: "cp3*-android_*"
 
           - name: PyPy Linux x86-64
             artifact_key: pypy-linux-x86_64
