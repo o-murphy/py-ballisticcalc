@@ -4,7 +4,7 @@ run-name: "ctypes: ${{ github.event_name == 'workflow_dispatch' && 'by hand' || 
 # Builds the ctypes package (py_ballisticcalc.ctypes) with cibuildwheel and tests each wheel: the engines through ctypes for
 # what the Cython wheels do not serve (PyPy, GraalPy, ppc64le, s390x, riscv64) and, as a second variant, for Android. One
 # py3-none wheel per platform, built by one interpreter; the PyPy and GraalPy entries build (and so test) it under those
-# interpreters. QEMU builds are a job each, glibc and musl apart, so they run in parallel. It does not run, or wait for, the Cython jobs (cibuildwheel-tests.yml).
+# interpreters. Each QEMU architecture is a job of its own (glibc and musl in it), so the three run in parallel. It does not run, or wait for, the Cython jobs (cibuildwheel-tests.yml).
 #
 # By hand (workflow_dispatch); GitHub starts a workflow by hand only when its file is on the default branch, so until this
 # one is merged it also starts on a push to a feat/ctypes-* branch (remove that trigger afterwards).
@@ -47,53 +47,26 @@ jobs:
             cibw_platform: linux
             needs_qemu: false
 
-          - name: Linux ppc64le glibc (QEMU)
-            artifact_key: linux-ppc64le-glibc
+          - name: Linux ppc64le (QEMU, glibc and musl)
+            artifact_key: linux-ppc64le
             os: ubuntu-latest
             cibw_archs: "ppc64le"
             cibw_platform: linux
             needs_qemu: true
-            build: "cp311-manylinux_ppc64le"
 
-          - name: Linux ppc64le musl (QEMU)
-            artifact_key: linux-ppc64le-musl
-            os: ubuntu-latest
-            cibw_archs: "ppc64le"
-            cibw_platform: linux
-            needs_qemu: true
-            build: "cp311-musllinux_ppc64le"
-
-          - name: Linux s390x glibc (QEMU)
-            artifact_key: linux-s390x-glibc
+          - name: Linux s390x (QEMU, glibc and musl)
+            artifact_key: linux-s390x
             os: ubuntu-latest
             cibw_archs: "s390x"
             cibw_platform: linux
             needs_qemu: true
-            build: "cp311-manylinux_s390x"
 
-          - name: Linux s390x musl (QEMU)
-            artifact_key: linux-s390x-musl
-            os: ubuntu-latest
-            cibw_archs: "s390x"
-            cibw_platform: linux
-            needs_qemu: true
-            build: "cp311-musllinux_s390x"
-
-          - name: Linux riscv64 glibc (QEMU)
-            artifact_key: linux-riscv64-glibc
+          - name: Linux riscv64 (QEMU, glibc and musl)
+            artifact_key: linux-riscv64
             os: ubuntu-latest
             cibw_archs: "riscv64"
             cibw_platform: linux
             needs_qemu: true
-            build: "cp311-manylinux_riscv64"
-
-          - name: Linux riscv64 musl (QEMU)
-            artifact_key: linux-riscv64-musl
-            os: ubuntu-latest
-            cibw_archs: "riscv64"
-            cibw_platform: linux
-            needs_qemu: true
-            build: "cp311-musllinux_riscv64"
 
           - name: Windows x64
             artifact_key: windows-x64
