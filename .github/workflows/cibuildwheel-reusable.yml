@@ -166,7 +166,7 @@ permissions:
   contents: read
 
 env:
-  CIBUILDWHEEL_VERSION: "4.2.1"
+  CIBUILDWHEEL_VERSION: "4.3.0"
   # setuptools-scm: the core and the exts must come out with the same version. The Linux build runs in a container
   # where there is no .git, so the version is fixed on the host (below) and passed in (CIBW_ENVIRONMENT_PASS).
   # SETUPTOOLS_SCM_OVERRIDES is read by every distribution without a SETUPTOOLS_SCM_OVERRIDES_FOR_<DIST> of its own.

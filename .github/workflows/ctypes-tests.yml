@@ -188,6 +188,37 @@ jobs:
             needs_qemu: false
             build: "gp312_250-macosx_arm64"
 
+          - name: GraalPy 3.13 Linux x86-64
+            artifact_key: graalpy313-linux-x86_64
+            os: ubuntu-latest
+            cibw_archs: "x86_64"
+            cibw_platform: linux
+            needs_qemu: false
+            build: "gp313_253-manylinux_x86_64"
+
+          - name: GraalPy 3.13 Linux ARM64
+            artifact_key: graalpy313-linux-aarch64
+            os: ubuntu-24.04-arm
+            cibw_archs: "aarch64"
+            cibw_platform: linux
+            needs_qemu: false
+            build: "gp313_253-manylinux_aarch64"
+
+          - name: GraalPy 3.13 macOS Apple Silicon
+            artifact_key: graalpy313-macos-arm64
+            os: macos-26
+            cibw_archs: "arm64"
+            cibw_platform: macos
+            needs_qemu: false
+            build: "gp313_253-macosx_arm64"
+
+          - name: GraalPy 3.13 Windows x64
+            artifact_key: graalpy313-windows-amd64
+            os: windows-latest
+            cibw_archs: "AMD64"
+            cibw_platform: windows
+            needs_qemu: false
+            build: "gp313_253-win_amd64"
 
     uses: ./.github/workflows/cibuildwheel-reusable.yml
     with:
