@@ -34,7 +34,7 @@ from py_ballisticcalc.exceptions import (
 )
 from py_ballisticcalc.shot import ShotProps
 from py_ballisticcalc.trajectory_data import BaseTrajData, HitResult, TrajectoryData, TrajFlag
-from py_ballisticcalc.unit import Angular, Distance
+from py_ballisticcalc.unit import Angular, Distance, Energy, Unit, Velocity, Weight
 from py_ballisticcalc.vector import Vector
 
 # ---------------------------------------------------------------- generated bindings
@@ -321,26 +321,60 @@ def _fill_shot(scr: _Scratch, shot_info, cfg, method: int) -> None:
 _TRAJ_FMT = struct.Struct("15di4x")
 
 
+_tuple_new = tuple.__new__
+_obj_new = object.__new__
+_FOOT, _FPS, _RAD, _FTLB, _LB = Unit.Foot, Unit.FPS, Unit.Radian, Unit.FootPound, Unit.Pound
+_FLAGS: dict[int, TrajFlag] = {}  # TrajFlag(...) of each flag value, looked up once
+
+
 def _traj_values(v) -> TrajectoryData:
-    """A TrajectoryData from the unpacked fields of one BCLIBCFFI_TrajectoryData (the order of the struct)."""
-    return TrajectoryData(
-        time=v[0],
-        distance=TrajectoryData._new_feet(v[1]),
-        velocity=TrajectoryData._new_fps(v[2]),
-        mach=v[3],
-        height=TrajectoryData._new_feet(v[4]),
-        slant_height=TrajectoryData._new_feet(v[5]),
-        drop_angle=TrajectoryData._new_rad(v[6]),
-        windage=TrajectoryData._new_feet(v[7]),
-        windage_angle=TrajectoryData._new_rad(v[8]),
-        slant_distance=TrajectoryData._new_feet(v[9]),
-        angle=TrajectoryData._new_rad(v[10]),
-        density_ratio=v[11],
-        drag=v[12],
-        energy=TrajectoryData._new_ft_lb(v[13]),
-        ogw=TrajectoryData._new_lb(v[14]),
-        flag=TrajFlag(v[15]),
-    )
+    """A TrajectoryData from the unpacked fields of one BCLIBCFFI_TrajectoryData (the order of the struct).
+
+    TrajectoryData is a NamedTuple: it is built with tuple.__new__ from its fields in order, and the unit objects are
+    created inline (object.__new__ and the two attribute stores TrajectoryData._new_feet and the like do), which saves
+    the Python-level __new__ with sixteen keyword arguments and ten calls per record.
+    """
+    flag = _FLAGS.get(v[15])
+    if flag is None:
+        flag = _FLAGS[v[15]] = TrajFlag(v[15])
+    distance = _obj_new(Distance)
+    distance._value = v[1] * 12
+    distance._defined_units = _FOOT
+    velocity = _obj_new(Velocity)
+    velocity._value = v[2] / 3.2808399
+    velocity._defined_units = _FPS
+    height = _obj_new(Distance)
+    height._value = v[4] * 12
+    height._defined_units = _FOOT
+    slant_height = _obj_new(Distance)
+    slant_height._value = v[5] * 12
+    slant_height._defined_units = _FOOT
+    drop_angle = _obj_new(Angular)
+    drop_angle._value = v[6]
+    drop_angle._defined_units = _RAD
+    windage = _obj_new(Distance)
+    windage._value = v[7] * 12
+    windage._defined_units = _FOOT
+    windage_angle = _obj_new(Angular)
+    windage_angle._value = v[8]
+    windage_angle._defined_units = _RAD
+    slant_distance = _obj_new(Distance)
+    slant_distance._value = v[9] * 12
+    slant_distance._defined_units = _FOOT
+    angle = _obj_new(Angular)
+    angle._value = v[10]
+    angle._defined_units = _RAD
+    energy = _obj_new(Energy)
+    energy._value = v[13]
+    energy._defined_units = _FTLB
+    ogw = _obj_new(Weight)
+    ogw._value = v[14] / 0.000142857143
+    ogw._defined_units = _LB
+    return _tuple_new(
+        TrajectoryData,
+        (v[0], distance, velocity, v[3], height, slant_height, drop_angle, windage, windage_angle, slant_distance,
+         angle, v[11], v[12], energy, ogw, flag),
+    )  # fmt: skip
 
 
 def _traj(r: "_T.TrajData") -> TrajectoryData:
