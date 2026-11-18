@@ -1,12 +1,14 @@
 name: Tests (cibuildwheel)
-run-name: >
-  ${{ github.event_name == 'pull_request' && 'Full Matrix — PR' || 'Minimal Matrix — Push' }}
-  ${{ github.event.pull_request.number || github.ref_name }}
+run-name: >-
+  ${{ github.event_name == 'push' && format('Minimal Matrix — Push {0}', github.ref_name)
+  || github.event_name == 'pull_request' && format('Full Matrix — PR {0}', github.event.pull_request.number)
+  || format('Full Matrix — by hand {0}', github.ref_name) }}
 
 # Builds the exts wheels with cibuildwheel and tests each of them on its own platform: every engine, one after another
 # (cibuildwheel-reusable.yml, .github/scripts/cibw_run_engines.py): the Cython ones, which depend on the wheel; the
 # pure-Python and SciPy engines run once per Python version in a job of their own. A pull request runs every platform; a
-# push to a branch runs one Linux job. The release (pypi-publish.yml) builds the same wheels without tests: they run here.
+# push to a branch runs one Linux job; a run by hand (workflow_dispatch) runs every platform, as a pull request does. The
+# release (pypi-publish.yml) builds the same wheels without tests: they run here.
 on:
   pull_request:
     branches:
