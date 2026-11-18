@@ -1,0 +1,285 @@
+name: cibuildwheel (reusable)
+run-name: "cibuildwheel: ${{ inputs.platform }} ${{ inputs.archs }} ${{ inputs.build }}"
+
+# Builds the exts wheels with cibuildwheel and tests every one of them in the same run: the engines are run one after
+# another by .github/scripts/cibw_run_engines.py (the test-command in py_ballisticcalc.exts/pyproject.toml). The wheels are uploaded
+# as a named artifact.
+#
+# Runs by hand (workflow_dispatch) or is called from another workflow (workflow_call) -- the inputs are the same.
+#
+# `build` and `skip` are CIBW_BUILD and CIBW_SKIP: several selectors, separated by commas (or spaces), for example
+#   build: cp311-*, cp314t-*        skip: *-musllinux_*, *-win32
+# Empty `build` means "what [tool.cibuildwheel] selects for the platform"; empty `skip` skips nothing. `test_skip` is
+# CIBW_TEST_SKIP, the same way: builds that are built but not tested (`*` for none of them tested).
+#
+# `artifact_name` must be unique within one run: when a caller starts this workflow several times with the same
+# platform and archs, it names each artifact itself.
+
+on:
+  workflow_dispatch:
+    inputs:
+      os:
+        description: "Runner (runs-on)"
+        required: false
+        type: string
+        default: ubuntu-latest
+      platform:
+        description: "cibuildwheel platform"
+        required: false
+        type: choice
+        default: linux
+        options:
+          - linux
+          - windows
+          - macos
+          - pyodide
+          - android
+          - ios
+      archs:
+        description: "CIBW_ARCHS, comma-separated (auto, x86_64,i686, aarch64, AMD64,x86, ...)"
+        required: false
+        type: string
+        default: auto
+      build:
+        description: "CIBW_BUILD selectors, comma-separated (empty: the project's own selection)"
+        required: false
+        type: string
+        default: ""
+      skip:
+        description: "CIBW_SKIP selectors, comma-separated"
+        required: false
+        type: string
+        default: ""
+      qemu:
+        description: "Set up QEMU (ppc64le, s390x, riscv64 on an x86-64 runner)"
+        required: false
+        type: boolean
+        default: false
+      artifact_name:
+        description: "Name of the wheels artifact (empty: exts-wheels-<platform>-<archs>)"
+        required: false
+        type: string
+        default: ""
+      timeout_minutes:
+        description: "Job timeout in minutes (QEMU is slow)"
+        required: false
+        type: number
+        default: 360
+      version:
+        description: "SETUPTOOLS_SCM_PRETEND_VERSION for the core and the exts (empty: the version of this checkout)"
+        required: false
+        type: string
+        default: ""
+      no_local_version:
+        description: "Strip the local version (+g<hash>): needed for what is going to be published"
+        required: false
+        type: boolean
+        default: false
+      test_skip:
+        description: "CIBW_TEST_SKIP selectors, comma-separated: builds that are not tested (e.g. *-*_ppc64le, *-*_s390x); \"*\" skips all tests"
+        required: false
+        type: string
+        default: ""
+      retention_days:
+        description: "How long the wheels artifact is kept, in days"
+        required: false
+        type: number
+        default: 7
+  workflow_call:
+    inputs:
+      os:
+        description: "Runner (runs-on)"
+        required: false
+        type: string
+        default: ubuntu-latest
+      platform:
+        description: "cibuildwheel platform: linux, windows, macos, pyodide, android or ios"
+        required: false
+        type: string
+        default: linux
+      archs:
+        description: "CIBW_ARCHS, comma-separated"
+        required: false
+        type: string
+        default: auto
+      build:
+        description: "CIBW_BUILD selectors, comma-separated (empty: the project's own selection)"
+        required: false
+        type: string
+        default: ""
+      skip:
+        description: "CIBW_SKIP selectors, comma-separated"
+        required: false
+        type: string
+        default: ""
+      qemu:
+        description: "Set up QEMU"
+        required: false
+        type: boolean
+        default: false
+      artifact_name:
+        description: "Name of the wheels artifact (empty: exts-wheels-<platform>-<archs>)"
+        required: false
+        type: string
+        default: ""
+      timeout_minutes:
+        description: "Job timeout in minutes"
+        required: false
+        type: number
+        default: 360
+      version:
+        description: "SETUPTOOLS_SCM_PRETEND_VERSION for the core and the exts (empty: the version of this checkout)"
+        required: false
+        type: string
+        default: ""
+      no_local_version:
+        description: "Strip the local version (+g<hash>): needed for what is going to be published"
+        required: false
+        type: boolean
+        default: false
+      test_skip:
+        description: "CIBW_TEST_SKIP selectors, comma-separated: builds that are not tested (e.g. *-*_ppc64le, *-*_s390x); \"*\" skips all tests"
+        required: false
+        type: string
+        default: ""
+      retention_days:
+        description: "How long the wheels artifact is kept, in days"
+        required: false
+        type: number
+        default: 7
+    outputs:
+      artifact_name:
+        description: "The name the wheels were uploaded under"
+        value: ${{ jobs.cibuildwheel.outputs.artifact_name }}
+
+permissions:
+  contents: read
+
+env:
+  CIBUILDWHEEL_VERSION: "4.2.1"
+  # setuptools-scm: the core and the exts must come out with the same version. The Linux build runs in a container
+  # where there is no .git, so the version is fixed on the host (below) and passed in (CIBW_ENVIRONMENT_PASS).
+  # SETUPTOOLS_SCM_OVERRIDES is read by every distribution without a SETUPTOOLS_SCM_OVERRIDES_FOR_<DIST> of its own.
+  SETUPTOOLS_SCM_OVERRIDES: ${{ inputs.no_local_version && '{local_scheme = "no-local-version"}' || '' }}
+
+jobs:
+  cibuildwheel:
+    name: cibuildwheel ${{ inputs.platform }} ${{ inputs.archs }}
+    runs-on: ${{ inputs.os }}
+    timeout-minutes: ${{ inputs.timeout_minutes }}
+    outputs:
+      artifact_name: ${{ steps.names.outputs.artifact }}
+    steps:
+      # The selectors come in as comma-separated lists; cibuildwheel reads space-separated ones from the environment.
+      - name: Resolve the selectors and the artifact name
+        id: names
+        env:
+          IN_BUILD: ${{ inputs.build }}
+          IN_SKIP: ${{ inputs.skip }}
+          IN_TEST_SKIP: ${{ inputs.test_skip }}
+          IN_ARCHS: ${{ inputs.archs }}
+          IN_PLATFORM: ${{ inputs.platform }}
+          IN_ARTIFACT: ${{ inputs.artifact_name }}
+        run: |
+          spaces() { echo "$1" | tr ',' ' ' | xargs; }
+          {
+            echo "build=$(spaces "$IN_BUILD")"
+            echo "skip=$(spaces "$IN_SKIP")"
+            echo "test_skip=$(spaces "$IN_TEST_SKIP")"
+            echo "archs=$(echo "$IN_ARCHS" | tr -d ' ')"
+          } >> "$GITHUB_OUTPUT"
+          ARTIFACT="${IN_ARTIFACT:-exts-wheels-${IN_PLATFORM}-$(echo "$IN_ARCHS" | tr -d ' ' | tr ',' '+')}"
+          echo "artifact=$ARTIFACT" >> "$GITHUB_OUTPUT"
+          echo "CIBW_BUILD='$(spaces "$IN_BUILD")'  CIBW_SKIP='$(spaces "$IN_SKIP")'  archs=$IN_ARCHS  artifact=$ARTIFACT"
+        shell: bash
+
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0 # setuptools-scm needs history
+          submodules: recursive
+
+      # No benefit on Linux: manylinux builds pull Docker images, which CIBW_CACHE_PATH does not cover. Elsewhere it
+      # caches the interpreters, toolchains, the Android NDK and the Pyodide xbuildenv.
+      - name: Cache the cibuildwheel downloads
+        if: ${{ inputs.platform != 'linux' }}
+        uses: actions/cache@v6
+        with:
+          path: ~/.cache/cibuildwheel
+          key: cibw-${{ steps.names.outputs.artifact }}-${{ hashFiles('py_ballisticcalc.exts/pyproject.toml') }}
+          restore-keys: |
+            cibw-${{ steps.names.outputs.artifact }}-
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2
+        with:
+          github-token: ${{ github.token }}
+
+      - name: Set up QEMU
+        if: ${{ inputs.qemu }}
+        uses: docker/setup-qemu-action@v4
+        with:
+          platforms: all
+
+      # The core package is pure Python: one wheel, built here and copied into the test environment (test-sources
+      # core-wheel), because the repository root is not visible inside Linux test containers or on Android.
+      - name: Build the core wheel (pure Python)
+        env:
+          SETUPTOOLS_SCM_PRETEND_VERSION: ${{ inputs.version }}
+        run: uv build --wheel --out-dir py_ballisticcalc.exts/core-wheel .
+        shell: bash
+
+      # The version of the exts is the version of the core wheel just built (the exts cannot see .git in a container).
+      - name: Fix the version for the exts
+        id: version
+        env:
+          IN_VERSION: ${{ inputs.version }}
+        run: |
+          VER="${IN_VERSION:-$(basename py_ballisticcalc.exts/core-wheel/py_ballisticcalc-*.whl | sed -E 's/^py_ballisticcalc-([^-]+)-.*/\1/')}"
+          test -n "$VER" || { echo "::error::cannot tell the version of the core wheel"; exit 1; }
+          echo "version=$VER" >> "$GITHUB_OUTPUT"
+          echo "Version for the exts: $VER"
+        shell: bash
+
+      # cibuildwheel copies test-sources only from inside the project folder (and on Android only into the device's
+      # working directory), so the test inputs are staged there: the core tests, the core wheel and the runner.
+      # cibw_stage/ is in .gitignore, nothing of it is committed.
+      - name: Stage the test inputs
+        run: |
+          STAGE=py_ballisticcalc.exts/cibw_stage
+          rm -rf "$STAGE"
+          mkdir -p "$STAGE/core-wheel"
+          cp -R tests "$STAGE/tests"
+          cp py_ballisticcalc.exts/core-wheel/*.whl "$STAGE/core-wheel/"
+          cp .github/scripts/cibw_run_engines.py "$STAGE/"
+          rm -rf py_ballisticcalc.exts/core-wheel
+          ls -R "$STAGE" | head -n 20
+        shell: bash
+
+      # cibuildwheel itself writes the run's summary (the wheels, their build times, the options) to GITHUB_STEP_SUMMARY.
+      - name: Build and test the exts wheels with cibuildwheel
+        # run from the project folder: test-sources are relative to the cwd
+        working-directory: py_ballisticcalc.exts
+        env:
+          CIBW_BUILD: ${{ steps.names.outputs.build }}
+          CIBW_SKIP: ${{ steps.names.outputs.skip }}
+          CIBW_TEST_SKIP: ${{ steps.names.outputs.test_skip }}
+          SETUPTOOLS_SCM_PRETEND_VERSION: ${{ steps.version.outputs.version }}
+          # Only these reach a container build (manylinux via Docker); Windows, macOS and Android inherit the whole
+          # host environment.
+          CIBW_ENVIRONMENT_PASS: SETUPTOOLS_SCM_PRETEND_VERSION SETUPTOOLS_SCM_OVERRIDES
+          # Keep it equal to the cache step's path: explicit, because the default differs between Linux/macOS and Windows.
+          CIBW_CACHE_PATH: ~/.cache/cibuildwheel
+        run: |
+          uvx cibuildwheel=="$CIBUILDWHEEL_VERSION" . \
+            --output-dir wheelhouse \
+            --platform "${{ inputs.platform }}" \
+            --archs "${{ steps.names.outputs.archs }}"
+        shell: bash
+
+      - name: Upload the wheels
+        uses: actions/upload-artifact@v7
+        with:
+          name: ${{ steps.names.outputs.artifact }}
+          path: py_ballisticcalc.exts/wheelhouse/
+          retention-days: ${{ inputs.retention_days }}
+          if-no-files-found: error

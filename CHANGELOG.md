@@ -20,6 +20,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   the git commit too, so both packages keep the same `setuptools-scm` version (the exts package refuses to import on a
   version mismatch). `--reinstall-package` is no longer needed, and was removed from the `uv-sync` pre-commit hook.
 
+### CI
+- `.github/workflows/cibuildwheel-reusable.yml`: builds the exts wheels with cibuildwheel and tests each of them (every
+  engine, one after another, found from the entry points: `.github/scripts/cibw_run_engines.py`) on its own platform, then
+  uploads them as a named artifact. Runs by hand (`workflow_dispatch`) or is called (`workflow_call`) with `build`, `skip`
+  and `test_skip` (`CIBW_BUILD`, `CIBW_SKIP`, `CIBW_TEST_SKIP`, several selectors separated by commas), `platform`, `archs`,
+  `version` / `no_local_version`, `artifact_name` and `retention_days`. SciPy and NumPy come through `test-requires` in
+  `py_ballisticcalc.exts/pyproject.toml`, left out by `[[tool.cibuildwheel.overrides]]` where PyPI has no scipy wheel.
+- `pypi-publish.yml` builds its wheels through that workflow, so a wheel that fails its tests stops the release (Pyodide,
+  Android and iOS wheels are not tested there).
+- The per-engine workflows `pytest-{,cythonized-}{euler,rk4,verlet,ck,dopri,tsitouras,scipy}-engine.yml` are removed;
+  `pytest-reusable.yml`, `pytest-manual.yml` and `pytest-tiny-engine.yml` stay.
+
 ### Removed
 - `Makefile`. Its targets are plain `uv sync` / `uv run` commands, now documented in `docs/contributing.md`; the
   remaining helpers became scripts: `scripts/clean.py` (remove extension build artifacts, `--all` also removes `.venv`

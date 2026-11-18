@@ -98,12 +98,43 @@ build-frontend = "build[uv]"
 # cp315t-* is a CPython prerelease until 3.15 final, hence the explicit enable.
 build = "cp311-* cp314t-* cp315t-*"
 enable = ["cpython-prerelease"]
+# Tests: after each wheel is built, cibuildwheel installs it in a clean environment and runs every engine of the core
+# test suite there, one after another (.github/scripts/cibw_run_engines.py). The workflow cibuildwheel-reusable.yml
+# stages cibw_stage/ (the core tests, the core wheel, the runner) in this folder; it is not committed.
+test-sources = ["cibw_stage"]
+# typing_extensions and Deprecated are the core's own dependencies; numpy and scipy are its `scipy` extra (the same
+# bounds), for the scipy engines. Where scipy has no wheel the overrides below leave them out, and the runner then
+# leaves the scipy engines out too.
+test-requires = [
+    "pytest",
+    "pytest-xdist",
+    "typing_extensions>=4.15.0",
+    "Deprecated>=1.3.1",
+    "numpy>=2.5.0; python_version >= '3.12'",
+    "numpy>=2.4.6; python_version < '3.12'",
+    "scipy>=1.18.0; python_version >= '3.12'",
+    "scipy>=1.17.1; python_version < '3.12'",
+]
+test-command = "python cibw_stage/cibw_run_engines.py"
+
+# No scipy wheels. PyPI has them only for macOS (x86_64, arm64), manylinux and musllinux (x86_64, aarch64) and Windows
+# (AMD64, ARM64), for CPython 3.11 up to 3.15 including the free-threaded builds (checked against scipy 1.17.1 and
+# 1.18.1); none for 32-bit Windows, i686, armv7l, ppc64le, s390x, riscv64, and Pyodide takes its packages from
+# elsewhere. Android and iOS are not tested at all, see below. The same list without numpy and scipy.
+[[tool.cibuildwheel.overrides]]
+select = ["*-win32", "*_i686", "*_armv7l", "*_ppc64le", "*_s390x", "*_riscv64", "*-pyodide_*"]
+test-requires = ["pytest", "pytest-xdist", "typing_extensions>=4.15.0", "Deprecated>=1.3.1"]
 
 [tool.cibuildwheel.android]
 build = "cp313-android_* cp314-android_* cp315-android_*"
+# Android and iOS accept only a restricted form of test command: those wheels are built, not tested, here
+test-command = ""
 
 [tool.cibuildwheel.pyodide]
 build = "cp313-pyodide_* cp314-pyodide_* cp315-pyodide_*"
+
+[tool.cibuildwheel.ios]
+test-command = ""
 
 [tool.cibuildwheel.linux]
 # Docker's default seccomp profile on the Ubuntu 26.04 runners refuses 32-bit socket calls: uv panics

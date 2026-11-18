@@ -73,6 +73,9 @@ jobs:
           path: ./dist
           retention-days: 14
 
+  # One job per matrix entry: cibuildwheel-reusable.yml builds the exts wheels, tests each of them (every engine, one after
+  # another: .github/scripts/cibw_run_engines.py) and uploads them as the artifact below. A wheel that fails
+  # its tests fails the job, and so the release: `publish` needs every one of them.
   build:
     name: Build wheels on ${{ matrix.os }} / ${{ matrix.name }}
     strategy:
@@ -134,69 +137,20 @@ jobs:
             cibw_archs: "wasm32"
             cibw_platform: pyodide
             needs_qemu: false
+            test_skip: "*" # the tests are not run on Pyodide here
 
-    runs-on: ${{ matrix.os }}
-    steps:
-      - uses: actions/checkout@v7
-        with:
-          fetch-depth: 0 # required for setuptools-scm
-          submodules: recursive
-
-      - name: Set up QEMU for Emulated Architectures
-        if: ${{ matrix.needs_qemu }}
-        uses: docker/setup-qemu-action@v4
-        with:
-          platforms: all
-
-      - name: Cache cibuildwheel toolchain downloads
-        # No benefit on Linux: manylinux/musllinux builds pull Docker images via
-        # `docker pull`, which CIBW_CACHE_PATH does not cover. On every other
-        # platform it caches cibuildwheel's downloaded interpreters/toolchains
-        # (CPython/PyPy/GraalPy installers, nuget packages, Android NDK, the
-        # pyodide emscripten/xbuildenv toolchain).
-        if: ${{ matrix.cibw_platform != 'linux' }}
-        uses: actions/cache@v6
-        with:
-          path: ~/.cache/cibuildwheel
-          key: cibw-${{ matrix.artifact_key }}-${{ hashFiles('py_ballisticcalc.exts/pyproject.toml') }}
-          restore-keys: |
-            cibw-${{ matrix.artifact_key }}-
-
-      - name: Install uv
-        uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2
-        with:
-          github-token: ${{ github.token }}
-
-      - name: Build binary python package
-        env:
-          SETUPTOOLS_SCM_PRETEND_VERSION: ${{ inputs.version }}
-          # see SETUPTOOLS_SCM_OVERRIDES comment in build-sdist / "Build pure python package".
-          # Must also be listed in CIBW_ENVIRONMENT_PASS below, otherwise it never reaches
-          # container-based builds (e.g. manylinux via Docker) — only Windows/macOS/Android
-          # inherit the full host environment automatically.
-          SETUPTOOLS_SCM_OVERRIDES: ${{ (github.event_name == 'push' || inputs.testpypi) && '{local_scheme = "no-local-version"}' || '' }}
-          CIBW_ENVIRONMENT_PASS: SETUPTOOLS_SCM_PRETEND_VERSION SETUPTOOLS_SCM_OVERRIDES
-          # Keep in sync with the cache step's `path` above — this makes the cache
-          # location explicit instead of relying on cibuildwheel's platform-specific
-          # default (which differs between Linux/macOS and Windows).
-          CIBW_CACHE_PATH: ~/.cache/cibuildwheel
-        run: |
-          uvx cibuildwheel py_ballisticcalc.exts \
-            --output-dir wheelhouse \
-            --platform ${{ matrix.cibw_platform || 'auto' }} \
-            --archs ${{ matrix.cibw_archs }}
-        shell: bash
-
-      - name: list ./wheelhouse
-        run: ls ./wheelhouse
-        shell: bash
-
-      - name: Upload artifacts
-        uses: actions/upload-artifact@v7
-        with:
-          name: dist-wheels-${{ matrix.artifact_key }}
-          path: ./wheelhouse
-          retention-days: 14
+    uses: ./.github/workflows/cibuildwheel-reusable.yml
+    with:
+      os: ${{ matrix.os }}
+      platform: ${{ matrix.cibw_platform }}
+      archs: ${{ matrix.cibw_archs }}
+      qemu: ${{ matrix.needs_qemu }}
+      test_skip: ${{ matrix.test_skip || '' }}
+      artifact_name: dist-wheels-${{ matrix.artifact_key }}
+      retention_days: 14
+      version: ${{ inputs.version }}
+      # PyPI and TestPyPI reject local version segments (+g<hash>); build-only runs keep it for traceability
+      no_local_version: ${{ github.event_name == 'push' || inputs.testpypi }}
 
   publish:
     needs: [build-sdist, build]

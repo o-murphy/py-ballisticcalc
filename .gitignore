@@ -31,3 +31,6 @@ compile_flags.txt
 # Pyodide
 **/.pyodide_build
 **/node_modules/
+
+# cibuildwheel test inputs, staged by .github/workflows/cibuildwheel-reusable.yml
+py_ballisticcalc.exts/cibw_stage/
