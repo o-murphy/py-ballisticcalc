@@ -1,19 +1,25 @@
-"""Extreme tests of zero-finding logic in the SciPy engine."""
+"""Extreme tests of the zero-finding logic: zero elevation for points all over the reachable area (the maximum range, the
+apex of a vertical shot, random points), with the early-termination limits at their tightest.
+
+    python examples/zero_stress_tests.py                  # the SciPy RK45 engine
+    python examples/zero_stress_tests.py cython+rk4       # any engine by name: cython+tsitouras, python+rk4, ...
+"""
 import datetime
 import math
 import random
+import sys
 
-from py_ballisticcalc import Calculator, SciPyEngineConfigDict, Distance, Velocity, DragModel, TableG1, \
+from py_ballisticcalc import Calculator, BaseEngineConfigDict, Distance, Velocity, DragModel, TableG1, \
     Weight, Ammo, Weapon, Shot, Angular, RangeError, TrajFlag, HitResult, OutOfRangeError, ZeroFindingError
 
 
-def create_zero_velocity_zero_min_altitude_calc(engine_name, method):
-    config = SciPyEngineConfigDict(
+def create_zero_velocity_zero_min_altitude_calc(engine_name):
+    # 0 is not "no limit": cMinimumAltitude=0 stops a shot when it comes back to sea level, cMinimumVelocity=0 never stops it
+    config = BaseEngineConfigDict(
         cMinimumVelocity=0,
         cMinimumAltitude=0,
-        integration_method=method
     )
-    calc = Calculator(config, engine=engine_name)
+    calc = Calculator(config=config, engine=engine_name)
     return calc
 
 def create_23_mm_shot():
@@ -38,33 +44,37 @@ def check_one_shot(calc, shot, point_x, point_y, expect_zero_finding_exception: 
     distance_in_meters = math.sqrt(point_x ** 2 + point_y ** 2)
     print(f"\nScenario: x={float(point_x)} y={float(point_y)} {distance_in_meters=:.2f} at {look_angle_in_degrees=:.4f}")
     try:
-        shot_angle = calc._engine_instance.find_zero_angle(shot, Distance.Meter(distance_in_meters))
+        shot_angle = calc.find_zero_angle(shot, Distance.Meter(distance_in_meters))
         print(f'\tZero elevation = {shot_angle>>Angular.Degree} degrees')
+        if point_x == 0 and point_y == 0:
+            # The target is the muzzle itself: there is nothing to aim at, the solver answers with the look angle at
+            # once (it used to raise ZeroFindingError, which is what expect_zero_finding_exception was for).
+            assert abs((shot_angle >> Angular.Degree) - look_angle_in_degrees) < 1e-9
+            return
         test_shot = create_23_mm_shot()
         test_shot.relative_angle = shot_angle
-        try:
-            if point_x==0:
-                fire_distance = 0.1
-                time_step = 0.001
-                extra = True
-            else:
-                fire_distance = point_x
-                time_step = 0.
-                extra = False
-            hit_results = calc.fire(test_shot, Distance.Meter(fire_distance), time_step=time_step, extra_data=extra)
-        except RangeError as e:
-            hit_results = HitResult(test_shot, e.incomplete_trajectory, extra=extra)
+        if point_x==0:
+            fire_distance = 0.1
+            time_step = 0.001
+            flags = TrajFlag.APEX
+        else:
+            fire_distance = point_x
+            time_step = 0.
+            flags = TrajFlag.NONE
+        # a shot that stops early (a limit, the minimum velocity) is not an error here: its records are what we look at
+        hit_results = calc.fire(test_shot, Distance.Meter(fire_distance), time_step=time_step, flags=flags,
+                                raise_range_error=False)
 
         if point_x==0:
             apex_point = hit_results.flag(TrajFlag.APEX)
             apex_point_index = None
             if apex_point is not None:
-                for index, p in enumerate(hit_results.trajectory):
+                for index, p in enumerate(hit_results.records):
                     if p == apex_point:
                         apex_point_index = index
                         break
                 assert apex_point_index
-                ascending_trajectory = hit_results.trajectory[:apex_point_index+1]
+                ascending_trajectory = hit_results.records[:apex_point_index+1]
                 min_dev_point = None
                 min_diff = float('inf')
                 for p in ascending_trajectory:
@@ -75,14 +85,14 @@ def check_one_shot(calc, shot, point_x, point_y, expect_zero_finding_exception: 
                 test_shot_x = min_dev_point.distance >> Distance.Meter
                 test_shot_y = min_dev_point.height >> Distance.Meter
         else:
-            test_shot_x = hit_results[-1].distance >> Distance.Meter
-            test_shot_y = hit_results[-1].height >> Distance.Meter
+            test_shot_x = hit_results.records[-1].distance >> Distance.Meter
+            test_shot_y = hit_results.records[-1].height >> Distance.Meter
         print(f"\tConfirmation shot reached x={float(test_shot_x)} y={float(test_shot_y)}")
         assert abs(point_x - test_shot_x) < 1e-2
         assert abs(point_y - test_shot_y) < 1e-2
     except OutOfRangeError as e:
         print(f"\tOutOfRangeError {e}")
-        max_range, max_angle = calc._engine_instance.find_max_range(shot)
+        max_range, max_angle = calc.find_max_range(shot)
         assert distance_in_meters > max_range >> Distance.Meter
     except ZeroFindingError as e:
         if expect_zero_finding_exception:
@@ -92,23 +102,19 @@ def check_one_shot(calc, shot, point_x, point_y, expect_zero_finding_exception: 
 
 if __name__=="__main__":
     attempt_count = 10  # Number of random shots to test
-    engine_name = "py_ballisticcalc:SciPyIntegrationEngine"
-    method = 'RK45'
+    engine_name = sys.argv[1] if len(sys.argv) > 1 else "scipy+rk45"
 
-    calc = create_zero_velocity_zero_min_altitude_calc(engine_name, method)
+    calc = create_zero_velocity_zero_min_altitude_calc(engine_name)
     print(f'{calc=}')
-    print(f'\nENGINE {engine_name} {method=}\n')
+    print(f'\nENGINE {engine_name}\n')
     shot = create_23_mm_shot()
-    max_range, max_angle = calc._engine_instance.find_max_range(shot)
+    max_range, max_angle = calc.find_max_range(shot)
     max_range_in_meters = max_range >> Distance.Meter
     print(f'Baseline shot max horizontal range: '
           f'{max_range_in_meters:.2f}m at elevation {(max_angle >> Angular.Degree):.4f} degrees')
 
     shot.relative_angle = Angular.Degree(90)
-    try:
-        hit_result = calc.fire(shot, Distance.Meter(1), time_step=0.001, extra_data=True)
-    except RangeError as e:
-        hit_result = HitResult(shot, e.incomplete_trajectory, extra=True)
+    hit_result = calc.fire(shot, Distance.Meter(1), time_step=0.001, flags=TrajFlag.APEX, raise_range_error=False)
     apex_point = hit_result.flag(TrajFlag.APEX)
     max_height_in_meters = apex_point.height >> Distance.Meter
     print(f'Vertical shot reaches height {max_height_in_meters:.2f}m')
