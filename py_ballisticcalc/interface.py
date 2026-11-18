@@ -96,17 +96,21 @@ class _EngineLoader:
                 yield ep
 
     @staticmethod
-    def _resolve(ep: EntryPoint) -> EngineFactoryProtocolType:
-        """Load the entry point object; supports ``module:Factory(key=value, ...)`` call syntax."""
-        m = _CALL_VALUE_RE.match(ep.value)
+    def _resolve_value(name: str, value: str, group: str) -> EngineFactoryProtocolType:
+        """Load the object a value names; supports ``module:Factory(key=value, ...)`` call syntax.
+
+        The value is not made an ``EntryPoint`` as it is: the call syntax is not a valid object reference, and since
+        Python 3.15 ``EntryPoint`` checks its value when it is created. Only the target before the parentheses is.
+        """
+        m = _CALL_VALUE_RE.match(value)
         if m is None:
-            return ep.load()
-        target = EntryPoint(ep.name, m["target"], ep.group).load()
+            return EntryPoint(name, value, group).load()
+        target = EntryPoint(name, m["target"], group).load()
         kwargs: dict[str, Any] = {}
         for arg in filter(None, (a.strip() for a in m["args"].split(","))):
             key, sep, raw = arg.partition("=")
             if not sep:
-                raise ValueError(f"Invalid argument '{arg}' in entry point {ep.value}; expected key=value")
+                raise ValueError(f"Invalid argument '{arg}' in entry point {value}; expected key=value")
             try:
                 kwargs[key.strip()] = ast.literal_eval(raw.strip())
             except (ValueError, SyntaxError):
@@ -114,20 +118,24 @@ class _EngineLoader:
         return target(**kwargs)
 
     @classmethod
-    def _load_from_entry(cls, ep: EntryPoint) -> EngineFactoryProtocolType | None:
+    def _load_value(cls, name: str, value: str, group: str) -> EngineFactoryProtocolType | None:
         try:
-            factory: EngineFactoryProtocolType = cls._resolve(ep)
+            factory: EngineFactoryProtocolType = cls._resolve_value(name, value, group)
             if not isinstance(factory, EngineFactoryProtocol):
-                raise TypeError(f"Unsupported engine {ep.value} does not implement EngineFactoryProtocol")
-            logger.info(f"Loaded calculator from: {ep.value} (Factory: {factory})")
+                raise TypeError(f"Unsupported engine {value} does not implement EngineFactoryProtocol")
+            logger.info(f"Loaded calculator from: {value} (Factory: {factory})")
             return factory  # type: ignore
         except ImportError as e:
-            logger.error(f"Error loading engine from {ep.value}: {e}")
+            logger.error(f"Error loading engine from {value}: {e}")
         except AttributeError as e:
-            logger.error(f"Error loading attribute from {ep.value}: {e}")
+            logger.error(f"Error loading attribute from {value}: {e}")
         except Exception as e:  # noqa: BLE001 -- plugin boundary: third-party entry points may raise anything
-            logger.exception(f"An unexpected error occurred loading {ep.value}: {e}")
+            logger.exception(f"An unexpected error occurred loading {value}: {e}")
         return None
+
+    @classmethod
+    def _load_from_entry(cls, ep: EntryPoint) -> EngineFactoryProtocolType | None:
+        return cls._load_value(ep.name, ep.value, ep.group)
 
     @staticmethod
     def _normalize_name(name: str) -> str:
@@ -157,10 +165,10 @@ class _EngineLoader:
             if ep.name == name and (factory := cls._load_from_entry(ep)):
                 return factory
 
-        # Direct "<module>:<factory>" path
-        ep = EntryPoint(name, name, cls._entry_point_group)
-        if factory := cls._load_from_entry(ep):
-            logger.info(f"Loaded calculator from: {ep.value} (Factory: {factory})")
+        # Direct "<module>:<factory>" path, also with the call syntax: no EntryPoint is made of the whole string (Python 3.15
+        # raises ValueError for a value that is not a plain object reference)
+        if factory := cls._load_value(name, name, cls._entry_point_group):
+            logger.info(f"Loaded calculator from: {name} (Factory: {factory})")
             return factory
         return None
 

@@ -98,12 +98,48 @@ build-frontend = "build[uv]"
 # cp315t-* is a CPython prerelease until 3.15 final, hence the explicit enable.
 build = "cp311-* cp314t-* cp315t-*"
 enable = ["cpython-prerelease"]
+# Tests: after each wheel is built, cibuildwheel installs it in a clean environment and runs every engine of the core
+# test suite there, one after another (.github/scripts/cibw_run_engines.py). The workflow cibuildwheel-reusable.yml
+# stages cibw_stage/ (the core tests, the core wheel) and the runner module cibw_run_engines.py in this folder; they
+# are not committed.
+test-sources = ["cibw_stage", "cibw_run_engines.py"]
+# The test environment gets the dependency group `test` (below): cibuildwheel installs the wheel under test and the
+# groups of this pyproject, it does not run `uv sync`, and the core package is not there to bring its own extras.
+test-groups = ["test"]
+test-command = "python cibw_run_engines.py cython"
+
+# No scipy wheels. PyPI has them only for macOS (x86_64, arm64), manylinux and musllinux (x86_64, aarch64) and Windows
+# (AMD64, ARM64), for CPython 3.11 up to 3.15 including the free-threaded builds (checked against scipy 1.17.1 and
+# 1.18.1); none for 32-bit Windows, i686, armv7l, ppc64le, s390x, riscv64, and Pyodide takes its packages from
+# elsewhere. These get the group without numpy and scipy, and the
+# runner then leaves the scipy engines out too.
+[[tool.cibuildwheel.overrides]]
+select = ["*-win32", "*_i686", "*_armv7l", "*_ppc64le", "*_s390x", "*_riscv64", "*-pyodide_*"]
+test-groups = ["test-noscipy"]
 
 [tool.cibuildwheel.android]
 build = "cp313-android_* cp314-android_* cp315-android_*"
+# The x86-64 wheel is tested in the emulator (cibuildwheel sets up KVM); the arm64 one is only built, there is no arm64
+# emulator on the x86-64 runners
+test-skip = "*-android_arm64_v8a"
+# Android accepts only a test command that starts with "python" and contains -m or -c: start the runner through runpy
+test-command = "python -c \"import runpy,sys; sys.argv=['cibw_run_engines.py','cython']; runpy.run_path('cibw_run_engines.py', run_name='__main__')\""
+# no scipy wheels for Android
+test-groups = ["test-noscipy"]
 
 [tool.cibuildwheel.pyodide]
 build = "cp313-pyodide_* cp314-pyodide_* cp315-pyodide_*"
+
+# iOS: the simulator wheels are built and tested; the device wheel (arm64_iphoneos) is built without tests, since
+# cibuildwheel runs tests only on simulator SDKs and nothing in CI can run a device build.
+[tool.cibuildwheel.ios]
+build = "cp313-ios_* cp314-ios_* cp315-ios_*"
+# cibuildwheel refuses build[uv] for iOS ("uv doesn't support iOS"): the plain build frontend here
+build-frontend = "build"
+# iOS runs only `python -m ...` test commands: the runner is started as a module
+test-command = "python -m cibw_run_engines cython"
+# no scipy wheels for iOS
+test-groups = ["test-noscipy"]
 
 [tool.cibuildwheel.linux]
 # Docker's default seccomp profile on the Ubuntu 26.04 runners refuses 32-bit socket calls: uv panics
@@ -143,4 +179,23 @@ fallback_version = "0.0.0.dev0"
 dev = [
     "cibuildwheel>=4.1.1",
     "cython>=3.2.9",
+]
+# What cibuildwheel installs next to a wheel to test it (see [tool.cibuildwheel] test-groups), and what
+# `uv sync --group test` gives for running the same tests by hand. typing_extensions and Deprecated are the core's own
+# dependencies (here with the newest Deprecated that each Python takes), numpy and scipy its `scipy` extra (the same
+# bounds): the core itself is not installed in the test
+# environment, `.github/scripts/cibw_run_engines.py` puts the core wheel on the path.
+test-noscipy = [
+    "pytest",
+    "pytest-xdist",
+    "typing_extensions>=4.15.0",
+    "Deprecated>=3.0.1; python_version >= '3.12'",  # Deprecated 3 needs Python 3.12+
+    "Deprecated>=1.3.1; python_version < '3.12'",
+]
+test = [
+    {include-group = "test-noscipy"},
+    "numpy>=2.5.0; python_version >= '3.12'",
+    "numpy>=2.4.6; python_version < '3.12'",
+    "scipy>=1.18.0; python_version >= '3.12'",
+    "scipy>=1.17.1; python_version < '3.12'",
 ]

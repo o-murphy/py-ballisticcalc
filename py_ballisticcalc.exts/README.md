@@ -15,9 +15,7 @@ LGPL library for small arms ballistic calculations based on point-mass (3 DoF) p
 [![py-versions]][sources]
 [![Made in Ukraine]][SWUBadge]
 
-[![Pytest Euler (Cython)](https://github.com/o-murphy/py-ballisticcalc/actions/workflows/pytest-cythonized-euler-engine.yml/badge.svg)](https://github.com/o-murphy/py-ballisticcalc/actions/workflows/pytest-cythonized-euler-engine.yml)
-[![Pytest RK4 (Cython)](https://github.com/o-murphy/py-ballisticcalc/actions/workflows/pytest-cythonized-rk4-engine.yml/badge.svg)](https://github.com/o-murphy/py-ballisticcalc/actions/workflows/pytest-cythonized-rk4-engine.yml)
-[![Pytest Scipy](https://github.com/o-murphy/py-ballisticcalc/actions/workflows/pytest-scipy-engine.yml/badge.svg)](https://github.com/o-murphy/py-ballisticcalc/actions/workflows/pytest-scipy-engine.yml)
+[![Tests (cibuildwheel)](https://github.com/o-murphy/py-ballisticcalc/actions/workflows/cibuildwheel-tests.yml/badge.svg)](https://github.com/o-murphy/py-ballisticcalc/actions/workflows/cibuildwheel-tests.yml)
 
 [sources]:
 https://github.com/o-murphy/py-ballisticcalc
