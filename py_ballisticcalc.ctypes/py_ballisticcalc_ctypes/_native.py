@@ -378,7 +378,9 @@ def _traj_values(v) -> TrajectoryData:
 
 
 def _traj(r: "_T.TrajData") -> TrajectoryData:
-    return _traj_values(_TRAJ_FMT.unpack_from(r))
+    # the bytes of the struct through its address: the ctypes structures of PyPy (older releases) and GraalPy do not export the
+    # buffer interface that struct.unpack_from(r) would need
+    return _traj_values(_TRAJ_FMT.unpack_from(C.string_at(C.addressof(r), _TRAJ_FMT.size)))
 
 
 def _raise(err: "_T.Error"):
