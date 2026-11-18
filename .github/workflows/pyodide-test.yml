@@ -6,7 +6,7 @@ run-name: "Pyodide Test: ${{ github.event_name == 'pull_request' && 'PR' || gith
 on:
   push:
     branches:
-      - "*"
+      - "**" # "*" does not match branch names with a slash (experiment/x)
     paths:
       - "pyproject.toml"
       - "py_ballisticcalc/**"
@@ -15,7 +15,7 @@ on:
       - ".github/workflows/pyodide-test.yml"
   pull_request:
     branches:
-      - "*"
+      - "**" # "*" does not match branch names with a slash (experiment/x)
     paths:
       - "pyproject.toml"
       - "py_ballisticcalc/**"
