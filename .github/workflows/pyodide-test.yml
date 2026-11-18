@@ -31,8 +31,6 @@ concurrency:
 jobs:
   pyodide_tests:
     name: Pyodide ${{ matrix.xbuildenv_version }}
-    # push runs the next channel only; pull requests and manual runs run both channels
-    if: github.event_name != 'push' || matrix.channel == 'next'
     runs-on: ubuntu-latest
     timeout-minutes: 60
 
