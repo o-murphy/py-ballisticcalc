@@ -2,7 +2,7 @@ name: cibuildwheel (reusable)
 run-name: "cibuildwheel: ${{ inputs.platform }} ${{ inputs.archs }} ${{ inputs.build }}"
 
 # Builds the exts wheels with cibuildwheel and tests every one of them in the same run: the engines are run one after
-# another by .github/scripts/cibw_run_engines.py (the test-command in py_ballisticcalc.exts/pyproject.toml). The wheels are uploaded
+# another by .github/scripts/cibw_run_engines.py (the test-command in the pyproject.toml of the package). The wheels are uploaded
 # as a named artifact.
 #
 # Runs by hand (workflow_dispatch) or is called from another workflow (workflow_call) -- the inputs are the same.
@@ -23,6 +23,11 @@ on:
         required: false
         type: string
         default: ubuntu-latest
+      project:
+        description: "Package directory to build: py_ballisticcalc.exts (Cython) or py_ballisticcalc.ctypes"
+        required: false
+        type: string
+        default: py_ballisticcalc.exts
       platform:
         description: "cibuildwheel platform"
         required: false
@@ -92,6 +97,11 @@ on:
         required: false
         type: string
         default: ubuntu-latest
+      project:
+        description: "Package directory to build: py_ballisticcalc.exts (Cython) or py_ballisticcalc.ctypes"
+        required: false
+        type: string
+        default: py_ballisticcalc.exts
       platform:
         description: "cibuildwheel platform: linux, windows, macos, pyodide, android or ios"
         required: false
@@ -179,6 +189,7 @@ jobs:
           IN_TEST_SKIP: ${{ inputs.test_skip }}
           IN_ARCHS: ${{ inputs.archs }}
           IN_PLATFORM: ${{ inputs.platform }}
+          IN_PROJECT: ${{ inputs.project }}
           IN_ARTIFACT: ${{ inputs.artifact_name }}
         run: |
           spaces() { echo "$1" | tr ',' ' ' | xargs; }
@@ -188,7 +199,8 @@ jobs:
             echo "test_skip=$(spaces "$IN_TEST_SKIP")"
             echo "archs=$(echo "$IN_ARCHS" | tr -d ' ')"
           } >> "$GITHUB_OUTPUT"
-          ARTIFACT="${IN_ARTIFACT:-exts-wheels-${IN_PLATFORM}-$(echo "$IN_ARCHS" | tr -d ' ' | tr ',' '+')}"
+          KIND="${IN_PROJECT#py_ballisticcalc.}" # exts, ctypes
+          ARTIFACT="${IN_ARTIFACT:-${KIND}-wheels-${IN_PLATFORM}-$(echo "$IN_ARCHS" | tr -d ' ' | tr ',' '+')}"
           echo "artifact=$ARTIFACT" >> "$GITHUB_OUTPUT"
           echo "CIBW_BUILD='$(spaces "$IN_BUILD")'  CIBW_SKIP='$(spaces "$IN_SKIP")'  archs=$IN_ARCHS  artifact=$ARTIFACT"
         shell: bash
@@ -205,7 +217,7 @@ jobs:
         uses: actions/cache@v6
         with:
           path: ~/.cache/cibuildwheel
-          key: cibw-${{ steps.names.outputs.artifact }}-${{ hashFiles('py_ballisticcalc.exts/pyproject.toml') }}
+          key: cibw-${{ steps.names.outputs.artifact }}-${{ hashFiles(format('{0}/pyproject.toml', inputs.project)) }}
           restore-keys: |
             cibw-${{ steps.names.outputs.artifact }}-
 
@@ -225,41 +237,57 @@ jobs:
       - name: Build the core wheel (pure Python)
         env:
           SETUPTOOLS_SCM_PRETEND_VERSION: ${{ inputs.version }}
-        run: uv build --wheel --out-dir py_ballisticcalc.exts/core-wheel .
+          PROJECT: ${{ inputs.project }}
+        run: uv build --wheel --out-dir "$PROJECT/core-wheel" .
         shell: bash
 
-      # The version of the exts is the version of the core wheel just built (the exts cannot see .git in a container).
-      - name: Fix the version for the exts
+      # The version of the package is the version of the core wheel just built (it cannot see .git in a container).
+      - name: Fix the version for the package
         id: version
         env:
           IN_VERSION: ${{ inputs.version }}
+          PROJECT: ${{ inputs.project }}
         run: |
-          VER="${IN_VERSION:-$(basename py_ballisticcalc.exts/core-wheel/py_ballisticcalc-*.whl | sed -E 's/^py_ballisticcalc-([^-]+)-.*/\1/')}"
+          VER="${IN_VERSION:-$(basename "$PROJECT"/core-wheel/py_ballisticcalc-*.whl | sed -E 's/^py_ballisticcalc-([^-]+)-.*/\1/')}"
           test -n "$VER" || { echo "::error::cannot tell the version of the core wheel"; exit 1; }
           echo "version=$VER" >> "$GITHUB_OUTPUT"
-          echo "Version for the exts: $VER"
+          echo "Version for $PROJECT: $VER"
         shell: bash
 
       # cibuildwheel copies test-sources only from inside the project folder (and on Android only into the device's
       # working directory), so the test inputs are staged there: the core tests, the core wheel and the runner.
       # cibw_stage/ and the runner module are in .gitignore, nothing of it is committed.
       - name: Stage the test inputs
+        env:
+          PROJECT: ${{ inputs.project }}
         run: |
-          STAGE=py_ballisticcalc.exts/cibw_stage
+          STAGE="$PROJECT/cibw_stage"
           rm -rf "$STAGE"
           mkdir -p "$STAGE/core-wheel"
           cp -R tests "$STAGE/tests"
-          cp py_ballisticcalc.exts/core-wheel/*.whl "$STAGE/core-wheel/"
+          cp "$PROJECT"/core-wheel/*.whl "$STAGE/core-wheel/"
           # the runner is a module of its own next to cibw_stage/, which is not a package (see the runner's docstring)
-          cp .github/scripts/cibw_run_engines.py py_ballisticcalc.exts/cibw_run_engines.py
-          rm -rf py_ballisticcalc.exts/core-wheel
+          cp .github/scripts/cibw_run_engines.py "$PROJECT/cibw_run_engines.py"
+          rm -rf "$PROJECT/core-wheel"
           ls -R "$STAGE" | head -n 20
         shell: bash
 
+      # A container build (Linux) and an sdist see only the project directory, not the repository's one bclibc submodule:
+      # a package that needs the sources there (py_ballisticcalc.ctypes) stages them itself with `_bclibc.py stage`.
+      - name: Stage the bclibc sources
+        env:
+          PROJECT: ${{ inputs.project }}
+        run: |
+          if [ -f "$PROJECT/_bclibc.py" ]; then
+            PY="$(command -v python3 || command -v python)"
+            (cd "$PROJECT" && "$PY" _bclibc.py stage)
+          fi
+        shell: bash
+
       # cibuildwheel itself writes the run's summary (the wheels, their build times, the options) to GITHUB_STEP_SUMMARY.
-      - name: Build and test the exts wheels with cibuildwheel
+      - name: Build and test the wheels with cibuildwheel
         # run from the project folder: test-sources are relative to the cwd
-        working-directory: py_ballisticcalc.exts
+        working-directory: ${{ inputs.project }}
         env:
           CIBW_BUILD: ${{ steps.names.outputs.build }}
           CIBW_SKIP: ${{ steps.names.outputs.skip }}
@@ -281,6 +309,6 @@ jobs:
         uses: actions/upload-artifact@v7
         with:
           name: ${{ steps.names.outputs.artifact }}
-          path: py_ballisticcalc.exts/wheelhouse/
+          path: ${{ inputs.project }}/wheelhouse/
           retention-days: ${{ inputs.retention_days }}
           if-no-files-found: error

@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- `py_ballisticcalc.ctypes`: the bclibc engines (`cython+*`) through ctypes, for what the Cython extensions do not serve: PyPy
+  and GraalPy (the Cython extension does not build on PyPy, and on GraalPy it builds but crashes on import), ppc64le, s390x
+  and riscv64, and, as a second variant, Android. The package ships the `bclibc_ffi` shared library (a C ABI, no dependency
+  on the interpreter), so there is one `py3-none-<platform>` wheel per platform for every Python: `manylinux` (`2_17`, built
+  in `manylinux_2_28`), `musllinux_1_2`, macOS, Windows. The library and the ctypes bindings are built from the one bclibc
+  submodule (`_bclibc.py` stages the sources for an sdist or a container build); the bindings (`_native_gen.py`) are made by
+  ctypesgen, a development dependency, with `regenerate_bindings.py`, and a test fails when they are out of date. A guard
+  checks that the version matches the main package's. The engines themselves are not in this package yet.
+- Extras: `ctypes` (the ctypes package) next to `exts` (Cython) is an explicit choice of the backend; `native` picks one of
+  them by environment markers (`exts` on CPython, `ctypes` on PyPy, GraalPy, ppc64le, s390x and riscv64).
+
 ### Changed
 - Pin `bclibc` to [`v2.1.0`](https://github.com/ballistics-lab/bclibc/releases/tag/v2.1.0): the zero search no longer
   depends on the early-termination limits (`cMaximumDrop`, `cMinimumAltitude`), so `find_zero_angle` with either at `0`, or for a
@@ -21,6 +33,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   version mismatch). `--reinstall-package` is no longer needed, and was removed from the `uv-sync` pre-commit hook.
 
 ### CI
+- `cibuildwheel-reusable.yml` has a `project` input (`py_ballisticcalc.exts` by default, or `py_ballisticcalc.ctypes`) and
+  stages the bclibc sources into a package that needs them. `cibuildwheel-tests.yml` builds and tests the ctypes package
+  by hand only (`workflow_dispatch` with `ctypes`), once the Cython jobs have passed: Linux (glibc, musl, ppc64le, s390x,
+  riscv64 under QEMU), macOS, Windows, Android, and under PyPy and GraalPy.
 - `.github/workflows/cibuildwheel-reusable.yml`: builds the exts wheels with cibuildwheel, tests each of them on its own
   platform and uploads them as a named artifact. Runs by hand (`workflow_dispatch`) or is called (`workflow_call`) with
   `build`, `skip` and `test_skip` (`CIBW_BUILD`, `CIBW_SKIP`, `CIBW_TEST_SKIP`, several selectors separated by commas),
