@@ -105,6 +105,12 @@ build = "cp313-android_* cp314-android_* cp315-android_*"
 [tool.cibuildwheel.pyodide]
 build = "cp313-pyodide_* cp314-pyodide_* cp315-pyodide_*"
 
+[tool.cibuildwheel.linux]
+# Docker's default seccomp profile on the Ubuntu 26.04 runners refuses 32-bit socket calls: uv panics
+# (tokio UnixStream, ENOSYS) and pip cannot reach the index in the i686 container. Run the Linux containers
+# with seccomp unconfined (the same fix natify-sh/waboros uses).
+container-engine = { name = "docker", create-args = ["--security-opt", "seccomp=unconfined"] }
+
 [tool.pytest.ini_options]
 minversion = "7.0"
 addopts = "-m 'not stress'"

@@ -82,9 +82,9 @@ jobs:
           - name: Linux x64 / x86
             artifact_key: linux-x64-x86
             os: ubuntu-latest
-            cibw_archs: "i686,x86_64" # x64 native, i686 over QEMU
+            cibw_archs: "i686,x86_64" # both native on the x86-64 runner
             cibw_platform: linux
-            needs_qemu: true
+            needs_qemu: false
 
           - name: Linux ARM64 / ARMv7
             artifact_key: linux-arm64-armv7
