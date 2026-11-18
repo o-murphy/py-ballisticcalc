@@ -251,6 +251,7 @@ jobs:
           cp -R tests "$STAGE/tests"
           cp py_ballisticcalc.exts/core-wheel/*.whl "$STAGE/core-wheel/"
           cp .github/scripts/cibw_run_engines.py "$STAGE/"
+          touch "$STAGE/__init__.py" # iOS starts the runner as a module of this package
           rm -rf py_ballisticcalc.exts/core-wheel
           ls -R "$STAGE" | head -n 20
         shell: bash

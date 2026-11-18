@@ -21,7 +21,7 @@ And the exts wheel is the thing under test: if it registered no ``cython+`` engi
 smaller run.
 
 Each engine is one pytest session (``--engine`` takes one name). A session is a subprocess where there are
-subprocesses, and in-process on Pyodide. An engine does not stop the others: all run, a summary is printed, and the
+subprocesses, and in-process on Pyodide and iOS. An engine does not stop the others: all run, a summary is printed, and the
 exit code is non-zero if any failed.
 """
 
@@ -83,7 +83,7 @@ def run_engine(engine: str, tests: Path, parallel: bool) -> int:
     args = [str(tests), "-q", "-p", "no:cacheprovider", "-m", "not stress", f"--engine={engine}"]
     if parallel:
         args += ["-n", "auto"]
-    if sys.platform == "emscripten":  # no subprocesses: run the session in this process
+    if sys.platform in ("emscripten", "ios"):  # no subprocesses: run the session in this process
         import pytest
 
         return int(pytest.main(args))

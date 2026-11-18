@@ -199,7 +199,9 @@ TEST_EXTENSIONS_DEPS = {}
 
 # Platform-specific compiler flags
 is_msvc = platform.system() == "Windows"
-is_macos = platform.system() == "Darwin"
+# Target, not host: platform.system() is the host OS under cross-compilation (see IS_* above), and sysconfig names
+# the macOS target as "macosx-...". Windows keeps platform.system(): no cross-builds target it here.
+is_macos = _SYSCONFIG_PLATFORM.startswith("macosx")
 
 
 if is_msvc:
@@ -211,6 +213,13 @@ if is_msvc:
     if platform.machine().startswith("ARM"):
         c_compile_args.append("/fp:precise")
         cpp_compile_args.append("/fp:precise")
+elif IS_IOS:
+    # iOS cross-build (macOS host): cibuildwheel points CC/CXX at the iOS SDK clang, so they are NOT overridden here
+    # (the macOS branch below would switch to the host clang). Same Apple flags as macOS; no stripping, since Apple's
+    # linker has no --strip-all.
+    c_compile_args = ["-g", "-O0", "-std=c99"]
+    cpp_compile_args = ["-O3", "-Wall", "-std=c++17", "-fno-exceptions", "-fno-rtti"]
+    cpp_extra_link_args = ["-stdlib=libc++"]
 elif is_macos:
     c_compile_args = ["-g", "-O0", "-std=c99"]
     cpp_compile_args = ["-O3", "-Wall", "-std=c++17", "-fno-exceptions", "-fno-rtti"]

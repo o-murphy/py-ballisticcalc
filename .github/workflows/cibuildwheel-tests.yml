@@ -1,0 +1,144 @@
+name: Tests (cibuildwheel)
+run-name: >
+  ${{ github.event_name == 'pull_request' && 'Full Matrix — PR' || 'Minimal Matrix — Push' }}
+  ${{ github.event.pull_request.number || github.ref_name }}
+
+# Builds the exts wheels with cibuildwheel and tests each of them on its own platform: every engine, one after another
+# (cibuildwheel-reusable.yml, .github/scripts/cibw_run_engines.py). A pull request runs every platform; a push to a
+# branch runs one Linux job. The release (pypi-publish.yml) builds the same wheels without tests: they run here.
+on:
+  pull_request:
+    branches:
+      - "**"
+    paths:
+      - "pyproject.toml"
+      - "py_ballisticcalc/**"
+      - "tests/**"
+      - "py_ballisticcalc.exts/**"
+      - ".gitmodules"
+      - ".github/workflows/cibuildwheel-tests.yml"
+      - ".github/workflows/cibuildwheel-reusable.yml"
+      - ".github/scripts/cibw_run_engines.py"
+  push:
+    branches:
+      - "**" # "*" would skip branch names containing a slash (ci/x, feature/x)
+    paths:
+      - "pyproject.toml"
+      - "py_ballisticcalc/**"
+      - "tests/**"
+      - "py_ballisticcalc.exts/**"
+      - ".gitmodules"
+      - ".github/workflows/cibuildwheel-tests.yml"
+      - ".github/workflows/cibuildwheel-reusable.yml"
+      - ".github/scripts/cibw_run_engines.py"
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  # Full matrix: pull requests (and a manual run)
+  full:
+    name: ${{ matrix.name }}
+    if: github.event_name != 'push'
+    strategy:
+      fail-fast: false
+      max-parallel: 10
+      matrix:
+        include:
+          - name: Linux x64 / x86
+            artifact_key: linux-x64-x86
+            os: ubuntu-latest
+            cibw_archs: "i686,x86_64"
+            cibw_platform: linux
+            needs_qemu: false
+
+          - name: Linux ARM64 / ARMv7
+            artifact_key: linux-arm64-armv7
+            os: ubuntu-24.04-arm
+            cibw_archs: "aarch64,armv7l"
+            cibw_platform: linux
+            needs_qemu: false
+
+          - name: Windows x64 / x86
+            artifact_key: windows-x64-x86
+            os: windows-latest
+            cibw_archs: "x86,AMD64"
+            cibw_platform: windows
+            needs_qemu: false
+
+          - name: Windows ARM64
+            artifact_key: windows-arm64
+            os: windows-11-arm
+            cibw_archs: "ARM64"
+            cibw_platform: windows
+            needs_qemu: false
+
+          - name: macOS Apple Silicon
+            artifact_key: macos-arm64
+            os: macos-26
+            cibw_archs: "arm64,universal2"
+            cibw_platform: macos
+            needs_qemu: false
+
+          - name: macOS Intel
+            artifact_key: macos-x86_64
+            os: macos-26-intel
+            cibw_archs: "x86_64"
+            cibw_platform: macos
+            needs_qemu: false
+
+          - name: iOS simulator arm64
+            artifact_key: ios-arm64-simulator
+            os: macos-26
+            cibw_archs: "arm64_iphonesimulator"
+            cibw_platform: ios
+            needs_qemu: false
+
+          - name: iOS simulator x86-64
+            artifact_key: ios-x86_64-simulator
+            os: macos-26-intel
+            cibw_archs: "x86_64_iphonesimulator"
+            cibw_platform: ios
+            needs_qemu: false
+
+          - name: Android ARM64 / x64
+            artifact_key: android-arm64_v8a-x86_64
+            os: ubuntu-latest
+            cibw_archs: "arm64_v8a,x86_64"
+            cibw_platform: android
+            needs_qemu: false
+
+          - name: Pyodide WebAssembly
+            artifact_key: pyodide-wasm32
+            os: ubuntu-latest
+            cibw_archs: "wasm32"
+            cibw_platform: pyodide
+            needs_qemu: false
+
+    uses: ./.github/workflows/cibuildwheel-reusable.yml
+    with:
+      os: ${{ matrix.os }}
+      platform: ${{ matrix.cibw_platform }}
+      archs: ${{ matrix.cibw_archs }}
+      qemu: ${{ matrix.needs_qemu }}
+      artifact_name: tests-wheels-${{ matrix.artifact_key }}
+      retention_days: 1
+
+  # Minimal matrix: pushes to a branch
+  minimal:
+    name: Linux x86-64
+    if: github.event_name == 'push'
+    uses: ./.github/workflows/cibuildwheel-reusable.yml
+    with:
+      os: ubuntu-latest
+      platform: linux
+      archs: x86_64
+      build: "cp311-*"
+      skip: "*-musllinux_*"
+      artifact_name: tests-wheels-linux-x86_64
+      retention_days: 1
