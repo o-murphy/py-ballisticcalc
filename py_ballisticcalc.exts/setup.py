@@ -364,9 +364,9 @@ from setuptools.command.build import build as _build
 BCLIBC_CORE_SOURCES = [BCLIBC_SRC_DIR / f"{name}.cpp" for name in (
     "interp", "base_types", "traj_data", "traj_filter", "engine", "euler", "rk4",
     "cash_karp", "dormand_prince", "tsitouras", "velocity_verlet")]
-# Linux host only (Android is cross-built from Linux and repaired by auditwheel); iOS and Pyodide keep the
+# Linux host only (Android is cross-built from Linux and repaired by auditwheel); Pyodide keeps the
 # per-extension static sources
-BCLIBC_SHARED = sys.platform.startswith("linux") and not (IS_IOS or IS_EMSCRIPTEN)
+BCLIBC_SHARED = sys.platform.startswith("linux") and not IS_EMSCRIPTEN
 def _libc_tag() -> str:
     """The libc of the build image as a wheel platform tag: manylinux_2_28_x86_64 or musllinux_1_2_x86_64.
 
