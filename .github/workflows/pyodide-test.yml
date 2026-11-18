@@ -36,14 +36,8 @@ jobs:
 
     strategy:
       fail-fast: false
-      matrix:
-        include:
-          - channel: next
-            xbuildenv_version: "315.0.0a2"
-            xbuildenv_url: "https://github.com/pyodide/pyodide/releases/download/315.0.0a2/xbuildenv-315.0.0a2.tar.gz"
-          - channel: latest
-            xbuildenv_version: "314.0.8"
-            xbuildenv_url: "https://github.com/pyodide/pyodide/releases/download/314.0.8/xbuildenv-314.0.8.tar.gz"
+      # push runs the next channel only; pull requests and manual runs run both channels
+      matrix: ${{ fromJSON(github.event_name == 'push' && '{"include":[{"channel":"next","xbuildenv_version":"315.0.0a2","xbuildenv_url":"https://github.com/pyodide/pyodide/releases/download/315.0.0a2/xbuildenv-315.0.0a2.tar.gz"}]}' || '{"include":[{"channel":"next","xbuildenv_version":"315.0.0a2","xbuildenv_url":"https://github.com/pyodide/pyodide/releases/download/315.0.0a2/xbuildenv-315.0.0a2.tar.gz"},{"channel":"latest","xbuildenv_version":"314.0.8","xbuildenv_url":"https://github.com/pyodide/pyodide/releases/download/314.0.8/xbuildenv-314.0.8.tar.gz"}]}') }}
 
     steps:
       - uses: actions/checkout@v7
