@@ -135,6 +135,8 @@ def _load_library_locked():
         Interception=G.BCLIBCFFI_Interception,
     )
     _check_library_version(G, lib)
+    if C.sizeof(_T.TrajData) != _TRAJ_FMT.size:  # the layout _traj reads
+        raise RuntimeError(f"BCLIBCFFI_TrajectoryData is {C.sizeof(_T.TrajData)} bytes, expected {_TRAJ_FMT.size}")
     _G = G
     _LIB = lib
     return lib
@@ -314,25 +316,35 @@ def _fill_shot(scr: _Scratch, shot_info, cfg, method: int) -> None:
     s.method = method
 
 
-def _traj(r: "_T.TrajData") -> TrajectoryData:
+# BCLIBCFFI_TrajectoryData: 15 doubles and the int32 flag (4 bytes of tail padding), read in one call instead of one ctypes
+# descriptor access per field
+_TRAJ_FMT = struct.Struct("15di4x")
+
+
+def _traj_values(v) -> TrajectoryData:
+    """A TrajectoryData from the unpacked fields of one BCLIBCFFI_TrajectoryData (the order of the struct)."""
     return TrajectoryData(
-        time=r.time,
-        distance=TrajectoryData._new_feet(r.distance_ft),
-        velocity=TrajectoryData._new_fps(r.velocity_fps),
-        mach=r.mach,
-        height=TrajectoryData._new_feet(r.height_ft),
-        slant_height=TrajectoryData._new_feet(r.slant_height_ft),
-        drop_angle=TrajectoryData._new_rad(r.drop_angle_rad),
-        windage=TrajectoryData._new_feet(r.windage_ft),
-        windage_angle=TrajectoryData._new_rad(r.windage_angle_rad),
-        slant_distance=TrajectoryData._new_feet(r.slant_distance_ft),
-        angle=TrajectoryData._new_rad(r.angle_rad),
-        density_ratio=r.density_ratio,
-        drag=r.drag,
-        energy=TrajectoryData._new_ft_lb(r.energy_ft_lb),
-        ogw=TrajectoryData._new_lb(r.ogw_lb),
-        flag=TrajFlag(r.flag),
+        time=v[0],
+        distance=TrajectoryData._new_feet(v[1]),
+        velocity=TrajectoryData._new_fps(v[2]),
+        mach=v[3],
+        height=TrajectoryData._new_feet(v[4]),
+        slant_height=TrajectoryData._new_feet(v[5]),
+        drop_angle=TrajectoryData._new_rad(v[6]),
+        windage=TrajectoryData._new_feet(v[7]),
+        windage_angle=TrajectoryData._new_rad(v[8]),
+        slant_distance=TrajectoryData._new_feet(v[9]),
+        angle=TrajectoryData._new_rad(v[10]),
+        density_ratio=v[11],
+        drag=v[12],
+        energy=TrajectoryData._new_ft_lb(v[13]),
+        ogw=TrajectoryData._new_lb(v[14]),
+        flag=TrajFlag(v[15]),
     )
+
+
+def _traj(r: "_T.TrajData") -> TrajectoryData:
+    return _traj_values(_TRAJ_FMT.unpack_from(r))
 
 
 def _raise(err: "_T.Error"):
@@ -380,7 +392,12 @@ def _integrate_common(engine, shot_info, range_limit_ft, range_step_ft, time_ste
     if rc != _G.BCLIBCFFI_OK:
         _raise(scr.err)
     count = scr.n.value
-    trajectory = [_traj(scr.recs[i]) for i in range(count)]
+    if count:
+        # the native records are copied once, then freed; the fields are unpacked from the copy
+        buf = C.string_at(scr.recs, count * _TRAJ_FMT.size)
+        trajectory = [_traj_values(v) for v in _TRAJ_FMT.iter_unpack(buf)]
+    else:
+        trajectory = []
     if count:
         lib.BCLIBCFFI_free_trajectory(scr.recs)
     base_data = None
