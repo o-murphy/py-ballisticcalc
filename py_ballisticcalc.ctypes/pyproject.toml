@@ -142,11 +142,13 @@ test = [
 ]
 
 # One interpreter builds the wheel: it is py3-none, so the builds for the other Pythons would give the same file. PyPy and
-# GraalPy builds (pp311-*, gp312_250-*) are chosen with the `build` input of the workflow and need `enable`.
+# GraalPy builds (pp311-*, gp313_253-*) are chosen with the `build` input of the workflow and need `enable`. GraalPy 3.12 (gp312_250) is not built: its ssl module does not work on macOS.
 [tool.cibuildwheel]
 build-frontend = "build[uv]"
 build = "cp311-*"
 enable = ["pypy", "graalpy"]
+# GraalPy 3.12 (25.0.3): its ssl module cannot make a context on macOS, pip fails there ("Can't create an SSLContext object without an ssl module"); GraalPy 3.13 is fine
+skip = ["gp312_250-*"]
 # After each wheel is built, cibuildwheel installs it in a clean environment and runs every engine of the core test suite
 # there (.github/scripts/cibw_run_engines.py); cibuildwheel-reusable.yml stages cibw_stage/ (the core tests, the core
 # wheel) and the runner in this folder, nothing of it is committed. The core wheel is put on the path by the runner.

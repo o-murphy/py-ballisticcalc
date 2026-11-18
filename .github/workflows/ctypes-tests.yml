@@ -126,13 +126,15 @@ jobs:
           # GraalPy has a job of its own on each platform it runs on: a crash or a hang there (pytest-xdist workers of GraalPy
           # died all at once on macOS Intel) must not take the CPython and PyPy wheels of the platform with it. The time limit
           # makes a hang a failure after an hour, not after the default six.
+          # Only GraalPy 3.13 (gp313_253): the ssl module of GraalPy 3.12 (gp312_250, 25.0.3) cannot make a context on macOS (pip
+          # fails with "Can't create an SSLContext object without an ssl module"), so no wheel is built or tested with it anywhere.
           - name: GraalPy Linux x64
             artifact_key: graalpy-linux-x64
             os: ubuntu-latest
             cibw_archs: "x86_64"
             cibw_platform: linux
             needs_qemu: false
-            build: "gp3*"
+            build: "gp313_253-*"
             timeout_minutes: 60
 
           - name: GraalPy Linux ARM64
@@ -141,7 +143,7 @@ jobs:
             cibw_archs: "aarch64"
             cibw_platform: linux
             needs_qemu: false
-            build: "gp3*"
+            build: "gp313_253-*"
             timeout_minutes: 60
 
           - name: GraalPy Windows x64
@@ -150,7 +152,7 @@ jobs:
             cibw_archs: "AMD64"
             cibw_platform: windows
             needs_qemu: false
-            build: "gp3*"
+            build: "gp313_253-*"
             timeout_minutes: 60
 
           - name: GraalPy macOS Apple Silicon
@@ -159,7 +161,7 @@ jobs:
             cibw_archs: "arm64"
             cibw_platform: macos
             needs_qemu: false
-            build: "gp3*"
+            build: "gp313_253-*"
             timeout_minutes: 60
 
           - name: GraalPy macOS Intel
@@ -168,7 +170,7 @@ jobs:
             cibw_archs: "x86_64"
             cibw_platform: macos
             needs_qemu: false
-            build: "gp3*"
+            build: "gp313_253-*"
             timeout_minutes: 60
 
     uses: ./.github/workflows/cibuildwheel-reusable.yml
