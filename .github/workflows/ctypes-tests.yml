@@ -42,7 +42,7 @@ jobs:
             cibw_archs: "x86_64,i686"
             cibw_platform: linux
             needs_qemu: false
-            build: "cp3*"
+            build: "cp3*, pp3*, gp3*"
 
           - name: Linux ARM64 / ARMv7 (glibc, musl)
             artifact_key: linux-arm64-armv7
@@ -50,7 +50,7 @@ jobs:
             cibw_archs: "aarch64,armv7l"
             cibw_platform: linux
             needs_qemu: false
-            build: "cp3*"
+            build: "cp3*, pp3*, gp3*"
 
           - name: Linux ppc64le (QEMU, glibc and musl)
             artifact_key: linux-ppc64le
@@ -82,7 +82,7 @@ jobs:
             cibw_archs: "x86,AMD64"
             cibw_platform: windows
             needs_qemu: false
-            build: "cp3*"
+            build: "cp3*, pp3*, gp3*"
 
           - name: Windows ARM64
             artifact_key: windows-arm64
@@ -98,7 +98,7 @@ jobs:
             cibw_archs: "arm64,universal2"
             cibw_platform: macos
             needs_qemu: false
-            build: "cp3*"
+            build: "cp3*, pp3*, gp3*"
 
           - name: macOS Intel
             artifact_key: macos-x86_64
@@ -106,7 +106,7 @@ jobs:
             cibw_archs: "x86_64"
             cibw_platform: macos
             needs_qemu: false
-            build: "cp3*"
+            build: "cp3*, pp3*, gp3*"
 
           - name: Android (x86-64 emulator, arm64 build)
             artifact_key: android
@@ -115,86 +115,6 @@ jobs:
             cibw_platform: android
             needs_qemu: false
             build: "cp3*-android_*"
-
-          - name: PyPy Linux x86-64 / x86
-            artifact_key: pypy-linux-x86_64
-            os: ubuntu-latest
-            cibw_archs: "x86_64,i686"
-            cibw_platform: linux
-            needs_qemu: false
-            build: "pp3*-manylinux_*"
-
-          - name: PyPy Linux ARM64
-            artifact_key: pypy-linux-aarch64
-            os: ubuntu-24.04-arm
-            cibw_archs: "aarch64"
-            cibw_platform: linux
-            needs_qemu: false
-            build: "pp3*-manylinux_aarch64"
-
-          - name: PyPy macOS Intel
-            artifact_key: pypy-macos-x86_64
-            os: macos-26-intel
-            cibw_archs: "x86_64"
-            cibw_platform: macos
-            needs_qemu: false
-            build: "pp3*-macosx_x86_64"
-
-          - name: PyPy macOS Apple Silicon
-            artifact_key: pypy-macos-arm64
-            os: macos-26
-            cibw_archs: "arm64"
-            cibw_platform: macos
-            needs_qemu: false
-            build: "pp3*-macosx_arm64"
-
-          - name: PyPy Windows x64
-            artifact_key: pypy-windows-x64
-            os: windows-latest
-            cibw_archs: "AMD64"
-            cibw_platform: windows
-            needs_qemu: false
-            build: "pp3*-win_amd64"
-
-          - name: GraalPy Linux x86-64
-            artifact_key: graalpy-linux-x86_64
-            os: ubuntu-latest
-            cibw_archs: "x86_64"
-            cibw_platform: linux
-            needs_qemu: false
-            build: "gp3*-manylinux_x86_64"
-
-          - name: GraalPy Linux ARM64
-            artifact_key: graalpy-linux-aarch64
-            os: ubuntu-24.04-arm
-            cibw_archs: "aarch64"
-            cibw_platform: linux
-            needs_qemu: false
-            build: "gp3*-manylinux_aarch64"
-
-          - name: GraalPy Windows x64
-            artifact_key: graalpy-windows-amd64
-            os: windows-latest
-            cibw_archs: "AMD64"
-            cibw_platform: windows
-            needs_qemu: false
-            build: "gp3*-win_amd64"
-
-          - name: GraalPy macOS Intel
-            artifact_key: graalpy-macos-x86_64
-            os: macos-26-intel
-            cibw_archs: "x86_64"
-            cibw_platform: macos
-            needs_qemu: false
-            build: "gp3*-macosx_x86_64"
-
-          - name: GraalPy macOS Apple Silicon
-            artifact_key: graalpy-macos-arm64
-            os: macos-26
-            cibw_archs: "arm64"
-            cibw_platform: macos
-            needs_qemu: false
-            build: "gp3*-macosx_arm64"
 
     uses: ./.github/workflows/cibuildwheel-reusable.yml
     with:
