@@ -223,7 +223,7 @@ plugins:
       handlers:
         python:
           load_external_modules: true
-          paths: ["py_ballisticcalc", "py_ballisticcalc.exts"]
+          paths: ["py_ballisticcalc", "py_ballisticcalc.exts", "py_ballisticcalc.ctypes"]
           options:
             docstring_style: google
             group_by_category: true

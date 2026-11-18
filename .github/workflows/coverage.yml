@@ -8,6 +8,7 @@ on:
       - "pyproject.toml"
       - "py_ballisticcalc/**"
       - "py_ballisticcalc.exts/**"
+      - "py_ballisticcalc.ctypes/**"
       - "tests/**"
       - ".github/workflows/coverage.yml"
   pull_request:
@@ -17,6 +18,7 @@ on:
       - "pyproject.toml"
       - "py_ballisticcalc/**"
       - "py_ballisticcalc.exts/**"
+      - "py_ballisticcalc.ctypes/**"
       - "tests/**"
       - ".github/workflows/coverage.yml"
   workflow_dispatch:
@@ -111,8 +113,66 @@ jobs:
           retention-days: 1
           if-no-files-found: error
 
+  # The ctypes engines: the Python side of py_ballisticcalc_ctypes (the engines, the glue over the shared library) is measured, like
+  # the pure-Python side of the package for the Cython engines; the library itself is C++ and is not line-traced. The package is
+  # installed editable (the library is built by setup.py into the source tree), so the report maps to the files of the repository;
+  # `uv run --no-sync` keeps it from being removed. The ids `cython+<method>` are the Cython ones, so the engines are named by class.
+  test-ctypes:
+    if: github.actor != 'dependabot[bot]'
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { method: euler, cls: Euler }
+          - { method: rk4, cls: RK4 }
+          - { method: verlet, cls: VelocityVerlet }
+          - { method: rkck, cls: CashKarp }
+          - { method: dopri, cls: DormandPrince }
+          - { method: tsitouras, cls: Tsitouras }
+
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0 # required for setuptools-scm
+          submodules: recursive # the bclibc sources the library is built from
+
+      - name: Install uv and set the python version
+        uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2
+        with:
+          python-version: "3.11"
+          activate-environment: "true"
+          github-token: ${{ github.token }}
+
+      - name: Install the project and the ctypes package
+        run: |
+          uv sync --dev --extra scipy
+          uv pip install -e ./py_ballisticcalc.ctypes
+        shell: bash
+
+      - name: Run coverage
+        run: >
+          uv run --no-sync pytest tests py_ballisticcalc.ctypes/tests
+          --cov=py_ballisticcalc
+          --cov=py_ballisticcalc_ctypes
+          --cov-report=
+          --engine=py_ballisticcalc_ctypes:Native${{ matrix.cls }}IntegrationEngine
+        shell: bash
+        env:
+          COVERAGE_FILE: .coverage.ctypes-${{ matrix.method }}
+
+      - name: Upload coverage data
+        if: ${{ !cancelled() }} # keep coverage data even if this engine's tests fail
+        uses: actions/upload-artifact@v7
+        with:
+          name: coverage-data-ctypes-${{ matrix.method }}
+          path: .coverage.ctypes-${{ matrix.method }}
+          include-hidden-files: true
+          retention-days: 1
+          if-no-files-found: error
+
   merge:
-    needs: test
+    needs: [test, test-ctypes]
     # !cancelled() alone would still run this even when `test` was skipped (dependabot actor), since a
     # skipped job isn't a cancelled one; the actor check keeps it skipped in that case too
     if: ${{ !cancelled() && github.actor != 'dependabot[bot]' }}

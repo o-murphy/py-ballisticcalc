@@ -77,3 +77,99 @@ coefficient; see [benchmarks](../../concepts/benchmarks.md#dormand-prince-and-ts
     options:
         group_by_category: false
         members:
+
+The same engines through ctypes, from the `py_ballisticcalc.ctypes` package (`pip install "py-ballisticcalc[ctypes]"`), are registered under the
+same names (`cython+rk4`, ...). The methods are those of the base engine, run by the native `bclibc_ffi` library.
+
+::: py_ballisticcalc_ctypes._native.NativeEulerIntegrationEngine
+    options:
+        group_by_category: false
+        inherited_members:
+            - get_calc_step
+            - integrate
+            - integrate_raw_at
+            - zero_angle
+            - zero_point
+            - find_zero_angle
+            - find_zero_point
+            - find_max_range
+            - find_apex
+
+::: py_ballisticcalc_ctypes._native.NativeRK4IntegrationEngine
+    options:
+        group_by_category: false
+        inherited_members:
+            - get_calc_step
+            - integrate
+            - integrate_raw_at
+            - zero_angle
+            - zero_point
+            - find_zero_angle
+            - find_zero_point
+            - find_max_range
+            - find_apex
+
+::: py_ballisticcalc_ctypes._native.NativeVelocityVerletIntegrationEngine
+    options:
+        group_by_category: false
+        inherited_members:
+            - get_calc_step
+            - integrate
+            - integrate_raw_at
+            - zero_angle
+            - zero_point
+            - find_zero_angle
+            - find_zero_point
+            - find_max_range
+            - find_apex
+
+::: py_ballisticcalc_ctypes._native.NativeCashKarpIntegrationEngine
+    options:
+        group_by_category: false
+        inherited_members:
+            - get_calc_step
+            - integrate
+            - integrate_raw_at
+            - zero_angle
+            - zero_point
+            - find_zero_angle
+            - find_zero_point
+            - find_max_range
+            - find_apex
+            - relative_tolerance
+            - absolute_tolerance
+            - get_step_stats
+
+::: py_ballisticcalc_ctypes._native.NativeDormandPrinceIntegrationEngine
+    options:
+        group_by_category: false
+        inherited_members:
+            - get_calc_step
+            - integrate
+            - integrate_raw_at
+            - zero_angle
+            - zero_point
+            - find_zero_angle
+            - find_zero_point
+            - find_max_range
+            - find_apex
+            - relative_tolerance
+            - absolute_tolerance
+            - get_step_stats
+
+::: py_ballisticcalc_ctypes._native.NativeTsitourasIntegrationEngine
+    options:
+        group_by_category: false
+        inherited_members:
+            - get_calc_step
+            - integrate
+            - integrate_raw_at
+            - zero_angle
+            - zero_point
+            - find_zero_angle
+            - find_zero_point
+            - find_max_range
+            - find_apex
+            - relative_tolerance
+            - absolute_tolerance
+            - get_step_stats

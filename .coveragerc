@@ -4,11 +4,14 @@ plugins = Cython.Coverage
 omit = 
     */site-packages/*
     */.venv/*
+    **/py_ballisticcalc_ctypes/_ctypesgen/**
 disable_warnings = couldnt-parse
 source =
     py_ballisticcalc
     py_ballisticcalc_exts
     py_ballisticcalc.exts
+    py_ballisticcalc_ctypes
+    py_ballisticcalc.ctypes
 
 [report]
 exclude_lines =
