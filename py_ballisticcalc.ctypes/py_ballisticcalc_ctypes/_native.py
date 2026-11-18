@@ -316,9 +316,10 @@ def _fill_shot(scr: _Scratch, shot_info, cfg, method: int) -> None:
     s.method = method
 
 
-# BCLIBCFFI_TrajectoryData: 15 doubles and the int32 flag (4 bytes of tail padding), read in one call instead of one ctypes
-# descriptor access per field
-_TRAJ_FMT = struct.Struct("15di4x")
+# BCLIBCFFI_TrajectoryData: 15 doubles and the int32 flag, read in one call instead of one ctypes descriptor access per
+# field. The tail padding is the C compiler's: "0d" pads to the alignment of a double like the structure does, so it is
+# 4 bytes where a double is aligned to 8 (128 bytes in all) and none on 32-bit x86 Linux, where it is aligned to 4 (124).
+_TRAJ_FMT = struct.Struct("15di0d")
 
 
 _tuple_new = tuple.__new__
