@@ -5,7 +5,8 @@
 No Python extension is built: the library is plain C++ with a C ABI (``BCLIBCFFI_*``), loaded through ctypes, so it
 does not depend on the interpreter. The wheel is therefore ``py3-none-<platform>``: one wheel per platform serves
 every CPython, PyPy and GraalPy that platform has (the Cython wheels of ``py_ballisticcalc.exts`` serve CPython where
-they are built, and the main package's ``exts`` extra picks between the two by environment markers).
+they are built; the main package's ``native`` extra picks between the two by environment markers, ``exts`` and ``ctypes`` are
+an explicit choice).
 
 The library is compiled with setuptools' compiler API from the sources the Cython extensions use (without the Python
 binding) plus the C ABI wrapper, and copied to ``py_ballisticcalc_ctypes/_native_lib/`` before the package is
@@ -14,6 +15,7 @@ collected. The sources come from the repository's one bclibc submodule, or from 
 Environment variables:
     PY_BALLISTICCALC_NATIVE_LIB_DIR  directory with a prebuilt bclibc_ffi library; the compile step is skipped
     CC, CXX, CFLAGS, CXXFLAGS, LDFLAGS  toolchain; CXX compiles and links the C++ sources
+    PY_BALLISTICCALC_BUILD_JOBS  number of sources compiled at once (default: the number of CPUs; 1 compiles one by one)
 """
 
 import glob
@@ -23,6 +25,7 @@ import shutil
 import subprocess
 import sys
 import sysconfig
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
@@ -82,6 +85,15 @@ def _has_static_libstdcxx(cxx: str) -> bool:
     except (OSError, subprocess.CalledProcessError):
         return False
     return os.path.isabs(found) and os.path.exists(found)
+
+
+def _build_jobs() -> int:
+    """How many sources are compiled at once: PY_BALLISTICCALC_BUILD_JOBS, else the number of CPUs (the Cython build uses
+    all of them too)."""
+    value = os.environ.get("PY_BALLISTICCALC_BUILD_JOBS", "")
+    if value.isdigit() and int(value) > 0:
+        return int(value)
+    return os.cpu_count() or 1
 
 
 def _compile_and_link(out_dir: Path) -> Path:
@@ -155,11 +167,22 @@ def _compile_and_link(out_dir: Path) -> Path:
             if _has_static_libstdcxx(cxx):
                 link_args += ["-static-libstdc++", "-static-libgcc"]
 
-    core = cc.compile(core_sources, output_dir=str(obj_dir), include_dirs=include_dirs, extra_postargs=compile_args)
-    ffi = cc.compile(
-        [ffi_source], output_dir=str(obj_dir), include_dirs=include_dirs, macros=ffi_macros, extra_postargs=compile_args
-    )
-    cc.link_shared_object(core + ffi, lib_name, output_dir=str(lib_dir), extra_postargs=link_args, target_lang="c++")
+    # One source per call, each in a thread of its own: a call spawns the compiler and waits for it, so the compilers run side by
+    # side. Every source has an object file of its own (its path under obj_dir), so nothing is written twice; the order of the
+    # objects, and so the library, is that of the sources. The MSVC compiler prepares its environment on the first use: do it here.
+    if hasattr(cc, "initialize") and not getattr(cc, "initialized", True):
+        cc.initialize()
+
+    def compile_one(job):
+        source, macros = job
+        return cc.compile(
+            [source], output_dir=str(obj_dir), include_dirs=include_dirs, macros=macros, extra_postargs=compile_args
+        )
+
+    jobs = [(source, None) for source in core_sources] + [(ffi_source, ffi_macros)]
+    with ThreadPoolExecutor(max_workers=min(_build_jobs(), len(jobs))) as pool:
+        objects = [obj for objs in pool.map(compile_one, jobs) for obj in objs]
+    cc.link_shared_object(objects, lib_name, output_dir=str(lib_dir), extra_postargs=link_args, target_lang="c++")
     return lib_dir
 
 
@@ -194,6 +217,11 @@ class sdist(_sdist):
     """Stages the bclibc sources into the package for the time of the sdist, so the archive builds anywhere."""
 
     def run(self):
+        # a library left in the package by an earlier wheel build (it is package data) must not go into the archive: an sdist is
+        # source, and a binary of another machine in it would be installed as if it were built here
+        for stale in NATIVE_DIR.glob("*") if NATIVE_DIR.is_dir() else ():
+            if stale.is_file():
+                stale.unlink()  # the directory stays: it is a package directory of the build
         _bclibc.stage()
         try:
             super().run()

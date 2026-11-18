@@ -4,8 +4,8 @@
 # disabled for this file only, so the rest of the package is still checked.
 """ctypes engines over the bclibc C-ABI library.
 
-Replaces the Cython engine classes (py_ballisticcalc.exts) with the same public surface: same factory class names are not
-required, entry-point names (cython+rk4, ...) are. Structs follow include/bclibc/ffi/bclibc_ffi.h.
+The engines of py_ballisticcalc.exts with the same public surface, registered under the same entry-point names (cython+rk4, ...);
+the classes are named Native<Method>IntegrationEngine. Structs follow include/bclibc/ffi/bclibc_ffi.h.
 The library is loaded lazily on first engine use.
 
 Each engine owns one `_Scratch` (created on first use, after the library is loaded): the C structs and output
@@ -38,7 +38,7 @@ from py_ballisticcalc.unit import Angular, Distance, Energy, Unit, Velocity, Wei
 from py_ballisticcalc.vector import Vector
 
 # ---------------------------------------------------------------- generated bindings
-# Structs, enums, constants and the BCLIBCFFI_* prototypes come from py_ballisticcalc/_ctypesgen/_native_gen.py
+# Structs, enums, constants and the BCLIBCFFI_* prototypes come from py_ballisticcalc_ctypes/_ctypesgen/_native_gen.py
 # (ctypesgen over bclibc_ffi.h). Importing this module does not load the library: the generated module is
 # imported by _load_library(), and its structs are reached through _T and _G from then on.
 
@@ -60,17 +60,6 @@ _TERMINATION = {
 
 _LIB = None
 _LIB_NAME = "bclibc_ffi"  # ctypesgen library name: libbclibc_ffi.so / .dylib, bclibc_ffi.dll
-_TYPE_NAMES = (
-    "Shot",
-    "Error",
-    "Request",
-    "TrajData",
-    "BaseData",
-    "Config",
-    "Wind",
-    "ZeroPointResult",
-    "MaxRangeResult",
-)
 
 
 def _library_dir() -> str:
@@ -91,7 +80,7 @@ _LOAD_LOCK = threading.Lock()  # serialises the first load when several threads 
 
 
 def _load_library():
-    """Load the native library on first use and bind the generated prototypes and the adaptive shim."""
+    """Load the native library on first use and bind the generated prototypes."""
     if _LIB is not None:
         return _LIB
     with _LOAD_LOCK:
@@ -172,7 +161,8 @@ class _Scratch:
         self.n_wind = -1
         self.wind_arr = None
         # the drag table of the previous call and the curve chosen for it: the same list object (with the same first and
-        # last point objects and length) is not compared again, a table is not edited in place
+        # last point objects and length) is checked against the curve by value (_same_curve), as a point may be edited in
+        # place, which the Cython engines see because they read the table on every call
         self.table = None
         self.table_key = None
         self.table_curve = None
@@ -259,7 +249,7 @@ def _fill_shot(scr: _Scratch, shot_info, cfg, method: int) -> None:
     n = len(table)
     # standard G1/G7 tables: the stored arrays, no copy; any other table: the scratch copy, written where it changed
     key = (n, table[0], table[-1]) if n else None
-    if table is scr.table and key == scr.table_key:
+    if table is scr.table and key == scr.table_key and _same_curve(table, scr.table_curve):
         curve = scr.table_curve
     else:
         if _same_curve(table, _STD_G7):
@@ -501,6 +491,7 @@ class _FixedEngine(BaseIntegrationEngine):
     DEFAULT_TIME_STEP = 0.0025
 
     def get_calc_step(self) -> float:
+        """The integration step in seconds: the engine's base step (`DEFAULT_TIME_STEP`) times `cStepMultiplier`."""
         return self._config.cStepMultiplier * self.DEFAULT_TIME_STEP
 
     def _native_shot(self, shot_info):
@@ -513,6 +504,8 @@ class _FixedEngine(BaseIntegrationEngine):
     def integrate(
         self, shot_info, max_range, dist_step=None, time_step=0.0, filter_flags=0, dense_output=False, **kwargs
     ):
+        """Same as the base engine's `integrate()`; the integration is one call of the native library, and the result is
+        built from its records."""
         range_limit_ft = max_range._feet
         range_step_ft = range_limit_ft if dist_step is None else dist_step._feet
         return _integrate_common(
@@ -525,6 +518,8 @@ class _FixedEngine(BaseIntegrationEngine):
         )[0]
 
     def integrate_raw_at(self, shot_info, key_attribute: str, target_value: float):
+        """Same as the base engine's `integrate_raw_at()`: integrates until `key_attribute` reaches `target_value`, in
+        the native library (see the base engine for the keys)."""
         if key_attribute not in _KEY:
             raise AttributeError(f"Cannot interpolate on '{key_attribute}'")
         lib = _LIB or _load_library()
@@ -541,6 +536,8 @@ class _FixedEngine(BaseIntegrationEngine):
         )
 
     def zero_angle(self, shot_info, distance):
+        """Same as the base engine's `zero_angle()`: the barrel elevation that hits the sight line at `distance`, found
+        in the native library."""
         lib = _LIB or _load_library()
         scr = self._native_shot(shot_info)
         rc = lib.BCLIBCFFI_find_zero_angle_shot(C.byref(scr.shot), distance._feet, C.byref(scr.value), C.byref(scr.err))
@@ -549,6 +546,8 @@ class _FixedEngine(BaseIntegrationEngine):
         return Angular.Radian(scr.value.value)
 
     def zero_point(self, shot_info, distance):
+        """Same as the base engine's `zero_point()`: the zero angle and the trajectory point it was determined at, found
+        in the native library."""
         lib = _LIB or _load_library()
         scr = self._native_shot(shot_info)
         rc = lib.BCLIBCFFI_find_zero_point_shot(C.byref(scr.shot), distance._feet, C.byref(scr.zp), C.byref(scr.err))
@@ -557,6 +556,7 @@ class _FixedEngine(BaseIntegrationEngine):
         return Angular.Radian(scr.zp.angle_rad), _traj(scr.zp.point)
 
     def find_zero_angle(self, shot_info, distance, lofted=False):
+        """Same as the base engine's `find_zero_angle()` (`lofted` picks the high solution), found in the native library."""
         lib = _LIB or _load_library()
         scr = self._native_shot(shot_info)
         rc = lib.BCLIBCFFI_find_zero_angle_lofted_shot(
@@ -567,6 +567,7 @@ class _FixedEngine(BaseIntegrationEngine):
         return Angular.Radian(scr.value.value)
 
     def find_zero_point(self, shot_info, distance, lofted=False):
+        """Same as the base engine's `find_zero_point()` (`lofted` picks the high solution), found in the native library."""
         lib = _LIB or _load_library()
         scr = self._native_shot(shot_info)
         rc = lib.BCLIBCFFI_find_zero_point_lofted_shot(
@@ -577,6 +578,8 @@ class _FixedEngine(BaseIntegrationEngine):
         return Angular.Radian(scr.zp.angle_rad), _traj(scr.zp.point)
 
     def find_max_range(self, shot_info, angle_bracket_deg=(0, 90)):
+        """Same as the base engine's `find_max_range()`: the maximum range and the launch angle that reaches it, found in
+        the native library."""
         lib = _LIB or _load_library()
         scr = self._native_shot(shot_info)
         rc = lib.BCLIBCFFI_find_max_range_shot(
@@ -587,6 +590,7 @@ class _FixedEngine(BaseIntegrationEngine):
         return Distance.Foot(scr.mr.max_range_ft), Angular.Radian(scr.mr.angle_at_max_rad)
 
     def find_apex(self, shot_info):
+        """Same as the base engine's `find_apex()`: the apex of the trajectory, found in the native library."""
         lib = _LIB or _load_library()
         scr = self._native_shot(shot_info)
         rc = lib.BCLIBCFFI_find_apex_shot(C.byref(scr.shot), C.byref(scr.apex), C.byref(scr.err))
@@ -619,28 +623,39 @@ class _AdaptiveEngine(BaseIntegrationEngine):
 
     @property
     def relative_tolerance(self) -> float:
+        """SciPy-style relative local-error tolerance (default: ``1e-6``). Must be finite and positive, `ValueError`
+        otherwise."""
         return self._relative_tolerance
 
     @relative_tolerance.setter
     def relative_tolerance(self, value: float) -> None:
+        """SciPy-style relative local-error tolerance (default: ``1e-6``). Must be finite and positive, `ValueError`
+        otherwise."""
         if not math.isfinite(value) or value <= 0:
             raise ValueError("relative_tolerance must be finite and positive")
         self._relative_tolerance = float(value)
 
     @property
     def absolute_tolerance(self) -> float:
+        """Scalar SciPy-style absolute local-error tolerance (default: ``1e-6``), applied to all six state components.
+        Must be finite and non-negative, `ValueError` otherwise."""
         return self._absolute_tolerance
 
     @absolute_tolerance.setter
     def absolute_tolerance(self, value: float) -> None:
+        """Scalar SciPy-style absolute local-error tolerance (default: ``1e-6``), applied to all six state components.
+        Must be finite and non-negative, `ValueError` otherwise."""
         if not math.isfinite(value) or value < 0:
             raise ValueError("absolute_tolerance must be finite and non-negative")
         self._absolute_tolerance = float(value)
 
     def get_step_stats(self) -> tuple[int, int]:
+        """The numbers of accepted and rejected steps of the last successful `integrate()` call, as ``(accepted,
+        rejected)``."""
         return self._last_accepted, self._last_rejected
 
     def get_calc_step(self) -> float:
+        """The integration step in seconds: the engine's base step (`DEFAULT_TIME_STEP`) times `cStepMultiplier`."""
         return self._config.cStepMultiplier * self.DEFAULT_TIME_STEP
 
     def _native_shot(self, shot_info):
@@ -653,6 +668,8 @@ class _AdaptiveEngine(BaseIntegrationEngine):
     def integrate(
         self, shot_info, max_range, dist_step=None, time_step=0.0, filter_flags=0, dense_output=False, **kwargs
     ):
+        """Same as the base engine's `integrate()`; the integration is one call of the native library, and this call's
+        own step stats are snapshotted (see `get_step_stats()`)."""
         range_limit_ft = max_range._feet
         range_step_ft = range_limit_ft if dist_step is None else dist_step._feet
         return self._integrate_adaptive(shot_info, range_limit_ft, range_step_ft, time_step, filter_flags, dense_output)
@@ -692,6 +709,8 @@ class _AdaptiveEngine(BaseIntegrationEngine):
         return result
 
     def integrate_raw_at(self, shot_info, key_attribute: str, target_value: float):
+        """Same as the base engine's `integrate_raw_at()`: integrates until `key_attribute` reaches `target_value`, in
+        the native library (see the base engine for the keys)."""
         if key_attribute not in _KEY:
             raise AttributeError(f"Cannot interpolate on '{key_attribute}'")
         lib = _LIB or _load_library()
@@ -716,6 +735,8 @@ class _AdaptiveEngine(BaseIntegrationEngine):
         )
 
     def zero_angle(self, shot_info, distance):
+        """Same as the base engine's `zero_angle()`: the barrel elevation that hits the sight line at `distance`, found
+        in the native library."""
         lib = _LIB or _load_library()
         scr = self._native_shot(shot_info)
         rc = lib.BCLIBCFFI_find_zero_angle_adaptive_shot(
@@ -733,6 +754,8 @@ class _AdaptiveEngine(BaseIntegrationEngine):
         return Angular.Radian(scr.value.value)
 
     def zero_point(self, shot_info, distance):
+        """Same as the base engine's `zero_point()`: the zero angle and the trajectory point it was determined at, found
+        in the native library."""
         lib = _LIB or _load_library()
         scr = self._native_shot(shot_info)
         rc = lib.BCLIBCFFI_find_zero_point_adaptive_shot(
@@ -750,6 +773,7 @@ class _AdaptiveEngine(BaseIntegrationEngine):
         return Angular.Radian(scr.zp.angle_rad), _traj(scr.zp.point)
 
     def find_zero_angle(self, shot_info, distance, lofted=False):
+        """Same as the base engine's `find_zero_angle()` (`lofted` picks the high solution), found in the native library."""
         lib = _LIB or _load_library()
         scr = self._native_shot(shot_info)
         rc = lib.BCLIBCFFI_find_zero_angle_lofted_adaptive_shot(
@@ -768,6 +792,7 @@ class _AdaptiveEngine(BaseIntegrationEngine):
         return Angular.Radian(scr.value.value)
 
     def find_zero_point(self, shot_info, distance, lofted=False):
+        """Same as the base engine's `find_zero_point()` (`lofted` picks the high solution), found in the native library."""
         lib = _LIB or _load_library()
         scr = self._native_shot(shot_info)
         rc = lib.BCLIBCFFI_find_zero_point_lofted_adaptive_shot(
@@ -786,6 +811,8 @@ class _AdaptiveEngine(BaseIntegrationEngine):
         return Angular.Radian(scr.zp.angle_rad), _traj(scr.zp.point)
 
     def find_max_range(self, shot_info, angle_bracket_deg=(0, 90)):
+        """Same as the base engine's `find_max_range()`: the maximum range and the launch angle that reaches it, found in
+        the native library."""
         lib = _LIB or _load_library()
         scr = self._native_shot(shot_info)
         rc = lib.BCLIBCFFI_find_max_range_adaptive_shot(
@@ -804,6 +831,7 @@ class _AdaptiveEngine(BaseIntegrationEngine):
         return Distance.Foot(scr.mr.max_range_ft), Angular.Radian(scr.mr.angle_at_max_rad)
 
     def find_apex(self, shot_info):
+        """Same as the base engine's `find_apex()`: the apex of the trajectory, found in the native library."""
         lib = _LIB or _load_library()
         scr = self._native_shot(shot_info)
         rc = lib.BCLIBCFFI_find_apex_adaptive_shot(
@@ -824,30 +852,51 @@ class _AdaptiveEngine(BaseIntegrationEngine):
 
 
 class NativeEulerIntegrationEngine(_FixedEngine):
+    """Euler integration engine for ballistic calculations through ctypes: the engine of
+    `CythonizedEulerIntegrationEngine`, run by the native `bclibc_ffi` library (base step 0.5 s)."""
+
     _NATIVE_METHOD = "euler"
     DEFAULT_TIME_STEP = 0.5
 
 
 class NativeRK4IntegrationEngine(_FixedEngine):
+    """RK4 (Runge-Kutta 4th order) integration engine for ballistic calculations through ctypes: the engine of
+    `CythonizedRK4IntegrationEngine`, run by the native `bclibc_ffi` library (base step 0.0025 s)."""
+
     _NATIVE_METHOD = "rk4"
     DEFAULT_TIME_STEP = 0.0025
 
 
 class NativeVelocityVerletIntegrationEngine(_FixedEngine):
+    """Velocity Verlet integration engine for ballistic calculations through ctypes: the engine of
+    `CythonizedVelocityVerletIntegrationEngine`, run by the native `bclibc_ffi` library (base step 0.001 s)."""
+
     _NATIVE_METHOD = "verlet"
     DEFAULT_TIME_STEP = 0.001
 
 
 class NativeCashKarpIntegrationEngine(_AdaptiveEngine):
+    """Cash-Karp (embedded adaptive RK45) integration engine for ballistic calculations through ctypes: the engine of
+    `CythonizedCashKarpIntegrationEngine`, run by the native `bclibc_ffi` library (base step 0.0025 s;
+    `relative_tolerance` and `absolute_tolerance` default to ``1e-6``)."""
+
     _NATIVE_METHOD = "rkck"
     DEFAULT_TIME_STEP = 0.0025
 
 
 class NativeDormandPrinceIntegrationEngine(_AdaptiveEngine):
+    """Dormand-Prince 5(4) integration engine for ballistic calculations through ctypes: the engine of
+    `CythonizedDormandPrinceIntegrationEngine`, run by the native `bclibc_ffi` library (base step 0.0025 s;
+    `relative_tolerance` and `absolute_tolerance` default to ``1e-6``)."""
+
     _NATIVE_METHOD = "dopri"
     DEFAULT_TIME_STEP = 0.0025
 
 
 class NativeTsitourasIntegrationEngine(_AdaptiveEngine):
+    """Tsitouras 5(4) integration engine for ballistic calculations through ctypes: the engine of
+    `CythonizedTsitourasIntegrationEngine`, run by the native `bclibc_ffi` library (base step 0.0025 s;
+    `relative_tolerance` and `absolute_tolerance` default to ``1e-6``)."""
+
     _NATIVE_METHOD = "tsit"
     DEFAULT_TIME_STEP = 0.0025

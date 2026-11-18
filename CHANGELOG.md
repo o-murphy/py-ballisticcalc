@@ -18,7 +18,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   Pyodide ABI, `pyemscripten_*`: one wheel for each of Python 3.13, 3.14 and 3.15). The library and the ctypes bindings are built
   from the one bclibc submodule (`_bclibc.py` stages the sources for an sdist or a container build); the bindings (`_native_gen.py`)
   are made by ctypesgen, a development dependency, with `regenerate_bindings.py`, and a test fails when they are out of date. A guard
-  checks that the version matches the main package's. On the benchmark (Linux x86-64, CPython 3.13, Dormand-Prince) a full
+  checks that the version matches the main package's. `setup.py` compiles the sources in parallel (`PY_BALLISTICCALC_BUILD_JOBS`, the
+  number of CPUs by default; 8.4 s with one job, 3.2 s with four) and an sdist never carries a library left in the package by an earlier
+  wheel build. On the benchmark (Linux x86-64, CPython 3.13, Dormand-Prince) a full
   trajectory takes about 5-20% longer than with the Cython engine.
 - Classifiers of the three packages: license (LGPLv3), audience, topic (Physics), `Typing :: Typed`; PyPy and GraalPy for the core; the languages (C++, Cython),
   the operating systems the wheels are built for, and free-threading (3 - Stable) for the extensions and the ctypes package.

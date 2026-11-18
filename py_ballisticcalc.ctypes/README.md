@@ -16,7 +16,7 @@ Install one of the two, not both: they register the same engine names.
 ## Engines
 
 `cython+euler`, `cython+rk4`, `cython+verlet`, `cython+rkck`, `cython+dopri` and `cython+tsitouras` (entry points of the
-`py_ballisticcalc.engine` group; the classes are `py_ballisticcalc_ctypes.Native<Method>IntegrationEngine`). The names are those of the
+`py_ballisticcalc.engines.cython` group; the classes are `py_ballisticcalc_ctypes.Native<Method>IntegrationEngine`). The names are those of the
 Cython engines, so `Calculator(engine="cython+dopri")` works with either package. On the benchmark of this repository (Linux x86-64,
 CPython 3.13, Dormand-Prince) a full trajectory takes about 5-20% longer than with the Cython engine; it was not measured on the other
 platforms.
@@ -43,6 +43,8 @@ pytest py_ballisticcalc.ctypes/tests         # the tests of the package
 ```
 
 * `PY_BALLISTICCALC_NATIVE_LIB_DIR=<dir>` uses a prebuilt `bclibc_ffi` library and skips the compile step.
+* The sources are compiled in parallel, one compiler process per source: `PY_BALLISTICCALC_BUILD_JOBS=<n>` sets how many run at once
+  (default: the number of CPUs; `1` compiles one by one). 8.4 s with one, 3.2 s with four, on a 4-core Linux machine.
 * The bindings (`py_ballisticcalc_ctypes/_ctypesgen/_native_gen.py`) are generated from `bclibc_ffi.h` by ctypesgen (a development
   dependency, `ctypesgen==1.1.1`) with `regenerate_bindings.py`; a test fails when they are out of date.
 * `_bclibc.py stage` copies the bclibc sources into the package for an sdist or a container build.

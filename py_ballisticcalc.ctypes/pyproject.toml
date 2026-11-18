@@ -119,7 +119,7 @@ cache-keys = [
 ]
 
 [dependency-groups]
-# ctypesgen makes py_ballisticcalc_ctypes/_native_gen.py from bclibc_ffi.h (regenerate_bindings.py); the result is
+# ctypesgen makes py_ballisticcalc_ctypes/_ctypesgen/_native_gen.py from bclibc_ffi.h (regenerate_bindings.py); the result is
 # committed, so building the package needs neither ctypesgen nor a C preprocessor. Pinned: the output must be reproducible.
 dev = [
     "ctypesgen==1.1.1",
