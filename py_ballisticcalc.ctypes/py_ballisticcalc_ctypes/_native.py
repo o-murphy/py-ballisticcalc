@@ -169,6 +169,11 @@ class _Scratch:
         self.custom = None  # _Curve for a custom drag table, reallocated only when its length changes
         self.n_wind = -1
         self.wind_arr = None
+        # the drag table of the previous call and the curve chosen for it: the same list object (with the same first and
+        # last point objects and length) is not compared again, a table is not edited in place
+        self.table = None
+        self.table_key = None
+        self.table_curve = None
 
 
 class _Curve:
@@ -251,12 +256,17 @@ def _fill_shot(scr: _Scratch, shot_info, cfg, method: int) -> None:
     table = dm.drag_table
     n = len(table)
     # standard G1/G7 tables: the stored arrays, no copy; any other table: the scratch copy, written where it changed
-    if _same_curve(table, _STD_G7):
-        curve = _STD_G7
-    elif _same_curve(table, _STD_G1):
-        curve = _STD_G1
+    key = (n, table[0], table[-1]) if n else None
+    if table is scr.table and key == scr.table_key:
+        curve = scr.table_curve
     else:
-        curve = _custom_curve(scr, table, n)
+        if _same_curve(table, _STD_G7):
+            curve = _STD_G7
+        elif _same_curve(table, _STD_G1):
+            curve = _STD_G1
+        else:
+            curve = _custom_curve(scr, table, n)
+        scr.table, scr.table_key, scr.table_curve = table, key, curve
 
     winds = tuple(shot_info.winds)
     nw = len(winds)
