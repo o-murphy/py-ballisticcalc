@@ -1,0 +1,31 @@
+# .github/workflows/pyodide-test.yml
+name: Pyodide Test
+
+run-name: "Pyodide test: ${{ inputs.channel }}"
+
+on:
+  workflow_dispatch:
+    inputs:
+      channel:
+        description: "Pyodide channel: next (315.0.0a2) or latest (314.0.8)"
+        required: true
+        type: choice
+        default: next
+        options:
+          - next
+          - latest
+
+jobs:
+  next:
+    if: inputs.channel == 'next'
+    uses: ./.github/workflows/pyodide-reusable.yml
+    with:
+      xbuildenv_url: "https://github.com/pyodide/pyodide/releases/download/315.0.0a2/xbuildenv-315.0.0a2.tar.gz"
+      xbuildenv_version: "315.0.0a2"
+
+  latest:
+    if: inputs.channel == 'latest'
+    uses: ./.github/workflows/pyodide-reusable.yml
+    with:
+      xbuildenv_url: "https://github.com/pyodide/pyodide/releases/download/314.0.8/xbuildenv-314.0.8.tar.gz"
+      xbuildenv_version: "314.0.8"
