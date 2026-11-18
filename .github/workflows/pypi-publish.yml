@@ -124,12 +124,12 @@ jobs:
             cibw_platform: macos
             needs_qemu: false
 
-          # the simulator wheels are tested too (cibuildwheel runs the tests only on simulator SDKs); each on a runner of
-          # its own architecture: the Intel simulator is not translated on an Apple Silicon runner
-          - name: iOS simulator arm64
-            artifact_key: ios-arm64-simulator
+          # iOS: the arm64 device and simulator wheels in one job (one runner, one setup); the Intel simulator on an Intel
+          # runner: it is not translated on an Apple Silicon one
+          - name: iOS arm64 (device, simulator)
+            artifact_key: ios-arm64
             os: macos-26
-            cibw_archs: "arm64_iphonesimulator"
+            cibw_archs: "arm64_iphoneos,arm64_iphonesimulator"
             cibw_platform: ios
             needs_qemu: false
 
@@ -137,14 +137,6 @@ jobs:
             artifact_key: ios-x86_64-simulator
             os: macos-26-intel
             cibw_archs: "x86_64_iphonesimulator"
-            cibw_platform: ios
-            needs_qemu: false
-
-          # the device wheel (nothing can run it in CI; the simulator ones above are the tested iOS builds)
-          - name: iOS device arm64
-            artifact_key: ios-arm64-device
-            os: macos-26
-            cibw_archs: "arm64_iphoneos"
             cibw_platform: ios
             needs_qemu: false
 
