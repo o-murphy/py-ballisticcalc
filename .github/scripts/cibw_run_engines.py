@@ -28,7 +28,7 @@ And the exts wheel is the thing under test: if it registered no ``cython+`` engi
 smaller run.
 
 Each engine is one pytest session (``--engine`` takes one name). A session is a subprocess where there are
-subprocesses, and in-process on Pyodide and iOS. An engine does not stop the others: all run, a summary is printed, and the
+subprocesses, and in-process on Pyodide, iOS and Android. An engine does not stop the others: all run, a summary is printed, and the
 exit code is non-zero if any failed.
 """
 
@@ -42,6 +42,10 @@ import zipfile
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
+
+# No subprocesses (and so no pytest-xdist): Pyodide and iOS have none, and on Android sys.executable is "" (Python is
+# embedded in the app), so subprocess fails with PermissionError. The sessions run in this process there.
+NO_SUBPROCESS = ("emscripten", "ios", "android")
 
 
 def unpack_core(wheel_dir: Path) -> str:
@@ -80,8 +84,8 @@ def discover_engines() -> tuple[list[str], list[str]]:
 
 
 def can_fork_workers() -> bool:
-    """pytest-xdist needs subprocesses: not available on Pyodide, and not on iOS."""
-    if sys.platform in ("emscripten", "ios"):
+    """pytest-xdist needs subprocesses: not available where there are none."""
+    if sys.platform in NO_SUBPROCESS:
         return False
     return importlib.util.find_spec("xdist") is not None
 
@@ -90,7 +94,7 @@ def run_engine(engine: str, tests: Path, parallel: bool) -> int:
     args = [str(tests), "-q", "-p", "no:cacheprovider", "-m", "not stress", f"--engine={engine}"]
     if parallel:
         args += ["-n", "auto"]
-    if sys.platform in ("emscripten", "ios"):  # no subprocesses: run the session in this process
+    if sys.platform in NO_SUBPROCESS:  # run the session in this process
         import pytest
 
         return int(pytest.main(args))

@@ -4,6 +4,7 @@
 import copy
 import os
 import platform
+import sys
 import sysconfig
 from pathlib import Path
 
@@ -88,8 +89,20 @@ FORCE_CYTHON_MACROS = [("__CYTHON__", "1")]
 # signal, since the cross-build tooling overrides the host's sysconfig data
 # to reflect the target platform.
 _SYSCONFIG_PLATFORM = sysconfig.get_platform()
+
+
+def _is_android() -> bool:
+    """Whether the build targets Android.
+
+    Python 3.13+ (PEP 738) reports it in sysconfig.get_platform() ("android-<api>-<abi>") and in sys.platform. An
+    earlier Python built for Android (Termux and the like) calls itself "linux" in both, but has
+    sys.getandroidapilevel(), which no other platform has.
+    """
+    return "android" in _SYSCONFIG_PLATFORM or sys.platform == "android" or hasattr(sys, "getandroidapilevel")
+
+
 IS_EMSCRIPTEN = "emscripten" in _SYSCONFIG_PLATFORM
-IS_ANDROID = "android" in _SYSCONFIG_PLATFORM
+IS_ANDROID = _is_android()
 IS_IOS = "ios" in _SYSCONFIG_PLATFORM
 
 # Stable ABI target: build once per platform, compatible with Python 3.11+.
