@@ -18,6 +18,49 @@ from py_ballisticcalc_exts.bind cimport _attribute_to_key, v3d_to_vector
 from py_ballisticcalc_exts.result cimport BCLIBC_Result, monostate, raise_std_error
 from libcpp.functional cimport reference_wrapper
 from py_ballisticcalc.trajectory_data import TrajectoryData, TrajFlag
+from py_ballisticcalc.unit import Angular, Distance, Energy, Unit, Velocity, Weight
+
+cdef object _tuple_new = tuple.__new__
+cdef object _obj_new = object.__new__
+cdef object _TD = TrajectoryData
+cdef object _Distance = Distance, _Velocity = Velocity, _Angular = Angular, _Energy = Energy, _Weight = Weight
+cdef object _U_FOOT = Unit.Foot, _U_FPS = Unit.FPS, _U_RAD = Unit.Radian, _U_FTLB = Unit.FootPound, _U_LB = Unit.Pound
+cdef dict _flags = {}
+
+
+cdef inline object _feet(double v):
+    d = _obj_new(_Distance)
+    d._value = v * 12
+    d._defined_units = _U_FOOT
+    return d
+
+
+cdef inline object _fps(double v):
+    d = _obj_new(_Velocity)
+    d._value = v / 3.2808399
+    d._defined_units = _U_FPS
+    return d
+
+
+cdef inline object _rad(double v):
+    d = _obj_new(_Angular)
+    d._value = v
+    d._defined_units = _U_RAD
+    return d
+
+
+cdef inline object _ft_lb(double v):
+    d = _obj_new(_Energy)
+    d._value = v
+    d._defined_units = _U_FTLB
+    return d
+
+
+cdef inline object _lb(double v):
+    d = _obj_new(_Weight)
+    d._value = v / 0.000142857143
+    d._defined_units = _U_LB
+    return d
 
 __all__ = ('CythonizedBaseTrajSeq', 'CythonizedBaseTrajData')
 
@@ -229,25 +272,17 @@ cdef class CythonizedBaseTrajData:
 
 
 cdef object TrajectoryData_from_cpp(const BCLIBC_TrajectoryData& cpp_data):
-    cdef object pydata = TrajectoryData(
-        time=cpp_data.time,
-        distance=TrajectoryData._new_feet(cpp_data.distance_ft),
-        velocity=TrajectoryData._new_fps(cpp_data.velocity_fps),
-        mach=cpp_data.mach,
-        height=TrajectoryData._new_feet(cpp_data.height_ft),
-        slant_height=TrajectoryData._new_feet(cpp_data.slant_height_ft),
-        drop_angle=TrajectoryData._new_rad(cpp_data.drop_angle_rad),
-        windage=TrajectoryData._new_feet(cpp_data.windage_ft),
-        windage_angle=TrajectoryData._new_rad(cpp_data.windage_angle_rad),
-        slant_distance=TrajectoryData._new_feet(cpp_data.slant_distance_ft),
-        angle=TrajectoryData._new_rad(cpp_data.angle_rad),
-        density_ratio=cpp_data.density_ratio,
-        drag=cpp_data.drag,
-        energy=TrajectoryData._new_ft_lb(cpp_data.energy_ft_lb),
-        ogw=TrajectoryData._new_lb(cpp_data.ogw_lb),
-        flag=TrajFlag(cpp_data.flag)
-    )
-    return pydata
+    cdef int f = <int>cpp_data.flag
+    flag = _flags.get(f)
+    if flag is None:
+        flag = _flags[f] = TrajFlag(f)
+    return _tuple_new(_TD, (
+        cpp_data.time, _feet(cpp_data.distance_ft), _fps(cpp_data.velocity_fps), cpp_data.mach,
+        _feet(cpp_data.height_ft), _feet(cpp_data.slant_height_ft), _rad(cpp_data.drop_angle_rad),
+        _feet(cpp_data.windage_ft), _rad(cpp_data.windage_angle_rad), _feet(cpp_data.slant_distance_ft),
+        _rad(cpp_data.angle_rad), cpp_data.density_ratio, cpp_data.drag, _ft_lb(cpp_data.energy_ft_lb),
+        _lb(cpp_data.ogw_lb), flag,
+    ))
 
 
 cdef list TrajectoryData_list_from_cpp(const vector[BCLIBC_TrajectoryData] &records):
