@@ -176,7 +176,8 @@ jobs:
   cibuildwheel:
     name: cibuildwheel ${{ inputs.platform }} ${{ inputs.archs }}
     runs-on: ${{ inputs.os }}
-    timeout-minutes: ${{ inputs.timeout_minutes }}
+    # fromJSON: started by hand (workflow_dispatch) a number input arrives as a string ('360'), which timeout-minutes refuses
+    timeout-minutes: ${{ fromJSON(inputs.timeout_minutes) }}
     outputs:
       artifact_name: ${{ steps.names.outputs.artifact }}
     steps:
