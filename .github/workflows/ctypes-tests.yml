@@ -108,13 +108,13 @@ jobs:
             needs_qemu: false
             build: "cp3*-android_*"
 
-          - name: PyPy Linux x86-64
+          - name: PyPy Linux x86-64 / x86
             artifact_key: pypy-linux-x86_64
             os: ubuntu-latest
-            cibw_archs: "x86_64"
+            cibw_archs: "x86_64,i686"
             cibw_platform: linux
             needs_qemu: false
-            build: "pp311-manylinux_x86_64"
+            build: "pp3*-manylinux_*"
 
           - name: PyPy Linux ARM64
             artifact_key: pypy-linux-aarch64
@@ -122,7 +122,7 @@ jobs:
             cibw_archs: "aarch64"
             cibw_platform: linux
             needs_qemu: false
-            build: "pp311-manylinux_aarch64"
+            build: "pp3*-manylinux_aarch64"
 
           - name: PyPy macOS Intel
             artifact_key: pypy-macos-x86_64
@@ -130,7 +130,7 @@ jobs:
             cibw_archs: "x86_64"
             cibw_platform: macos
             needs_qemu: false
-            build: "pp311-macosx_x86_64"
+            build: "pp3*-macosx_x86_64"
 
           - name: PyPy macOS Apple Silicon
             artifact_key: pypy-macos-arm64
@@ -138,7 +138,7 @@ jobs:
             cibw_archs: "arm64"
             cibw_platform: macos
             needs_qemu: false
-            build: "pp311-macosx_arm64"
+            build: "pp3*-macosx_arm64"
 
           - name: PyPy Windows x64
             artifact_key: pypy-windows-x64
@@ -146,7 +146,7 @@ jobs:
             cibw_archs: "AMD64"
             cibw_platform: windows
             needs_qemu: false
-            build: "pp311-win_amd64"
+            build: "pp3*-win_amd64"
 
           - name: GraalPy Linux x86-64
             artifact_key: graalpy-linux-x86_64
@@ -154,7 +154,7 @@ jobs:
             cibw_archs: "x86_64"
             cibw_platform: linux
             needs_qemu: false
-            build: "gp312_250-manylinux_x86_64"
+            build: "gp3*-manylinux_x86_64"
 
           - name: GraalPy Linux ARM64
             artifact_key: graalpy-linux-aarch64
@@ -162,7 +162,7 @@ jobs:
             cibw_archs: "aarch64"
             cibw_platform: linux
             needs_qemu: false
-            build: "gp312_250-manylinux_aarch64"
+            build: "gp3*-manylinux_aarch64"
 
           - name: GraalPy Windows x64
             artifact_key: graalpy-windows-amd64
@@ -170,7 +170,7 @@ jobs:
             cibw_archs: "AMD64"
             cibw_platform: windows
             needs_qemu: false
-            build: "gp312_250-win_amd64"
+            build: "gp3*-win_amd64"
 
           - name: GraalPy macOS Intel
             artifact_key: graalpy-macos-x86_64
@@ -178,7 +178,7 @@ jobs:
             cibw_archs: "x86_64"
             cibw_platform: macos
             needs_qemu: false
-            build: "gp312_250-macosx_x86_64"
+            build: "gp3*-macosx_x86_64"
 
           - name: GraalPy macOS Apple Silicon
             artifact_key: graalpy-macos-arm64
@@ -186,39 +186,7 @@ jobs:
             cibw_archs: "arm64"
             cibw_platform: macos
             needs_qemu: false
-            build: "gp312_250-macosx_arm64"
-
-          - name: GraalPy 3.13 Linux x86-64
-            artifact_key: graalpy313-linux-x86_64
-            os: ubuntu-latest
-            cibw_archs: "x86_64"
-            cibw_platform: linux
-            needs_qemu: false
-            build: "gp313_253-manylinux_x86_64"
-
-          - name: GraalPy 3.13 Linux ARM64
-            artifact_key: graalpy313-linux-aarch64
-            os: ubuntu-24.04-arm
-            cibw_archs: "aarch64"
-            cibw_platform: linux
-            needs_qemu: false
-            build: "gp313_253-manylinux_aarch64"
-
-          - name: GraalPy 3.13 macOS Apple Silicon
-            artifact_key: graalpy313-macos-arm64
-            os: macos-26
-            cibw_archs: "arm64"
-            cibw_platform: macos
-            needs_qemu: false
-            build: "gp313_253-macosx_arm64"
-
-          - name: GraalPy 3.13 Windows x64
-            artifact_key: graalpy313-windows-amd64
-            os: windows-latest
-            cibw_archs: "AMD64"
-            cibw_platform: windows
-            needs_qemu: false
-            build: "gp313_253-win_amd64"
+            build: "gp3*-macosx_arm64"
 
     uses: ./.github/workflows/cibuildwheel-reusable.yml
     with:

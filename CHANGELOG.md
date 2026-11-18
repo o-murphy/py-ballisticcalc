@@ -35,7 +35,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   version mismatch). `--reinstall-package` is no longer needed, and was removed from the `uv-sync` pre-commit hook.
 
 ### CI
-- cibuildwheel 4.2.1 → 4.3.0 in `cibuildwheel-reusable.yml` (it knows GraalPy 3.13, `gp313_253`); `ctypes-tests.yml` tests the ctypes wheel on PyPy 3.11 and GraalPy 3.12 and 3.13
+- cibuildwheel 4.2.1 → 4.3.0 in `cibuildwheel-reusable.yml` (it knows GraalPy 3.13, `gp313_253`); `ctypes-tests.yml` tests the ctypes wheel on every PyPy and GraalPy version cibuildwheel has (`pp3*`, `gp3*`: the wheel is built once, the other versions only test it)
   on every platform they exist for (GraalPy builds with the plain `build` frontend: uv and GraalPy are incompatible).
 - `cibuildwheel-reusable.yml` has a `project` input (`py_ballisticcalc.exts` by default, or `py_ballisticcalc.ctypes`) and
   stages the bclibc sources into a package that needs them. `ctypes-tests.yml` builds and tests the ctypes package, by hand only (`workflow_dispatch`; it does not run the Cython jobs of
