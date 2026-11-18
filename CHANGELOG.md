@@ -8,6 +8,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Changed
+- Pin `bclibc` to [`v2.1.0`](https://github.com/ballistics-lab/bclibc/releases/tag/v2.1.0): the zero search no longer
+  depends on the early-termination limits (`cMaximumDrop`, `cMinimumAltitude`), so `find_zero_angle` with either at `0`, or for a
+  long zero (3500 yd and more) at the default limits, no longer raises `SolverRuntimeError` ("Trajectory too short to determine
+  error at distance"); the two stress tests that failed for that reason pass. `find_max_range` of the adaptive engines moves by
+  hundredths of a foot (the line-of-sight crossing is found on the Hermite interpolant of the step, not a chord).
 - `uv sync --extra exts` now rebuilds `py_ballisticcalc.exts` only when it is needed: `[tool.uv] cache-keys` in
   `py_ballisticcalc.exts/pyproject.toml` track the extension sources (`.pyx`, `.pxd`, `.pyi`, `.cpp`, `.hpp`, `.h`,
   including the `bclibc` submodule), the build config, the build-flag environment variables (`CYTHON_COVERAGE`,
@@ -19,6 +24,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `Makefile`. Its targets are plain `uv sync` / `uv run` commands, now documented in `docs/contributing.md`; the
   remaining helpers became scripts: `scripts/clean.py` (remove extension build artifacts, `--all` also removes `.venv`
   and `__pycache__`) and `scripts/test-leaks.sh` (stress tests under Valgrind).
+
+### Fixed
+- `examples/config_load.py` (a `Path` stopped being a context manager in Python 3.13: `importlib.resources.as_file()`),
+  `examples/ukrop_338lm_300gr_smk_unit_parse.py` (`Unit.parse()` replaces the private `_parse_value` / `_parse_unit`) and
+  `examples/zero_stress_tests.py` (keyword-only `Calculator`, `fire(..., raise_range_error=False)`, no `_engine_instance`; it takes
+  the engine as an argument, so it also runs on `cython+*`) run again.
 
 ## [3.1.1] - 2026-10-16
 
