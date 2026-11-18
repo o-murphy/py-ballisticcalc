@@ -6,21 +6,50 @@ structures of PyPy 8.0 do not (its buffer protocol was refactored in that releas
 struct_BCLIBCFFI_TrajectoryData``, while the same code passed on CPython and on PyPy 7.3.
 
 These tests run the paths that read one structure with a ``struct.Struct`` that, like those interpreters, refuses
-everything but bytes-like objects, so the mistake fails on every interpreter, not only on the one that shows it.
-
-The tests belong to the ctypes package, and live here because this is the suite the CI runs on every interpreter, platform
-and engine (the tests of the packages themselves are not run by it). They are skipped where the ctypes engines are not the
-ones under test.
+everything but bytes-like objects, so the mistake fails on every interpreter, not only on the one that shows it. Every
+ctypes engine is run (``pytest py_ballisticcalc.ctypes/tests``).
 """
+
+import ctypes
 
 import pytest
 
-from py_ballisticcalc import Calculator
-from py_ballisticcalc.unit import Distance
+from py_ballisticcalc import Angular, Calculator, DragModel, Distance, Ammo, Shot, TableG7, Velocity, Weight
 
 native = pytest.importorskip("py_ballisticcalc_ctypes._native")
 
-from tests.fixtures_and_helpers import create_5_56_mm_shot  # noqa: E402
+ENGINES = [
+    getattr(native, name)
+    for name in (
+        "NativeEulerIntegrationEngine",
+        "NativeRK4IntegrationEngine",
+        "NativeVelocityVerletIntegrationEngine",
+        "NativeCashKarpIntegrationEngine",
+        "NativeDormandPrinceIntegrationEngine",
+        "NativeTsitourasIntegrationEngine",
+    )
+]
+
+
+def create_5_56_mm_shot():
+    """5.56x45mm NATO SS109"""
+    dm = DragModel(
+        bc=0.151,
+        drag_table=TableG7,
+        weight=Weight.Grain(62),
+        diameter=Distance.Millimeter(5.56),
+        length=Distance.Millimeter(21.0),
+    )
+    return Shot(ammo=Ammo(dm, mv=Velocity.MPS(900)))
+
+
+@pytest.fixture(scope="module", autouse=True)
+def _library():
+    """The engines need the bclibc_ffi library, which a checkout that was not built does not have: skip, do not fail."""
+    try:
+        native._load_library()
+    except (ImportError, OSError) as exc:
+        pytest.skip(f"the bclibc_ffi library is not built here: {exc}")
 
 
 class _BytesOnlyStruct:
@@ -40,19 +69,15 @@ class _BytesOnlyStruct:
         return self._real.iter_unpack(buffer)
 
 
-@pytest.fixture
-def engine(loaded_engine_instance, monkeypatch):
-    """An instance of the engine under test, when it is one of the ctypes engines, with the bytes-only reader."""
-    if getattr(loaded_engine_instance, "__module__", None) != native.__name__:
-        pytest.skip("the engine under test is not a ctypes engine")
+@pytest.fixture(params=ENGINES, ids=lambda cls: cls.__name__.removeprefix("Native").removesuffix("IntegrationEngine"))
+def engine(request, monkeypatch):
+    """An instance of each ctypes engine, with the bytes-only reader."""
     monkeypatch.setattr(native, "_TRAJ_FMT", _BytesOnlyStruct(native._TRAJ_FMT))
-    return Calculator(engine=loaded_engine_instance)._engine_instance
+    return Calculator(engine=request.param)._engine_instance
 
 
 def test_the_reader_of_the_test_is_strict():
     """The substitute does what it is for: a ctypes structure is not accepted, its bytes are."""
-    import ctypes
-
     strict = _BytesOnlyStruct(native._TRAJ_FMT)
     record = ctypes.create_string_buffer(strict.size)
     with pytest.raises(TypeError, match="bytes-like object is required"):
@@ -92,8 +117,6 @@ def test_integrate_records(engine):
 
 
 def _shot_with_elevation():
-    from py_ballisticcalc.unit import Angular
-
     shot = create_5_56_mm_shot()
     shot.relative_angle = Angular.Degree(5)
     return shot
