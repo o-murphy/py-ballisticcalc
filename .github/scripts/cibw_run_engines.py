@@ -99,6 +99,10 @@ def can_fork_workers() -> bool:
     """pytest-xdist needs subprocesses: not available where there are none."""
     if sys.platform in NO_SUBPROCESS:
         return False
+    # GraalPy on Windows: the first engine's session died in seconds without a word and the second hung for the hour
+    # (the CI run of the ctypes wheels); the same suite runs on GraalPy on Linux, so the workers are what is suspected
+    if sys.implementation.name == "graalpy" and sys.platform == "win32":
+        return False
     return importlib.util.find_spec("xdist") is not None
 
 
