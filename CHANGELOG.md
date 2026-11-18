@@ -8,14 +8,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
-- `py_ballisticcalc.ctypes`: the bclibc engines (`cython+*`) through ctypes, for what the Cython extensions do not serve: PyPy
-  and GraalPy (the Cython extension does not build on PyPy, and on GraalPy it builds but crashes on import), ppc64le, s390x
-  and riscv64, and, as a second variant, Android. The package ships the `bclibc_ffi` shared library (a C ABI, no dependency
+- `py_ballisticcalc.ctypes`: the bclibc engines (`cython+*`) through ctypes, for every platform the Cython extensions are built for
+  except iOS, and the only backend where they do not work: PyPy and GraalPy (the Cython extension does not build on PyPy, and on
+  GraalPy it builds but crashes on import), ppc64le, s390x and riscv64; on the others (CPython on Linux, macOS, Windows incl. x86 and
+  ARM64, Android) it is the second variant next to Cython. The package ships the `bclibc_ffi` shared library (a C ABI, no dependency
   on the interpreter), so there is one `py3-none-<platform>` wheel per platform for every Python: `manylinux` (`2_17`, built
   in `manylinux_2_28`), `musllinux_1_2`, macOS, Windows. The library and the ctypes bindings are built from the one bclibc
   submodule (`_bclibc.py` stages the sources for an sdist or a container build); the bindings (`_native_gen.py`) are made by
   ctypesgen, a development dependency, with `regenerate_bindings.py`, and a test fails when they are out of date. A guard
-  checks that the version matches the main package's. The engines themselves are not in this package yet.
+  checks that the version matches the main package's.
 - `py_ballisticcalc.ctypes` registers the engines as entry points (`cython+euler`, `rk4`, `verlet`, `rkck`, `dopri`, `tsitouras`) and
   refuses a library that does not match the bindings' bclibc version; the main test suite passes on CPython, PyPy and GraalPy.
 - Extras: `ctypes` (the ctypes package) next to `exts` (Cython) is an explicit choice of the backend; `native` picks one of

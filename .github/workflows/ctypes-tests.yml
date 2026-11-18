@@ -76,18 +76,26 @@ jobs:
             needs_qemu: true
             build: "cp3*"
 
-          - name: Windows x64
-            artifact_key: windows-x64
+          - name: Windows x64 / x86
+            artifact_key: windows-x64-x86
             os: windows-latest
-            cibw_archs: "AMD64"
+            cibw_archs: "x86,AMD64"
             cibw_platform: windows
             needs_qemu: false
             build: "cp3*"
 
-          - name: macOS Apple Silicon (universal2)
-            artifact_key: macos-universal2
+          - name: Windows ARM64
+            artifact_key: windows-arm64
+            os: windows-11-arm
+            cibw_archs: "ARM64"
+            cibw_platform: windows
+            needs_qemu: false
+            build: "cp3*"
+
+          - name: macOS Apple Silicon
+            artifact_key: macos-arm64
             os: macos-26
-            cibw_archs: "universal2"
+            cibw_archs: "arm64,universal2"
             cibw_platform: macos
             needs_qemu: false
             build: "cp3*"
