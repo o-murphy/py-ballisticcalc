@@ -128,6 +128,8 @@ jobs:
           # makes a hang a failure after an hour, not after the default six.
           # Only GraalPy 3.13 (gp313_253): the ssl module of GraalPy 3.12 (gp312_250, 25.0.3) cannot make a context on macOS (pip
           # fails with "Can't create an SSLContext object without an ssl module"), so no wheel is built or tested with it anywhere.
+          # GraalPy 3.13 has no macOS Intel build (gp312_250 is the only GraalPy identifier there): no GraalPy job for macOS Intel.
+          # On Windows GraalPy runs the tests without pytest-xdist (cibw_run_engines.py).
           - name: GraalPy Linux x64
             artifact_key: graalpy-linux-x64
             os: ubuntu-latest
@@ -159,15 +161,6 @@ jobs:
             artifact_key: graalpy-macos-arm64
             os: macos-26
             cibw_archs: "arm64"
-            cibw_platform: macos
-            needs_qemu: false
-            build: "gp313_253-*"
-            timeout_minutes: 60
-
-          - name: GraalPy macOS Intel
-            artifact_key: graalpy-macos-x86_64
-            os: macos-26-intel
-            cibw_archs: "x86_64"
             cibw_platform: macos
             needs_qemu: false
             build: "gp313_253-*"
