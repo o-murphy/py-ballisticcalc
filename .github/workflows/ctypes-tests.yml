@@ -8,7 +8,7 @@ run-name: >-
 # through ctypes (cibuildwheel-reusable.yml, .github/scripts/cibw_run_engines.py), for what the Cython wheels do not serve (PyPy,
 # GraalPy, ppc64le, s390x, riscv64) and, as a second variant, for CPython on Linux, macOS, Windows, Android and Pyodide. One
 # py3-none wheel per platform, built by one interpreter; the PyPy entries build (and so test) it under PyPy, and GraalPy has
-# jobs of its own (see below). Each QEMU architecture is a job of its own (glibc and musl in it), so the three run in parallel.
+# jobs of its own (see the matrix, .github/matrices.yml). Each QEMU architecture is a job of its own (glibc and musl in it), so the three run in parallel.
 # A pull request runs every platform; a push to a branch runs one Linux job; a run by hand (workflow_dispatch) runs every
 # platform, as a pull request does. It does not run, or wait for, the Cython jobs (cibuildwheel-tests.yml).
 on:
@@ -25,6 +25,9 @@ on:
       - ".github/workflows/ctypes-tests.yml"
       - ".github/workflows/cibuildwheel-reusable.yml"
       - ".github/scripts/cibw_run_engines.py"
+      - ".github/matrices.yml"
+      - ".github/actions/wheel-matrix/**"
+      - ".github/scripts/wheel_matrix.py"
   push:
     branches:
       - "**" # "*" would skip branch names containing a slash (ci/x, feature/x)
@@ -38,6 +41,9 @@ on:
       - ".github/workflows/ctypes-tests.yml"
       - ".github/workflows/cibuildwheel-reusable.yml"
       - ".github/scripts/cibw_run_engines.py"
+      - ".github/matrices.yml"
+      - ".github/actions/wheel-matrix/**"
+      - ".github/scripts/wheel_matrix.py"
   workflow_dispatch:
 
 concurrency:
@@ -48,147 +54,34 @@ permissions:
   contents: read
 
 jobs:
+  # The matrix is in .github/matrices.yml (the list of platforms is long and some are in more than one workflow)
+  wheel_matrix:
+    name: Wheel matrix
+    if: github.event_name != 'push'
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.read.outputs.matrix }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          sparse-checkout: .github
+      - id: read
+        uses: ./.github/actions/wheel-matrix
+        with:
+          matrix: ctypes-tests
+
   # Full matrix: pull requests (and a manual run)
   full:
     name: ${{ matrix.name }}
+    needs: wheel_matrix
     if: github.event_name != 'push'
     strategy:
       fail-fast: false
       # `cp3*` selects the CPython identifiers only (the project enables PyPy and GraalPy too): one builds the py3-none wheel, the others
       # reuse it and test it on their Python, as for the abi3 wheels of exts.
-      # GraalPy on Windows (3.13 only) has a job of its own below: it builds with the plain `build` frontend (uv 0.13 cannot inspect graalpy.exe: ctypes.ArgumentError in VirtualAlloc) and runs the tests without pytest-xdist
+      # GraalPy on Windows (3.13 only) has a job of its own in the matrix (.github/matrices.yml): it builds with the plain `build` frontend (uv 0.13 cannot inspect graalpy.exe: ctypes.ArgumentError in VirtualAlloc) and runs the tests without pytest-xdist
       max-parallel: 20 # every entry at once; the QEMU ones are the slowest
-      matrix:
-        include:
-          - name: Linux x64 / x86 (glibc, musl)
-            artifact_key: linux-x64-x86
-            os: ubuntu-latest
-            cibw_archs: "x86_64,i686"
-            cibw_platform: linux
-            needs_qemu: false
-            build: "cp3*, pp3*"
-
-          - name: Linux ARM64 / ARMv7 (glibc, musl)
-            artifact_key: linux-arm64-armv7
-            os: ubuntu-24.04-arm
-            cibw_archs: "aarch64,armv7l"
-            cibw_platform: linux
-            needs_qemu: false
-            build: "cp3*, pp3*"
-
-          - name: Linux ppc64le (QEMU, glibc and musl)
-            artifact_key: linux-ppc64le
-            os: ubuntu-latest
-            cibw_archs: "ppc64le"
-            cibw_platform: linux
-            needs_qemu: true
-            build: "cp3*"
-
-          - name: Linux s390x (QEMU, glibc and musl)
-            artifact_key: linux-s390x
-            os: ubuntu-latest
-            cibw_archs: "s390x"
-            cibw_platform: linux
-            needs_qemu: true
-            build: "cp3*"
-
-          - name: Linux riscv64 (QEMU, glibc and musl)
-            artifact_key: linux-riscv64
-            os: ubuntu-latest
-            cibw_archs: "riscv64"
-            cibw_platform: linux
-            needs_qemu: true
-            build: "cp3*"
-
-          - name: Windows x64 / x86
-            artifact_key: windows-x64-x86
-            os: windows-latest
-            cibw_archs: "x86,AMD64"
-            cibw_platform: windows
-            needs_qemu: false
-            build: "cp3*, pp3*"
-
-          - name: Windows ARM64
-            artifact_key: windows-arm64
-            os: windows-11-arm
-            cibw_archs: "ARM64"
-            cibw_platform: windows
-            needs_qemu: false
-            build: "cp3*"
-
-          - name: macOS Apple Silicon
-            artifact_key: macos-arm64
-            os: macos-26
-            cibw_archs: "arm64,universal2"
-            cibw_platform: macos
-            needs_qemu: false
-            build: "cp3*, pp3*"
-
-          - name: macOS Intel
-            artifact_key: macos-x86_64
-            os: macos-26-intel
-            cibw_archs: "x86_64"
-            cibw_platform: macos
-            needs_qemu: false
-            build: "cp3*, pp3*"
-
-          - name: Android (x86-64 emulator, arm64 build)
-            artifact_key: android
-            os: ubuntu-latest
-            cibw_archs: "arm64_v8a,x86_64"
-            cibw_platform: android
-            needs_qemu: false
-            build: "cp3*-android_*"
-
-          - name: Pyodide WebAssembly
-            artifact_key: pyodide-wasm32
-            os: ubuntu-latest
-            cibw_archs: "wasm32"
-            cibw_platform: pyodide
-            needs_qemu: false
-
-          # GraalPy has a job of its own on each platform it runs on: a crash or a hang there (pytest-xdist workers of GraalPy
-          # died all at once on macOS Intel) must not take the CPython and PyPy wheels of the platform with it. The time limit
-          # makes a hang a failure after an hour, not after the default six.
-          # GraalPy 3.12 (gp312_250, 25.0.3) is built on Linux only: on macOS its ssl module cannot make a context (pip fails with
-          # "Can't create an SSLContext object without an ssl module"), on Windows its tests hang (`skip` of the package). GraalPy 3.13
-          # (gp313_253) is built everywhere it exists, and has no macOS Intel build: no GraalPy job for macOS Intel.
-          # On Windows GraalPy runs the tests without pytest-xdist (cibw_run_engines.py).
-          - name: GraalPy Linux x64
-            artifact_key: graalpy-linux-x64
-            os: ubuntu-latest
-            cibw_archs: "x86_64"
-            cibw_platform: linux
-            needs_qemu: false
-            build: "gp3*"
-            timeout_minutes: 60
-
-          - name: GraalPy Linux ARM64
-            artifact_key: graalpy-linux-arm64
-            os: ubuntu-24.04-arm
-            cibw_archs: "aarch64"
-            cibw_platform: linux
-            needs_qemu: false
-            build: "gp3*"
-            timeout_minutes: 60
-
-          - name: GraalPy Windows x64
-            artifact_key: graalpy-windows-x64
-            os: windows-latest
-            cibw_archs: "AMD64"
-            cibw_platform: windows
-            needs_qemu: false
-            build: "gp313_253-*"
-            timeout_minutes: 60
-
-          - name: GraalPy macOS Apple Silicon
-            artifact_key: graalpy-macos-arm64
-            os: macos-26
-            cibw_archs: "arm64"
-            cibw_platform: macos
-            needs_qemu: false
-            build: "gp313_253-*"
-            timeout_minutes: 60
+      matrix: ${{ fromJSON(needs.wheel_matrix.outputs.matrix) }}
 
     uses: ./.github/workflows/cibuildwheel-reusable.yml
     with:

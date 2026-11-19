@@ -1,0 +1,289 @@
+# The cibuildwheel matrices of the workflows, one list of platforms each. They are long, and several platforms are in more than one,
+# so they are kept here and not in the workflows: a workflow reads its matrix with .github/actions/wheel-matrix (the checks of the
+# entries are in .github/scripts/wheel_matrix.py) and gives it to `strategy.matrix`.
+#
+#   exts-tests    cibuildwheel-tests.yml  the Cython wheels, built and tested (a pull request, a run by hand)
+#   ctypes-tests  ctypes-tests.yml        the ctypes wheels, built and tested (a pull request, a run by hand)
+#   exts-release  pypi-publish.yml        the Cython wheels of a release, built without tests
+#
+# An entry has `name` (the job's name), `artifact_key` (unique in its matrix: the artifact is named from it), `os` (the runner),
+# `cibw_platform`, `cibw_archs`, `needs_qemu` and, when it is not the default of the project, `build` (CIBW_BUILD), `test_skip`
+# (CIBW_TEST_SKIP) and `timeout_minutes`.
+
+exts-tests:
+  - name: Linux x64 / x86
+    artifact_key: linux-x64-x86
+    os: ubuntu-latest
+    cibw_archs: "i686,x86_64"
+    cibw_platform: linux
+    needs_qemu: false
+
+  - name: Linux ARM64 / ARMv7
+    artifact_key: linux-arm64-armv7
+    os: ubuntu-24.04-arm
+    cibw_archs: "aarch64,armv7l"
+    cibw_platform: linux
+    needs_qemu: false
+
+  - name: Windows x64 / x86
+    artifact_key: windows-x64-x86
+    os: windows-latest
+    cibw_archs: "x86,AMD64"
+    cibw_platform: windows
+    needs_qemu: false
+
+  - name: Windows ARM64
+    artifact_key: windows-arm64
+    os: windows-11-arm
+    cibw_archs: "ARM64"
+    cibw_platform: windows
+    needs_qemu: false
+
+  - name: macOS Apple Silicon
+    artifact_key: macos-arm64
+    os: macos-26
+    cibw_archs: "arm64,universal2"
+    cibw_platform: macos
+    needs_qemu: false
+
+  - name: macOS Intel
+    artifact_key: macos-x86_64
+    os: macos-26-intel
+    cibw_archs: "x86_64"
+    cibw_platform: macos
+    needs_qemu: false
+
+  # the device wheel is built here too, so that a pull request breaks on it, not the release; nothing can run it, so
+  # only the simulator wheel is tested (cibuildwheel tests simulator SDKs only)
+  - name: iOS arm64 (device, simulator)
+    artifact_key: ios-arm64
+    os: macos-26
+    cibw_archs: "arm64_iphoneos,arm64_iphonesimulator"
+    cibw_platform: ios
+    needs_qemu: false
+    test_skip: "*_iphoneos"
+
+  - name: iOS simulator x86-64
+    artifact_key: ios-x86_64-simulator
+    os: macos-26-intel
+    cibw_archs: "x86_64_iphonesimulator"
+    cibw_platform: ios
+    needs_qemu: false
+
+  - name: Android ARM64 / x64
+    artifact_key: android-arm64_v8a-x86_64
+    os: ubuntu-latest
+    cibw_archs: "arm64_v8a,x86_64"
+    cibw_platform: android
+    needs_qemu: false
+
+  - name: Pyodide WebAssembly
+    artifact_key: pyodide-wasm32
+    os: ubuntu-latest
+    cibw_archs: "wasm32"
+    cibw_platform: pyodide
+    needs_qemu: false
+
+ctypes-tests:
+  - name: Linux x64 / x86 (glibc, musl)
+    artifact_key: linux-x64-x86
+    os: ubuntu-latest
+    cibw_archs: "x86_64,i686"
+    cibw_platform: linux
+    needs_qemu: false
+    build: "cp3*, pp3*"
+
+  - name: Linux ARM64 / ARMv7 (glibc, musl)
+    artifact_key: linux-arm64-armv7
+    os: ubuntu-24.04-arm
+    cibw_archs: "aarch64,armv7l"
+    cibw_platform: linux
+    needs_qemu: false
+    build: "cp3*, pp3*"
+
+  - name: Linux ppc64le (QEMU, glibc and musl)
+    artifact_key: linux-ppc64le
+    os: ubuntu-latest
+    cibw_archs: "ppc64le"
+    cibw_platform: linux
+    needs_qemu: true
+    build: "cp3*"
+
+  - name: Linux s390x (QEMU, glibc and musl)
+    artifact_key: linux-s390x
+    os: ubuntu-latest
+    cibw_archs: "s390x"
+    cibw_platform: linux
+    needs_qemu: true
+    build: "cp3*"
+
+  - name: Linux riscv64 (QEMU, glibc and musl)
+    artifact_key: linux-riscv64
+    os: ubuntu-latest
+    cibw_archs: "riscv64"
+    cibw_platform: linux
+    needs_qemu: true
+    build: "cp3*"
+
+  - name: Windows x64 / x86
+    artifact_key: windows-x64-x86
+    os: windows-latest
+    cibw_archs: "x86,AMD64"
+    cibw_platform: windows
+    needs_qemu: false
+    build: "cp3*, pp3*"
+
+  - name: Windows ARM64
+    artifact_key: windows-arm64
+    os: windows-11-arm
+    cibw_archs: "ARM64"
+    cibw_platform: windows
+    needs_qemu: false
+    build: "cp3*"
+
+  - name: macOS Apple Silicon
+    artifact_key: macos-arm64
+    os: macos-26
+    cibw_archs: "arm64,universal2"
+    cibw_platform: macos
+    needs_qemu: false
+    build: "cp3*, pp3*"
+
+  - name: macOS Intel
+    artifact_key: macos-x86_64
+    os: macos-26-intel
+    cibw_archs: "x86_64"
+    cibw_platform: macos
+    needs_qemu: false
+    build: "cp3*, pp3*"
+
+  - name: Android (x86-64 emulator, arm64 build)
+    artifact_key: android
+    os: ubuntu-latest
+    cibw_archs: "arm64_v8a,x86_64"
+    cibw_platform: android
+    needs_qemu: false
+    build: "cp3*-android_*"
+
+  - name: Pyodide WebAssembly
+    artifact_key: pyodide-wasm32
+    os: ubuntu-latest
+    cibw_archs: "wasm32"
+    cibw_platform: pyodide
+    needs_qemu: false
+
+  # GraalPy has a job of its own on each platform it runs on: a crash or a hang there (pytest-xdist workers of GraalPy
+  # died all at once on macOS Intel) must not take the CPython and PyPy wheels of the platform with it. The time limit
+  # makes a hang a failure after an hour, not after the default six.
+  # GraalPy 3.12 (gp312_250, 25.0.3) is built on Linux only: on macOS its ssl module cannot make a context (pip fails with
+  # "Can't create an SSLContext object without an ssl module"), on Windows its tests hang (`skip` of the package). GraalPy 3.13
+  # (gp313_253) is built everywhere it exists, and has no macOS Intel build: no GraalPy job for macOS Intel.
+  # On Windows GraalPy runs the tests without pytest-xdist (cibw_run_engines.py).
+  - name: GraalPy Linux x64
+    artifact_key: graalpy-linux-x64
+    os: ubuntu-latest
+    cibw_archs: "x86_64"
+    cibw_platform: linux
+    needs_qemu: false
+    build: "gp3*"
+    timeout_minutes: 60
+
+  - name: GraalPy Linux ARM64
+    artifact_key: graalpy-linux-arm64
+    os: ubuntu-24.04-arm
+    cibw_archs: "aarch64"
+    cibw_platform: linux
+    needs_qemu: false
+    build: "gp3*"
+    timeout_minutes: 60
+
+  - name: GraalPy Windows x64
+    artifact_key: graalpy-windows-x64
+    os: windows-latest
+    cibw_archs: "AMD64"
+    cibw_platform: windows
+    needs_qemu: false
+    build: "gp313_253-*"
+    timeout_minutes: 60
+
+  - name: GraalPy macOS Apple Silicon
+    artifact_key: graalpy-macos-arm64
+    os: macos-26
+    cibw_archs: "arm64"
+    cibw_platform: macos
+    needs_qemu: false
+    build: "gp313_253-*"
+    timeout_minutes: 60
+
+exts-release:
+  - name: Linux x64 / x86
+    artifact_key: linux-x64-x86
+    os: ubuntu-latest
+    cibw_archs: "i686,x86_64" # both native on the x86-64 runner
+    cibw_platform: linux
+    needs_qemu: false
+
+  - name: Linux ARM64 / ARMv7
+    artifact_key: linux-arm64-armv7
+    os: ubuntu-24.04-arm
+    cibw_archs: "aarch64,armv7l"
+    cibw_platform: linux
+    needs_qemu: false
+
+  - name: Windows x64 / x86
+    artifact_key: windows-x64-x86
+    os: windows-latest
+    cibw_archs: "x86,AMD64"
+    cibw_platform: windows
+    needs_qemu: false
+
+  - name: Windows ARM64
+    artifact_key: windows-arm64
+    os: windows-11-arm
+    cibw_archs: "ARM64"
+    cibw_platform: windows
+    needs_qemu: false
+
+  - name: macOS Apple Silicon
+    artifact_key: macos-arm64
+    os: macos-26
+    cibw_archs: "arm64,universal2"
+    cibw_platform: macos
+    needs_qemu: false
+
+  - name: macOS Intel
+    artifact_key: macos-x86_64
+    os: macos-26-intel
+    cibw_archs: "x86_64"
+    cibw_platform: macos
+    needs_qemu: false
+
+  # iOS: the arm64 device and simulator wheels in one job (one runner, one setup); the Intel simulator on an Intel
+  # runner: it is not translated on an Apple Silicon one
+  - name: iOS arm64 (device, simulator)
+    artifact_key: ios-arm64
+    os: macos-26
+    cibw_archs: "arm64_iphoneos,arm64_iphonesimulator"
+    cibw_platform: ios
+    needs_qemu: false
+
+  - name: iOS simulator x86-64
+    artifact_key: ios-x86_64-simulator
+    os: macos-26-intel
+    cibw_archs: "x86_64_iphonesimulator"
+    cibw_platform: ios
+    needs_qemu: false
+
+  - name: Android ARM64 / x64
+    artifact_key: android-arm64_v8a-x86_64
+    os: ubuntu-latest
+    cibw_archs: "arm64_v8a,x86_64"
+    cibw_platform: android
+    needs_qemu: false
+
+  - name: Pyodide WebAssembly
+    artifact_key: pyodide-wasm32
+    os: ubuntu-latest
+    cibw_archs: "wasm32"
+    cibw_platform: pyodide
+    needs_qemu: false

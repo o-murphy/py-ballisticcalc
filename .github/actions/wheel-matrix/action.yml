@@ -1,0 +1,33 @@
+name: Wheel matrix
+description: >-
+  The cibuildwheel matrix of a workflow, from .github/matrices.yml, checked by .github/scripts/wheel_matrix.py. The repository must be
+  checked out (only .github is needed): a job gives the output to `strategy.matrix` with `fromJSON`.
+
+inputs:
+  matrix:
+    description: The name of the matrix in .github/matrices.yml (exts-tests, ctypes-tests, exts-release)
+    required: true
+
+outputs:
+  matrix:
+    description: 'The matrix as JSON: {"include": [...]}'
+    value: ${{ steps.read.outputs.matrix }}
+
+runs:
+  using: composite
+  steps:
+    - name: Install uv
+      uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2
+      with:
+        github-token: ${{ github.token }}
+
+    - name: Read and check the matrix
+      id: read
+      shell: bash
+      env:
+        MATRIX: ${{ inputs.matrix }}
+      run: |
+        set -euo pipefail
+        # an assignment, not `echo "matrix=$(...)"`: the status of a substitution inside echo would be lost
+        matrix="$(uv run --no-project --with pyyaml==6.0.3 python .github/scripts/wheel_matrix.py "$MATRIX")"
+        echo "matrix=$matrix" >> "$GITHUB_OUTPUT"

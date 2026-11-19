@@ -70,6 +70,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `os`, `project`, `platform`, `archs`, `timeout_minutes`, `version` / `no_local_version`, `artifact_name` and `retention_days`. The test
   environment is the `test` dependency group of the package's `pyproject.toml` (`test-noscipy` where PyPI has no scipy wheel, picked by
   `[[tool.cibuildwheel.overrides]]`).
+- The cibuildwheel matrices (the Cython tests, the ctypes tests, the Cython release) are in one file, `.github/matrices.yml`, not in each
+  workflow: a `wheel_matrix` job of `cibuildwheel-tests.yml`, `ctypes-tests.yml` and `pypi-publish.yml` reads its matrix with
+  `.github/actions/wheel-matrix` and gives it to `strategy.matrix`. `.github/scripts/wheel_matrix.py` checks the entries (a missing or
+  unknown field, a wrong type, an `artifact_key` used twice), which `actionlint` cannot do for a matrix it does not see.
 - The tests of each package (`py_ballisticcalc.exts/tests`, `py_ballisticcalc.ctypes/tests`) run in every cibuildwheel job through
   `test-sources` in its `pyproject.toml`: `cibw_run_engines.py` runs them in the session of every engine, after the core suite. The runner's group argument is `cython` for exts and `ctypes` for ctypes, and a wheel whose group registered no engine is a failure.
 - `.github/scripts/cibw_run_engines.py` runs the engines one after another, found from the entry points (no probe); the

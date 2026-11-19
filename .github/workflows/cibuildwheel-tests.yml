@@ -23,6 +23,9 @@ on:
       - ".github/workflows/cibuildwheel-reusable.yml"
       - ".github/workflows/pure-engines-reusable.yml"
       - ".github/scripts/cibw_run_engines.py"
+      - ".github/matrices.yml"
+      - ".github/actions/wheel-matrix/**"
+      - ".github/scripts/wheel_matrix.py"
   push:
     branches:
       - "**" # "*" would skip branch names containing a slash (ci/x, feature/x)
@@ -36,6 +39,9 @@ on:
       - ".github/workflows/cibuildwheel-reusable.yml"
       - ".github/workflows/pure-engines-reusable.yml"
       - ".github/scripts/cibw_run_engines.py"
+      - ".github/matrices.yml"
+      - ".github/actions/wheel-matrix/**"
+      - ".github/scripts/wheel_matrix.py"
   workflow_dispatch:
 
 concurrency:
@@ -46,87 +52,31 @@ permissions:
   contents: read
 
 jobs:
+  # The matrix is in .github/matrices.yml (the list of platforms is long and some are in more than one workflow)
+  wheel_matrix:
+    name: Wheel matrix
+    if: github.event_name != 'push'
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.read.outputs.matrix }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          sparse-checkout: .github
+      - id: read
+        uses: ./.github/actions/wheel-matrix
+        with:
+          matrix: exts-tests
+
   # Full matrix: pull requests (and a manual run)
   full:
     name: ${{ matrix.name }}
+    needs: wheel_matrix
     if: github.event_name != 'push'
     strategy:
       fail-fast: false
       max-parallel: 10
-      matrix:
-        include:
-          - name: Linux x64 / x86
-            artifact_key: linux-x64-x86
-            os: ubuntu-latest
-            cibw_archs: "i686,x86_64"
-            cibw_platform: linux
-            needs_qemu: false
-
-          - name: Linux ARM64 / ARMv7
-            artifact_key: linux-arm64-armv7
-            os: ubuntu-24.04-arm
-            cibw_archs: "aarch64,armv7l"
-            cibw_platform: linux
-            needs_qemu: false
-
-          - name: Windows x64 / x86
-            artifact_key: windows-x64-x86
-            os: windows-latest
-            cibw_archs: "x86,AMD64"
-            cibw_platform: windows
-            needs_qemu: false
-
-          - name: Windows ARM64
-            artifact_key: windows-arm64
-            os: windows-11-arm
-            cibw_archs: "ARM64"
-            cibw_platform: windows
-            needs_qemu: false
-
-          - name: macOS Apple Silicon
-            artifact_key: macos-arm64
-            os: macos-26
-            cibw_archs: "arm64,universal2"
-            cibw_platform: macos
-            needs_qemu: false
-
-          - name: macOS Intel
-            artifact_key: macos-x86_64
-            os: macos-26-intel
-            cibw_archs: "x86_64"
-            cibw_platform: macos
-            needs_qemu: false
-
-          # the device wheel is built here too, so that a pull request breaks on it, not the release; nothing can run it, so
-          # only the simulator wheel is tested (cibuildwheel tests simulator SDKs only)
-          - name: iOS arm64 (device, simulator)
-            artifact_key: ios-arm64
-            os: macos-26
-            cibw_archs: "arm64_iphoneos,arm64_iphonesimulator"
-            cibw_platform: ios
-            needs_qemu: false
-            test_skip: "*_iphoneos"
-
-          - name: iOS simulator x86-64
-            artifact_key: ios-x86_64-simulator
-            os: macos-26-intel
-            cibw_archs: "x86_64_iphonesimulator"
-            cibw_platform: ios
-            needs_qemu: false
-
-          - name: Android ARM64 / x64
-            artifact_key: android-arm64_v8a-x86_64
-            os: ubuntu-latest
-            cibw_archs: "arm64_v8a,x86_64"
-            cibw_platform: android
-            needs_qemu: false
-
-          - name: Pyodide WebAssembly
-            artifact_key: pyodide-wasm32
-            os: ubuntu-latest
-            cibw_archs: "wasm32"
-            cibw_platform: pyodide
-            needs_qemu: false
+      matrix: ${{ fromJSON(needs.wheel_matrix.outputs.matrix) }}
 
     uses: ./.github/workflows/cibuildwheel-reusable.yml
     with:
