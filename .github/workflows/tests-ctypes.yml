@@ -118,7 +118,9 @@ jobs:
   full:
     name: ${{ matrix.name }}
     needs: wheel_matrix
-    if: github.event_name != 'push'
+    # !cancelled(): `changes` (the night run only) is skipped in the other runs, and a skipped job up the chain skips this one
+    # through the implicit success() of an `if` without a status function
+    if: ${{ !cancelled() && needs.wheel_matrix.result == 'success' && github.event_name != 'push' }}
     strategy:
       fail-fast: false
       # `cp3*` selects the CPython identifiers only (the project enables PyPy and GraalPy too): one builds the py3-none wheel, the others
