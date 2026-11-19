@@ -10,7 +10,7 @@ run-name: >-
 # py3-none wheel per platform, built by one interpreter; the PyPy entries build (and so test) it under PyPy, and GraalPy has
 # jobs of its own (see the matrix, .github/matrices.yml). Each QEMU architecture is a job of its own (glibc and musl in it), so the three run in parallel.
 # A pull request runs every platform; a push to a branch runs one Linux job; a run by hand (workflow_dispatch) runs every
-# platform, as a pull request does. It does not run, or wait for, the Cython jobs (exts-tests.yml).
+# platform, as a pull request does. It does not run, or wait for, the Cython jobs (tests-exts.yml).
 on:
   pull_request:
     branches:
@@ -22,7 +22,7 @@ on:
       - "py_ballisticcalc.ctypes/**"
       - "py_ballisticcalc.exts/py_ballisticcalc_exts/external/bclibc" # the one bclibc submodule the library is built from
       - ".gitmodules"
-      - ".github/workflows/ctypes-tests.yml"
+      - ".github/workflows/tests-ctypes.yml"
       - ".github/workflows/cibuildwheel-reusable.yml"
       - ".github/scripts/cibw_run_engines.py"
       - ".github/matrices.yml"
@@ -38,7 +38,7 @@ on:
       - "py_ballisticcalc.ctypes/**"
       - "py_ballisticcalc.exts/py_ballisticcalc_exts/external/bclibc"
       - ".gitmodules"
-      - ".github/workflows/ctypes-tests.yml"
+      - ".github/workflows/tests-ctypes.yml"
       - ".github/workflows/cibuildwheel-reusable.yml"
       - ".github/scripts/cibw_run_engines.py"
       - ".github/matrices.yml"

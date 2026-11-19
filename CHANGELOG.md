@@ -56,8 +56,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   package and leaves out the generated bindings (`_ctypesgen`); the C++ library itself is not line-traced.
 - cibuildwheel 4.2.1 → 4.3.0 in `cibuildwheel-reusable.yml` (it knows GraalPy 3.13, `gp313_253`).
 - `cibuildwheel-reusable.yml` has a `project` input (`py_ballisticcalc.exts` by default, or `py_ballisticcalc.ctypes`) and stages the
-  bclibc sources into a package that needs them. `ctypes-tests.yml` builds and tests the ctypes package the way
-  `exts-tests.yml` does the Cython one: a pull request and a run by hand run the full matrix, a push to a branch runs one
+  bclibc sources into a package that needs them. `tests-ctypes.yml` builds and tests the ctypes package the way
+  `tests-exts.yml` does the Cython one: a pull request and a run by hand run the full matrix, a push to a branch runs one
   Linux x86-64 job (CPython 3.11, glibc), without the Cython jobs. The full matrix: Linux x86_64, i686, aarch64 and armv7l (glibc, musl), ppc64le, s390x and riscv64 (QEMU, a job each), macOS
   arm64 (universal2) and Intel, Windows x64, x86 and ARM64, Android (x86-64 emulator; the arm64 wheel is built, not run), Pyodide, PyPy
   (`pp3*`) and GraalPy. One CPython builds the `py3-none` wheel of a platform and every other Python only tests it. GraalPy has a job of
@@ -71,7 +71,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   environment is the `test` dependency group of the package's `pyproject.toml` (`test-noscipy` where PyPI has no scipy wheel, picked by
   `[[tool.cibuildwheel.overrides]]`).
 - The cibuildwheel matrices (the Cython tests, the ctypes tests, the Cython release) are in one file, `.github/matrices.yml`, not in each
-  workflow: a `wheel_matrix` job of `exts-tests.yml`, `ctypes-tests.yml` and `pypi-publish.yml` reads its matrix (`exts-tests`, `ctypes`, `exts-release`) with
+  workflow: a `wheel_matrix` job of `tests-exts.yml`, `tests-ctypes.yml` and `pypi-publish.yml` reads its matrix (`exts-tests`, `ctypes`, `exts-release`) with
   `.github/actions/wheel-matrix` and gives it to `strategy.matrix`. `.github/scripts/wheel_matrix.py` checks the entries (a missing or
   unknown field, a wrong type, an `artifact_key` used twice), which `actionlint` cannot do for a matrix it does not see.
 - The tests of each package (`py_ballisticcalc.exts/tests`, `py_ballisticcalc.ctypes/tests`) run in every cibuildwheel job through
@@ -80,20 +80,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   arguments pick groups (`cython`, `python`, `scipy`) or engines (`python+rk4`). cibuildwheel tests the `cython` group. On
   Pyodide, iOS and Android, where there is no subprocess (`sys.executable` is empty on Android), the sessions run in this
   process.
-- `.github/workflows/exts-tests.yml`: every pull request builds the exts wheels and tests the Cython engines on
+- `.github/workflows/tests-exts.yml`: every pull request builds the exts wheels and tests the Cython engines on
   each of them, on its own platform (Linux x86-64 / i686 / aarch64 / armv7l, Windows x64 / x86 / ARM64, macOS arm64 /
   universal2 / Intel, the iOS simulators, Android x86-64, Pyodide). The arm64 Android wheel (no emulator) and the iOS device
   wheel are built without tests. A push to a branch runs one Linux job.
 - `.github/workflows/pure-engines-reusable.yml`: the pure-Python and SciPy engines do not depend on the wheel and take
   minutes each, so they run on the core wheel (built once by a `core-wheel` job and shared as an artifact), once for each
   of Python 3.11, 3.14t and 3.15t on Linux, and `python+rk4` with the SciPy engines once more on Windows and on macOS
-  (3.11). Called from `pure-tests.yml`, the tests of the core: a pull request and a run by hand (not a push), with its own `paths`
+  (3.11). Called from `tests-pure.yml`, the tests of the core: a pull request and a run by hand (not a push), with its own `paths`
   (the core, the tests, the `test` group of `py_ballisticcalc.exts/pyproject.toml`).
 - `pypi-publish.yml` builds its wheels through `cibuildwheel-reusable.yml` too, without tests (`test_skip`: they run on the
   pull request), and builds the iOS device and simulator wheels.
 - The per-engine workflows `pytest-{,cythonized-}{euler,rk4,verlet,ck,dopri,tsitouras,scipy}-engine.yml` are removed;
   `pytest-reusable.yml`, `pytest-manual.yml` and `pytest-tiny-engine.yml` stay. The badges of the engines in the README
-  point to the workflow of their package (`pure-tests.yml` for `python+*` and `scipy+*`, `exts-tests.yml` for `cython+*`), and the
+  point to the workflow of their package (`tests-pure.yml` for `python+*` and `scipy+*`, `tests-exts.yml` for `cython+*`), and the
   README has a `Tests` badge for each of the core, exts and ctypes.
 
 ### Removed
@@ -117,7 +117,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `timeout-minutes` refused it (`Unexpected value '360'`); `fromJSON` makes it a number for a start by hand and for a call.
 - `cibuildwheel-reusable.yml` exported an empty `CIBW_SKIP` and `CIBW_TEST_SKIP` when the inputs were empty, which cibuildwheel takes for
   a value that overrides the `skip` and `test-skip` of the package's `pyproject.toml`; they are not exported when empty. (An empty
-  `CIBW_BUILD` still means every CPython, which the jobs of `exts-tests.yml` rely on.)
+  `CIBW_BUILD` still means every CPython, which the jobs of `tests-exts.yml` rely on.)
 
 ## [3.1.1] - 2026-10-16
 

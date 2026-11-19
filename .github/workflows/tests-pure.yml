@@ -5,7 +5,7 @@ run-name: >-
 
 # The tests of the core package (py_ballisticcalc): the pure-Python and SciPy engines (python+*, scipy+*), run on the core wheel by
 # pure-engines-reusable.yml. They do not depend on a compiled wheel, so they have a workflow of their own, apart from the wheel
-# tests of exts-tests.yml and ctypes-tests.yml. A pull request and a run by hand (workflow_dispatch) run them; a push does not.
+# tests of tests-exts.yml and tests-ctypes.yml. A pull request and a run by hand (workflow_dispatch) run them; a push does not.
 on:
   pull_request:
     branches:
@@ -15,7 +15,7 @@ on:
       - "py_ballisticcalc/**"
       - "tests/**"
       - "py_ballisticcalc.exts/pyproject.toml" # the `test` dependency group the engines are run with
-      - ".github/workflows/pure-tests.yml"
+      - ".github/workflows/tests-pure.yml"
       - ".github/workflows/pure-engines-reusable.yml"
       - ".github/scripts/cibw_run_engines.py"
   workflow_dispatch:

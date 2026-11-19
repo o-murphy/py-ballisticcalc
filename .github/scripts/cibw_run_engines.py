@@ -19,7 +19,7 @@ already installed by cibuildwheel; its runtime dependencies come from test-requi
 
 The arguments on the command line pick which engines run: a group (``cython``, ``ctypes``, ``python``, ``scipy``: the part of the
 engine name before the ``+``) or one engine (``python+rk4``); none given means all of them. cibuildwheel tests only the native group of the package (``cython`` for exts, ``ctypes`` for ctypes): the other engines do not depend on the
-wheel under test, they are run once per Python version elsewhere (pure-tests.yml).
+wheel under test, they are run once per Python version elsewhere (tests-pure.yml).
 
 The engines are not listed here and are not probed: they are what the engine loader's entry points name in this
 environment (the core wheel's and the wheel under test's), and every one of them is run, so one that cannot load fails

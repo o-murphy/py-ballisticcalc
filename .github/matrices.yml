@@ -2,8 +2,8 @@
 # so they are kept here and not in the workflows: a workflow reads its matrix with .github/actions/wheel-matrix (the checks of the
 # entries are in .github/scripts/wheel_matrix.py) and gives it to `strategy.matrix`.
 #
-#   exts-tests    exts-tests.yml    the Cython wheels, built and tested (a pull request, a run by hand)
-#   ctypes        ctypes-tests.yml  the ctypes wheels, built and tested; the same list is the one of the release
+#   exts-tests    tests-exts.yml    the Cython wheels, built and tested (a pull request, a run by hand)
+#   ctypes        tests-ctypes.yml  the ctypes wheels, built and tested; the same list is the one of the release
 #   exts-release  pypi-publish.yml  the Cython wheels of a release, built without tests
 #
 # An entry has `name` (the job's name), `artifact_key` (unique in its matrix: the artifact is named from it), `os` (the runner),

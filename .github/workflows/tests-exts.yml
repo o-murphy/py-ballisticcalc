@@ -8,7 +8,7 @@ run-name: >-
 # engine, one after another (cibuildwheel-reusable.yml, .github/scripts/cibw_run_engines.py). A pull request runs every platform; a
 # push to a branch runs one Linux job; a run by hand (workflow_dispatch) runs every platform, as a pull request does. The matrix is in
 # .github/matrices.yml. The release (pypi-publish.yml) builds the same wheels without tests: they run here. The tests of the core (the
-# pure-Python and SciPy engines) are in pure-tests.yml, those of the ctypes wheels in ctypes-tests.yml.
+# pure-Python and SciPy engines) are in tests-pure.yml, those of the ctypes wheels in tests-ctypes.yml.
 on:
   pull_request:
     branches:
@@ -19,7 +19,7 @@ on:
       - "tests/**"
       - "py_ballisticcalc.exts/**"
       - ".gitmodules"
-      - ".github/workflows/exts-tests.yml"
+      - ".github/workflows/tests-exts.yml"
       - ".github/workflows/cibuildwheel-reusable.yml"
       - ".github/scripts/cibw_run_engines.py"
       - ".github/matrices.yml"
@@ -34,7 +34,7 @@ on:
       - "tests/**"
       - "py_ballisticcalc.exts/**"
       - ".gitmodules"
-      - ".github/workflows/exts-tests.yml"
+      - ".github/workflows/tests-exts.yml"
       - ".github/workflows/cibuildwheel-reusable.yml"
       - ".github/scripts/cibw_run_engines.py"
       - ".github/matrices.yml"
