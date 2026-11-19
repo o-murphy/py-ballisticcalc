@@ -57,8 +57,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - cibuildwheel 4.2.1 → 4.3.0 in `cibuildwheel-reusable.yml` (it knows GraalPy 3.13, `gp313_253`).
 - `cibuildwheel-reusable.yml` has a `project` input (`py_ballisticcalc.exts` by default, or `py_ballisticcalc.ctypes`) and stages the
   bclibc sources into a package that needs them. `tests-ctypes.yml` builds and tests the ctypes package the way
-  `tests-exts.yml` does the Cython one: a pull request and a run by hand run the full matrix, a push to a branch runs one
-  Linux x86-64 job (CPython 3.11, glibc), without the Cython jobs. The full matrix: Linux x86_64, i686, aarch64 and armv7l (glibc, musl), ppc64le, s390x and riscv64 (QEMU, a job each), macOS
+  `tests-exts.yml` does the Cython one: a pull request runs the full matrix, a push to a branch runs one
+  Linux x86-64 job (CPython 3.11, glibc), without the Cython jobs. The QEMU jobs (ppc64le, s390x, riscv64: an hour or more each, over 90% of it
+  the tests) build the wheel and run a smoke test for a pull request (one Python, `ctypes+rk4` and `ctypes+dopri`, the `smoke` of their entries in
+  `.github/matrices.yml`: about ten minutes); their whole tests are run by hand (`workflow_dispatch`, the input `qemu`) and by a nightly schedule,
+  which is skipped when nothing the workflow tests has changed since its last successful run (`.github/scripts/changed_since_last_run.py`).
+  `cibuildwheel-reusable.yml` has a `test_command` input (`CIBW_TEST_COMMAND`) for it. The full matrix: Linux x86_64, i686, aarch64 and armv7l (glibc, musl), ppc64le, s390x and riscv64 (QEMU, a job each), macOS
   arm64 (universal2) and Intel, Windows x64, x86 and ARM64, Android (x86-64 emulator; the arm64 wheel is built, not run), Pyodide, PyPy
   (`pp3*`) and GraalPy. One CPython builds the `py3-none` wheel of a platform and every other Python only tests it. GraalPy has a job of
   its own on each platform: GraalPy 3.13 (`gp313_253`) on Linux, Windows and macOS arm64 (there is no macOS Intel build), GraalPy 3.12

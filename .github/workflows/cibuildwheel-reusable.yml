@@ -11,7 +11,7 @@ run-name: "cibuildwheel: ${{ inputs.platform }} ${{ inputs.archs }} ${{ inputs.b
 #   build: cp311-*, cp314t-*        skip: *-musllinux_*, *-win32
 # An empty `build` is an empty CIBW_BUILD, which cibuildwheel takes as every build of the platform (the `build` of the package's
 # pyproject.toml is not used: every CPython builds and is tested, which tests-exts.yml relies on). An empty `skip` and an empty
-# `test_skip` are not exported at all, so the `skip` and `test-skip` of the package's pyproject.toml apply. `test_skip` is
+# `test_skip` are not exported at all, so the `skip`, `test-skip` and `test-command` (when `test_command` is empty) of the package's pyproject.toml apply. `test_skip` is
 # CIBW_TEST_SKIP, the same way: builds that are built but not tested (`*` for none of them tested).
 #
 # `artifact_name` must be unique within one run: when a caller starts this workflow several times with the same
@@ -87,6 +87,11 @@ on:
         required: false
         type: string
         default: ""
+      test_command:
+        description: "CIBW_TEST_COMMAND: what tests a wheel, instead of the test-command of the package (empty: the package's own)"
+        required: false
+        type: string
+        default: ""
       retention_days:
         description: "How long the wheels artifact is kept, in days"
         required: false
@@ -151,6 +156,11 @@ on:
         default: false
       test_skip:
         description: "CIBW_TEST_SKIP selectors, comma-separated: builds that are not tested (e.g. *-*_ppc64le, *-*_s390x); \"*\" skips all tests"
+        required: false
+        type: string
+        default: ""
+      test_command:
+        description: "CIBW_TEST_COMMAND: what tests a wheel, instead of the test-command of the package (empty: the package's own)"
         required: false
         type: string
         default: ""
@@ -295,6 +305,7 @@ jobs:
           CIBW_BUILD: ${{ steps.names.outputs.build }}
           CIBW_SKIP: ${{ steps.names.outputs.skip }}
           CIBW_TEST_SKIP: ${{ steps.names.outputs.test_skip }}
+          CIBW_TEST_COMMAND: ${{ inputs.test_command }}
           SETUPTOOLS_SCM_PRETEND_VERSION: ${{ steps.version.outputs.version }}
           # Only these reach a container build (manylinux via Docker); Windows, macOS and Android inherit the whole
           # host environment.
@@ -306,7 +317,7 @@ jobs:
           # gp312_250 was selected again), so an empty skip must not exist as a variable. CIBW_BUILD is left as it is: empty, it
           # makes every CPython build and be tested (cp311 + cp314t + cp315t only, as the `build` of py_ballisticcalc.exts says,
           # when it does not exist), which the jobs of tests-exts.yml rely on.
-          for v in CIBW_SKIP CIBW_TEST_SKIP; do [ -n "${!v}" ] || unset "$v"; done
+          for v in CIBW_SKIP CIBW_TEST_SKIP CIBW_TEST_COMMAND; do [ -n "${!v}" ] || unset "$v"; done
           uvx cibuildwheel=="$CIBUILDWHEEL_VERSION" . \
             --output-dir wheelhouse \
             --platform "${{ inputs.platform }}" \

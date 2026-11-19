@@ -8,7 +8,9 @@
 #
 # An entry has `name` (the job's name), `artifact_key` (unique in its matrix: the artifact is named from it), `os` (the runner),
 # `cibw_platform`, `cibw_archs`, `needs_qemu` and, when it is not the default of the project, `build` (CIBW_BUILD), `test_skip`
-# (CIBW_TEST_SKIP) and `timeout_minutes`.
+# (CIBW_TEST_SKIP), `test_command` (CIBW_TEST_COMMAND) and `timeout_minutes`. `smoke` is a mapping of those fields (`build`, `test_command`,
+# `test_skip`, `timeout_minutes`) that replace the entry's own when the matrix is read with --smoke: a build and a quick test of the
+# wheels that are slow to test (QEMU), which is what a pull request does with them; the full tests are by the schedule and by hand.
 
 exts-tests:
   - name: Linux x64 / x86
@@ -108,6 +110,9 @@ ctypes:
     cibw_platform: linux
     needs_qemu: true
     build: "cp3*"
+    smoke: &qemu_smoke # what a pull request does with it (see `smoke` above): one Python, two engines (a fixed-step and an adaptive one)
+      build: "cp311-*"
+      test_command: "python cibw_run_engines.py ctypes+rk4 ctypes+dopri"
 
   - name: Linux s390x (QEMU, glibc and musl)
     artifact_key: linux-s390x
@@ -116,6 +121,7 @@ ctypes:
     cibw_platform: linux
     needs_qemu: true
     build: "cp3*"
+    smoke: *qemu_smoke
 
   - name: Linux riscv64 (QEMU, glibc and musl)
     artifact_key: linux-riscv64
@@ -124,6 +130,7 @@ ctypes:
     cibw_platform: linux
     needs_qemu: true
     build: "cp3*"
+    smoke: *qemu_smoke
 
   - name: Windows x64 / x86
     artifact_key: windows-x64-x86

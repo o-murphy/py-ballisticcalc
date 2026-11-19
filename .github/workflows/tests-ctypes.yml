@@ -2,15 +2,21 @@ name: Tests (ctypes)
 run-name: >-
   ${{ github.event_name == 'push' && format('ctypes: Minimal Matrix — Push {0}', github.ref_name)
   || github.event_name == 'pull_request' && format('ctypes: Full Matrix — PR {0}', github.event.pull_request.number)
+  || github.event_name == 'schedule' && format('ctypes: Night Matrix (QEMU) — {0}', github.ref_name)
   || format('ctypes: Full Matrix — by hand {0}', github.ref_name) }}
 
 # Builds the ctypes package (py_ballisticcalc.ctypes) with cibuildwheel and tests each wheel on its own platform: every engine
 # through ctypes (cibuildwheel-reusable.yml, .github/scripts/cibw_run_engines.py), for what the Cython wheels do not serve (PyPy,
 # GraalPy, ppc64le, s390x, riscv64) and, as a second variant, for CPython on Linux, macOS, Windows, Android and Pyodide. One
 # py3-none wheel per platform, built by one interpreter; the PyPy entries build (and so test) it under PyPy, and GraalPy has
-# jobs of its own (see the matrix, .github/matrices.yml). Each QEMU architecture is a job of its own (glibc and musl in it), so the three run in parallel.
-# A pull request runs every platform; a push to a branch runs one Linux job; a run by hand (workflow_dispatch) runs every
-# platform, as a pull request does. It does not run, or wait for, the Cython jobs (tests-exts.yml).
+# jobs of its own (see the matrix, .github/matrices.yml). It does not run, or wait for, the Cython jobs (tests-exts.yml).
+#
+# A pull request runs every platform. The QEMU ones (ppc64le, s390x, riscv64) take an hour or more each, nearly all of it the tests (84
+# sessions under emulation; the build is a few minutes), so for a pull request they build the wheel and run a smoke test only (one
+# Python, two engines, the `smoke` of their entries in .github/matrices.yml). Their whole tests are run by hand (workflow_dispatch,
+# with `qemu` on) and by the schedule, every night on the default branch, which is skipped when nothing the workflow tests has changed
+# since the last successful night run (.github/scripts/changed_since_last_run.py). A push to a branch runs one Linux job. A run by
+# hand and a night run have a concurrency group of their own, so that a push does not cancel an hour of QEMU.
 on:
   pull_request:
     branches:
@@ -44,20 +50,55 @@ on:
       - ".github/matrices.yml"
       - ".github/actions/wheel-matrix/**"
       - ".github/scripts/wheel_matrix.py"
+  schedule:
+    - cron: "0 3 * * *" # every night, UTC; a schedule runs the default branch only
   workflow_dispatch:
+    inputs:
+      qemu:
+        description: "Test the QEMU jobs in full (ppc64le, s390x, riscv64: an hour or more each); off: a build and a smoke test, as in a pull request"
+        required: false
+        type: boolean
+        default: true
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
+  group: ${{ github.workflow }}-${{ github.ref }}-${{ (github.event_name == 'push' || github.event_name == 'pull_request') && 'ci' || github.event_name }}
   cancel-in-progress: true
 
 permissions:
   contents: read
 
 jobs:
+  # The night run only: is there anything new to test since the last successful night run?
+  changes:
+    name: Changes since the last night run
+    if: github.event_name == 'schedule'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      actions: read # the last successful run is looked up with gh
+    outputs:
+      skip: ${{ steps.changes.outputs.skip }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0 # the commits to compare
+      - name: Install uv
+        uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2
+        with:
+          github-token: ${{ github.token }}
+      - id: changes
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: uv run --no-project --with pyyaml==6.0.3 python .github/scripts/changed_since_last_run.py tests-ctypes.yml
+        shell: bash
+
   # The matrix is in .github/matrices.yml (the list of platforms is long and some are in more than one workflow)
   wheel_matrix:
     name: Wheel matrix
-    if: github.event_name != 'push'
+    needs: changes
+    # `changes` runs by the schedule only: without !cancelled() the job would be skipped with it. A night run with nothing new skips it
+    if: ${{ !cancelled() && github.event_name != 'push' && needs.changes.outputs.skip != 'true' }}
     runs-on: ubuntu-latest
     outputs:
       matrix: ${{ steps.read.outputs.matrix }}
@@ -69,8 +110,10 @@ jobs:
         uses: ./.github/actions/wheel-matrix
         with:
           matrix: ctypes
+          # the QEMU entries are tested in full by the schedule, and by hand when asked (the input `qemu`); otherwise a build and a smoke test
+          smoke: ${{ !(github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && inputs.qemu)) }}
 
-  # Full matrix: pull requests (and a manual run)
+  # Full matrix: pull requests, a manual run and the night run
   full:
     name: ${{ matrix.name }}
     needs: wheel_matrix
@@ -90,6 +133,7 @@ jobs:
       platform: ${{ matrix.cibw_platform }}
       archs: ${{ matrix.cibw_archs }}
       build: ${{ matrix.build || '' }}
+      test_command: ${{ matrix.test_command || '' }}
       qemu: ${{ matrix.needs_qemu }}
       timeout_minutes: ${{ matrix.timeout_minutes || 360 }}
       artifact_name: ctypes-wheels-${{ matrix.artifact_key }}

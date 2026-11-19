@@ -7,6 +7,10 @@ inputs:
   matrix:
     description: The name of the matrix in .github/matrices.yml (exts-tests, ctypes, exts-release)
     required: true
+  smoke:
+    description: "'true' reads the matrix with --smoke: the entries that have a `smoke` mapping take its fields (a build and a quick test)"
+    required: false
+    default: 'false'
 
 outputs:
   matrix:
@@ -26,8 +30,11 @@ runs:
       shell: bash
       env:
         MATRIX: ${{ inputs.matrix }}
+        SMOKE: ${{ inputs.smoke }}
       run: |
         set -euo pipefail
         # an assignment, not `echo "matrix=$(...)"`: the status of a substitution inside echo would be lost
-        matrix="$(uv run --no-project --with pyyaml==6.0.3 python .github/scripts/wheel_matrix.py "$MATRIX")"
+        options=()
+        [ "$SMOKE" != "true" ] || options+=(--smoke)
+        matrix="$(uv run --no-project --with pyyaml==6.0.3 python .github/scripts/wheel_matrix.py "$MATRIX" "${options[@]}")"
         echo "matrix=$matrix" >> "$GITHUB_OUTPUT"
