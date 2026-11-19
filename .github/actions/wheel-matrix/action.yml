@@ -5,7 +5,7 @@ description: >-
 
 inputs:
   matrix:
-    description: The name of the matrix in .github/matrices.yml (exts-tests, ctypes-tests, exts-release)
+    description: The name of the matrix in .github/matrices.yml (exts-tests, ctypes, exts-release)
     required: true
 
 outputs:

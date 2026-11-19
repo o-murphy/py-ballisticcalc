@@ -10,7 +10,7 @@ run-name: >-
 # py3-none wheel per platform, built by one interpreter; the PyPy entries build (and so test) it under PyPy, and GraalPy has
 # jobs of its own (see the matrix, .github/matrices.yml). Each QEMU architecture is a job of its own (glibc and musl in it), so the three run in parallel.
 # A pull request runs every platform; a push to a branch runs one Linux job; a run by hand (workflow_dispatch) runs every
-# platform, as a pull request does. It does not run, or wait for, the Cython jobs (cibuildwheel-tests.yml).
+# platform, as a pull request does. It does not run, or wait for, the Cython jobs (exts-tests.yml).
 on:
   pull_request:
     branches:
@@ -68,7 +68,7 @@ jobs:
       - id: read
         uses: ./.github/actions/wheel-matrix
         with:
-          matrix: ctypes-tests
+          matrix: ctypes
 
   # Full matrix: pull requests (and a manual run)
   full:

@@ -10,7 +10,7 @@ run-name: "cibuildwheel: ${{ inputs.platform }} ${{ inputs.archs }} ${{ inputs.b
 # `build` and `skip` are CIBW_BUILD and CIBW_SKIP: several selectors, separated by commas (or spaces), for example
 #   build: cp311-*, cp314t-*        skip: *-musllinux_*, *-win32
 # An empty `build` is an empty CIBW_BUILD, which cibuildwheel takes as every build of the platform (the `build` of the package's
-# pyproject.toml is not used: every CPython builds and is tested, which cibuildwheel-tests.yml relies on). An empty `skip` and an empty
+# pyproject.toml is not used: every CPython builds and is tested, which exts-tests.yml relies on). An empty `skip` and an empty
 # `test_skip` are not exported at all, so the `skip` and `test-skip` of the package's pyproject.toml apply. `test_skip` is
 # CIBW_TEST_SKIP, the same way: builds that are built but not tested (`*` for none of them tested).
 #
@@ -305,7 +305,7 @@ jobs:
           # An empty variable is not "not set" for cibuildwheel: CIBW_SKIP='' overrides the `skip` of the pyproject.toml (checked:
           # gp312_250 was selected again), so an empty skip must not exist as a variable. CIBW_BUILD is left as it is: empty, it
           # makes every CPython build and be tested (cp311 + cp314t + cp315t only, as the `build` of py_ballisticcalc.exts says,
-          # when it does not exist), which the jobs of cibuildwheel-tests.yml rely on.
+          # when it does not exist), which the jobs of exts-tests.yml rely on.
           for v in CIBW_SKIP CIBW_TEST_SKIP; do [ -n "${!v}" ] || unset "$v"; done
           uvx cibuildwheel=="$CIBUILDWHEEL_VERSION" . \
             --output-dir wheelhouse \

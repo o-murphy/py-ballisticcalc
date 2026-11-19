@@ -89,7 +89,7 @@ jobs:
           matrix: exts-release
 
   # One job per matrix entry: cibuildwheel-reusable.yml builds the exts wheels and uploads them as the artifact below. They
-  # are not tested here (test_skip): the same wheels are built and tested on every pull request, by cibuildwheel-tests.yml.
+  # are not tested here (test_skip): the same wheels are built and tested on every pull request, by exts-tests.yml.
   build:
     name: Build wheels on ${{ matrix.os }} / ${{ matrix.name }}
     needs: wheel_matrix
@@ -103,7 +103,7 @@ jobs:
       platform: ${{ matrix.cibw_platform }}
       archs: ${{ matrix.cibw_archs }}
       qemu: ${{ matrix.needs_qemu }}
-      # built, not tested: the tests run on every pull request (cibuildwheel-tests.yml), a release only builds
+      # built, not tested: the tests run on every pull request (exts-tests.yml), a release only builds
       test_skip: "*"
       artifact_name: dist-wheels-${{ matrix.artifact_key }}
       retention_days: 14

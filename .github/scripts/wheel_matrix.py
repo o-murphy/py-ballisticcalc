@@ -1,6 +1,6 @@
 """The cibuildwheel matrix of a workflow, read from .github/matrices.yml and printed as the JSON for `strategy.matrix`.
 
-    python .github/scripts/wheel_matrix.py exts-tests|ctypes-tests|exts-release
+    python .github/scripts/wheel_matrix.py exts-tests|ctypes|exts-release
 
 The matrices are long, and the same platforms are in several of them, so they are kept in one file, not in each workflow. A
 workflow cannot check what a matrix it reads holds (actionlint sees only the expression), so the entries are checked here: a field

@@ -1,0 +1,76 @@
+name: Tests (core)
+run-name: >-
+  ${{ github.event_name == 'pull_request' && format('core: PR {0}', github.event.pull_request.number)
+  || format('core: by hand {0}', github.ref_name) }}
+
+# The tests of the core package (py_ballisticcalc): the pure-Python and SciPy engines (python+*, scipy+*), run on the core wheel by
+# pure-engines-reusable.yml. They do not depend on a compiled wheel, so they have a workflow of their own, apart from the wheel
+# tests of exts-tests.yml and ctypes-tests.yml. A pull request and a run by hand (workflow_dispatch) run them; a push does not.
+on:
+  pull_request:
+    branches:
+      - "**"
+    paths:
+      - "pyproject.toml"
+      - "py_ballisticcalc/**"
+      - "tests/**"
+      - "py_ballisticcalc.exts/pyproject.toml" # the `test` dependency group the engines are run with
+      - ".github/workflows/pure-tests.yml"
+      - ".github/workflows/pure-engines-reusable.yml"
+      - ".github/scripts/cibw_run_engines.py"
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  # Each run of the pure-Python and SciPy engines takes minutes (the Cython ones, seconds): so they run once per Python version, on
+  # the core wheel built here once, and the jobs take it as an artifact.
+  core-wheel:
+    name: Core wheel (pure Python)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0 # setuptools-scm needs history
+          submodules: recursive
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2
+        with:
+          github-token: ${{ github.token }}
+
+      - run: uv build --wheel --out-dir dist .
+        shell: bash
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: tests-core-wheel
+          path: dist/
+          retention-days: 1
+          if-no-files-found: error
+
+  pure:
+    name: Python and SciPy engines, Python ${{ matrix.python }}, ${{ matrix.os }}
+    needs: core-wheel
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest]
+        python: ["3.11", "3.14t", "3.15t"]
+        include:
+          # Windows and macOS once, on the oldest Python, with the engine that has the most Python in it and SciPy's (compiled
+          # code, the likeliest to differ in the last digits between platforms)
+          - { os: windows-latest, python: "3.11", groups: "python+rk4 scipy" }
+          - { os: macos-26, python: "3.11", groups: "python+rk4 scipy" }
+    uses: ./.github/workflows/pure-engines-reusable.yml
+    with:
+      os: ${{ matrix.os }}
+      python: ${{ matrix.python }}
+      groups: ${{ matrix.groups || 'python scipy' }}
+      core_wheel_artifact: tests-core-wheel
+

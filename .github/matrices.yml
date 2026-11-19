@@ -2,9 +2,9 @@
 # so they are kept here and not in the workflows: a workflow reads its matrix with .github/actions/wheel-matrix (the checks of the
 # entries are in .github/scripts/wheel_matrix.py) and gives it to `strategy.matrix`.
 #
-#   exts-tests    cibuildwheel-tests.yml  the Cython wheels, built and tested (a pull request, a run by hand)
-#   ctypes-tests  ctypes-tests.yml        the ctypes wheels, built and tested (a pull request, a run by hand)
-#   exts-release  pypi-publish.yml        the Cython wheels of a release, built without tests
+#   exts-tests    exts-tests.yml    the Cython wheels, built and tested (a pull request, a run by hand)
+#   ctypes        ctypes-tests.yml  the ctypes wheels, built and tested; the same list is the one of the release
+#   exts-release  pypi-publish.yml  the Cython wheels of a release, built without tests
 #
 # An entry has `name` (the job's name), `artifact_key` (unique in its matrix: the artifact is named from it), `os` (the runner),
 # `cibw_platform`, `cibw_archs`, `needs_qemu` and, when it is not the default of the project, `build` (CIBW_BUILD), `test_skip`
@@ -84,7 +84,7 @@ exts-tests:
     cibw_platform: pyodide
     needs_qemu: false
 
-ctypes-tests:
+ctypes:
   - name: Linux x64 / x86 (glibc, musl)
     artifact_key: linux-x64-x86
     os: ubuntu-latest
