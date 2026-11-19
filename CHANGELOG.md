@@ -87,7 +87,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `.github/workflows/tests-exts.yml`: every pull request builds the exts wheels and tests the Cython engines on
   each of them, on its own platform (Linux x86-64 / i686 / aarch64 / armv7l, Windows x64 / x86 / ARM64, macOS arm64 /
   universal2 / Intel, the iOS simulators, Android x86-64, Pyodide). The arm64 Android wheel (no emulator) and the iOS device
-  wheel are built without tests. A push to a branch runs one Linux job.
+  wheel are built without tests. A push to a branch runs one Linux job. The iOS simulator jobs (20 minutes or more each, mostly the tests) build
+  the wheels, the device one too, and run a smoke test for a pull request (CPython 3.13, `cython+rk4` and `cython+dopri`, the `smoke` of their entries in
+  `.github/matrices.yml`); their whole tests are run by hand (`workflow_dispatch`, the input `ios`) and by a nightly schedule, which is skipped when
+  nothing the workflow tests has changed since its last successful run, as the QEMU jobs of `tests-ctypes.yml` are.
 - `.github/workflows/pure-engines-reusable.yml`: the pure-Python and SciPy engines do not depend on the wheel and take
   minutes each, so they run on the core wheel (built once by a `core-wheel` job and shared as an artifact), once for each
   of Python 3.11, 3.14t and 3.15t on Linux, and `python+rk4` with the SciPy engines once more on Windows and on macOS

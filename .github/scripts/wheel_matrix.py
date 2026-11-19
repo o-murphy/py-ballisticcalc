@@ -2,8 +2,8 @@
 
     python .github/scripts/wheel_matrix.py exts-tests|ctypes|exts-release [--smoke]
 
-With `--smoke` an entry that has a `smoke` mapping takes those fields in place of its own (the wheels that are slow to test, QEMU: a build
-and a quick test, not the whole tests); the others are as they are. `smoke` is never in the output.
+With `--smoke` an entry that has a `smoke` mapping takes those fields in place of its own (the wheels that are slow to test, QEMU and the iOS simulator:
+a build and a quick test, not the whole tests); the others are as they are. `smoke` is never in the output.
 
 The matrices are long, and the same platforms are in several of them, so they are kept in one file, not in each workflow. A
 workflow cannot check what a matrix it reads holds (actionlint sees only the expression), so the entries are checked here: a field

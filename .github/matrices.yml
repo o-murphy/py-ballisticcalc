@@ -10,7 +10,7 @@
 # `cibw_platform`, `cibw_archs`, `needs_qemu` and, when it is not the default of the project, `build` (CIBW_BUILD), `test_skip`
 # (CIBW_TEST_SKIP), `test_command` (CIBW_TEST_COMMAND) and `timeout_minutes`. `smoke` is a mapping of those fields (`build`, `test_command`,
 # `test_skip`, `timeout_minutes`) that replace the entry's own when the matrix is read with --smoke: a build and a quick test of the
-# wheels that are slow to test (QEMU), which is what a pull request does with them; the full tests are by the schedule and by hand.
+# wheels that are slow to test (QEMU, the iOS simulator), which is what a pull request does with them; the full tests are by the schedule and by hand.
 
 exts-tests:
   - name: Linux x64 / x86
@@ -64,6 +64,9 @@ exts-tests:
     cibw_platform: ios
     needs_qemu: false
     test_skip: "*_iphoneos"
+    smoke: &ios_smoke # what a pull request does with it: one Python (the device wheel is still built), two engines in the simulator
+      build: "cp313-ios_*"
+      test_command: "python -m cibw_run_engines cython+rk4 cython+dopri"
 
   - name: iOS simulator x86-64
     artifact_key: ios-x86_64-simulator
@@ -71,6 +74,7 @@ exts-tests:
     cibw_archs: "x86_64_iphonesimulator"
     cibw_platform: ios
     needs_qemu: false
+    smoke: *ios_smoke
 
   - name: Android ARM64 / x64
     artifact_key: android-arm64_v8a-x86_64
