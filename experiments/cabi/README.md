@@ -1,5 +1,11 @@
 # Bindings over the C ABI of bclibc: prototypes and what they showed
 
+> **Update (bclibc 2.2.0):** the Cython prototype is now the package [`py_ballisticcalc.cabi`](../../py_ballisticcalc.cabi)
+> (`cabi+<method>` engines). bclibc 2.2 closed the gaps listed below: the buffer and the interpolation of base trajectory
+> points (`BCLIBCFFI_base_traj_*`) and the error kinds (`BCLIBCFFI_ERR_DOMAIN`...) are in its C ABI, so `c/bclibc_ffi_ext.{h,c}`
+> and the message matching of `_raise_get` are gone, and `bcffi.pxd` is `_bcffi.pxd`, generated from the real header with
+> `BCLIBC_FFI_PARSE_ONLY`. The text below is the state of the prototype on bclibc 2.1.0; `cffi/` and `swig/` are unchanged.
+
 An experiment, not part of any package. It asks one question: **if the engines were bound to `bclibc_ffi.h` (the C ABI,
 `BCLIBCFFI_*`) instead of to the C++ API, how would the binding layer compare, and in which language?** The ABI is what
 `py_ballisticcalc.ctypes` already uses. Three prototypes port its engine glue (`_native.py`): Cython (`cython/`), cffi

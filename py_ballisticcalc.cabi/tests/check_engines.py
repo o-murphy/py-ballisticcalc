@@ -1,7 +1,7 @@
 """Parity of the prototype with the Cython-over-C++ engines of py_ballisticcalc_exts: the six engines (the whole trajectory,
 bit for bit), zero_point and the dense sequence.
 
-    PYTHONPATH=build python check.py        # py_ballisticcalc and py_ballisticcalc_exts must be importable too
+    python check_engines.py        # py_ballisticcalc and py_ballisticcalc_exts must be importable too
 """
 
 import logging
@@ -29,7 +29,7 @@ def key(d):
 
 worst = 0.0
 for n in NAMES:
-    cpp, cabi = (engine(f"py_ballisticcalc_exts:Cythonized{n}IntegrationEngine"), engine(f"bcy:Native{n}IntegrationEngine"))
+    cpp, cabi = (engine(f"py_ballisticcalc_exts:Cythonized{n}IntegrationEngine"), engine(f"py_ballisticcalc_cabi:Native{n}IntegrationEngine"))
     a = cpp.integrate(shot(False), Distance.Meter(2000), Distance.Meter(100), 0.0, TrajFlag.ALL, True)
     b = cabi.integrate(shot(False), Distance.Meter(2000), Distance.Meter(100), 0.0, TrajFlag.ALL, True)
     assert len(a.records) == len(b.records), n

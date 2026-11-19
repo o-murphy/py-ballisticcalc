@@ -1,13 +1,13 @@
-"""CythonizedBaseTrajSeq / CythonizedBaseTrajData of py_ballisticcalc_exts (C++ API) against the ones of bcy (C ABI): the same
+"""CythonizedBaseTrajSeq / CythonizedBaseTrajData of py_ballisticcalc_exts (C++ API) against the ones of py_ballisticcalc_cabi (C ABI): the same
 calls on the same points, equal results or the same exception type, on ordinary and edge cases.
 
-    PYTHONPATH=build python check_seq.py          (py_ballisticcalc_exts must be installed)
+    python check_seq.py          (py_ballisticcalc_exts must be installed)
 """
 import math
 import random
 import warnings
 
-import bcy
+from py_ballisticcalc_cabi import _native as bcy
 from py_ballisticcalc_exts import traj_data as cxx
 
 KEYS = ["time", "mach", "position.x", "position.y", "position.z", "velocity.x", "velocity.y", "velocity.z", "bogus"]

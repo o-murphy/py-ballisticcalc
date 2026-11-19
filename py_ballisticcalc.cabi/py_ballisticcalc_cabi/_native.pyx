@@ -1,16 +1,15 @@
 # cython: language_level=3
-"""The bclibc engines as Cython over the C ABI (bclibc_ffi.h), not the C++ API."""
+"""The bclibc engines as Cython over the C ABI of bclibc (bclibc_ffi.h, 2.2), not the C++ API."""
 import math
 import struct
 
-from cpython.bytes cimport PyBytes_FromStringAndSize
 from libc.math cimport NAN
 from libc.stdint cimport int32_t
 from cython cimport final
 from libc.stdlib cimport free, malloc, realloc
 from libc.string cimport memcpy
 
-from bcffi cimport *
+from py_ballisticcalc_cabi._bcffi cimport *
 
 from py_ballisticcalc.drag_tables import TableG1, TableG7
 from py_ballisticcalc.engines.base_engine import BaseIntegrationEngine
@@ -255,12 +254,13 @@ cdef int _raise(const BCLIBCFFI_Error *err) except -1:
         raise ZeroFindingError(err.f64_0, err.i32_0, Angular.Radian(err.f64_1), msg)
     if err.code == BCLIBCFFI_ERR_INTERCEPTION:
         raise InterceptionError(msg, (None, None))
+    _raise_kind(err.code, msg)
     raise SolverRuntimeError(msg)
 
 
 # ---------------------------------------------------------------------------------------------------------------------
-# CythonizedBaseTrajData and CythonizedBaseTrajSeq: the two public buffers of the C++ layer (traj_data.pyx). Only the Python
-# side is here: the buffer, the interpolation and the search are C functions (c/bclibc_ffi_ext.c, bclibc_ffi.h).
+# CythonizedBaseTrajData and CythonizedBaseTrajSeq: the two public buffers of the C++ layer (traj_data.pyx).
+# Only the Python side is here: the buffer, the interpolation and the search are C functions of bclibc_ffi.h.
 # ---------------------------------------------------------------------------------------------------------------------
 
 cdef int _key_of(str key_attribute) except -1:
@@ -270,30 +270,34 @@ cdef int _key_of(str key_attribute) except -1:
     return <int>k
 
 
-cdef int _raise_get(const BCLIBCFFI_Error *err) except -1:
-    """The error of get_at / get_at_slant_height, as the C++ layer raises it: IndexError when the value is outside the stream,
-    ValueError for too few points or a degenerate segment (an empty stream is "too few points").
-
-    The C ABI does not say which of the two it is: setEngineError in bclibc_ffi.cpp makes ERR_GENERIC of every error that is
-    not a Solver* one, an out-of-range and a domain error alike. The message is what tells them apart here (the one text the
-    tests of the C++ layer match on). A kind in BCLIBCFFI_Error would make this a switch on the code."""
-    msg = (<bytes>err.message).decode("utf-8", "replace")
-    if err.code == BCLIBCFFI_ERR_GENERIC or err.code == BCLIBCFFI_ERR_OUT_OF_RANGE or err.code == BCLIBCFFI_ERR_INTERCEPTION:
-        if "outside the trajectory's range" in msg:
-            raise IndexError(msg)
+cdef int _raise_kind(int32_t code, str msg) except -1:
+    """The kinds of error that are not a solver's (bclibc 2.2), as the C++ layer raises them: ValueError for a domain or
+    an argument error, IndexError for an index or a value outside the data, RuntimeError for the rest."""
+    if code == BCLIBCFFI_ERR_DOMAIN or code == BCLIBCFFI_ERR_INVALID_ARGUMENT:
         raise ValueError(msg)
-    raise RuntimeError(msg)
+    if code == BCLIBCFFI_ERR_OUT_OF_BOUNDS:
+        raise IndexError(msg)
+    if code == BCLIBCFFI_ERR_LOGIC or code == BCLIBCFFI_ERR_RUNTIME:
+        raise RuntimeError(msg)
+    return 0
 
 
-cdef int _raise_seq(const BCLIBCFFI_Error *err) except -1:
-    """What the C++ layer makes of the error of a sequence call: out of range -> IndexError, a degenerate segment or a
-    bad argument -> ValueError, anything else -> RuntimeError."""
+cdef int _raise_get(const BCLIBCFFI_Error *err) except -1:
+    """The error of get_at / get_at_slant_height (dense_get_at...): the code tells the kinds apart."""
     msg = (<bytes>err.message).decode("utf-8", "replace")
     if err.code == BCLIBCFFI_ERR_OUT_OF_RANGE or err.code == BCLIBCFFI_ERR_INTERCEPTION:
         raise IndexError(msg)
-    if err.code == BCLIBCFFI_ERR_GENERIC:
-        raise ValueError(msg)
-    raise RuntimeError(msg)
+    _raise_kind(err.code, msg)
+    raise ValueError(msg)
+
+
+cdef int _raise_seq(const BCLIBCFFI_Error *err) except -1:
+    """The error of a sequence call (interpolation, append)."""
+    msg = (<bytes>err.message).decode("utf-8", "replace")
+    if err.code == BCLIBCFFI_ERR_OUT_OF_RANGE or err.code == BCLIBCFFI_ERR_INTERCEPTION:
+        raise IndexError(msg)
+    _raise_kind(err.code, msg)
+    raise ValueError(msg)
 
 
 @final
@@ -415,7 +419,8 @@ def make_base_traj_data(double time, double px, double py, double pz, double vx,
 cdef class CythonizedBaseTrajSeq:
     """Contiguous C buffer of BCLIBCFFI_BaseTrajData points with append and interpolation."""
     cdef BCLIBCFFI_BaseTrajBuf _buf
-    cdef bint _lib  # the array is the library's own (the dense steps of integrate()): freed by BCLIBCFFI_free_base_trajectory
+    # the array is the library's own (the dense steps of integrate()): freed by BCLIBCFFI_free_base_trajectory
+    cdef bint _lib
 
     def __dealloc__(self):
         if self._lib:
@@ -432,7 +437,8 @@ cdef class CythonizedBaseTrajSeq:
 
     cdef int _own(self) except -1:
         """Copies the library's array into one the buffer can grow."""
-        cdef BCLIBCFFI_BaseTrajData *mine = <BCLIBCFFI_BaseTrajData *>malloc(self._buf.count * sizeof(BCLIBCFFI_BaseTrajData))
+        cdef BCLIBCFFI_BaseTrajData *mine = <BCLIBCFFI_BaseTrajData *>malloc(
+            self._buf.count * sizeof(BCLIBCFFI_BaseTrajData))
         if mine == NULL:
             raise MemoryError()
         memcpy(mine, self._buf.data, self._buf.count * sizeof(BCLIBCFFI_BaseTrajData))
@@ -478,7 +484,8 @@ cdef class CythonizedBaseTrajSeq:
         cdef int key = _key_of(key_attribute)
         cdef CythonizedBaseTrajData out = CythonizedBaseTrajData()
         cdef BCLIBCFFI_Error err
-        if BCLIBCFFI_base_traj_interpolate_at(self._buf.data, self._buf.count, idx, key, key_value, &out._d, &err) != BCLIBCFFI_OK:
+        if BCLIBCFFI_base_traj_interpolate_at(
+                self._buf.data, self._buf.count, idx, key, key_value, &out._d, &err) != BCLIBCFFI_OK:
             _raise_seq(&err)
         return out
 
@@ -507,7 +514,8 @@ cdef class CythonizedBaseTrajSeq:
         cdef BCLIBCFFI_Error err
         cdef int32_t rc
         with nogil:
-            rc = BCLIBCFFI_dense_get_at_slant_height(self._buf.data, self._buf.count, look_angle_rad, value, &out._d, &err)
+            rc = BCLIBCFFI_dense_get_at_slant_height(
+                self._buf.data, self._buf.count, look_angle_rad, value, &out._d, &err)
         if rc != BCLIBCFFI_OK:
             _raise_get(&err)
         return out
@@ -529,7 +537,8 @@ class _Engine(BaseIntegrationEngine):
         _fill_shot(scr, shot_info, self._config, self._METHOD)
         return scr
 
-    def _run(self, shot_info, double range_limit_ft, double range_step_ft, double time_step, filter_flags, dense_output):
+    def _run(self, shot_info, double range_limit_ft, double range_step_ft, double time_step, filter_flags,
+             dense_output):
         cdef _Scratch scr = _scratch_of(self)
         cdef int rc, i, count, want = 1 if dense_output else 0, method = self._METHOD
         cdef double rtol, atol
@@ -571,7 +580,8 @@ class _Engine(BaseIntegrationEngine):
         error = RangeError(term, trajectory) if term is not None else None
         return HitResult(props, trajectory, base_data, filter_flags != TrajFlag.NONE, error)
 
-    def integrate(self, shot_info, max_range, dist_step=None, time_step=0.0, filter_flags=0, dense_output=False, **kwargs):
+    def integrate(self, shot_info, max_range, dist_step=None, time_step=0.0, filter_flags=0, dense_output=False,
+                  **kwargs):
         limit = max_range._feet
         return self._run(shot_info, limit, limit if dist_step is None else dist_step._feet, time_step, filter_flags,
                          dense_output)
@@ -756,47 +766,3 @@ class NativeDormandPrinceIntegrationEngine(_AdaptiveEngine):
 
 class NativeTsitourasIntegrationEngine(_AdaptiveEngine):
     _METHOD = 5
-
-
-def _probe(engine, shot_info, int n, str what, double range_ft, int dense):
-    """Timing probe: n repetitions of one stage of the integrate path, seconds per call."""
-    from time import perf_counter
-    cdef _Scratch scr = _scratch_of(engine)
-    cdef int i, rc, method = engine._METHOD
-    cdef double rtol = engine._relative_tolerance, atol = engine._absolute_tolerance
-    cdef BCLIBCFFI_Shot *shot = &scr.shot
-    cdef double t0, t1
-    _fill_shot(scr, shot_info, engine._config, method)
-    scr.req.range_limit_ft = range_ft
-    scr.req.range_step_ft = range_ft
-    scr.req.time_step = 0.0
-    scr.req.filter_flags = 63
-    if what == "fill":
-        t0 = perf_counter()
-        for i in range(n):
-            _fill_shot(scr, shot_info, engine._config, method)
-        return (perf_counter() - t0) / n
-    if what == "call":
-        t0 = perf_counter()
-        for i in range(n):
-            with nogil:
-                rc = BCLIBCFFI_integrate_adaptive_shot(shot, method, rtol, atol, &scr.req, dense, &scr.recs, &scr.n,
-                                                       &scr.dense, &scr.dn, &scr.reason, &scr.stats, &scr.err)
-            if scr.n:
-                BCLIBCFFI_free_trajectory(scr.recs)
-            if scr.dn:
-                BCLIBCFFI_free_base_trajectory(scr.dense)
-        return (perf_counter() - t0) / n
-    if what == "conv":
-        with nogil:
-            rc = BCLIBCFFI_integrate_adaptive_shot(shot, method, rtol, atol, &scr.req, dense, &scr.recs, &scr.n,
-                                                   &scr.dense, &scr.dn, &scr.reason, &scr.stats, &scr.err)
-        t0 = perf_counter()
-        for i in range(n):
-            lst = [_traj(&scr.recs[j]) for j in range(scr.n)]
-        t1 = perf_counter()
-        if scr.n:
-            BCLIBCFFI_free_trajectory(scr.recs)
-        if scr.dn:
-            BCLIBCFFI_free_base_trajectory(scr.dense)
-        return (t1 - t0) / n, scr.n, scr.dn
