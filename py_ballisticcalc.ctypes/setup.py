@@ -22,7 +22,6 @@ import glob
 import os
 import shlex
 import shutil
-import subprocess
 import sys
 import sysconfig
 from concurrent.futures import ThreadPoolExecutor
@@ -74,17 +73,6 @@ def _target_kind() -> str:
 def _msvc_arm() -> bool:
     """MSVC on ARM needs /fp:precise (the same condition as the Cython build)."""
     return sysconfig.get_platform().lower().startswith(("win-arm", "win_arm"))
-
-
-def _has_static_libstdcxx(cxx: str) -> bool:
-    """Whether the compiler finds libstdc++.a (glibc and musl toolchains alike); -print-file-name echoes the bare name if not."""
-    try:
-        found = subprocess.run(
-            [cxx, "-print-file-name=libstdc++.a"], capture_output=True, text=True, check=True
-        ).stdout.strip()
-    except (OSError, subprocess.CalledProcessError):
-        return False
-    return os.path.isabs(found) and os.path.exists(found)
 
 
 def _build_jobs() -> int:
@@ -161,11 +149,9 @@ def _compile_and_link(out_dir: Path) -> Path:
                 "-O3", "-Wall", "-std=c++17", "-fno-exceptions", "-fno-rtti", "-ffp-contract=off", "-fPIC",
                 "-ffunction-sections", "-fdata-sections",
             ]  # fmt: skip
-            # only the BCLIBCFFI_* symbols are exported; the C++ runtime goes into the library when the toolchain has it as
-            # a static library (musl and glibc), so the wheel does not depend on the distribution's libstdc++
+            # only the BCLIBCFFI_* symbols are exported; libstdc++ is linked dynamically, as in the Cython wheels: the manylinux
+            # toolchain keeps to the symbols its policy allows, and auditwheel checks them
             link_args = [f"-Wl,--version-script={version_script}", "-Wl,--gc-sections", "-Wl,-strip-all"]
-            if _has_static_libstdcxx(cxx):
-                link_args += ["-static-libstdc++", "-static-libgcc"]
 
     # One source per call, each in a thread of its own: a call spawns the compiler and waits for it, so the compilers run side by
     # side. Every source has an object file of its own (its path under obj_dir), so nothing is written twice; the order of the
