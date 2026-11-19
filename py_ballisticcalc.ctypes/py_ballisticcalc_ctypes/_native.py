@@ -95,6 +95,30 @@ def _check_library_version(G, lib):
         )
 
 
+# BCLIBCFFI_get_layout() lists the structs in the order they joined the ABI, each as its size and the offsets of its fields:
+# Config (1 + 7 values), Wind (1 + 4), Shot (1 + 24), TrajectoryRequest (1 + 4), then TrajectoryData (1 + 16: the size,
+# the 15 doubles and the flag).
+_LAYOUT_TRAJECTORY_DATA = 8 + 5 + 25 + 5
+_TRAJ_FLAG_OFFSET = 15 * 8
+
+
+def _trajectory_data_size(G):
+    """sizeof(BCLIBCFFI_TrajectoryData) as the library reports it, or None when it cannot be read (a library that has no
+    BCLIBCFFI_get_layout, or whose list does not start with the layout this expects)."""
+    get_layout = getattr(G, "BCLIBCFFI_get_layout", None)
+    if get_layout is None:
+        return None
+    values = (C.c_int32 * 256)()
+    count = get_layout(values, 256)
+    at = _LAYOUT_TRAJECTORY_DATA
+    if count < at + 17 or values[at + 1] != 0 or values[at + 16] != _TRAJ_FLAG_OFFSET:
+        return None
+    return values[at]
+
+
+_ERROR_TYPES: dict[int, type[Exception]] = {}  # status code -> Python exception, see _raise()
+
+
 def _load_library_locked():
     global _LIB, _G, _T
     if _LIB is not None:
@@ -119,8 +143,24 @@ def _load_library_locked():
         Interception=G.BCLIBCFFI_Interception,
     )
     _check_library_version(G, lib)
-    if C.sizeof(_T.TrajData) != _TRAJ_FMT.size:  # the layout _traj reads
-        raise RuntimeError(f"BCLIBCFFI_TrajectoryData is {C.sizeof(_T.TrajData)} bytes, expected {_TRAJ_FMT.size}")
+    # the size the library itself was compiled with (BCLIBCFFI_get_layout), not one counted here: the bytes _traj reads
+    # have to be exactly as many as the library writes, and the ctypes structure the arrays are indexed by as many as both
+    reported = _trajectory_data_size(G)
+    if reported is not None and not (reported == _TRAJ_FMT.size == C.sizeof(_T.TrajData)):
+        raise RuntimeError(
+            f"BCLIBCFFI_TrajectoryData is {reported} bytes in the library, {C.sizeof(_T.TrajData)} in the ctypes structure "
+            f"and {_TRAJ_FMT.size} in the reader (_TRAJ_FMT)"
+        )
+    for name, exc in (
+        ("BCLIBCFFI_ERR_DOMAIN", ValueError),
+        ("BCLIBCFFI_ERR_INVALID_ARGUMENT", ValueError),
+        ("BCLIBCFFI_ERR_OUT_OF_BOUNDS", IndexError),
+        ("BCLIBCFFI_ERR_LOGIC", RuntimeError),
+        ("BCLIBCFFI_ERR_RUNTIME", RuntimeError),
+    ):
+        code = getattr(G, name, None)  # absent from the bindings of a bclibc older than 2.2
+        if code is not None:
+            _ERROR_TYPES[code] = exc
     _G = G
     _LIB = lib
     return lib
@@ -304,6 +344,7 @@ def _fill_shot(scr: _Scratch, shot_info, cfg, method: int) -> None:
 # BCLIBCFFI_TrajectoryData: 15 doubles and the int32 flag, read in one call instead of one ctypes descriptor access per
 # field. The tail padding is the C compiler's: "0d" pads to the alignment of a double like the structure does, so it is
 # 4 bytes where a double is aligned to 8 (128 bytes in all) and none on 32-bit x86 Linux, where it is aligned to 4 (124).
+# _load_library() checks the size against the one the library reports in BCLIBCFFI_get_layout().
 _TRAJ_FMT = struct.Struct("15di0d")
 
 
@@ -370,13 +411,22 @@ def _traj(r: "_T.TrajData") -> TrajectoryData:
 
 
 def _raise(err: "_T.Error"):
+    """The py_ballisticcalc exception of a failed call: what the Cython layer raises for the same kind of error
+    (exceptions.pxd, result.pxd), now that the status code tells the kinds apart."""
     msg = err.message.decode("utf-8", "replace")
-    if err.code == _G.BCLIBCFFI_ERR_OUT_OF_RANGE:
+    code = err.code
+    if code == _G.BCLIBCFFI_ERR_OUT_OF_RANGE:
         raise OutOfRangeError(Distance.Foot(err.f64_0), Distance.Foot(err.f64_1), Angular.Radian(err.f64_2), msg)
-    if err.code == _G.BCLIBCFFI_ERR_ZERO_FINDING:
+    if code == _G.BCLIBCFFI_ERR_ZERO_FINDING:
         raise ZeroFindingError(err.f64_0, err.i32_0, Angular.Radian(err.f64_1), msg)
-    if err.code == _G.BCLIBCFFI_ERR_INTERCEPTION:
+    if code == _G.BCLIBCFFI_ERR_INTERCEPTION:
         raise InterceptionError(msg, (None, None))
+    # the kinds that are not a solver's (bclibc 2.2): ValueError for a domain or argument error, IndexError for an index or
+    # a value outside the data, RuntimeError for the rest, as Cython's own `except +` mapping gave. One dict lookup, filled
+    # once when the library is loaded
+    exc = _ERROR_TYPES.get(code)
+    if exc is not None:
+        raise exc(msg)
     raise SolverRuntimeError(msg)
 
 
