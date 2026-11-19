@@ -48,7 +48,8 @@ on:
       - ".github/actions/wheel-matrix/**"
       - ".github/scripts/wheel_matrix.py"
   schedule:
-    - cron: "30 3 * * *" # every night, UTC (half an hour after the ctypes tests); a schedule runs the default branch only
+    - cron: "47 4 * * *" # every night, UTC (30 minutes after the ctypes tests, so that the macOS jobs of the two do not wait for each other); a
+    # schedule runs the default branch only, and not on the hour: GitHub delays the scheduled runs at the start of every hour
   workflow_dispatch:
     inputs:
       ios:

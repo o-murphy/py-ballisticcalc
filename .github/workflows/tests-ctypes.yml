@@ -51,7 +51,8 @@ on:
       - ".github/actions/wheel-matrix/**"
       - ".github/scripts/wheel_matrix.py"
   schedule:
-    - cron: "0 3 * * *" # every night, UTC; a schedule runs the default branch only
+    - cron: "17 4 * * *" # every night, UTC (06:17 or 07:17 in Kyiv); a schedule runs the default branch only. Not on the hour: GitHub delays
+    # the scheduled runs at the start of every hour, when most of them start
   workflow_dispatch:
     inputs:
       qemu:
