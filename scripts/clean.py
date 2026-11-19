@@ -19,6 +19,8 @@ EXTS = ROOT / "py_ballisticcalc.exts"
 PKG = EXTS / "py_ballisticcalc_exts"
 CTYPES = ROOT / "py_ballisticcalc.ctypes"
 CPKG = CTYPES / "py_ballisticcalc_ctypes"
+CABI = ROOT / "py_ballisticcalc.cabi"
+BPKG = CABI / "py_ballisticcalc_cabi"
 
 
 def remove(path: Path) -> None:
@@ -55,6 +57,12 @@ def main() -> None:
         CPKG / "_native_lib",
         CPKG / "external",
         *CTYPES.glob("*.egg-info"),
+        # the cabi package: the extension, the generated C++, the staged bclibc sources
+        CABI / "build",
+        CABI / "dist",
+        BPKG / "external",
+        *CABI.glob("*.egg-info"),
+        *(p for p in BPKG.glob("*") if p.is_file() and p.suffix in {".so", ".pyd", ".cpp", ".html"}),
     ]
     for target in targets:
         if target.exists() or target.is_symlink():

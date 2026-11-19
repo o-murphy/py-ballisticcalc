@@ -23,10 +23,11 @@ def main() -> None:
     venv = repo / ".venv"
     py = os.environ.get("PYTHON", "3.12")
     # the compiled engines come from the Cython extensions (default, `cython+*`) or the same through ctypes (EXTRA=ctypes,
-    # `ctypes+*`; the bclibc_ffi library is compiled, a C++ compiler is needed)
+    # `ctypes+*`; the bclibc_ffi library is compiled, a C++ compiler is needed) or Cython over the C ABI of bclibc
+    # (EXTRA=cabi, `cabi+*`)
     extra = os.environ.get("EXTRA", "exts")
-    if extra not in {"exts", "ctypes"}:
-        raise SystemExit("EXTRA must be exts or ctypes")
+    if extra not in {"exts", "ctypes", "cabi"}:
+        raise SystemExit("EXTRA must be exts, ctypes or cabi")
     recreate = os.environ.get("RECREATE", "0") == "1"
 
     if not shutil.which("uv"):
