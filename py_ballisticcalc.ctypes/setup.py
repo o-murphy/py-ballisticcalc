@@ -146,19 +146,19 @@ def _compile_and_link(out_dir: Path) -> Path:
             # (-O, -fPIC, -fwasm-exceptions, -sSUPPORT_LONGJMP=wasm) in CFLAGS/CXXFLAGS/LDFLAGS, which are kept above; there is
             # no version script or strip for wasm-ld, and the C++ runtime goes into the module
             lib_name = "libbclibc_ffi.so"
-            compile_args = ["-std=c++17", "-fno-exceptions", "-fno-rtti", "-ffp-contract=off", "-fPIC"]
+            compile_args = ["-std=c++17", "-Wall", "-fno-exceptions", "-fno-rtti", "-ffp-contract=off", "-fPIC"]
             link_args = ["-sSIDE_MODULE=1"]
         elif kind == "macos":
             lib_name = "libbclibc_ffi.dylib"
             compile_args = [
-                "-O3", "-std=c++17", "-fno-exceptions", "-fno-rtti", "-stdlib=libc++", "-ffp-contract=off",
+                "-O3", "-Wall", "-std=c++17", "-fno-exceptions", "-fno-rtti", "-stdlib=libc++", "-ffp-contract=off",
                 "-fPIC", "-ffunction-sections", "-fdata-sections",
             ]  # fmt: skip
             link_args = ["-stdlib=libc++", "-Wl,-dead_strip", "-Wl,-x", "-install_name", f"@rpath/{lib_name}"]
         else:
             lib_name = "libbclibc_ffi.so"
             compile_args = [
-                "-O3", "-std=c++17", "-fno-exceptions", "-fno-rtti", "-ffp-contract=off", "-fPIC",
+                "-O3", "-Wall", "-std=c++17", "-fno-exceptions", "-fno-rtti", "-ffp-contract=off", "-fPIC",
                 "-ffunction-sections", "-fdata-sections",
             ]  # fmt: skip
             # only the BCLIBCFFI_* symbols are exported; the C++ runtime goes into the library when the toolchain has it as
