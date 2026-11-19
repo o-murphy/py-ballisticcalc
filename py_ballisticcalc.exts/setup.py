@@ -231,12 +231,12 @@ elif IS_IOS:
     # (the macOS branch below would switch to the host clang). Same Apple flags as macOS; no stripping, since Apple's
     # linker has no --strip-all.
     c_compile_args = ["-g", "-O0", "-std=c99"]
-    cpp_compile_args = ["-O3", "-Wall", "-std=c++17", "-fno-exceptions", "-fno-rtti"]
-    cpp_extra_link_args = ["-stdlib=libc++"]
+    cpp_compile_args = ["-O3", "-Wall", "-std=c++17", "-fno-exceptions", "-fno-rtti", "-ffp-contract=off"]
+    cpp_extra_link_args = ["-stdlib=libc++", "-Wl,-dead_strip", "-Wl,-x"]
 elif is_macos:
     c_compile_args = ["-g", "-O0", "-std=c99"]
-    cpp_compile_args = ["-O3", "-Wall", "-std=c++17", "-fno-exceptions", "-fno-rtti"]
-    cpp_extra_link_args = ["-stdlib=libc++"]
+    cpp_compile_args = ["-O3", "-Wall", "-std=c++17", "-fno-exceptions", "-fno-rtti", "-ffp-contract=off"]
+    cpp_extra_link_args = ["-stdlib=libc++", "-Wl,-dead_strip", "-Wl,-x"]
     os.environ["CC"] = "clang"
     os.environ["CXX"] = "clang++"
 elif IS_EMSCRIPTEN:
@@ -247,13 +247,23 @@ elif IS_EMSCRIPTEN:
     # "-Wl,-strip-all" is dropped: em++'s linker wrapper does not reliably
     # support arbitrary native-ld passthrough flags for stripping.
     c_compile_args = ["-std=c99"]
-    cpp_compile_args = ["-x", "c++", "-std=c++17", "-Wall", "-fno-exceptions", "-fno-rtti"]
+    cpp_compile_args = ["-x", "c++", "-std=c++17", "-Wall", "-fno-exceptions", "-fno-rtti", "-ffp-contract=off"]
     cpp_extra_link_args = []
 else:
     # GCC/Clang flags (also covers Android and iOS cross-builds, which use a
     # GNU-compatible clang toolchain via their respective NDK/Xcode setups)
     c_compile_args = ["-g", "-O0", "-std=c99"]
-    cpp_compile_args = ["-x", "c++", "-std=c++17", "-O3", "-Wall", "-g", "-fno-exceptions", "-fno-rtti"]
+    cpp_compile_args = [
+        "-x",
+        "c++",
+        "-std=c++17",
+        "-O3",
+        "-Wall",
+        "-g",
+        "-fno-exceptions",
+        "-fno-rtti",
+        "-ffp-contract=off",
+    ]
     if DISABLE_STRIP:
         cpp_extra_link_args = []
     else:
