@@ -56,9 +56,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   package and leaves out the generated bindings (`_ctypesgen`); the C++ library itself is not line-traced.
 - cibuildwheel 4.2.1 → 4.3.0 in `cibuildwheel-reusable.yml` (it knows GraalPy 3.13, `gp313_253`).
 - `cibuildwheel-reusable.yml` has a `project` input (`py_ballisticcalc.exts` by default, or `py_ballisticcalc.ctypes`) and stages the
-  bclibc sources into a package that needs them. `ctypes-tests.yml` builds and tests the ctypes package by hand
-  (`workflow_dispatch`; until the file is on the default branch also on a push to `feat/ctypes-*`), without the Cython jobs of
-  `cibuildwheel-tests.yml`: Linux x86_64, i686, aarch64 and armv7l (glibc, musl), ppc64le, s390x and riscv64 (QEMU, a job each), macOS
+  bclibc sources into a package that needs them. `ctypes-tests.yml` builds and tests the ctypes package the way
+  `cibuildwheel-tests.yml` does the Cython one: a pull request and a run by hand run the full matrix, a push to a branch runs one
+  Linux x86-64 job (CPython 3.11, glibc), without the Cython jobs. The full matrix: Linux x86_64, i686, aarch64 and armv7l (glibc, musl), ppc64le, s390x and riscv64 (QEMU, a job each), macOS
   arm64 (universal2) and Intel, Windows x64, x86 and ARM64, Android (x86-64 emulator; the arm64 wheel is built, not run), Pyodide, PyPy
   (`pp3*`) and GraalPy. One CPython builds the `py3-none` wheel of a platform and every other Python only tests it. GraalPy has a job of
   its own on each platform: GraalPy 3.13 (`gp313_253`) on Linux, Windows and macOS arm64 (there is no macOS Intel build), GraalPy 3.12
