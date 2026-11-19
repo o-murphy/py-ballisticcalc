@@ -27,12 +27,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   the operating systems the wheels are built for, and free-threading (3 - Stable) for the extensions and the ctypes package.
 - `py_ballisticcalc.ctypes` registers the engines as entry points of the `py_ballisticcalc.engines.ctypes` group (`ctypes+euler`, `rk4`, `verlet`, `rkck`, `dopri`, `tsitouras`: the Cython ones keep `cython+<method>`, so both packages can be installed) and
   refuses a library that does not match the bindings' bclibc version; the main test suite passes on CPython, PyPy and GraalPy.
-- Extras: `ctypes` (the ctypes package) next to `exts` (Cython) is an explicit choice of the backend; `native` picks one of
-  them by environment markers (`exts` on CPython, `ctypes` on PyPy, GraalPy, ppc64le, s390x and riscv64).
+- Extras: `ctypes` (the ctypes package) next to `exts` (Cython) is an explicit choice of the backend.
 
 - API documentation of the ctypes engines: the six `Native*IntegrationEngine` classes and their public methods have docstrings and are in
   `docs/api/calculator/engines.md` (`py_ballisticcalc.ctypes` is in the `paths` of mkdocstrings in `mkdocs.yml`); `docs/install.md`
-  and the engine pages describe the `ctypes` and `native` extras.
+  and the engine pages describe the `ctypes` extra.
 ### Changed
 - Pin `bclibc` to [`v2.1.0`](https://github.com/ballistics-lab/bclibc/releases/tag/v2.1.0): the zero search no longer
   depends on the early-termination limits (`cMaximumDrop`, `cMinimumAltitude`), so `find_zero_angle` with either at `0`, or for a

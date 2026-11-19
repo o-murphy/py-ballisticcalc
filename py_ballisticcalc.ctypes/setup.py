@@ -5,8 +5,7 @@
 No Python extension is built: the library is plain C++ with a C ABI (``BCLIBCFFI_*``), loaded through ctypes, so it
 does not depend on the interpreter. The wheel is therefore ``py3-none-<platform>``: one wheel per platform serves
 every CPython, PyPy and GraalPy that platform has (the Cython wheels of ``py_ballisticcalc.exts`` serve CPython where
-they are built; the main package's ``native`` extra picks between the two by environment markers, ``exts`` and ``ctypes`` are
-an explicit choice).
+they are built; ``exts`` and ``ctypes`` are an explicit choice of the main package's extras).
 
 The library is compiled with setuptools' compiler API from the sources the Cython extensions use (without the Python
 binding) plus the C ABI wrapper, and copied to ``py_ballisticcalc_ctypes/_native_lib/`` before the package is

@@ -196,15 +196,10 @@ fallback_version = "0.0.0.dev0"
 #   `exts` is the Cython extensions; `ctypes` is the same engines through ctypes, for PyPy and GraalPy (Cython does not
 #   work there), ppc64le, s390x, riscv64 and, as a second variant, the platforms Cython is built for. Those two are an explicit
 #   choice of the backend.
-#   `native` is the conditional one: environment markers pick exactly one of them for the interpreter and the machine.
 [tool.setuptools_dynamic_dependencies.optional-dependencies]
 exts = ["py_ballisticcalc.exts=={version}"]
 ctypes = ["py_ballisticcalc.ctypes=={version}"]
-cabi = ["py_ballisticcalc.cabi=={version}"]  # Cython over the C ABI of bclibc: an explicit choice, not part of `native`
-native = [
-    "py_ballisticcalc.exts=={version}; platform_python_implementation == 'CPython' and platform_machine not in 'ppc64le s390x riscv64'",
-    "py_ballisticcalc.ctypes=={version}; platform_python_implementation != 'CPython' or platform_machine in 'ppc64le s390x riscv64'",
-]
+cabi = ["py_ballisticcalc.cabi=={version}"]  # Cython over the C ABI of bclibc: an explicit choice of the backend
 charts = [
     "matplotlib>=3.10.9",
     "pandas>=3.0.2",

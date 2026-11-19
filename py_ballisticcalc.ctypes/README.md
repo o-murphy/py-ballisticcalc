@@ -9,7 +9,6 @@ in its place, which `ctypes` does not read (not tried here), and the Cython whee
 ```bash
 pip install py_ballisticcalc[ctypes]   # this package
 pip install py_ballisticcalc[exts]     # the Cython variant
-pip install py_ballisticcalc[native]   # one of the two for the interpreter and the machine (ctypes on PyPy, GraalPy, ppc64le, s390x, riscv64)
 ```
 
 The engines of the two packages have different names (`cython+rk4` and `ctypes+rk4`), so both can be installed.

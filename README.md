@@ -54,9 +54,6 @@ uv add py-ballisticcalc[exts]
 # The same engines through ctypes, named ctypes+<method> (needed on PyPy, GraalPy, ppc64le, s390x, riscv64; elsewhere an alternative to [exts])
 uv add py-ballisticcalc[ctypes]
 
-# Or let the environment pick the backend: Cython (cython+<method>) on CPython, ctypes (ctypes+<method>) on PyPy, GraalPy, ppc64le, s390x and riscv64
-uv add py-ballisticcalc[native]
-
 # Using matplotlib and pandas uses additional dependencies
 uv add py-ballisticcalc[charts]
 
@@ -74,9 +71,6 @@ pip install py-ballisticcalc[exts]
 
 # The same engines through ctypes, named ctypes+<method> (needed on PyPy, GraalPy, ppc64le, s390x, riscv64; elsewhere an alternative to [exts])
 pip install py-ballisticcalc[ctypes]
-
-# Or let the environment pick the backend: Cython (cython+<method>) on CPython, ctypes (ctypes+<method>) on PyPy, GraalPy, ppc64le, s390x and riscv64
-pip install py-ballisticcalc[native]
 
 # Using matplotlib and pandas uses additional dependencies
 pip install py-ballisticcalc[charts]

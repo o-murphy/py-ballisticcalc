@@ -89,8 +89,7 @@ Where the Cython extensions are not available (PyPy, GraalPy, ppc64le, s390x, ri
 engines come from the `[ctypes]` option (a shared library loaded through `ctypes`; see
 [`py_ballisticcalc.ctypes`](https://github.com/o-murphy/py-ballisticcalc/tree/master/py_ballisticcalc.ctypes)). They are named
 `ctypes+euler`, `ctypes+rk4`, `ctypes+verlet`, `ctypes+rkck`, `ctypes+dopri` and `ctypes+tsitouras`, so the code asks for them by their own
-name (`Calculator(engine="ctypes+dopri")`) and both packages can be installed. `[native]` installs one of the two for the interpreter and
-the machine.
+name (`Calculator(engine="ctypes+dopri")`) and both packages can be installed.
 
 ## Adaptive integration
 

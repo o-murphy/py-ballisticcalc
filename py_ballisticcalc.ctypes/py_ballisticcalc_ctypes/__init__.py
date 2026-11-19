@@ -53,7 +53,7 @@ def library_path() -> Path:
 
 def check_versions(core_version: str, own_version: str) -> None:
     """The main package and this one are released together and must be the same version
-    (the `ctypes` and `native` extras pin it)."""
+    (the `ctypes` extra pins it)."""
     if core_version != own_version:
         raise AssertionError(
             f"Incompatible versions: {CORE_PACKAGE_NAME}@{core_version} "
