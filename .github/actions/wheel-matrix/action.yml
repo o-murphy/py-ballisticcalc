@@ -5,7 +5,7 @@ description: >-
 
 inputs:
   matrix:
-    description: The name of the matrix in .github/matrices.yml (exts-tests, ctypes, exts-release)
+    description: The name of the matrix in .github/matrices.yml (exts-tests, cabi-tests, ctypes, exts-release)
     required: true
   smoke:
     description: "'true' reads the matrix with --smoke: the entries that have a `smoke` mapping take its fields (a build and a quick test)"

@@ -1,0 +1,149 @@
+name: Tests (cabi)
+run-name: >-
+  ${{ github.event_name == 'push' && format('cabi: Minimal Matrix — Push {0}', github.ref_name)
+  || github.event_name == 'pull_request' && format('cabi: Full Matrix — PR {0}', github.event.pull_request.number)
+  || github.event_name == 'schedule' && format('cabi: Night Matrix (iOS) — {0}', github.ref_name)
+  || format('cabi: Full Matrix — by hand {0}', github.ref_name) }}
+
+# Builds the cabi wheels (py_ballisticcalc.cabi: Cython over the C ABI of bclibc) with cibuildwheel and tests each of them on its own platform: every cabi
+# engine, one after another (cibuildwheel-reusable.yml, .github/scripts/cibw_run_engines.py). The matrix is in .github/matrices.yml. The tests of the core (the pure-Python and SciPy
+# engines) are in tests-pure.yml, those of the ctypes wheels in tests-ctypes.yml.
+#
+# A pull request runs every platform. The iOS simulator jobs take 20 minutes or more each, mostly the tests, so for a pull request they
+# build the wheels (the device one too) and run a smoke test only (one Python, two engines: the `smoke` of their entries in the matrix).
+# Their whole tests are run by hand (workflow_dispatch, with `ios` on) and by the schedule, every night on the default branch, which is
+# skipped when nothing the workflow tests has changed since the last successful night run (.github/scripts/changed_since_last_run.py).
+# A push to a branch runs one Linux job. A run by hand and a night run have a concurrency group of their own, so that a push does not
+# cancel them.
+on:
+  pull_request:
+    branches:
+      - "**"
+    paths:
+      - "pyproject.toml"
+      - "py_ballisticcalc/**"
+      - "tests/**"
+      - "py_ballisticcalc.cabi/**"
+      - ".gitmodules"
+      - ".github/workflows/tests-cabi.yml"
+      - ".github/workflows/cibuildwheel-reusable.yml"
+      - ".github/scripts/cibw_run_engines.py"
+      - ".github/matrices.yml"
+      - ".github/actions/wheel-matrix/**"
+      - ".github/scripts/wheel_matrix.py"
+  push:
+    branches:
+      - "**" # "*" would skip branch names containing a slash (ci/x, feature/x)
+    paths:
+      - "pyproject.toml"
+      - "py_ballisticcalc/**"
+      - "tests/**"
+      - "py_ballisticcalc.cabi/**"
+      - ".gitmodules"
+      - ".github/workflows/tests-cabi.yml"
+      - ".github/workflows/cibuildwheel-reusable.yml"
+      - ".github/scripts/cibw_run_engines.py"
+      - ".github/matrices.yml"
+      - ".github/actions/wheel-matrix/**"
+      - ".github/scripts/wheel_matrix.py"
+  schedule:
+    - cron: "17 5 * * *" # every night, UTC (30 minutes after the exts tests); a
+    # schedule runs the default branch only, and not on the hour: GitHub delays the scheduled runs at the start of every hour
+  workflow_dispatch:
+    inputs:
+      ios:
+        description: "Test the iOS jobs in full (20 minutes or more each); off: a build and a smoke test, as in a pull request"
+        required: false
+        type: boolean
+        default: true
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}-${{ (github.event_name == 'push' || github.event_name == 'pull_request') && 'ci' || github.event_name }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  # The night run only: is there anything new to test since the last successful night run?
+  changes:
+    name: Changes since the last night run
+    if: github.event_name == 'schedule'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      actions: read # the last successful run is looked up with gh
+    outputs:
+      skip: ${{ steps.changes.outputs.skip }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0 # the commits to compare
+      - name: Install uv
+        uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2
+        with:
+          github-token: ${{ github.token }}
+      - id: changes
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: uv run --no-project --with pyyaml==6.0.3 python .github/scripts/changed_since_last_run.py tests-cabi.yml
+        shell: bash
+
+  # The matrix is in .github/matrices.yml (the list of platforms is long and some are in more than one workflow)
+  wheel_matrix:
+    name: Wheel matrix
+    needs: changes
+    # `changes` runs by the schedule only: without !cancelled() the job would be skipped with it. A night run with nothing new skips it
+    if: ${{ !cancelled() && github.event_name != 'push' && needs.changes.outputs.skip != 'true' }}
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.read.outputs.matrix }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          sparse-checkout: .github
+      - id: read
+        uses: ./.github/actions/wheel-matrix
+        with:
+          matrix: cabi-tests
+          # the iOS entries are tested in full by the schedule, and by hand when asked (the input `ios`); otherwise a build and a smoke test
+          smoke: ${{ !(github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && inputs.ios)) }}
+
+  # Full matrix: pull requests, a manual run and the night run
+  full:
+    name: ${{ matrix.name }}
+    needs: wheel_matrix
+    if: github.event_name != 'push'
+    strategy:
+      fail-fast: false
+      max-parallel: 10
+      matrix: ${{ fromJSON(needs.wheel_matrix.outputs.matrix) }}
+
+    uses: ./.github/workflows/cibuildwheel-reusable.yml
+    with:
+      project: py_ballisticcalc.cabi
+      os: ${{ matrix.os }}
+      platform: ${{ matrix.cibw_platform }}
+      archs: ${{ matrix.cibw_archs }}
+      build: ${{ matrix.build || '' }}
+      test_command: ${{ matrix.test_command || '' }}
+      qemu: ${{ matrix.needs_qemu }}
+      test_skip: ${{ matrix.test_skip || '' }}
+      artifact_name: tests-cabi-wheels-${{ matrix.artifact_key }}
+      retention_days: 1
+
+  # Minimal matrix: pushes to a branch
+  minimal:
+    name: Linux x86-64
+    if: github.event_name == 'push'
+    uses: ./.github/workflows/cibuildwheel-reusable.yml
+    with:
+      project: py_ballisticcalc.cabi
+      os: ubuntu-latest
+      platform: linux
+      archs: x86_64
+      build: "cp311-*"
+      skip: "*-musllinux_*"
+      artifact_name: tests-cabi-wheels-linux-x86_64
+      retention_days: 1
