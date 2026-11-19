@@ -3,7 +3,8 @@
 The bclibc engines of [py_ballisticcalc](https://github.com/o-murphy/py-ballisticcalc) through `ctypes`: for the interpreters the
 Cython extensions (`py_ballisticcalc.exts`) cannot serve (PyPy, GraalPy), for the architectures they are not built for (ppc64le,
 s390x, riscv64), and as a second variant next to them on CPython (Linux, macOS, Windows incl. x86 and ARM64, Android, Pyodide). iOS is
-not built.
+not built: an iOS app builder (Briefcase, or an Xcode project) turns each `.so` of a wheel into a framework and leaves a `.fwork` marker
+in its place, which `ctypes` does not read (not tried here), and the Cython wheels are built for iOS.
 
 ```bash
 pip install py_ballisticcalc[ctypes]   # this package

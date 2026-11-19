@@ -11,7 +11,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `py_ballisticcalc.ctypes`: the bclibc engines (`ctypes+*`) through ctypes: the only backend where the Cython extensions do not
   work (PyPy and GraalPy: the Cython extension does not build on PyPy, and on GraalPy it builds but crashes on import) and on the
   architectures they are not built for (ppc64le, s390x, riscv64); on the others (CPython on Linux, macOS, Windows incl. x86 and ARM64,
-  Android, Pyodide) it is the second variant next to Cython. iOS is not built. The package ships the `bclibc_ffi` shared library (a C ABI,
+  Android, Pyodide) it is the second variant next to Cython. iOS is not built (an iOS app builder turns the `.so` of a wheel into a framework and leaves a `.fwork`
+  marker, which `ctypes` does not read; not tried; the Cython wheels are built for iOS). The package ships the `bclibc_ffi` shared library (a C ABI,
   no dependency on the interpreter; the bclibc core is compiled into it, where the Cython modules each have their own copy), so there is
   one `py3-none-<platform>` wheel per platform for every Python: `manylinux` (glibc 2.17 on x86_64, aarch64, ppc64le and s390x, 2.31 on
   armv7l, 2.38 on riscv64; built in `manylinux_2_28`), `musllinux_1_2`, macOS, Windows, Android and Pyodide (its platform tag names the

@@ -63,17 +63,12 @@ _LIB_NAME = "bclibc_ffi"  # ctypesgen library name: libbclibc_ffi.so / .dylib, b
 
 
 def _library_dir() -> str:
-    """Directory holding the native library.
-
-    PY_BALLISTICCALC_NATIVE_LIB_DIR overrides the package default. On iOS the library is inside
-    bclibc_ffi.framework/ (the loader then finds the framework binary named bclibc_ffi).
-    """
+    """Directory holding the native library: ``_native_lib`` of the package, or the directory in the environment variable
+    PY_BALLISTICCALC_NATIVE_LIB_DIR when it is set (the same one setup.py takes a prebuilt library from)."""
     override = os.environ.get("PY_BALLISTICCALC_NATIVE_LIB_DIR")
     if override:
         return override
-    base = Path(__file__).with_name("_native_lib")
-    framework = base / "bclibc_ffi.framework"
-    return str(framework if framework.is_dir() else base)
+    return str(Path(__file__).with_name("_native_lib"))
 
 
 _LOAD_LOCK = threading.Lock()  # serialises the first load when several threads start engines at once
