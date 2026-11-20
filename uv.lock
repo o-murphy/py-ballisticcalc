@@ -2516,6 +2516,7 @@ dev = [
     { name = "pandas" },
     { name = "pandas-stubs" },
     { name = "pre-commit" },
+    { name = "psutil" },
     { name = "pylint" },
     { name = "pyright" },
     { name = "pytest" },
@@ -2574,6 +2575,7 @@ dev = [
     { name = "types-deprecated" },
 ]
 test = [
+    { name = "psutil" },
     { name = "pytest" },
     { name = "pytest-cov" },
 ]
@@ -2606,6 +2608,7 @@ requires-dist = [
     { name = "pandas", marker = "extra == 'dev'", specifier = ">=3.0.2" },
     { name = "pandas-stubs", marker = "extra == 'dev'", specifier = ">=3.0.3.260530" },
     { name = "pre-commit", marker = "extra == 'dev'", specifier = ">=4.6.0" },
+    { name = "psutil", marker = "extra == 'dev'", specifier = ">=7.0.0" },
     { name = "py-ballisticcalc-cabi", marker = "extra == 'cabi'", directory = "py_ballisticcalc.cabi" },
     { name = "py-ballisticcalc-ctypes", marker = "extra == 'ctypes'", directory = "py_ballisticcalc.ctypes" },
     { name = "py-ballisticcalc-exts", marker = "extra == 'exts'", directory = "py_ballisticcalc.exts" },
@@ -2652,6 +2655,7 @@ dev = [
     { name = "types-deprecated", specifier = ">=1.3.1.20260520" },
 ]
 test = [
+    { name = "psutil", specifier = ">=7.0.0" },
     { name = "pytest", specifier = ">=9.1.1" },
     { name = "pytest-cov", specifier = ">=7.1.0" },
 ]

@@ -232,6 +232,7 @@ dev = [
     "pylint>=4.0.6",
     "pytest>=9.1.1",
     "pytest-cov>=7.1.0",
+    "psutil>=7.0.0", # the RSS check of py_ballisticcalc.exts/tests/test_memory_leak.py (-m stress)
     "ruff>=0.16.0",
     "cython-lint>=0.21.0", # lints py_ballisticcalc.exts/**/*.pyx; must run from root venv (pre-commit)
     "pre-commit>=4.6.0",
@@ -293,4 +294,5 @@ dev = [
 test = [
     "pytest>=9.1.1",
     "pytest-cov>=7.1.0",
+    "psutil>=7.0.0",
 ]
