@@ -192,15 +192,9 @@ class _Scratch:
         self.mr = _T.MaxRangeResult()
         self.apex = _T.TrajData()
         self.it = _T.Interception()
-        self.custom = None  # _Curve for a custom drag table, reallocated only when its length changes
+        self.custom = None  # _Curve for the drag table, reallocated only when its length changes
         self.n_wind = -1
         self.wind_arr = None
-        # the drag table of the previous call and the curve chosen for it: the same list object (with the same first and
-        # last point objects and length) is checked against the curve by value (_same_curve), as a point may be edited in
-        # place, which the Cython engines see because they read the table on every call
-        self.table = None
-        self.table_key = None
-        self.table_curve = None
 
 
 class _Curve:
@@ -215,31 +209,6 @@ class _Curve:
         self.c_store = array.array("d", [0.0]) * n
         self.mach = (C.c_double * n).from_buffer(self.m_store)
         self.cd = (C.c_double * n).from_buffer(self.c_store)
-
-
-def _std_curve(table) -> "_Curve":
-    """A standard table (dict points, as in py_ballisticcalc.drag_tables), stored once."""
-    curve = _Curve(len(table))
-    for i, point in enumerate(table):
-        curve.m_store[i] = point["Mach"]
-        curve.c_store[i] = point["CD"]
-    return curve
-
-
-# the standard G1 and G7 tables, built once: a drag model whose table has the same values is passed these arrays
-_STD_G1 = _std_curve(TableG1)
-_STD_G7 = _std_curve(TableG7)
-
-
-def _same_curve(table, curve: "_Curve") -> bool:
-    """True when the drag table's values equal the stored curve's. No allocation: a read-only pass over the points."""
-    if len(table) != curve.n:
-        return False
-    ms, cs = curve.m_store, curve.c_store
-    for i, point in enumerate(table):
-        if point.Mach != ms[i] or point.CD != cs[i]:
-            return False
-    return True
 
 
 def _custom_curve(scr: "_Scratch", table, n: int) -> "_Curve":
@@ -282,18 +251,8 @@ def _fill_shot(scr: _Scratch, shot_info, cfg, method: int) -> None:
     weapon = shot_info.weapon
     table = dm.drag_table
     n = len(table)
-    # standard G1/G7 tables: the stored arrays, no copy; any other table: the scratch copy, written where it changed
-    key = (n, table[0], table[-1]) if n else None
-    if table is scr.table and key == scr.table_key and _same_curve(table, scr.table_curve):
-        curve = scr.table_curve
-    else:
-        if _same_curve(table, _STD_G7):
-            curve = _STD_G7
-        elif _same_curve(table, _STD_G1):
-            curve = _STD_G1
-        else:
-            curve = _custom_curve(scr, table, n)
-        scr.table, scr.table_key, scr.table_curve = table, key, curve
+    # the table is read on every call, as the exts engine does (bind.pyx): no cache and no standard-table shortcut
+    curve = _custom_curve(scr, table, n)
 
     winds = tuple(shot_info.winds)
     nw = len(winds)

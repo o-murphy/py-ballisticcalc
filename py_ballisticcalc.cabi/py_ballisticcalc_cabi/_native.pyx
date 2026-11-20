@@ -90,31 +90,6 @@ cdef class _Curve:
         free(self.c)
 
 
-cdef _Curve _std_curve(table):
-    cdef _Curve curve = _Curve(len(table))
-    cdef int i = 0
-    for point in table:
-        curve.m[i] = point["Mach"]
-        curve.c[i] = point["CD"]
-        i += 1
-    return curve
-
-
-cdef _Curve _STD_G1 = _std_curve(TableG1)
-cdef _Curve _STD_G7 = _std_curve(TableG7)
-
-
-cdef bint _same_curve(table, _Curve curve):
-    cdef int i = 0
-    if len(table) != curve.n:
-        return False
-    for point in table:
-        if point.Mach != curve.m[i] or point.CD != curve.c[i]:
-            return False
-        i += 1
-    return True
-
-
 cdef class _Scratch:
     """Per-engine C storage, allocated once and reused by every call."""
     cdef BCLIBCFFI_Shot shot
@@ -132,8 +107,6 @@ cdef class _Scratch:
     cdef BCLIBCFFI_Wind *winds
     cdef int n_wind
     cdef _Curve custom
-    cdef object table, table_key
-    cdef _Curve table_curve
 
     def __cinit__(self):
         self.n_wind = 0
@@ -172,17 +145,8 @@ cdef int _fill_shot(_Scratch scr, shot_info, cfg, int method) except -1:
     weapon = shot_info.weapon
     table = dm.drag_table
     n = len(table)
-    key = (n, table[0], table[-1]) if n else None
-    if table is scr.table and key == scr.table_key:
-        curve = scr.table_curve
-    else:
-        if _same_curve(table, _STD_G7):
-            curve = _STD_G7
-        elif _same_curve(table, _STD_G1):
-            curve = _STD_G1
-        else:
-            curve = _custom_curve(scr, table, n)
-        scr.table, scr.table_key, scr.table_curve = table, key, curve
+    # the table is copied on every call, as the exts engine does (bind.pyx): no cache of the table
+    curve = _custom_curve(scr, table, n)
 
     winds = shot_info.winds
     nw = len(winds)
