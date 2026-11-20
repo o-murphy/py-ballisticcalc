@@ -567,7 +567,10 @@ class _Engine(BaseIntegrationEngine):
                 rc = BCLIBCFFI_integrate_at_shot(&scr.shot, key, target_value, &scr.it, &scr.err)
         if rc != BCLIBCFFI_OK:
             _raise(&scr.err)
-        return _base(&scr.it.raw_data), _traj(&scr.it.full_data)
+        # the raw point is a CythonizedBaseTrajData, as in the exts engine (base_engine.pyx integrate_raw_at)
+        raw = CythonizedBaseTrajData()
+        raw._d = scr.it.raw_data
+        return raw, _traj(&scr.it.full_data)
 
     def zero_angle(self, shot_info, distance):
         cdef _Scratch scr = self._native_shot(shot_info)
@@ -664,6 +667,11 @@ class _Engine(BaseIntegrationEngine):
             _raise(&scr.err)
         return _traj(&scr.apex)
 
+    @property
+    def integration_step_count(self):
+        """Not available: the C ABI reports no step count for a fixed-step integration (the exts engine does)."""
+        raise NotImplementedError("integration_step_count of a fixed-step engine: the C ABI reports no step count")
+
 
 class _AdaptiveEngine(_Engine):
     """Adaptive engines: per-instance tolerances and the step statistics of the last integrate()."""
@@ -703,6 +711,14 @@ class _AdaptiveEngine(_Engine):
 
     def get_step_stats(self):
         return self._last_accepted, self._last_rejected
+
+    @property
+    def integration_step_count(self):
+        """The steps of the last integration, as the exts engine's counter. For the adaptive methods that is the
+        accepted steps (checked equal to exts); the C ABI reports no count for a fixed-step integration."""
+        if not self._ADAPTIVE:
+            raise NotImplementedError("integration_step_count of a fixed-step engine: the C ABI reports no step count")
+        return self._last_accepted
 
 
 class NativeEulerIntegrationEngine(_Engine):

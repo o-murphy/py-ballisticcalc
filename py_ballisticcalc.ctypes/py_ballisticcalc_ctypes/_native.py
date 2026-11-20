@@ -497,6 +497,11 @@ class _FixedEngine(BaseIntegrationEngine):
         """The integration step in seconds: the engine's base step (`DEFAULT_TIME_STEP`) times `cStepMultiplier`."""
         return self._config.cStepMultiplier * self.DEFAULT_TIME_STEP
 
+    @property
+    def integration_step_count(self) -> int:
+        """Not available: the C ABI reports no step count for a fixed-step integration (the exts engine does)."""
+        raise NotImplementedError("integration_step_count of a fixed-step engine: the C ABI reports no step count")
+
     def _native_shot(self, shot_info):
         """The shot as filled into this engine's scratch storage (the C input for every call)."""
         _LIB or _load_library()
@@ -656,6 +661,11 @@ class _AdaptiveEngine(BaseIntegrationEngine):
         """The numbers of accepted and rejected steps of the last successful `integrate()` call, as ``(accepted,
         rejected)``."""
         return self._last_accepted, self._last_rejected
+
+    @property
+    def integration_step_count(self) -> int:
+        """The steps of the last integration, as the exts engine's counter: the accepted steps (checked equal to exts)."""
+        return self._last_accepted
 
     def get_calc_step(self) -> float:
         """The integration step in seconds: the engine's base step (`DEFAULT_TIME_STEP`) times `cStepMultiplier`."""
