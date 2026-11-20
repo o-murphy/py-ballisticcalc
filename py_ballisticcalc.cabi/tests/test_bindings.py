@@ -7,8 +7,9 @@ from pathlib import Path
 
 import pytest
 
+# Appended, not inserted: a source checkout must not shadow the installed py_ballisticcalc_cabi (it has no compiled _native).
 HERE = Path(__file__).resolve().parent.parent
-sys.path.insert(0, str(HERE))
+sys.path.append(str(HERE))
 
 
 @pytest.fixture
