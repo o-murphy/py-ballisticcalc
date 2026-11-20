@@ -488,6 +488,9 @@ class _Engine(BaseIntegrationEngine):
     """Native engine: fixed-step (RK4, Euler, Verlet) or adaptive (Cash-Karp, Dormand-Prince, Tsitouras)."""
     _METHOD = 0
     _ADAPTIVE = False
+    # the step statistics of the last integrate() (the instance attributes replace them on the first call)
+    _last_accepted = 0
+    _last_rejected = 0
     _relative_tolerance = 0.0
     _absolute_tolerance = 0.0
     DEFAULT_TIME_STEP = 0.0025
@@ -520,8 +523,9 @@ class _Engine(BaseIntegrationEngine):
             self._last_accepted, self._last_rejected = scr.stats.accepted, scr.stats.rejected
         else:
             with nogil:
-                rc = BCLIBCFFI_integrate_dense_shot(shot, &scr.req, want, &scr.recs, &scr.n, &scr.dense, &scr.dn,
-                                                    &scr.reason, &scr.err)
+                rc = BCLIBCFFI_integrate_dense_shot_stats(shot, &scr.req, want, &scr.recs, &scr.n, &scr.dense, &scr.dn,
+                                                          &scr.reason, &scr.stats, &scr.err)
+            self._last_accepted, self._last_rejected = scr.stats.accepted, scr.stats.rejected
         if rc != BCLIBCFFI_OK:
             _raise(&scr.err)
         count = scr.n
@@ -667,10 +671,14 @@ class _Engine(BaseIntegrationEngine):
             _raise(&scr.err)
         return _traj(&scr.apex)
 
+    def get_step_stats(self):
+        return self._last_accepted, self._last_rejected
+
     @property
     def integration_step_count(self):
-        """Not available: the C ABI reports no step count for a fixed-step integration (the exts engine does)."""
-        raise NotImplementedError("integration_step_count of a fixed-step engine: the C ABI reports no step count")
+        """The steps of the last integration, as the exts engine's counter. The C ABI reports them per call: the
+        accepted steps of an adaptive call, the steps of BCLIBCFFI_integrate_dense_shot_stats for a fixed-step one."""
+        return self._last_accepted
 
 
 class _AdaptiveEngine(_Engine):
@@ -708,17 +716,6 @@ class _AdaptiveEngine(_Engine):
         if not math.isfinite(value) or value < 0:
             raise ValueError("absolute_tolerance must be finite and non-negative")
         self._absolute_tolerance = float(value)
-
-    def get_step_stats(self):
-        return self._last_accepted, self._last_rejected
-
-    @property
-    def integration_step_count(self):
-        """The steps of the last integration, as the exts engine's counter. For the adaptive methods that is the
-        accepted steps (checked equal to exts); the C ABI reports no count for a fixed-step integration."""
-        if not self._ADAPTIVE:
-            raise NotImplementedError("integration_step_count of a fixed-step engine: the C ABI reports no step count")
-        return self._last_accepted
 
 
 class NativeEulerIntegrationEngine(_Engine):

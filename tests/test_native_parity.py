@@ -92,17 +92,14 @@ def test_variants_agree(shot_name, method):
                 )
 
 
-ADAPTIVE = ["rkck", "dopri", "tsitouras"]
-FIXED = ["euler", "rk4", "verlet"]
-
-
 def _engine(name, method):
     return Calculator(engine=f"{VARIANTS[name][1]}+{method}")._engine_instance
 
 
-@pytest.mark.parametrize("method", ADAPTIVE)
+@pytest.mark.parametrize("method", METHODS)
 def test_integration_step_count_agrees(method):
-    """The adaptive methods: the step count of the last integrate() is the accepted steps, the same in every variant."""
+    """The step count of the last integrate() is the same in every variant: the accepted steps of an adaptive method, the
+    steps taken by a fixed-step one (BCLIBCFFI_integrate_dense_shot_stats)."""
     variants = installed_variants()
     if len(variants) < 2:
         pytest.skip("needs at least two of the native variants installed")
@@ -115,25 +112,6 @@ def test_integration_step_count_agrees(method):
     reference = variants[0]
     for name in variants[1:]:
         assert counts[name] == counts[reference], f"{name}: {counts[name]} steps, {reference}: {counts[reference]}"
-
-
-@pytest.mark.parametrize("method", FIXED)
-def test_fixed_step_count_is_reported_by_exts_only(method):
-    """Known gap: the C ABI reports no step count for a fixed-step integration, so cabi and ctypes raise NotImplementedError
-    where the exts engine returns its counter. The test fails when the gap is closed, to be updated then."""
-    if "exts" not in installed_variants():
-        pytest.skip("the exts variant is the reference of the step count")
-    make_shot, trajectory_range = SHOTS["g1_wind"]
-    engine = _engine("exts", method)
-    engine.integrate(make_shot(), trajectory_range)
-    assert engine.integration_step_count > 0
-    for name in installed_variants():
-        if name == "exts":
-            continue
-        engine = _engine(name, method)
-        engine.integrate(make_shot(), trajectory_range)
-        with pytest.raises(NotImplementedError):
-            _ = engine.integration_step_count
 
 
 @pytest.mark.parametrize("method", METHODS)
