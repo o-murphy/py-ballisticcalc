@@ -174,3 +174,52 @@ def test_integrate_raw_at_class_is_the_exts_class():
     raw_exts, _ = _engine("exts", "dopri").integrate_raw_at(make_shot(), "time", 0.5)
     raw_cabi, _ = _engine("cabi", "dopri").integrate_raw_at(make_shot(), "time", 0.5)
     assert type(raw_cabi).__name__ == type(raw_exts).__name__ == "CythonizedBaseTrajData"
+
+
+def _dense(name):
+    make_shot, _ = SHOTS["g1_wind"]
+    return _engine(name, "dopri").integrate(make_shot(), Unit.Meter(300), dense_output=True).base_data
+
+
+def _point(b):
+    return (
+        float(b.time),
+        b.position.x,
+        b.position.y,
+        b.position.z,
+        b.velocity.x,
+        b.velocity.y,
+        b.velocity.z,
+        float(b.mach),
+    )
+
+
+@pytest.mark.parametrize("name", ["cabi", "ctypes"])
+def test_dense_sequence_methods_agree(name):
+    """The dense sequence (base_data) of a variant: get_at, get_at_slant_height and interpolate_at give the exts values."""
+    if name not in installed_variants() or "exts" not in installed_variants():
+        pytest.skip("needs the exts and this variant installed")
+    reference, other = _dense("exts"), _dense(name)
+    assert len(other) == len(reference)
+    checks = {
+        "get_at_time": lambda s: s.get_at("time", 0.3),
+        "get_at_start": lambda s: s.get_at("time", 0.3, 0.1),
+        "slant_height": lambda s: s.get_at_slant_height(0.0, 0.5),
+        "interpolate_at": lambda s: s.interpolate_at(2, "time", 0.2),
+    }
+    for label, call in checks.items():
+        expected, actual = _point(call(reference)), _point(call(other))
+        for x, y in zip(expected, actual):
+            assert math.isclose(x, y, rel_tol=0.0, abs_tol=TOLERANCE), f"{name} {label}: {actual} != {expected}"
+
+
+@pytest.mark.parametrize("name", ["cabi", "ctypes"])
+def test_dense_sequence_errors_agree(name):
+    """An unknown key is an AttributeError in every variant; reserve() with a negative size is a ValueError."""
+    if name not in installed_variants() or "exts" not in installed_variants():
+        pytest.skip("needs the exts and this variant installed")
+    for seq in (_dense("exts"), _dense(name)):
+        with pytest.raises(AttributeError):
+            seq.get_at("no_such_key", 0.1)
+        with pytest.raises(ValueError):
+            seq.reserve(-1)

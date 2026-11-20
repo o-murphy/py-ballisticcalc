@@ -471,6 +471,75 @@ class _DenseSeq(Sequence):
         t, px, py, pz, vx, vy, vz, mach = _BASE_FMT.unpack_from(self._buf, idx * _BASE_FMT.size)
         return BaseTrajData(t, Vector(px, py, pz), Vector(vx, vy, vz), mach)
 
+    def _steps(self):
+        """The steps as a pointer for the C functions, read in place: no copy (the bytes, or the bytearray after an append)."""
+        buf = self._buf
+        if isinstance(buf, bytearray):
+            return C.cast((C.c_char * len(buf)).from_buffer(buf), C.POINTER(_G.BCLIBCFFI_DenseStep))
+        return C.cast(C.c_char_p(buf), C.POINTER(_G.BCLIBCFFI_DenseStep))
+
+    def append(self, time, px, py, pz, vx, vy, vz, mach):
+        """Append a point, as the exts sequence does. The storage becomes a bytearray at the first append."""
+        if not isinstance(self._buf, bytearray):
+            self._buf = bytearray(self._buf)
+        self._buf += _BASE_FMT.pack(time, px, py, pz, vx, vy, vz, mach)
+        self._n += 1
+
+    def reserve(self, min_capacity):
+        """Deprecated, as in the exts sequence: a warning and the argument check; the storage grows by itself."""
+        import warnings
+
+        warnings.warn("reserve method deprecated due to auto resources manage")
+        if min_capacity < 0:
+            raise ValueError("min_capacity must be non-negative")
+
+    def interpolate_at(self, idx, key_attribute, key_value):
+        """Interpolate using points (idx-1, idx, idx+1) keyed by key_attribute at key_value."""
+        lib = _LIB or _load_library()
+        out, err = _G.BCLIBCFFI_BaseTrajData(), _G.BCLIBCFFI_Error()
+        rc = lib.BCLIBCFFI_base_traj_interpolate_at(
+            self._steps(), self._n, idx, _key(key_attribute), key_value, C.byref(out), C.byref(err)
+        )
+        if rc != _G.BCLIBCFFI_OK:
+            _raise(err)
+        return _base_traj(out)
+
+    def get_at(self, key_attribute, key_value, start_from_time=None):
+        """The point where key_attribute == key_value (monotone PCHIP interpolation). With start_from_time > 0 the search
+        starts from the first point where time >= start_from_time and goes forward or backward, as HitResult.get_at()."""
+        lib = _LIB or _load_library()
+        out, err = _G.BCLIBCFFI_BaseTrajData(), _G.BCLIBCFFI_Error()
+        t0 = 0.0 if start_from_time is None else float(start_from_time)
+        rc = lib.BCLIBCFFI_dense_get_at(
+            self._steps(), self._n, _key(key_attribute), key_value, t0, C.byref(out), C.byref(err)
+        )
+        if rc != _G.BCLIBCFFI_OK:
+            _raise(err)
+        return _base_traj(out)
+
+    def get_at_slant_height(self, look_angle_rad, value):
+        """The point where value == slant height = position.y*cos(a) - position.x*sin(a)."""
+        lib = _LIB or _load_library()
+        out, err = _G.BCLIBCFFI_BaseTrajData(), _G.BCLIBCFFI_Error()
+        rc = lib.BCLIBCFFI_dense_get_at_slant_height(
+            self._steps(), self._n, look_angle_rad, value, C.byref(out), C.byref(err)
+        )
+        if rc != _G.BCLIBCFFI_OK:
+            _raise(err)
+        return _base_traj(out)
+
+
+def _base_traj(raw) -> BaseTrajData:
+    """A BaseTrajData of a C BCLIBCFFI_BaseTrajData (the core class, as integrate_raw_at returns)."""
+    return BaseTrajData(raw.time, Vector(raw.px, raw.py, raw.pz), Vector(raw.vx, raw.vy, raw.vz), raw.mach)
+
+
+def _key(key_attribute):
+    """The C interpolation key of an attribute name; AttributeError for an unknown one (as the exts engine)."""
+    if key_attribute not in _KEY:
+        raise AttributeError(f"Cannot interpolate on '{key_attribute}'")
+    return _KEY[key_attribute]
+
 
 def _fixed_call(lib, scr, want_dense):
     return lib.BCLIBCFFI_integrate_dense_shot(
