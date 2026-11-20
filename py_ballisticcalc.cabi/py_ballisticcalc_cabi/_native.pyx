@@ -11,7 +11,6 @@ from libc.string cimport memcpy
 
 from py_ballisticcalc_cabi._bcffi cimport *
 
-from py_ballisticcalc.drag_tables import TableG1, TableG7
 from py_ballisticcalc.engines.base_engine import BaseIntegrationEngine
 from py_ballisticcalc.exceptions import (
     InterceptionError, OutOfRangeError, RangeError, SolverRuntimeError, ZeroFindingError,

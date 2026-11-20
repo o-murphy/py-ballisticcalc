@@ -10,10 +10,13 @@ import warnings
 
 import pytest
 
-from py_ballisticcalc import (Angular, Atmo, Calculator, DragModel, Shot, TableG1, TableG7, Ammo, Unit, Weapon, Wind)
+from py_ballisticcalc import Ammo, Angular, Atmo, Calculator, DragModel, Shot, TableG1, TableG7, Unit, Weapon, Wind
 
-VARIANTS = {"exts": ("py_ballisticcalc_exts", "cython"), "cabi": ("py_ballisticcalc_cabi", "cabi"),
-            "ctypes": ("py_ballisticcalc_ctypes", "ctypes")}
+VARIANTS = {
+    "exts": ("py_ballisticcalc_exts", "cython"),
+    "cabi": ("py_ballisticcalc_cabi", "cabi"),
+    "ctypes": ("py_ballisticcalc_ctypes", "ctypes"),
+}
 METHODS = ["euler", "rk4", "verlet", "rkck", "dopri", "tsitouras"]
 TOLERANCE = 1e-9
 FIELDS = ("time", "distance", "velocity", "mach", "height", "drop_angle", "windage")
@@ -31,13 +34,24 @@ def installed_variants():
 
 
 SHOTS = {
-    "g1_wind": (lambda: Shot(weapon=Weapon(sight_height=Unit.Inch(1.5)),
-                             ammo=Ammo(DragModel(bc=0.759, drag_table=TableG1), mv=Unit.MPS(815)),
-                             atmo=Atmo.icao(), winds=[Wind(Unit.MPS(3), Angular.Degree(90))]), Unit.Meter(1000)),
-    "g7_cold_altitude": (lambda: Shot(weapon=Weapon(sight_height=Unit.Inch(2), twist=Unit.Inch(9)),
-                                      ammo=Ammo(DragModel(bc=0.243, drag_table=TableG7), mv=Unit.MPS(800)),
-                                      atmo=Atmo(altitude=Unit.Meter(1500), temperature=Unit.Celsius(-20)),
-                                      winds=[Wind(Unit.MPS(6), Angular.Degree(45))]), Unit.Meter(1200)),
+    "g1_wind": (
+        lambda: Shot(
+            weapon=Weapon(sight_height=Unit.Inch(1.5)),
+            ammo=Ammo(DragModel(bc=0.759, drag_table=TableG1), mv=Unit.MPS(815)),
+            atmo=Atmo.icao(),
+            winds=[Wind(Unit.MPS(3), Angular.Degree(90))],
+        ),
+        Unit.Meter(1000),
+    ),
+    "g7_cold_altitude": (
+        lambda: Shot(
+            weapon=Weapon(sight_height=Unit.Inch(2), twist=Unit.Inch(9)),
+            ammo=Ammo(DragModel(bc=0.243, drag_table=TableG7), mv=Unit.MPS(800)),
+            atmo=Atmo(altitude=Unit.Meter(1500), temperature=Unit.Celsius(-20)),
+            winds=[Wind(Unit.MPS(6), Angular.Degree(45))],
+        ),
+        Unit.Meter(1200),
+    ),
 }
 
 
@@ -45,8 +59,18 @@ def records(engine, make_shot, trajectory_range):
     with warnings.catch_warnings():
         warnings.simplefilter("ignore", DeprecationWarning)
         result = Calculator(engine=engine).fire(make_shot(), trajectory_range=trajectory_range, extra_data=True)
-        return [(float(p.time), p.distance >> Unit.Meter, p.velocity >> Unit.MPS, float(p.mach), p.height >> Unit.Meter,
-                 p.drop_angle >> Unit.Radian, p.windage >> Unit.Meter) for p in result.trajectory]
+        return [
+            (
+                float(p.time),
+                p.distance >> Unit.Meter,
+                p.velocity >> Unit.MPS,
+                float(p.mach),
+                p.height >> Unit.Meter,
+                p.drop_angle >> Unit.Radian,
+                p.windage >> Unit.Meter,
+            )
+            for p in result.trajectory
+        ]
 
 
 @pytest.mark.parametrize("shot_name", list(SHOTS))

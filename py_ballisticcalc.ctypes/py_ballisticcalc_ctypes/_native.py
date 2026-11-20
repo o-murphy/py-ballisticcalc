@@ -23,7 +23,6 @@ from collections.abc import Sequence
 from pathlib import Path
 from types import SimpleNamespace
 
-from py_ballisticcalc.drag_tables import TableG1, TableG7
 from py_ballisticcalc.engines.base_engine import BaseIntegrationEngine
 from py_ballisticcalc.exceptions import (
     InterceptionError,
