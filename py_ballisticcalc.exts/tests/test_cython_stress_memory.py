@@ -7,6 +7,7 @@ from py_ballisticcalc import (
     BaseEngineConfigDict,
     Calculator,
     Ammo,
+    Angular,
     Shot,
     Distance,
     DragModel,
@@ -15,7 +16,7 @@ from py_ballisticcalc import (
     Weight,
 )
 
-from py_ballisticcalc_exts.traj_data import CythonizedBaseTrajSeq
+from py_ballisticcalc_exts import CythonizedBaseTrajSeq
 
 
 pytestmark = pytest.mark.stress
@@ -56,18 +57,49 @@ def _rss_bytes() -> int:
         return int(current)
 
 
-def test_rss_stability_over_many_runs(loaded_engine_instance):
+def _varied_shot(i: int) -> Shot:
+    """A distinct shot per iteration (muzzle velocity, BC, look angle), so every call builds fresh shot state."""
+    dm = DragModel(
+        bc=0.2 + 0.0005 * (i % 100),
+        drag_table=TableG7,
+        weight=Weight.Grain(175),
+        diameter=Distance.Millimeter(7.62),
+        length=Distance.Millimeter(32.0),
+    )
+    return Shot(
+        ammo=Ammo(dm, mv=Velocity.MPS(700 + i % 200)),
+        look_angle=Angular.Degree((i % 11) - 5),
+    )
+
+
+def test_rss_stability_over_many_shots(loaded_engine_instance):
+    """Shot-state allocation/free churn: thousands of integrate() calls, RSS must stay flat (not unbounded growth)."""
+    calc = Calculator(config=_base_config(), engine=loaded_engine_instance)
+    for i in range(200):  # warm-up: allocator pools, caches
+        calc.integrate(_varied_shot(i), Distance.Yard(400), Distance.Yard(100))
+    gc.collect()
+
+    baseline = _rss_bytes()
+    for i in range(3000):
+        calc.integrate(_varied_shot(i), Distance.Yard(400), Distance.Yard(100), dense_output=bool(i % 2))
+        if i % 500 == 0:
+            gc.collect()
+    gc.collect()
+    after = _rss_bytes()
+
+    # A leak of even 1 KiB per shot would be 3 MiB; allow allocator fragmentation but not unbounded growth
+    assert after - baseline < 20 * 1024 * 1024
+
+
+def test_rss_stability_zero_angle_churn(loaded_engine_instance):
     calc = Calculator(config=_base_config(), engine=loaded_engine_instance)
     shot = _shot()
-
     baseline = _rss_bytes()
     for _ in range(40):
         calc.integrate(shot, Distance.Yard(400), Distance.Yard(25))
         calc.find_zero_angle(shot, Distance.Yard(200))
         gc.collect()
     after = _rss_bytes()
-
-    # Allow modest growth for allocator fragmentation; ensure it's not unbounded
     assert after - baseline < 50 * 1024 * 1024  # < 50 MiB growth
 
 
@@ -94,12 +126,11 @@ def test_tracemalloc_no_python_object_leak(loaded_engine_instance):
     import tracemalloc
 
     calc = Calculator(config=_base_config(), engine=loaded_engine_instance)
-    shot = _shot()
 
     tracemalloc.start()
     snapshot1 = tracemalloc.take_snapshot()
-    for _ in range(20):
-        _ = calc.integrate(shot, Distance.Yard(300), Distance.Yard(50), dense_output=True)
+    for i in range(200):
+        _ = calc.integrate(_varied_shot(i), Distance.Yard(300), Distance.Yard(50), dense_output=True)
     gc.collect()
     snapshot2 = tracemalloc.take_snapshot()
     stats = snapshot2.compare_to(snapshot1, "filename")

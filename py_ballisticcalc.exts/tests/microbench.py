@@ -1,7 +1,7 @@
 import time
 from statistics import mean
 
-from py_ballisticcalc_exts.traj_data import CythonizedBaseTrajSeq
+from py_ballisticcalc_exts import CythonizedBaseTrajSeq
 
 
 def bench_append(n, reserve_first=False):

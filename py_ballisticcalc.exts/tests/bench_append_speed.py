@@ -1,6 +1,6 @@
 import time
 
-from py_ballisticcalc_exts.traj_data import CythonizedBaseTrajSeq
+from py_ballisticcalc_exts import CythonizedBaseTrajSeq
 
 
 def bench(n=100000):
