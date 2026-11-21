@@ -14,7 +14,7 @@ import pytest
 
 from py_ballisticcalc import Ammo, Angular, Atmo, Calculator, DragModel, Shot, TableG1, TableG7, Unit, Weapon, Wind
 
-GOLDEN = Path(__file__).resolve().parents[2] / "tests" / "data" / "exts_golden.json"
+GOLDEN = Path(__file__).resolve().parent / "data" / "exts_golden.json"
 TOLERANCE = 1e-9
 
 SHOTS = {
