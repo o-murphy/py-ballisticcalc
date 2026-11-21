@@ -6,7 +6,7 @@ import struct
 from libc.math cimport NAN
 from libc.stdint cimport int32_t
 from cython cimport final
-from libc.stdlib cimport free, malloc, realloc
+from libc.stdlib cimport free, malloc
 from libc.string cimport memcpy
 
 from py_ballisticcalc_exts._bcffi cimport *
@@ -393,6 +393,19 @@ cdef class CythonizedBaseTrajSeq:
         return out
 
 
+cdef struct _EngineState:
+    BCLIBCFFI_Config config
+    double gravity_y
+    BCLIBCFFI_Shot shot
+    int method
+    bint adaptive
+    double time_step
+    double rtol
+    double atol
+    int last_accepted
+    int last_rejected
+
+
 cdef class CythonizedBaseIntegrationEngine:
     """Native engine: fixed-step (RK4, Euler, Verlet) or adaptive (Cash-Karp, Dormand-Prince, Tsitouras)."""
     _METHOD = 0
@@ -403,70 +416,35 @@ cdef class CythonizedBaseIntegrationEngine:
     APEX_IS_MAX_RANGE_RADIANS = BaseIntegrationEngine.APEX_IS_MAX_RANGE_RADIANS
     ALLOWED_ZERO_ERROR_FEET = BaseIntegrationEngine.ALLOWED_ZERO_ERROR_FEET
 
-    # per-engine C storage, allocated once with the engine and reused by every call
-    cdef BCLIBCFFI_Shot shot
-    cdef BCLIBCFFI_TrajectoryRequest req
-    cdef BCLIBCFFI_Error err
-    cdef BCLIBCFFI_StepStats stats
-    cdef BCLIBCFFI_ZeroPointResult zp
-    cdef BCLIBCFFI_MaxRangeResult mr
-    cdef BCLIBCFFI_TrajectoryData apex
-    cdef BCLIBCFFI_Interception it
-    cdef BCLIBCFFI_TrajectoryData *recs
-    cdef BCLIBCFFI_DenseStep *dense
-    cdef int32_t n, dn, reason
-    cdef double value
-    cdef BCLIBCFFI_Wind *winds
-    cdef int n_wind
-    cdef _Curve custom
-    cdef int _method
-    cdef bint _adaptive
-    cdef double _time_step
-    # the step statistics of the last integrate()
-    cdef int _last_accepted
-    cdef int _last_rejected
-    cdef double _relative_tolerance
-    cdef double _absolute_tolerance
-    # the numbers of the engine config the hot path reads, cached once in __init__ (_config stays the public attribute)
-    cdef double _step_multiplier
-    cdef double _zero_finding_accuracy
-    cdef double _minimum_velocity
-    cdef double _maximum_drop
-    cdef int32_t _max_iterations
-    cdef double _gravity_constant
-    cdef double _minimum_altitude
-    cdef double _calc_step_value
+    # everything the engine keeps between calls; the per-call records, results and buffers are locals of the methods
+    cdef _EngineState _this
     cdef public object _config
-    cdef public object gravity_vector
+    cdef _Curve _table
 
     def __cinit__(self, *args, **kwargs):
         cls = type(self)
-        self._method = cls._METHOD
-        self._adaptive = cls._ADAPTIVE
-        self._time_step = cls.DEFAULT_TIME_STEP
-        self.n_wind = 0
-        self.winds = NULL
-        self.recs = NULL
-        self.dense = NULL
-
-    def __dealloc__(self):
-        free(self.winds)
-        if self.dense != NULL:
-            BCLIBCFFI_free_base_trajectory(self.dense)
-            self.dense = NULL
+        self._this.method = cls._METHOD
+        self._this.adaptive = cls._ADAPTIVE
+        self._this.time_step = cls.DEFAULT_TIME_STEP
+        self._this.last_accepted = self._this.last_rejected = 0
+        self._this.rtol = self._this.atol = 1e-6
 
     def __init__(self, config=None):
         self._config = create_base_engine_config(config)
+        self._load_config()
+
+    cdef int _load_config(self) except -1:
+        # as the old exts _init_trajectory: reload the numbers from _config, in case it was changed on the instance
         cfg = self._config
-        self._step_multiplier = cfg.cStepMultiplier
-        self._zero_finding_accuracy = cfg.cZeroFindingAccuracy
-        self._minimum_velocity = cfg.cMinimumVelocity
-        self._maximum_drop = cfg.cMaximumDrop
-        self._max_iterations = int(cfg.cMaxIterations)
-        self._gravity_constant = cfg.cGravityConstant
-        self._minimum_altitude = cfg.cMinimumAltitude
-        self._calc_step_value = self._step_multiplier * self._time_step
-        self.gravity_vector = Vector(0.0, self._gravity_constant, 0.0)
+        self._this.config.cStepMultiplier = cfg.cStepMultiplier
+        self._this.config.cZeroFindingAccuracy = cfg.cZeroFindingAccuracy
+        self._this.config.cMinimumVelocity = cfg.cMinimumVelocity
+        self._this.config.cMaximumDrop = cfg.cMaximumDrop
+        self._this.config.cMaxIterations = int(cfg.cMaxIterations)
+        self._this.config.cGravityConstant = cfg.cGravityConstant
+        self._this.config.cMinimumAltitude = cfg.cMinimumAltitude
+        self._this.gravity_y = cfg.cGravityConstant
+        return 0
 
     def _init_trajectory(self, shot):
         props = ShotProps.from_shot(shot)
@@ -477,14 +455,15 @@ cdef class CythonizedBaseIntegrationEngine:
         return self._calc_step()
 
     cdef double _calc_step(self):
-        return self._calc_step_value
+        return self._this.config.cStepMultiplier * self._this.time_step
 
-    cdef int _init_shot(self, shot_info) except -1:
-        cdef BCLIBCFFI_Shot *s = &self.shot
-        cdef BCLIBCFFI_Config *c = &s.config
+    cdef int _init_shot(self, shot_info, BCLIBCFFI_Wind **winds_out) except -1:
+        # fills _this.shot; the wind buffer is the caller's (freed in its finally), the drag table is self._table
+        cdef BCLIBCFFI_Shot *s = &self._this.shot
         cdef int i, nt, nw
         cdef _Curve curve
-        cdef BCLIBCFFI_Wind *tmp
+        cdef BCLIBCFFI_Wind *wb
+        self._load_config()
         ammo = shot_info.ammo
         dm = ammo.dm
         atmo = shot_info.atmo
@@ -492,9 +471,9 @@ cdef class CythonizedBaseIntegrationEngine:
         table = dm.drag_table
         nt = len(table)
         # the table is copied on every call, as the exts engine does (bind.pyx): no cache of the table
-        if self.custom is None or self.custom.n != nt:
-            self.custom = _Curve(nt)
-        curve = self.custom
+        if self._table is None or self._table.n != nt:
+            self._table = _Curve(nt)
+        curve = self._table
         i = 0
         for point in table:
             curve.m[i] = point.Mach
@@ -503,19 +482,17 @@ cdef class CythonizedBaseIntegrationEngine:
 
         winds = shot_info.winds
         nw = len(winds)
-        if nw != self.n_wind:
-            tmp = <BCLIBCFFI_Wind *>realloc(self.winds, (nw if nw else 1) * sizeof(BCLIBCFFI_Wind))
-            if tmp == NULL:
-                raise MemoryError()
-            self.winds = tmp
-            self.n_wind = nw
-            s.winds = self.winds if nw else NULL
+        wb = <BCLIBCFFI_Wind *>malloc((nw if nw else 1) * sizeof(BCLIBCFFI_Wind))
+        if wb == NULL:
+            raise MemoryError()
+        winds_out[0] = wb
+        s.winds = wb if nw else NULL
         for i in range(nw):
             w = winds[i]
-            self.winds[i].velocity_fps = w.velocity._fps
-            self.winds[i].direction_from_rad = w.direction_from._rad
-            self.winds[i].until_distance_ft = w.until_distance._feet
-            self.winds[i].max_distance_ft = w.MAX_DISTANCE_FEET
+            wb[i].velocity_fps = w.velocity._fps
+            wb[i].direction_from_rad = w.direction_from._rad
+            wb[i].until_distance_ft = w.until_distance._feet
+            wb[i].max_distance_ft = w.MAX_DISTANCE_FEET
 
         s.bc = dm.BC
         s.weight_grain = dm.weight._grain
@@ -538,67 +515,62 @@ cdef class CythonizedBaseIntegrationEngine:
         s.cant_angle_rad = shot_info.cant_angle._rad
         s.latitude_deg = NAN if shot_info.latitude is None else shot_info.latitude
         s.azimuth_deg = NAN if shot_info.azimuth is None else shot_info.azimuth
-        c.cStepMultiplier = self._step_multiplier
-        c.cZeroFindingAccuracy = self._zero_finding_accuracy
-        c.cMinimumVelocity = self._minimum_velocity
-        c.cMaximumDrop = self._maximum_drop
-        c.cMaxIterations = self._max_iterations
-        c.cGravityConstant = self._gravity_constant
-        c.cMinimumAltitude = self._minimum_altitude
-        s.method = <BCLIBCFFI_IntegrationMethod>self._method
+        s.config = self._this.config
+        s.method = <BCLIBCFFI_IntegrationMethod>self._this.method
         return 0
 
     cdef object _run(self, shot_info, double range_limit_ft, double range_step_ft, double time_step, filter_flags,
                      dense_output):
-        cdef int rc, i, count, want = 1 if dense_output else 0, method = self._method, ff = filter_flags
-        cdef double rtol, atol
-        cdef BCLIBCFFI_Shot *shot = &self.shot
-        # the stats of this call only: zeroed in the scratch too, since a failed adaptive call leaves them untouched
-        self._last_accepted = self._last_rejected = 0
-        self.stats.accepted = self.stats.rejected = 0
-        if self.dense != NULL:
-            BCLIBCFFI_free_base_trajectory(self.dense)
-            self.dense = NULL
-        self.recs = NULL
-        self.n = self.dn = 0
-        self._init_shot(shot_info)
-        self.req.range_limit_ft = range_limit_ft
-        self.req.range_step_ft = range_step_ft
-        self.req.time_step = time_step
-        self.req.filter_flags = ff
-        if self._adaptive:
-            rtol = self._relative_tolerance
-            atol = self._absolute_tolerance
-            with nogil:
-                rc = BCLIBCFFI_integrate_adaptive_shot(shot, method, rtol, atol, &self.req, want, &self.recs, &self.n,
-                                                       &self.dense, &self.dn, &self.reason, &self.stats, &self.err)
-            self._last_accepted, self._last_rejected = self.stats.accepted, self.stats.rejected
-        else:
-            with nogil:
-                rc = BCLIBCFFI_integrate_dense_shot_stats(shot, &self.req, want, &self.recs, &self.n, &self.dense,
-                                                          &self.dn, &self.reason, &self.stats, &self.err)
-            self._last_accepted, self._last_rejected = self.stats.accepted, self.stats.rejected
-        if rc != BCLIBCFFI_OK:
-            _raise(&self.err)
-        count = self.n
-        try:
-            trajectory = [_traj(&self.recs[i]) for i in range(count)]
-        finally:
-            if count:
-                BCLIBCFFI_free_trajectory(self.recs)
-            self.recs = NULL
-        base_data = None
+        cdef int rc, i, count, want = 1 if dense_output else 0, method = self._this.method, ff = filter_flags
+        cdef double rtol = self._this.rtol, atol = self._this.atol
+        cdef BCLIBCFFI_TrajectoryRequest req
+        cdef BCLIBCFFI_Error err
+        cdef BCLIBCFFI_StepStats stats
+        cdef BCLIBCFFI_TrajectoryData *recs = NULL
+        cdef BCLIBCFFI_DenseStep *dense = NULL
+        cdef BCLIBCFFI_Wind *winds = NULL
+        cdef int32_t n = 0, dn = 0, reason = 0
         cdef CythonizedBaseTrajSeq seq
-        if dense_output:
-            seq = CythonizedBaseTrajSeq()
-            if self.dn:
-                seq._adopt(self.dense, self.dn)
-                self.dense = NULL
-            base_data = seq
+        cdef BCLIBCFFI_Shot *shot = &self._this.shot
+        # the stats of this call only: zeroed too, since a failed adaptive call leaves them untouched
+        self._this.last_accepted = self._this.last_rejected = 0
+        stats.accepted = stats.rejected = 0
+        req.range_limit_ft = range_limit_ft
+        req.range_step_ft = range_step_ft
+        req.time_step = time_step
+        req.filter_flags = ff
+        try:
+            self._init_shot(shot_info, &winds)
+            if self._this.adaptive:
+                with nogil:
+                    rc = BCLIBCFFI_integrate_adaptive_shot(shot, method, rtol, atol, &req, want, &recs, &n, &dense,
+                                                           &dn, &reason, &stats, &err)
+            else:
+                with nogil:
+                    rc = BCLIBCFFI_integrate_dense_shot_stats(shot, &req, want, &recs, &n, &dense, &dn, &reason,
+                                                              &stats, &err)
+            self._this.last_accepted, self._this.last_rejected = stats.accepted, stats.rejected
+            if rc != BCLIBCFFI_OK:
+                _raise(&err)
+            count = n
+            trajectory = [_traj(&recs[i]) for i in range(count)]
+            base_data = None
+            if dense_output:
+                seq = CythonizedBaseTrajSeq()
+                if dn:
+                    seq._adopt(dense, dn)
+                    dense = NULL
+                base_data = seq
+        finally:
+            if recs != NULL and n:
+                BCLIBCFFI_free_trajectory(recs)
+            if dense != NULL:
+                BCLIBCFFI_free_base_trajectory(dense)
+            free(winds)
         props = ShotProps.from_shot(shot_info)
         props.filter_flags = filter_flags
         props.calc_step = self._calc_step()
-        term = _TERMINATION.get(self.reason)
+        term = _TERMINATION.get(reason)
         error = RangeError(term, trajectory) if term is not None else None
         return HitResult(props, trajectory, base_data, filter_flags != TrajFlag.NONE, error)
 
@@ -612,129 +584,150 @@ cdef class CythonizedBaseIntegrationEngine:
                    dense_output, **kwargs):
         return self._run(props.shot, range_limit_ft, range_step_ft, time_step, filter_flags, dense_output)
 
+    cdef object _raw_at(self, shot_info, int key, double target_value):
+        cdef int rc, method = self._this.method
+        cdef bint adaptive = self._this.adaptive
+        cdef double rtol = self._this.rtol, atol = self._this.atol
+        cdef BCLIBCFFI_Error err
+        cdef BCLIBCFFI_StepStats stats
+        cdef BCLIBCFFI_Interception it
+        cdef BCLIBCFFI_Wind *winds = NULL
+        cdef CythonizedBaseTrajData raw
+        try:
+            self._init_shot(shot_info, &winds)
+            with nogil:
+                if adaptive:
+                    rc = BCLIBCFFI_integrate_at_adaptive_shot(&self._this.shot, method, rtol, atol, key, target_value,
+                                                              &it, &stats, &err)
+                else:
+                    rc = BCLIBCFFI_integrate_at_shot(&self._this.shot, key, target_value, &it, &err)
+            if rc != BCLIBCFFI_OK:
+                _raise(&err)
+        finally:
+            free(winds)
+        # the raw point is a CythonizedBaseTrajData, as in the exts engine (base_engine.pyx integrate_raw_at)
+        raw = CythonizedBaseTrajData()
+        raw._d = it.raw_data
+        return raw, _traj(&it.full_data)
+
     def integrate_raw_at(self, shot_info, str key_attribute, double target_value):
         if key_attribute not in _KEY:
             raise AttributeError(f"Cannot interpolate on '{key_attribute}'")
-        self._init_shot(shot_info)
-        cdef int rc, key = _KEY[key_attribute], method = self._method
-        cdef bint adaptive = self._adaptive
-        cdef double rtol = self._relative_tolerance, atol = self._absolute_tolerance
-        with nogil:
-            if adaptive:
-                rc = BCLIBCFFI_integrate_at_adaptive_shot(&self.shot, method, rtol, atol, key, target_value, &self.it,
-                                                          &self.stats, &self.err)
-            else:
-                rc = BCLIBCFFI_integrate_at_shot(&self.shot, key, target_value, &self.it, &self.err)
-        if rc != BCLIBCFFI_OK:
-            _raise(&self.err)
-        # the raw point is a CythonizedBaseTrajData, as in the exts engine (base_engine.pyx integrate_raw_at)
-        raw = CythonizedBaseTrajData()
-        raw._d = self.it.raw_data
-        return raw, _traj(&self.it.full_data)
+        return self._raw_at(shot_info, _KEY[key_attribute], target_value)
+
+    cdef object _zero(self, shot_info, double ft, int lofted, bint want_point, bint plain):
+        # plain: zero_angle/zero_point (no lofted flag); otherwise find_zero_angle/find_zero_point
+        cdef int rc, method = self._this.method
+        cdef bint adaptive = self._this.adaptive
+        cdef double rtol = self._this.rtol, atol = self._this.atol
+        cdef BCLIBCFFI_Error err
+        cdef BCLIBCFFI_StepStats stats
+        cdef BCLIBCFFI_ZeroPointResult zp
+        cdef BCLIBCFFI_Wind *winds = NULL
+        cdef double value = 0.0
+        try:
+            self._init_shot(shot_info, &winds)
+            with nogil:
+                if want_point:
+                    if plain:
+                        if adaptive:
+                            rc = BCLIBCFFI_find_zero_point_adaptive_shot(&self._this.shot, method, rtol, atol, ft, &zp,
+                                                                         &stats, &err)
+                        else:
+                            rc = BCLIBCFFI_find_zero_point_shot(&self._this.shot, ft, &zp, &err)
+                    elif adaptive:
+                        rc = BCLIBCFFI_find_zero_point_lofted_adaptive_shot(&self._this.shot, method, rtol, atol, ft,
+                                                                            lofted, &zp, &stats, &err)
+                    else:
+                        rc = BCLIBCFFI_find_zero_point_lofted_shot(&self._this.shot, ft, lofted, &zp, &err)
+                elif plain:
+                    if adaptive:
+                        rc = BCLIBCFFI_find_zero_angle_adaptive_shot(&self._this.shot, method, rtol, atol, ft, &value,
+                                                                     &stats, &err)
+                    else:
+                        rc = BCLIBCFFI_find_zero_angle_shot(&self._this.shot, ft, &value, &err)
+                elif adaptive:
+                    rc = BCLIBCFFI_find_zero_angle_lofted_adaptive_shot(&self._this.shot, method, rtol, atol, ft,
+                                                                        lofted, &value, &stats, &err)
+                else:
+                    rc = BCLIBCFFI_find_zero_angle_lofted_shot(&self._this.shot, ft, lofted, &value, &err)
+            if rc != BCLIBCFFI_OK:
+                _raise(&err)
+        finally:
+            free(winds)
+        if want_point:
+            return Angular.Radian(zp.angle_rad), _traj(&zp.point)
+        return Angular.Radian(value)
 
     def zero_angle(self, shot_info, distance):
-        self._init_shot(shot_info)
-        cdef double ft = distance._feet
-        cdef int rc, method = self._method
-        cdef bint adaptive = self._adaptive
-        cdef double rtol = self._relative_tolerance, atol = self._absolute_tolerance
-        with nogil:
-            if adaptive:
-                rc = BCLIBCFFI_find_zero_angle_adaptive_shot(&self.shot, method, rtol, atol, ft, &self.value,
-                                                             &self.stats, &self.err)
-            else:
-                rc = BCLIBCFFI_find_zero_angle_shot(&self.shot, ft, &self.value, &self.err)
-        if rc != BCLIBCFFI_OK:
-            _raise(&self.err)
-        return Angular.Radian(self.value)
+        return self._zero(shot_info, distance._feet, 0, False, True)
 
     def zero_point(self, shot_info, distance):
-        self._init_shot(shot_info)
-        cdef double ft = distance._feet
-        cdef int rc, method = self._method
-        cdef bint adaptive = self._adaptive
-        cdef double rtol = self._relative_tolerance, atol = self._absolute_tolerance
-        with nogil:
-            if adaptive:
-                rc = BCLIBCFFI_find_zero_point_adaptive_shot(&self.shot, method, rtol, atol, ft, &self.zp, &self.stats,
-                                                             &self.err)
-            else:
-                rc = BCLIBCFFI_find_zero_point_shot(&self.shot, ft, &self.zp, &self.err)
-        if rc != BCLIBCFFI_OK:
-            _raise(&self.err)
-        return Angular.Radian(self.zp.angle_rad), _traj(&self.zp.point)
+        return self._zero(shot_info, distance._feet, 0, True, True)
 
     def find_zero_angle(self, shot_info, distance, lofted=False):
-        self._init_shot(shot_info)
-        cdef double ft = distance._feet
-        cdef int rc, method = self._method, lo = 1 if lofted else 0
-        cdef bint adaptive = self._adaptive
-        cdef double rtol = self._relative_tolerance, atol = self._absolute_tolerance
-        with nogil:
-            if adaptive:
-                rc = BCLIBCFFI_find_zero_angle_lofted_adaptive_shot(&self.shot, method, rtol, atol, ft, lo,
-                                                                    &self.value, &self.stats, &self.err)
-            else:
-                rc = BCLIBCFFI_find_zero_angle_lofted_shot(&self.shot, ft, lo, &self.value, &self.err)
-        if rc != BCLIBCFFI_OK:
-            _raise(&self.err)
-        return Angular.Radian(self.value)
+        return self._zero(shot_info, distance._feet, 1 if lofted else 0, False, False)
 
     def find_zero_point(self, shot_info, distance, lofted=False):
-        self._init_shot(shot_info)
-        cdef double ft = distance._feet
-        cdef int rc, method = self._method, lo = 1 if lofted else 0
-        cdef bint adaptive = self._adaptive
-        cdef double rtol = self._relative_tolerance, atol = self._absolute_tolerance
-        with nogil:
-            if adaptive:
-                rc = BCLIBCFFI_find_zero_point_lofted_adaptive_shot(&self.shot, method, rtol, atol, ft, lo, &self.zp,
-                                                                    &self.stats, &self.err)
-            else:
-                rc = BCLIBCFFI_find_zero_point_lofted_shot(&self.shot, ft, lo, &self.zp, &self.err)
-        if rc != BCLIBCFFI_OK:
-            _raise(&self.err)
-        return Angular.Radian(self.zp.angle_rad), _traj(&self.zp.point)
+        return self._zero(shot_info, distance._feet, 1 if lofted else 0, True, False)
+
+    cdef object _max_range(self, shot_info, double lo_deg, double hi_deg):
+        cdef int rc, method = self._this.method
+        cdef bint adaptive = self._this.adaptive
+        cdef double rtol = self._this.rtol, atol = self._this.atol
+        cdef BCLIBCFFI_Error err
+        cdef BCLIBCFFI_StepStats stats
+        cdef BCLIBCFFI_MaxRangeResult mr
+        cdef BCLIBCFFI_Wind *winds = NULL
+        try:
+            self._init_shot(shot_info, &winds)
+            with nogil:
+                if adaptive:
+                    rc = BCLIBCFFI_find_max_range_adaptive_shot(&self._this.shot, method, rtol, atol, lo_deg, hi_deg,
+                                                                &mr, &stats, &err)
+                else:
+                    rc = BCLIBCFFI_find_max_range_shot(&self._this.shot, lo_deg, hi_deg, &mr, &err)
+            if rc != BCLIBCFFI_OK:
+                _raise(&err)
+        finally:
+            free(winds)
+        return Distance.Foot(mr.max_range_ft), Angular.Radian(mr.angle_at_max_rad)
 
     def find_max_range(self, shot_info, angle_bracket_deg=(0, 90)):
-        self._init_shot(shot_info)
-        cdef double lo_deg = angle_bracket_deg[0], hi_deg = angle_bracket_deg[1]
-        cdef int rc, method = self._method
-        cdef bint adaptive = self._adaptive
-        cdef double rtol = self._relative_tolerance, atol = self._absolute_tolerance
-        with nogil:
-            if adaptive:
-                rc = BCLIBCFFI_find_max_range_adaptive_shot(&self.shot, method, rtol, atol, lo_deg, hi_deg, &self.mr,
-                                                            &self.stats, &self.err)
-            else:
-                rc = BCLIBCFFI_find_max_range_shot(&self.shot, lo_deg, hi_deg, &self.mr, &self.err)
-        if rc != BCLIBCFFI_OK:
-            _raise(&self.err)
-        return Distance.Foot(self.mr.max_range_ft), Angular.Radian(self.mr.angle_at_max_rad)
+        return self._max_range(shot_info, angle_bracket_deg[0], angle_bracket_deg[1])
+
+    cdef object _apex(self, shot_info):
+        cdef int rc, method = self._this.method
+        cdef bint adaptive = self._this.adaptive
+        cdef double rtol = self._this.rtol, atol = self._this.atol
+        cdef BCLIBCFFI_Error err
+        cdef BCLIBCFFI_StepStats stats
+        cdef BCLIBCFFI_TrajectoryData apex
+        cdef BCLIBCFFI_Wind *winds = NULL
+        try:
+            self._init_shot(shot_info, &winds)
+            with nogil:
+                if adaptive:
+                    rc = BCLIBCFFI_find_apex_adaptive_shot(&self._this.shot, method, rtol, atol, &apex, &stats, &err)
+                else:
+                    rc = BCLIBCFFI_find_apex_shot(&self._this.shot, &apex, &err)
+            if rc != BCLIBCFFI_OK:
+                _raise(&err)
+        finally:
+            free(winds)
+        return _traj(&apex)
 
     def find_apex(self, shot_info):
-        self._init_shot(shot_info)
-        cdef int rc, method = self._method
-        cdef bint adaptive = self._adaptive
-        cdef double rtol = self._relative_tolerance, atol = self._absolute_tolerance
-        with nogil:
-            if adaptive:
-                rc = BCLIBCFFI_find_apex_adaptive_shot(&self.shot, method, rtol, atol, &self.apex, &self.stats,
-                                                       &self.err)
-            else:
-                rc = BCLIBCFFI_find_apex_shot(&self.shot, &self.apex, &self.err)
-        if rc != BCLIBCFFI_OK:
-            _raise(&self.err)
-        return _traj(&self.apex)
+        return self._apex(shot_info)
 
     def get_step_stats(self):
-        return self._last_accepted, self._last_rejected
+        return self._this.last_accepted, self._this.last_rejected
 
     @property
     def integration_step_count(self):
         """The steps of the last integration, as the exts engine's counter. The C ABI reports them per call: the
         accepted steps of an adaptive call, the steps of BCLIBCFFI_integrate_dense_shot_stats for a fixed-step one."""
-        return self._last_accepted
+        return self._this.last_accepted
 
 
 cdef class _AdaptiveEngine(CythonizedBaseIntegrationEngine):
@@ -742,7 +735,7 @@ cdef class _AdaptiveEngine(CythonizedBaseIntegrationEngine):
     _ADAPTIVE = True
 
     def __cinit__(self, *args, **kwargs):
-        self._relative_tolerance = self._absolute_tolerance = 1e-6
+        self._this.rtol = self._this.atol = 1e-6
 
     def __init__(self, config=None):
         rtol = atol = 1e-6
@@ -757,23 +750,23 @@ cdef class _AdaptiveEngine(CythonizedBaseIntegrationEngine):
 
     @property
     def relative_tolerance(self) -> float:
-        return self._relative_tolerance
+        return self._this.rtol
 
     @relative_tolerance.setter
     def relative_tolerance(self, value: float) -> None:
         if not math.isfinite(value) or value <= 0:
             raise ValueError("relative_tolerance must be finite and positive")
-        self._relative_tolerance = float(value)
+        self._this.rtol = float(value)
 
     @property
     def absolute_tolerance(self) -> float:
-        return self._absolute_tolerance
+        return self._this.atol
 
     @absolute_tolerance.setter
     def absolute_tolerance(self, value: float) -> None:
         if not math.isfinite(value) or value < 0:
             raise ValueError("absolute_tolerance must be finite and non-negative")
-        self._absolute_tolerance = float(value)
+        self._this.atol = float(value)
 
 
 cdef class CythonizedEulerIntegrationEngine(CythonizedBaseIntegrationEngine):
