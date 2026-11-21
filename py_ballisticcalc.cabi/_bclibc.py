@@ -1,7 +1,6 @@
 """Where the bclibc sources are, how they are staged, and bclibc/version.h without CMake.
 
-The repository has one bclibc submodule. It is at the top level (``bclibc/``) or, until it is moved there, in the
-extensions package (``py_ballisticcalc.exts/py_ballisticcalc_exts/external/bclibc``): the first that exists is used.
+The repository has one bclibc submodule, at the top level (``bclibc/``).
 This package does not have a copy of its own; it finds the sources in one of two places:
 
 * ``py_ballisticcalc_cabi/external/bclibc``: the staged copy. ``sdist`` puts it into the source distribution, so
@@ -22,11 +21,8 @@ from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
 STAGED = HERE / "py_ballisticcalc_cabi" / "external" / "bclibc"
-# where the repository's one submodule is: the top level, or (as long as it is there) the extensions package
-SUBMODULES = (
-    HERE.parent / "bclibc",
-    HERE.parent / "py_ballisticcalc.exts" / "py_ballisticcalc_exts" / "external" / "bclibc",
-)
+# where the repository's one submodule is: the top level
+SUBMODULES = (HERE.parent / "bclibc",)
 
 
 def shared() -> Path:

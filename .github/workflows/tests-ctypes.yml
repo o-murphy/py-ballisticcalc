@@ -26,7 +26,7 @@ on:
       - "py_ballisticcalc/**"
       - "tests/**"
       - "py_ballisticcalc.ctypes/**"
-      - "py_ballisticcalc.exts/py_ballisticcalc_exts/external/bclibc" # the one bclibc submodule the library is built from
+      - "bclibc" # the one bclibc submodule the library is built from
       - ".gitmodules"
       - ".github/workflows/tests-ctypes.yml"
       - ".github/workflows/cibuildwheel-reusable.yml"
@@ -42,7 +42,7 @@ on:
       - "py_ballisticcalc/**"
       - "tests/**"
       - "py_ballisticcalc.ctypes/**"
-      - "py_ballisticcalc.exts/py_ballisticcalc_exts/external/bclibc"
+      - "bclibc"
       - ".gitmodules"
       - ".github/workflows/tests-ctypes.yml"
       - ".github/workflows/cibuildwheel-reusable.yml"

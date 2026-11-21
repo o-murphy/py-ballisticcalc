@@ -132,7 +132,7 @@ extend-exclude = [
     "__init__.py",
     "tests",
     "examples",
-    "py_ballisticcalc.exts/py_ballisticcalc_exts/external/bclibc",
+    "bclibc",
     "py_ballisticcalc.ctypes/py_ballisticcalc_ctypes/external",
     "py_ballisticcalc.ctypes/py_ballisticcalc_ctypes/_native_lib",
     "py_ballisticcalc.cabi/py_ballisticcalc_cabi/external",

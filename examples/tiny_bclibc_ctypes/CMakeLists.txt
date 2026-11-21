@@ -11,7 +11,7 @@
 #
 # Where bclibc comes from:
 #   py-ballisticcalc already carries bclibc as a single git submodule at
-#   py_ballisticcalc.exts/py_ballisticcalc_exts/external/bclibc (used to build the Cython
+#   bclibc (used to build the Cython
 #   engine). This example intentionally reuses that SAME checkout rather than fetching a
 #   second copy of bclibc -- two independently-pinned copies in one repo would let the
 #   Cython engine and this example silently drift onto different bclibc versions. If the
@@ -22,7 +22,7 @@ cmake_minimum_required(VERSION 3.14)
 project(tiny_bclibc_examples LANGUAGES C)
 
 set(_submodule_dir
-    "${CMAKE_CURRENT_SOURCE_DIR}/../../py_ballisticcalc.exts/py_ballisticcalc_exts/external/bclibc")
+    "${CMAKE_CURRENT_SOURCE_DIR}/../../bclibc")
 set(TINY_BCLIBC_SOURCE_DIR "${_submodule_dir}/tiny_bclibc")
 set(_engine_h "${TINY_BCLIBC_SOURCE_DIR}/include/tiny_bclibc/engine.h")
 
@@ -30,7 +30,7 @@ if(NOT EXISTS "${_engine_h}")
     message(FATAL_ERROR
         "bclibc submodule not initialized: ${_engine_h} not found.\n"
         "Run from the repo root: git submodule update --init "
-        "py_ballisticcalc.exts/py_ballisticcalc_exts/external/bclibc")
+        "bclibc")
 endif()
 
 file(STRINGS "${_engine_h}" _raw_api_line REGEX "tiny_bclibc_integrate_raw")
@@ -39,11 +39,11 @@ if(NOT _raw_api_line)
         "The bclibc submodule checkout at ${_submodule_dir} is pinned to a commit that "
         "predates tiny_bclibc_integrate_raw() (the raw-streaming API the example engines call). "
         "Update the submodule to a commit that has it, e.g. from the repo root:\n"
-        "  cd py_ballisticcalc.exts/py_ballisticcalc_exts/external/bclibc\n"
+        "  cd bclibc\n"
         "  git fetch origin main\n"
         "  git checkout FETCH_HEAD\n"
         "  cd -\n"
-        "  git add py_ballisticcalc.exts/py_ballisticcalc_exts/external/bclibc")
+        "  git add bclibc")
 endif()
 
 include(ExternalProject)

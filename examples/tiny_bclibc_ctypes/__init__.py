@@ -3,7 +3,7 @@
 This is example code, not part of the installed py_ballisticcalc package: it depends on
 natively-compiled `tiny_bclibc` shared libraries that py_ballisticcalc does not ship or build
 itself. Use `CMakeLists.txt` in this directory to build them (from the bclibc git submodule
-already vendored at `py_ballisticcalc.exts/py_ballisticcalc_exts/external/bclibc` — see below),
+already vendored at `bclibc` — see below),
 and `run_example.py` for a runnable demo.
 
 `tiny_bclibc` (see https://github.com/ballistics-lab/bclibc/tree/main/tiny_bclibc) is a pure
@@ -51,7 +51,7 @@ Architecture:
     engine can be run against the full py_ballisticcalc pytest suite like any other engine —
     e.g. from the repo root:
     ```bash
-    git submodule update --init py_ballisticcalc.exts/py_ballisticcalc_exts/external/bclibc
+    git submodule update --init bclibc
     cmake -B examples/tiny_bclibc_ctypes/build -S examples/tiny_bclibc_ctypes
     cmake --build examples/tiny_bclibc_ctypes/build
     export PYBALLISTICCALC_TINY_BCLIBC_LIB=$(pwd)/examples/tiny_bclibc_ctypes/build/single/libtiny_bclibc.so
@@ -63,7 +63,7 @@ Architecture:
 Requirements:
     Build tiny_bclibc as a shared library, once per precision, via `CMakeLists.txt` in this
     directory — it reuses the bclibc git submodule already vendored for the Cython engine at
-    `py_ballisticcalc.exts/py_ballisticcalc_exts/external/bclibc` rather than fetching a second,
+    `bclibc` rather than fetching a second,
     independently-versioned copy of bclibc. Then point `PYBALLISTICCALC_TINY_BCLIBC_LIB`
     (single) / `PYBALLISTICCALC_TINY_BCLIBC_DP_LIB` (double) at the resulting
     `libtiny_bclibc.so` (`.dylib`/`.dll`). Each library is loaded lazily on first use of its

@@ -196,7 +196,7 @@ This library is free software: you can redistribute it and/or modify it under th
 See [LICENSE](LICENSE) for the full text. See [CHANGELOG](CHANGELOG.md) for release history.
 
 > [!NOTE]
-> **[bclibc]** (the ballistic solver engine, located in `py_ballisticcalc_exts/external/bclibc`) is licensed separately under the **GNU Lesser General Public License v3.0**. See [`py_ballisticcalc_exts/external/bclibc/LICENSE`](py_ballisticcalc_exts/external/bclibc/LICENSE).
+> **[bclibc]** (the ballistic solver engine, located in `bclibc`) is licensed separately under the **GNU Lesser General Public License v3.0**. See [`py_ballisticcalc_exts/external/bclibc/LICENSE`](bclibc/LICENSE).
 
 
 > [!WARNING]

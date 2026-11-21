@@ -1,7 +1,7 @@
 """Example: run a trajectory through the tiny_bclibc single- and double-precision engines.
 
 Prerequisite: build the shared libraries (from the repo root) and point the env vars at them.
-    git submodule update --init py_ballisticcalc.exts/py_ballisticcalc_exts/external/bclibc
+    git submodule update --init bclibc
     cmake -B examples/tiny_bclibc_ctypes/build -S examples/tiny_bclibc_ctypes
     cmake --build examples/tiny_bclibc_ctypes/build
     export PYBALLISTICCALC_TINY_BCLIBC_LIB=$(pwd)/examples/tiny_bclibc_ctypes/build/single/libtiny_bclibc.so

@@ -136,8 +136,8 @@ EXTENSIONS_BASE_DIR = Path("py_ballisticcalc_exts")
 SRC_DIR_PATH = EXTENSIONS_BASE_DIR / "src"
 INCLUDE_DIR_PATH = EXTENSIONS_BASE_DIR / "include"
 
-# bclibc git submodule (lives inside the package so it ships with wheels)
-BCLIBC_DIR = EXTENSIONS_BASE_DIR / "external/bclibc"
+# bclibc git submodule (top level of the repository)
+BCLIBC_DIR = Path("..") / "bclibc"
 BCLIBC_SRC_DIR = BCLIBC_DIR / "src"
 BCLIBC_INCLUDE_DIR = BCLIBC_DIR / "include"
 
