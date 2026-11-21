@@ -580,6 +580,13 @@ class _FixedEngine(BaseIntegrationEngine):
         """The steps of the last integration, as the exts engine's counter (the native library reports it per call)."""
         return self._last_accepted
 
+    def _begin_stats(self):
+        """Zero the stats of the last integrate() before it runs: a call that fails before the C call reports 0."""
+        _LIB or _load_library()
+        stats = _scratch_of(self).stats
+        stats.accepted = stats.rejected = 0
+        self._last_accepted = self._last_rejected = 0
+
     def _record_stats(self):
         stats = _scratch_of(self).stats
         self._last_accepted, self._last_rejected = stats.accepted, stats.rejected
@@ -598,18 +605,22 @@ class _FixedEngine(BaseIntegrationEngine):
         built from its records."""
         range_limit_ft = max_range._feet
         range_step_ft = range_limit_ft if dist_step is None else dist_step._feet
-        result = _integrate_common(
-            self, shot_info, range_limit_ft, range_step_ft, time_step, filter_flags, dense_output, _fixed_call
-        )[0]
-        self._record_stats()
-        return result
+        self._begin_stats()
+        try:
+            return _integrate_common(
+                self, shot_info, range_limit_ft, range_step_ft, time_step, filter_flags, dense_output, _fixed_call
+            )[0]
+        finally:  # also after an error: the C call fills the stats before it returns its status
+            self._record_stats()
 
     def _integrate(self, props, range_limit_ft, range_step_ft, time_step, filter_flags, dense_output, **kwargs):
-        result = _integrate_common(
-            self, props.shot, range_limit_ft, range_step_ft, time_step, filter_flags, dense_output, _fixed_call
-        )[0]
-        self._record_stats()
-        return result
+        self._begin_stats()
+        try:
+            return _integrate_common(
+                self, props.shot, range_limit_ft, range_step_ft, time_step, filter_flags, dense_output, _fixed_call
+            )[0]
+        finally:
+            self._record_stats()
 
     def integrate_raw_at(self, shot_info, key_attribute: str, target_value: float):
         """Same as the base engine's `integrate_raw_at()`: integrates until `key_attribute` reaches `target_value`, in
@@ -743,6 +754,17 @@ class _AdaptiveEngine(BaseIntegrationEngine):
             raise ValueError("absolute_tolerance must be finite and non-negative")
         self._absolute_tolerance = float(value)
 
+    def _begin_stats(self):
+        """Zero the stats of the last integrate() before it runs: a call that fails before the C call reports 0."""
+        _LIB or _load_library()
+        stats = _scratch_of(self).stats
+        stats.accepted = stats.rejected = 0
+        self._last_accepted = self._last_rejected = 0
+
+    def _record_stats(self):
+        stats = _scratch_of(self).stats
+        self._last_accepted, self._last_rejected = stats.accepted, stats.rejected
+
     def get_step_stats(self) -> tuple[int, int]:
         """The numbers of accepted and rejected steps of the last successful `integrate()` call, as ``(accepted,
         rejected)``."""
@@ -800,11 +822,13 @@ class _AdaptiveEngine(BaseIntegrationEngine):
                 C.byref(scr.err),
             )
 
-        result, _reason, _s = _integrate_common(
-            self, shot_info, range_limit_ft, range_step_ft, time_step, filter_flags, dense_output, call
-        )
-        stats = _scratch_of(self).stats
-        self._last_accepted, self._last_rejected = stats.accepted, stats.rejected
+        self._begin_stats()
+        try:
+            result, _reason, _s = _integrate_common(
+                self, shot_info, range_limit_ft, range_step_ft, time_step, filter_flags, dense_output, call
+            )
+        finally:  # also after an error: the C call fills the stats before it returns its status
+            self._record_stats()
         return result
 
     def integrate_raw_at(self, shot_info, key_attribute: str, target_value: float):

@@ -110,6 +110,7 @@ def test_integration_step_count_agrees(method):
         engine.integrate(make_shot(), trajectory_range)
         counts[name] = engine.integration_step_count
     reference = variants[0]
+    assert counts[reference] > 0, f"{reference}: no step count after integrate()"
     for name in variants[1:]:
         assert counts[name] == counts[reference], f"{name}: {counts[name]} steps, {reference}: {counts[reference]}"
 

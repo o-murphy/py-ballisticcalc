@@ -509,6 +509,8 @@ class _Engine(BaseIntegrationEngine):
         cdef int rc, i, count, want = 1 if dense_output else 0, method = self._METHOD
         cdef double rtol, atol
         cdef BCLIBCFFI_Shot *shot = &scr.shot
+        # the stats of this call only: a call that fails before the C call (in _fill_shot) reports 0
+        self._last_accepted = self._last_rejected = 0
         _fill_shot(scr, shot_info, self._config, method)
         scr.req.range_limit_ft = range_limit_ft
         scr.req.range_step_ft = range_step_ft
