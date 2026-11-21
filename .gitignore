@@ -36,11 +36,6 @@ compile_flags.txt
 py_ballisticcalc.exts/cibw_stage/
 py_ballisticcalc.exts/cibw_run_engines.py
 
-# py_ballisticcalc.cabi: the test inputs staged by cibuildwheel, the bclibc sources staged for an sdist or a container build
-py_ballisticcalc.cabi/cibw_stage/
-py_ballisticcalc.cabi/cibw_run_engines.py
-py_ballisticcalc.cabi/py_ballisticcalc_cabi/external/
-
 # py_ballisticcalc.ctypes: the library built by setup.py and the bclibc sources staged for an sdist or a container build
 py_ballisticcalc.ctypes/py_ballisticcalc_ctypes/_native_lib/
 py_ballisticcalc.ctypes/py_ballisticcalc_ctypes/external/

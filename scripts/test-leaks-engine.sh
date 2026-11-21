@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Leak check of one native engine (ctypes+<method>, cabi+<method> or cython+<method>) under Valgrind, Linux only.
+# Leak check of one native engine (ctypes+<method> or cython+<method>) under Valgrind, Linux only.
 # Usage: scripts/test-leaks-engine.sh <engine> [iterations]        (default 200)
 #
 # The same workload runs once and then `iterations` times; the bytes "definitely lost" must not grow with the iterations (the

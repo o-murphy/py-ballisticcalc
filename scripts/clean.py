@@ -19,8 +19,6 @@ EXTS = ROOT / "py_ballisticcalc.exts"
 PKG = EXTS / "py_ballisticcalc_exts"
 CTYPES = ROOT / "py_ballisticcalc.ctypes"
 CPKG = CTYPES / "py_ballisticcalc_ctypes"
-CABI = ROOT / "py_ballisticcalc.cabi"
-BPKG = CABI / "py_ballisticcalc_cabi"
 
 
 def remove(path: Path) -> None:
@@ -44,8 +42,12 @@ def main() -> None:
         EXTS / "build",
         EXTS / "dist",
         PKG / "build",
+        # the bclibc sources staged for an sdist or a container build, and what cibuildwheel leaves in the project
+        PKG / "external",
+        EXTS / "cibw_stage",
+        EXTS / "cibw_run_engines.py",
         *EXTS.glob("*.egg-info"),
-        *(p for p in PKG.glob("*") if p.is_file() and p.suffix in {".so", ".pyd", ".html"}),
+        *(p for p in PKG.glob("*") if p.is_file() and p.suffix in {".so", ".pyd", ".html", ".c", ".cpp"}),
         # the ctypes package: the library setup.py built, the bclibc sources staged for an sdist or a container build, and
         # what cibuildwheel and the workflows leave in the project directory
         CTYPES / "build",
@@ -57,12 +59,6 @@ def main() -> None:
         CPKG / "_native_lib",
         CPKG / "external",
         *CTYPES.glob("*.egg-info"),
-        # the cabi package: the extension, the generated C++, the staged bclibc sources
-        CABI / "build",
-        CABI / "dist",
-        BPKG / "external",
-        *CABI.glob("*.egg-info"),
-        *(p for p in BPKG.glob("*") if p.is_file() and p.suffix in {".so", ".pyd", ".cpp", ".html"}),
     ]
     for target in targets:
         if target.exists() or target.is_symlink():
