@@ -2,7 +2,7 @@
 
 import pytest
 
-from py_ballisticcalc_cabi import CythonizedBaseTrajSeq
+from py_ballisticcalc_exts import CythonizedBaseTrajSeq
 
 
 def seq(n):

@@ -7,7 +7,7 @@ from pathlib import Path
 
 import pytest
 
-# Appended, not inserted: a source checkout must not shadow the installed py_ballisticcalc_cabi (it has no compiled _native).
+# Appended, not inserted: a source checkout must not shadow the installed py_ballisticcalc_exts (it has no compiled _native).
 HERE = Path(__file__).resolve().parent.parent
 sys.path.append(str(HERE))
 
@@ -33,7 +33,7 @@ def test_pxd_is_up_to_date(regen):
 
 
 def test_version_guard():
-    import py_ballisticcalc_cabi as pkg
+    import py_ballisticcalc_exts as pkg
 
     pkg.check_versions("3.1.2", "3.1.2")
     with pytest.raises(AssertionError, match="Versions must match"):

@@ -1,7 +1,7 @@
 import math
 import pytest
 
-from py_ballisticcalc_exts.traj_data import CythonizedBaseTrajSeq
+from py_ballisticcalc_exts import CythonizedBaseTrajSeq
 
 
 def make_linear_seq(n=5):

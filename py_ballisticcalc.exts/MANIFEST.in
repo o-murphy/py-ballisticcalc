@@ -1,9 +1,10 @@
-# setuptools-scm uses git ls-files which does not recurse into submodules by
-# default, so we list the submodule content explicitly for sdist.
-recursive-include py_ballisticcalc_exts/external/bclibc/include *.hpp *.h
-recursive-include py_ballisticcalc_exts/external/bclibc/src *.cpp *.ipp
-
-# Local Python-binding sources and Cython files
-recursive-include py_ballisticcalc_exts/include *.hpp *.h
-recursive-include py_ballisticcalc_exts/src *.cpp
+# The bclibc sources are not a submodule of this package: sdist stages them from the repository's top-level bclibc/
+# submodule, see setup.py and _bclibc.py.
+include _bclibc.py
+include regenerate_bindings.py
 recursive-include py_ballisticcalc_exts *.pyx *.pxd *.pyi
+recursive-include py_ballisticcalc_exts/external/bclibc/include *.hpp *.h
+recursive-include py_ballisticcalc_exts/external/bclibc/src *.cpp *.ipp *.h *.hpp *.version
+include py_ballisticcalc_exts/external/bclibc/version.h.in
+include py_ballisticcalc_exts/external/bclibc/BCLIBC_VERSION
+include py_ballisticcalc_exts/external/bclibc/LICENSE

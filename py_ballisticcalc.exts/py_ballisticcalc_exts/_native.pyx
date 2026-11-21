@@ -9,7 +9,7 @@ from cython cimport final
 from libc.stdlib cimport free, malloc, realloc
 from libc.string cimport memcpy
 
-from py_ballisticcalc_cabi._bcffi cimport *
+from py_ballisticcalc_exts._bcffi cimport *
 
 from py_ballisticcalc.engines.base_engine import BaseIntegrationEngine
 from py_ballisticcalc.exceptions import (
@@ -484,7 +484,7 @@ cdef class CythonizedBaseTrajSeq:
         return out
 
 
-class _Engine(BaseIntegrationEngine):
+class CythonizedBaseIntegrationEngine(BaseIntegrationEngine):
     """Native engine: fixed-step (RK4, Euler, Verlet) or adaptive (Cash-Karp, Dormand-Prince, Tsitouras)."""
     _METHOD = 0
     _ADAPTIVE = False
@@ -684,7 +684,7 @@ class _Engine(BaseIntegrationEngine):
         return self._last_accepted
 
 
-class _AdaptiveEngine(_Engine):
+class _AdaptiveEngine(CythonizedBaseIntegrationEngine):
     """Adaptive engines: per-instance tolerances and the step statistics of the last integrate()."""
     _ADAPTIVE = True
 
@@ -721,27 +721,27 @@ class _AdaptiveEngine(_Engine):
         self._absolute_tolerance = float(value)
 
 
-class NativeEulerIntegrationEngine(_Engine):
+class CythonizedEulerIntegrationEngine(CythonizedBaseIntegrationEngine):
     _METHOD = 1
     DEFAULT_TIME_STEP = 0.5
 
 
-class NativeRK4IntegrationEngine(_Engine):
+class CythonizedRK4IntegrationEngine(CythonizedBaseIntegrationEngine):
     _METHOD = 0
 
 
-class NativeVelocityVerletIntegrationEngine(_Engine):
+class CythonizedVelocityVerletIntegrationEngine(CythonizedBaseIntegrationEngine):
     _METHOD = 2
     DEFAULT_TIME_STEP = 0.001
 
 
-class NativeCashKarpIntegrationEngine(_AdaptiveEngine):
+class CythonizedCashKarpIntegrationEngine(_AdaptiveEngine):
     _METHOD = 3
 
 
-class NativeDormandPrinceIntegrationEngine(_AdaptiveEngine):
+class CythonizedDormandPrinceIntegrationEngine(_AdaptiveEngine):
     _METHOD = 4
 
 
-class NativeTsitourasIntegrationEngine(_AdaptiveEngine):
+class CythonizedTsitourasIntegrationEngine(_AdaptiveEngine):
     _METHOD = 5

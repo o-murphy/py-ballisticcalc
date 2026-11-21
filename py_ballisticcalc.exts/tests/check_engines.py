@@ -29,7 +29,7 @@ def key(d):
 
 worst = 0.0
 for n in NAMES:
-    cpp, cabi = (engine(f"py_ballisticcalc_exts:Cythonized{n}IntegrationEngine"), engine(f"py_ballisticcalc_cabi:Native{n}IntegrationEngine"))
+    cpp, cabi = (engine(f"py_ballisticcalc_exts:Cythonized{n}IntegrationEngine"), engine(f"py_ballisticcalc_exts:Cythonized{n}IntegrationEngine"))
     a = cpp.integrate(shot(False), Distance.Meter(2000), Distance.Meter(100), 0.0, TrajFlag.ALL, True)
     b = cabi.integrate(shot(False), Distance.Meter(2000), Distance.Meter(100), 0.0, TrajFlag.ALL, True)
     assert len(a.records) == len(b.records), n

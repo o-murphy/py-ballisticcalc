@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-"""Regenerate py_ballisticcalc_cabi/_bcffi.pxd, the Cython declarations of bclibc_ffi.h (the C ABI of bclibc).
+"""Regenerate py_ballisticcalc_exts/_bcffi.pxd, the Cython declarations of bclibc_ffi.h (the C ABI of bclibc).
 
 autopxd2 is a development dependency (``uv sync --group dev``); the generated file is committed, so building the package
 does not need it. Run this after the bclibc submodule is bumped and commit the result; the test ``tests/test_bindings.py``
@@ -22,7 +22,7 @@ sys.path.insert(0, str(HERE))
 
 import _bclibc
 
-OUT = HERE / "py_ballisticcalc_cabi" / "_bcffi.pxd"
+OUT = HERE / "py_ballisticcalc_exts" / "_bcffi.pxd"
 HEADER_RELATIVE = "include/bclibc/ffi/bclibc_ffi.h"
 STUBS = HERE.parent / "py_ballisticcalc.ctypes" / "ctypesgen_stubs"  # stdint.h/stddef.h for a parser without a libc
 

@@ -3,7 +3,7 @@
 The repository has one bclibc submodule, at the top level (``bclibc/``).
 This package does not have a copy of its own; it finds the sources in one of two places:
 
-* ``py_ballisticcalc_cabi/external/bclibc``: the staged copy. ``sdist`` puts it into the source distribution, so
+* ``py_ballisticcalc_exts/external/bclibc``: the staged copy. ``sdist`` puts it into the source distribution, so
   that one builds anywhere, and ``python _bclibc.py stage`` makes it for a build that sees only this directory
   (cibuildwheel runs a Linux build in a container with the project directory only). It is not committed.
 * the repository's submodule, when building from the repository.
@@ -20,7 +20,7 @@ import sys
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
-STAGED = HERE / "py_ballisticcalc_cabi" / "external" / "bclibc"
+STAGED = HERE / "py_ballisticcalc_exts" / "external" / "bclibc"
 # where the repository's one submodule is: the top level
 SUBMODULES = (HERE.parent / "bclibc",)
 
@@ -42,11 +42,25 @@ def bclibc_dir() -> Path:
     """The staged copy if there is one, else the shared submodule."""
     for candidate in (STAGED, shared()):
         if (candidate / "src" / "ffi" / "bclibc_ffi.cpp").exists():
+            check_header(candidate)
             return candidate
     raise RuntimeError(
         "bclibc sources not found: run `git submodule update --init --recursive` in the repository, "
         f"or `python _bclibc.py stage` ({shared()})"
     )
+
+
+REQUIRED_SYMBOL = "BCLIBCFFI_integrate_dense_shot_stats"
+
+
+def check_header(directory: Path) -> None:
+    """Fail early with a clear message when the bclibc checkout is older than the C ABI this package declares."""
+    header = directory / "include" / "bclibc" / "ffi" / "bclibc_ffi.h"
+    if REQUIRED_SYMBOL not in header.read_text(encoding="utf-8", errors="replace"):
+        raise RuntimeError(
+            f"{header} has no {REQUIRED_SYMBOL}: the bclibc checkout is too old for py_ballisticcalc_exts "
+            "(update the bclibc submodule)"
+        )
 
 
 def describe(directory: Path) -> str:

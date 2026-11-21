@@ -1,7 +1,7 @@
 import pytest
 
-from py_ballisticcalc_exts.traj_data import CythonizedBaseTrajData
-from py_ballisticcalc_exts._test_helpers import make_base_traj_data
+from py_ballisticcalc_exts import CythonizedBaseTrajData
+from py_ballisticcalc_exts._native import make_base_traj_data
 
 
 def test_base_traj_interpolate_time_linear_position():

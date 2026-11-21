@@ -16,7 +16,7 @@ authors = [
     { name="o-murphy", email="thehelixpg@gmail.com" },
     { name="dbookstaber", email="bookstaber@gmail.com"}
 ]
-description = "LGPL library for small arms ballistic calculations (Python 3)"
+description = "Cython engines of py_ballisticcalc over the C ABI of bclibc (one abi3 extension module)"
 readme = "README.md"
 requires-python = ">=3.11"
 keywords = ["py_ballisticcalc", "ballistics", "Cython", "ballistic calculator", "python", "python3"]
@@ -88,22 +88,15 @@ tsitouras = "py_ballisticcalc_exts:CythonizedTsitourasIntegrationEngine"
 
 
 [tool.setuptools]
-py-modules = ["py_ballisticcalc_exts"]
+include-package-data = true
 
 [tool.setuptools.package-data]
-py_ballisticcalc_exts = [
-    "py.typed",
-    "include/bclibc/*.hpp",
-    "src/*.cpp",
-    "external/bclibc/include/bclibc/*.hpp",
-    "external/bclibc/include/bclibc/ffi/*.h",
-    "external/bclibc/src/*.cpp",
-]
+py_ballisticcalc_exts = ["py.typed", "*.pyi", "*.pxd", "*.pyx"]
 
 [tool.setuptools.packages.find]
 where = ["."]
 include = ["py_ballisticcalc_exts*"]
-exclude = ["py_ballisticcalc_exts.include*", "py_ballisticcalc_exts.external*"]
+exclude = ["py_ballisticcalc_exts.external*"]
 
 [project.optional-dependencies]
 dev = [
@@ -181,10 +174,11 @@ markers = ["stress: long-running or resource-intensive tests, opt-in only"]
 cache-keys = [
     { file = "pyproject.toml" },
     { file = "setup.py" },
+    { file = "_bclibc.py" },
     { file = "py_ballisticcalc_exts/**/*.{pyx,pxd,pyi,py}" },
-    { file = "py_ballisticcalc_exts/src/**/*.{cpp,hpp,h}" },
-    { file = "py_ballisticcalc_exts/include/**/*.{cpp,hpp,h}" },
-    { file = "py_ballisticcalc_exts/external/**/*.{cpp,hpp,h}" },
+    { file = "../bclibc/src/**/*.{cpp,hpp,h,ipp}" },
+    { file = "../bclibc/include/**/*.{hpp,h}" },
+    { file = "py_ballisticcalc_exts/external/**/*.{cpp,hpp,h,ipp}" },
     # build flags read by setup.py
     { env = "CYTHON_COVERAGE" },
     { env = "CYTHON_SAFETY" },
