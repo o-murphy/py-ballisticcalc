@@ -3,7 +3,6 @@
 # entries are in .github/scripts/wheel_matrix.py) and gives it to `strategy.matrix`.
 #
 #   exts-tests    tests-exts.yml    the Cython wheels, built and tested (a pull request, a run by hand)
-#   cabi-tests    tests-cabi.yml    the cabi wheels (Cython over the C ABI), built and tested: the platforms of exts-tests
 #   ctypes        tests-ctypes.yml  the ctypes wheels, built and tested; the same list is the one of the release
 #   exts-release  pypi-publish.yml  the Cython wheels of a release, built without tests
 #
@@ -76,85 +75,6 @@ exts-tests:
     cibw_platform: ios
     needs_qemu: false
     smoke: *ios_smoke
-
-  - name: Android ARM64 / x64
-    artifact_key: android-arm64_v8a-x86_64
-    os: ubuntu-latest
-    cibw_archs: "arm64_v8a,x86_64"
-    cibw_platform: android
-    needs_qemu: false
-
-  - name: Pyodide WebAssembly
-    artifact_key: pyodide-wasm32
-    os: ubuntu-latest
-    cibw_archs: "wasm32"
-    cibw_platform: pyodide
-    needs_qemu: false
-
-# The same platforms as exts-tests, for the Cython-over-the-C-ABI wheels of py_ballisticcalc.cabi (tests-cabi.yml)
-cabi-tests:
-  - name: Linux x64 / x86
-    artifact_key: linux-x64-x86
-    os: ubuntu-latest
-    cibw_archs: "i686,x86_64"
-    cibw_platform: linux
-    needs_qemu: false
-
-  - name: Linux ARM64 / ARMv7
-    artifact_key: linux-arm64-armv7
-    os: ubuntu-24.04-arm
-    cibw_archs: "aarch64,armv7l"
-    cibw_platform: linux
-    needs_qemu: false
-
-  - name: Windows x64 / x86
-    artifact_key: windows-x64-x86
-    os: windows-latest
-    cibw_archs: "x86,AMD64"
-    cibw_platform: windows
-    needs_qemu: false
-
-  - name: Windows ARM64
-    artifact_key: windows-arm64
-    os: windows-11-arm
-    cibw_archs: "ARM64"
-    cibw_platform: windows
-    needs_qemu: false
-
-  - name: macOS Apple Silicon
-    artifact_key: macos-arm64
-    os: macos-26
-    cibw_archs: "arm64,universal2"
-    cibw_platform: macos
-    needs_qemu: false
-
-  - name: macOS Intel
-    artifact_key: macos-x86_64
-    os: macos-26-intel
-    cibw_archs: "x86_64"
-    cibw_platform: macos
-    needs_qemu: false
-
-  # the device wheel is built here too, so that a pull request breaks on it, not the release; nothing can run it, so
-  # only the simulator wheel is tested (cibuildwheel tests simulator SDKs only)
-  - name: iOS arm64 (device, simulator)
-    artifact_key: ios-arm64
-    os: macos-26
-    cibw_archs: "arm64_iphoneos,arm64_iphonesimulator"
-    cibw_platform: ios
-    needs_qemu: false
-    test_skip: "*_iphoneos"
-    smoke: &cabi_ios_smoke # what a pull request does with it: one Python (the device wheel is still built), two engines in the simulator
-      build: "cp313-ios_*"
-      test_command: "python -m cibw_run_engines cabi+rk4 cabi+dopri"
-
-  - name: iOS simulator x86-64
-    artifact_key: ios-x86_64-simulator
-    os: macos-26-intel
-    cibw_archs: "x86_64_iphonesimulator"
-    cibw_platform: ios
-    needs_qemu: false
-    smoke: *cabi_ios_smoke
 
   - name: Android ARM64 / x64
     artifact_key: android-arm64_v8a-x86_64

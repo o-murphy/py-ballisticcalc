@@ -1,7 +1,7 @@
 name: cibuildwheel (reusable)
 run-name: "cibuildwheel: ${{ inputs.platform }} ${{ inputs.archs }} ${{ inputs.build }}"
 
-# Builds the wheels of one package (`project`: py_ballisticcalc.exts, py_ballisticcalc.ctypes or py_ballisticcalc.cabi) with cibuildwheel and tests every one
+# Builds the wheels of one package (`project`: py_ballisticcalc.exts or py_ballisticcalc.ctypes) with cibuildwheel and tests every one
 # of them in the same run: the engines are run one after another by .github/scripts/cibw_run_engines.py (the test-command in the
 # pyproject.toml of the package). The wheels are uploaded as a named artifact.
 #
@@ -26,7 +26,7 @@ on:
         type: string
         default: ubuntu-latest
       project:
-        description: "Package directory to build: py_ballisticcalc.exts (Cython), py_ballisticcalc.ctypes or py_ballisticcalc.cabi (Cython over the C ABI)"
+        description: "Package directory to build: py_ballisticcalc.exts (Cython over the bclibc C ABI) or py_ballisticcalc.ctypes"
         required: false
         type: string
         default: py_ballisticcalc.exts
@@ -63,7 +63,7 @@ on:
         type: boolean
         default: false
       artifact_name:
-        description: "Name of the wheels artifact (empty: <exts|ctypes|cabi>-wheels-<platform>-<archs>)"
+        description: "Name of the wheels artifact (empty: <exts|ctypes>-wheels-<platform>-<archs>)"
         required: false
         type: string
         default: ""
@@ -105,7 +105,7 @@ on:
         type: string
         default: ubuntu-latest
       project:
-        description: "Package directory to build: py_ballisticcalc.exts (Cython), py_ballisticcalc.ctypes or py_ballisticcalc.cabi (Cython over the C ABI)"
+        description: "Package directory to build: py_ballisticcalc.exts (Cython over the bclibc C ABI) or py_ballisticcalc.ctypes"
         required: false
         type: string
         default: py_ballisticcalc.exts
@@ -135,7 +135,7 @@ on:
         type: boolean
         default: false
       artifact_name:
-        description: "Name of the wheels artifact (empty: <exts|ctypes|cabi>-wheels-<platform>-<archs>)"
+        description: "Name of the wheels artifact (empty: <exts|ctypes>-wheels-<platform>-<archs>)"
         required: false
         type: string
         default: ""
@@ -212,7 +212,7 @@ jobs:
             echo "test_skip=$(spaces "$IN_TEST_SKIP")"
             echo "archs=$(echo "$IN_ARCHS" | tr -d ' ')"
           } >> "$GITHUB_OUTPUT"
-          KIND="${IN_PROJECT#py_ballisticcalc.}" # exts, ctypes, cabi
+          KIND="${IN_PROJECT#py_ballisticcalc.}" # exts, ctypes
           ARTIFACT="${IN_ARTIFACT:-${KIND}-wheels-${IN_PLATFORM}-$(echo "$IN_ARCHS" | tr -d ' ' | tr ',' '+')}"
           echo "artifact=$ARTIFACT" >> "$GITHUB_OUTPUT"
           echo "CIBW_BUILD='$(spaces "$IN_BUILD")'  CIBW_SKIP='$(spaces "$IN_SKIP")'  archs=$IN_ARCHS  artifact=$ARTIFACT"
@@ -286,7 +286,7 @@ jobs:
         shell: bash
 
       # A container build (Linux) and an sdist see only the project directory, not the repository's one bclibc submodule:
-      # a package that needs the sources there (py_ballisticcalc.ctypes, py_ballisticcalc.cabi) stages them itself with `_bclibc.py stage`.
+      # a package that needs the sources there (py_ballisticcalc.exts, py_ballisticcalc.ctypes) stages them itself with `_bclibc.py stage`.
       - name: Stage the bclibc sources
         env:
           PROJECT: ${{ inputs.project }}

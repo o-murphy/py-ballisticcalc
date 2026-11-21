@@ -1,6 +1,6 @@
 """The cibuildwheel matrix of a workflow, read from .github/matrices.yml and printed as the JSON for `strategy.matrix`.
 
-    python .github/scripts/wheel_matrix.py exts-tests|cabi-tests|ctypes|exts-release [--smoke]
+    python .github/scripts/wheel_matrix.py exts-tests|ctypes|exts-release [--smoke]
 
 With `--smoke` an entry that has a `smoke` mapping takes those fields in place of its own (the wheels that are slow to test, QEMU and the iOS simulator:
 a build and a quick test, not the whole tests); the others are as they are. `smoke` is never in the output.
