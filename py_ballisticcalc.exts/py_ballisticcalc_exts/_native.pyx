@@ -81,8 +81,13 @@ cdef class _Curve:
 
     def __cinit__(self, int n):
         self.n = n
-        self.m = <double *>malloc(n * sizeof(double))
-        self.c = <double *>malloc(n * sizeof(double))
+        self.m = <double *>malloc((n if n else 1) * sizeof(double))
+        self.c = <double *>malloc((n if n else 1) * sizeof(double))
+        if self.m == NULL or self.c == NULL:
+            free(self.m)
+            free(self.c)
+            self.m = self.c = NULL
+            raise MemoryError()
 
     def __dealloc__(self):
         free(self.m)
@@ -422,6 +427,15 @@ cdef class CythonizedBaseIntegrationEngine:
     cdef int _last_rejected
     cdef double _relative_tolerance
     cdef double _absolute_tolerance
+    # the numbers of the engine config the hot path reads, cached once in __init__ (_config stays the public attribute)
+    cdef double _step_multiplier
+    cdef double _zero_finding_accuracy
+    cdef double _minimum_velocity
+    cdef double _maximum_drop
+    cdef int32_t _max_iterations
+    cdef double _gravity_constant
+    cdef double _minimum_altitude
+    cdef double _calc_step_value
     cdef public object _config
     cdef public object gravity_vector
 
@@ -432,13 +446,27 @@ cdef class CythonizedBaseIntegrationEngine:
         self._time_step = cls.DEFAULT_TIME_STEP
         self.n_wind = 0
         self.winds = NULL
+        self.recs = NULL
+        self.dense = NULL
 
     def __dealloc__(self):
         free(self.winds)
+        if self.dense != NULL:
+            BCLIBCFFI_free_base_trajectory(self.dense)
+            self.dense = NULL
 
     def __init__(self, config=None):
         self._config = create_base_engine_config(config)
-        self.gravity_vector = Vector(0.0, self._config.cGravityConstant, 0.0)
+        cfg = self._config
+        self._step_multiplier = cfg.cStepMultiplier
+        self._zero_finding_accuracy = cfg.cZeroFindingAccuracy
+        self._minimum_velocity = cfg.cMinimumVelocity
+        self._maximum_drop = cfg.cMaximumDrop
+        self._max_iterations = int(cfg.cMaxIterations)
+        self._gravity_constant = cfg.cGravityConstant
+        self._minimum_altitude = cfg.cMinimumAltitude
+        self._calc_step_value = self._step_multiplier * self._time_step
+        self.gravity_vector = Vector(0.0, self._gravity_constant, 0.0)
 
     def _init_trajectory(self, shot):
         props = ShotProps.from_shot(shot)
@@ -449,14 +477,14 @@ cdef class CythonizedBaseIntegrationEngine:
         return self._calc_step()
 
     cdef double _calc_step(self):
-        return self._config.cStepMultiplier * self._time_step
+        return self._calc_step_value
 
     cdef int _init_shot(self, shot_info) except -1:
         cdef BCLIBCFFI_Shot *s = &self.shot
         cdef BCLIBCFFI_Config *c = &s.config
         cdef int i, nt, nw
         cdef _Curve curve
-        cfg = self._config
+        cdef BCLIBCFFI_Wind *tmp
         ammo = shot_info.ammo
         dm = ammo.dm
         atmo = shot_info.atmo
@@ -476,7 +504,10 @@ cdef class CythonizedBaseIntegrationEngine:
         winds = shot_info.winds
         nw = len(winds)
         if nw != self.n_wind:
-            self.winds = <BCLIBCFFI_Wind *>realloc(self.winds, (nw if nw else 1) * sizeof(BCLIBCFFI_Wind))
+            tmp = <BCLIBCFFI_Wind *>realloc(self.winds, (nw if nw else 1) * sizeof(BCLIBCFFI_Wind))
+            if tmp == NULL:
+                raise MemoryError()
+            self.winds = tmp
             self.n_wind = nw
             s.winds = self.winds if nw else NULL
         for i in range(nw):
@@ -507,29 +538,34 @@ cdef class CythonizedBaseIntegrationEngine:
         s.cant_angle_rad = shot_info.cant_angle._rad
         s.latitude_deg = NAN if shot_info.latitude is None else shot_info.latitude
         s.azimuth_deg = NAN if shot_info.azimuth is None else shot_info.azimuth
-        c.cStepMultiplier = cfg.cStepMultiplier
-        c.cZeroFindingAccuracy = cfg.cZeroFindingAccuracy
-        c.cMinimumVelocity = cfg.cMinimumVelocity
-        c.cMaximumDrop = cfg.cMaximumDrop
-        c.cMaxIterations = int(cfg.cMaxIterations)
-        c.cGravityConstant = cfg.cGravityConstant
-        c.cMinimumAltitude = cfg.cMinimumAltitude
+        c.cStepMultiplier = self._step_multiplier
+        c.cZeroFindingAccuracy = self._zero_finding_accuracy
+        c.cMinimumVelocity = self._minimum_velocity
+        c.cMaximumDrop = self._maximum_drop
+        c.cMaxIterations = self._max_iterations
+        c.cGravityConstant = self._gravity_constant
+        c.cMinimumAltitude = self._minimum_altitude
         s.method = <BCLIBCFFI_IntegrationMethod>self._method
         return 0
 
     cdef object _run(self, shot_info, double range_limit_ft, double range_step_ft, double time_step, filter_flags,
                      dense_output):
-        cdef int rc, i, count, want = 1 if dense_output else 0, method = self._method
+        cdef int rc, i, count, want = 1 if dense_output else 0, method = self._method, ff = filter_flags
         cdef double rtol, atol
         cdef BCLIBCFFI_Shot *shot = &self.shot
         # the stats of this call only: zeroed in the scratch too, since a failed adaptive call leaves them untouched
         self._last_accepted = self._last_rejected = 0
         self.stats.accepted = self.stats.rejected = 0
+        if self.dense != NULL:
+            BCLIBCFFI_free_base_trajectory(self.dense)
+            self.dense = NULL
+        self.recs = NULL
+        self.n = self.dn = 0
         self._init_shot(shot_info)
         self.req.range_limit_ft = range_limit_ft
         self.req.range_step_ft = range_step_ft
         self.req.time_step = time_step
-        self.req.filter_flags = int(filter_flags)
+        self.req.filter_flags = ff
         if self._adaptive:
             rtol = self._relative_tolerance
             atol = self._absolute_tolerance
@@ -545,9 +581,12 @@ cdef class CythonizedBaseIntegrationEngine:
         if rc != BCLIBCFFI_OK:
             _raise(&self.err)
         count = self.n
-        trajectory = [_traj(&self.recs[i]) for i in range(count)]
-        if count:
-            BCLIBCFFI_free_trajectory(self.recs)
+        try:
+            trajectory = [_traj(&self.recs[i]) for i in range(count)]
+        finally:
+            if count:
+                BCLIBCFFI_free_trajectory(self.recs)
+            self.recs = NULL
         base_data = None
         cdef CythonizedBaseTrajSeq seq
         if dense_output:
