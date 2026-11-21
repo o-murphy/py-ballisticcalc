@@ -1,8 +1,13 @@
-"""The three native variants of the bclibc core agree: Cython (py_ballisticcalc.exts), the C ABI in Cython (py_ballisticcalc.cabi)
-and ctypes (py_ballisticcalc.ctypes). They are the same C++ core behind different bindings, so every integration method must give
-the same trajectory. A variant that is not installed is skipped; the test needs at least two of them.
+"""The two native variants of the bclibc core agree: Cython (py_ballisticcalc.exts, over the bclibc C ABI) and ctypes
+(py_ballisticcalc.ctypes). They are the same core behind different bindings, so every integration method must give the same
+trajectory. A variant that is not installed is skipped; the test needs both.
 
-The comparison is by field, abs tolerance 1e-9 (the same core compiled with -ffp-contract=off gives identical numbers).
+The comparison is by field, abs tolerance 1e-9.
+
+Documented divergences of ctypes from exts (not checked for equality here):
+- ctypes is 20-45% slower than exts.
+- the ctypes bclibc version check compares major.minor only.
+- ctypes is pure Python: integrate_raw_at returns the core BaseTrajData, not the Cython CythonizedBaseTrajData.
 """
 
 import math
@@ -14,7 +19,6 @@ from py_ballisticcalc import Ammo, Angular, Atmo, Calculator, DragModel, Shot, T
 
 VARIANTS = {
     "exts": ("py_ballisticcalc_exts", "cython"),
-    "cabi": ("py_ballisticcalc_cabi", "cabi"),
     "ctypes": ("py_ballisticcalc_ctypes", "ctypes"),
 }
 METHODS = ["euler", "rk4", "verlet", "rkck", "dopri", "tsitouras"]
@@ -78,7 +82,7 @@ def records(engine, make_shot, trajectory_range):
 def test_variants_agree(shot_name, method):
     variants = installed_variants()
     if len(variants) < 2:
-        pytest.skip("needs at least two of the native variants (exts, cabi, ctypes) installed")
+        pytest.skip("needs at least two of the native variants (exts, ctypes) installed")
     make_shot, trajectory_range = SHOTS[shot_name]
     reference_name = variants[0]
     reference = records(f"{VARIANTS[reference_name][1]}+{method}", make_shot, trajectory_range)
@@ -144,15 +148,15 @@ def test_integrate_raw_at_agrees(method):
             assert math.isclose(x, y, rel_tol=0.0, abs_tol=TOLERANCE), f"{name} vs {reference}, {field}: {y} != {x}"
 
 
-def test_integrate_raw_at_class_is_the_exts_class():
-    """cabi returns the exts class CythonizedBaseTrajData from integrate_raw_at. ctypes is pure Python and returns the core
-    BaseTrajData (no Cython class is available there), so it is not compared by class."""
-    if "exts" not in installed_variants() or "cabi" not in installed_variants():
-        pytest.skip("needs the exts and cabi variants installed")
+def test_integrate_raw_at_class_divergence():
+    """exts returns CythonizedBaseTrajData from integrate_raw_at; ctypes is pure Python and returns BaseTrajData."""
+    if len(installed_variants()) < 2:
+        pytest.skip("needs the exts and ctypes variants installed")
     make_shot, _ = SHOTS["g1_wind"]
     raw_exts, _ = _engine("exts", "dopri").integrate_raw_at(make_shot(), "time", 0.5)
-    raw_cabi, _ = _engine("cabi", "dopri").integrate_raw_at(make_shot(), "time", 0.5)
-    assert type(raw_cabi).__name__ == type(raw_exts).__name__ == "CythonizedBaseTrajData"
+    raw_ctypes, _ = _engine("ctypes", "dopri").integrate_raw_at(make_shot(), "time", 0.5)
+    assert type(raw_exts).__name__ == "CythonizedBaseTrajData"
+    assert type(raw_ctypes).__name__ == "BaseTrajData"
 
 
 def _dense(name):
@@ -173,7 +177,7 @@ def _point(b):
     )
 
 
-@pytest.mark.parametrize("name", ["cabi", "ctypes"])
+@pytest.mark.parametrize("name", ["ctypes"])
 def test_dense_sequence_methods_agree(name):
     """The dense sequence (base_data) of a variant: get_at, get_at_slant_height and interpolate_at give the exts values."""
     if name not in installed_variants() or "exts" not in installed_variants():
@@ -192,7 +196,7 @@ def test_dense_sequence_methods_agree(name):
             assert math.isclose(x, y, rel_tol=0.0, abs_tol=TOLERANCE), f"{name} {label}: {actual} != {expected}"
 
 
-@pytest.mark.parametrize("name", ["cabi", "ctypes"])
+@pytest.mark.parametrize("name", ["ctypes"])
 def test_dense_sequence_errors_agree(name):
     """An unknown key is an AttributeError in every variant; reserve() with a negative size is a ValueError."""
     if name not in installed_variants() or "exts" not in installed_variants():
