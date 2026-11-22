@@ -19,7 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `CYTHON_SAFETY`, `CYTHON_FORCE_REGEN`, `DISABLE_SHARED_STRIP`) and the git commit. The root `pyproject.toml` tracks
   the git commit too, so both packages keep the same `setuptools-scm` version (the exts package refuses to import on a
   version mismatch). `--reinstall-package` is no longer needed, and was removed from the `uv-sync` pre-commit hook.
-- Re-pin `bclibc` to `7ce2bec` (the `fix/zero-close-target` branch of `ballistics-lab/bclibc`, on top of 2.2.1) for the
+- Re-pin `bclibc` to `557da08` (`main` of `ballistics-lab/bclibc` after the close-target zero fix, on top of 2.2.1) for the
   close-target zero fix above; this also takes the `bclibc` changes since 2.1.0 (2.2.0 / 2.2.1: C ABI additions and fixed-step
   statistics in the FFI).
 
