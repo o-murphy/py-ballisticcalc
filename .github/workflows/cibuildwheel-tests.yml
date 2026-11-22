@@ -1,6 +1,10 @@
 name: Tests (cibuildwheel)
+# The title follows the job that runs: only a push runs the minimal matrix; a pull request and a manual run (workflow_dispatch)
+# run the full one.
 run-name: >
-  ${{ github.event_name == 'pull_request' && 'Full Matrix — PR' || 'Minimal Matrix — Push' }}
+  ${{ github.event_name == 'push' && 'Minimal Matrix — Push'
+  || github.event_name == 'pull_request' && 'Full Matrix — PR'
+  || 'Full Matrix — by hand' }}
   ${{ github.event.pull_request.number || github.ref_name }}
 
 # Builds the exts wheels with cibuildwheel and tests each of them on its own platform: every engine, one after another
