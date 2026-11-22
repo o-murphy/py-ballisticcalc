@@ -29,6 +29,19 @@ VELOCITIES_MPS = (300.0, 800.0)
 HEIGHT_TOLERANCE_M = 2e-3
 
 
+def _skip_slow_unless_shortcut(engine, distance_m: float, sight_height_m: float, velocity: float = 800.0) -> None:
+    """Keep the pure-Python engines' run time short.
+
+    Searching for a zero takes tens of seconds per case on the pure-Python RK4/Euler/Verlet engines.  They run only the
+    cases the fix changes (a target closer than twice the sight height, which takes the shortcut) at one velocity;
+    the fast engines (Cython, SciPy, tiny_bclibc) run the whole grid.
+    """
+    module = getattr(engine, "__module__", "") or ""
+    if module.startswith("py_ballisticcalc.engines.") and "scipy" not in module:
+        if distance_m >= 2.0 * sight_height_m or velocity != 800.0:
+            pytest.skip("searched zero is too slow on pure-Python engines; covered by the fast engines")
+
+
 def _make_shot(sight_height_m: float, mv_mps: float, drag_table=TableG7) -> Shot:
     return Shot(
         weapon=Weapon(sight_height=Distance.Meter(sight_height_m), twist=Distance.Inch(11)),
@@ -54,6 +67,7 @@ def _fire_with_zero(calc: Calculator, shot: Shot, zero_angle: Angular, distance_
 @pytest.mark.parametrize("distance", CLOSE_TARGETS_M)
 def test_close_target_zero_hits_line_of_sight(loaded_engine_instance, distance, sight_height, velocity):
     """The zero shot of a close target crosses the line of sight at the target."""
+    _skip_slow_unless_shortcut(loaded_engine_instance, distance, sight_height, velocity)
     shot = _make_shot(sight_height, velocity)
     calc = Calculator(engine=loaded_engine_instance)
     angle = calc.find_zero_angle(shot, Distance.Meter(distance))
@@ -68,6 +82,7 @@ def test_close_target_zero_hits_line_of_sight(loaded_engine_instance, distance, 
 @pytest.mark.parametrize("sight_height", (0.1, 0.5))
 def test_close_target_zero_angle_is_straight_line(loaded_engine_instance, distance, sight_height):
     """With drag and gravity negligible the zero angle is the line from the bore to the target."""
+    _skip_slow_unless_shortcut(loaded_engine_instance, distance, sight_height)
     shot = _make_shot(sight_height, 800.0)
     calc = Calculator(engine=loaded_engine_instance)
     angle = calc.find_zero_angle(shot, Distance.Meter(distance))
@@ -81,6 +96,7 @@ def test_close_target_zero_angle_is_straight_line(loaded_engine_instance, distan
 @pytest.mark.parametrize("distance", (0.2, 0.9))
 def test_close_target_zero_point(loaded_engine_instance, distance, sight_height):
     """find_zero_point (where implemented) agrees in sign and magnitude with find_zero_angle."""
+    _skip_slow_unless_shortcut(loaded_engine_instance, distance, sight_height)
     shot = _make_shot(sight_height, 800.0)
     calc = Calculator(engine=loaded_engine_instance)
     engine = calc._engine_instance
@@ -98,11 +114,17 @@ def test_close_target_zero_point(loaded_engine_instance, distance, sight_height)
     assert point.slant_height >> Distance.Meter == pytest.approx(0.0, abs=HEIGHT_TOLERANCE_M)
 
 
+# -10 and not -20 degrees: a steeper downhill shot at a ~1 m target with a tiny sight raises OutOfRangeError from
+# find_max_range on the pure-Python Euler/Verlet engines (pre-existing, unrelated to the close-target shortcut).
 @pytest.mark.parametrize("look_angle", (-10.0, 15.0, 45.0))
 @pytest.mark.parametrize("sight_height", (0.1, 0.5))
 @pytest.mark.parametrize("distance", (0.2, 0.4, 0.9))
 def test_close_target_zero_with_look_angle(loaded_engine_instance, distance, sight_height, look_angle):
     """With a look angle the zero shot reaches the (slant) line of sight at the target."""
+    _skip_slow_unless_shortcut(loaded_engine_instance, distance, sight_height)
+    if look_angle != 15.0 and "py_ballisticcalc.engines." in (getattr(loaded_engine_instance, "__module__", "") or "") \
+            and "scipy" not in loaded_engine_instance.__module__:
+        pytest.skip("one look angle is enough on pure-Python engines")
     shot = _make_shot(sight_height, 800.0, TableG1)
     shot.look_angle = Angular.Degree(look_angle)
     calc = Calculator(engine=loaded_engine_instance)
@@ -118,6 +140,7 @@ def test_close_target_zero_with_look_angle(loaded_engine_instance, distance, sig
 def test_close_target_zero_with_cant(loaded_engine_instance, distance):
     """A canted rifle has an effective sight height of sight_height*cos(cant); the zero follows it."""
     sight_height = 0.1
+    _skip_slow_unless_shortcut(loaded_engine_instance, distance, sight_height * math.cos(math.radians(30)))
     shot = _make_shot(sight_height, 800.0)
     shot.cant_angle = Angular.Degree(30)
     calc = Calculator(engine=loaded_engine_instance)

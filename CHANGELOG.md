@@ -54,8 +54,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   and `__pycache__`) and `scripts/test-leaks.sh` (stress tests under Valgrind).
 
 ### Fixed
-- The zero angle of a very close target, closer than twice the sight height (or twice `calc_step`, whichever is larger), in
-  the Python engines and in the Cython ones. This "very close shot" shortcut of `_init_zero_calculation` returns a straight line
+- The zero angle of a very close target, closer than the cutoff (`2 * max(|sight height|, props.calc_step)`, which in practice is
+  twice the sight height), in the Python engines and in the Cython ones. This "very close shot" shortcut of `_init_zero_calculation` returns a straight line
   from the bore to the target without a search, and it computed `atan2(target_y + start_height, target_x)` where `start_height`
   is the *negative* sight height (the bore is below the line of sight). For a sight above the bore the angle was therefore
   negative: the bore pointed down, away from the line of sight, and the shot missed it by twice the sight height (0.1 m for a
@@ -66,11 +66,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   so it was about 0.6 m whatever the sight height); it is fixed in the new `bclibc` pin (see Changed), and the Cython engines and the
   `tiny_bclibc` example engines (which call it) follow. **The results for close targets change on purpose**: the zero
   angle of such a target has the other sign, and the Cython engines no longer take the shortcut for a target between
-  twice the sight height and about 0.6 m (0.1 to 0.6 m with a 0.05 or 0.1 m sight) and search for it like any other. The zero
-  of any other target is bit-for-bit what it was. `tests/test_zeros.py::test_negative_sight_height` expected +45 deg for a
+  twice the sight height and about 0.6 m (0.1 to 0.6 m with a 0.05 or 0.1 m sight) and search for it like any other. No other test
+  outcome changed (full suite, before and after, on the Python, SciPy, Cython and `tiny_bclibc` engines). `tests/test_zeros.py::test_negative_sight_height` expected +45 deg for a
   100 mm target with a 100 mm sight *below* the bore, the old sign; it is -45 deg now (the bore must point down to
   meet the line of sight). New tests: `tests/test_zero_close_target.py` (the zero shot of close targets, over sight heights,
   velocities and look angles, crosses the line of sight at the target; with cant the angle follows `sight_height * cos(cant)`).
+  Known, unrelated and not changed: `find_max_range` on the pure-Python Euler and Verlet engines raises `OutOfRangeError` for
+  a steep downhill shot (-20 deg) at a ~1 m target with a tiny sight.
 - `py_ballisticcalc.exts/setup.py`: a Python built for Android before 3.13 reports `linux` in `sysconfig.get_platform()`, so the
   build was not recognised as Android and kept the stable ABI (abi3), which cannot be imported there; `sys.platform` and
   `sys.getandroidapilevel()` are checked as well.
