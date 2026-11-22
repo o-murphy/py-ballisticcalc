@@ -293,4 +293,6 @@ def test_negative_sight_height(loaded_engine_instance):
     shot.weapon.sight_height = Distance.Millimeter(-100)
     calc = Calculator(engine=loaded_engine_instance)
     zero_angle = calc.set_weapon_zero(shot, Distance.Millimeter(100))
-    assert (zero_angle >> Angular.Degree) == pytest.approx(45.0, abs=1e-4)
+    # The sight is 100 mm below the bore, so the bore must point down 45 degrees to meet the line of sight at 100 mm.
+    # (This once expected +45, the wrong-sign close-target shortcut; see tests/test_zero_close_target.py.)
+    assert (zero_angle >> Angular.Degree) == pytest.approx(-45.0, abs=1e-4)

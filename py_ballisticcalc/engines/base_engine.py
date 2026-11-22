@@ -665,9 +665,13 @@ class BaseIntegrationEngine(ABC, EngineProtocol):
         if abs(slant_range_ft) < self.ALLOWED_ZERO_ERROR_FEET:
             return ZeroFindingProps(_ZeroCalcStatus.DONE, look_angle_rad=props.look_angle_rad)
         if abs(slant_range_ft) < 2.0 * max(abs(start_height_ft), props.calc_step):
-            # Very close shot; ignore gravity and drag
+            # Very close shot; ignore gravity and drag.
+            # `start_height_ft` is the (negative) height of the bore relative to the line of sight, so the straight
+            # line from the bore to the target on the line of sight rises by `target_y_ft - start_height_ft`.
+            # (Adding it, as this once did, points the bore away from the line of sight for a sight above the bore
+            # and misses the line of sight by twice the sight height.)
             return ZeroFindingProps(
-                _ZeroCalcStatus.DONE, look_angle_rad=math.atan2(target_y_ft + start_height_ft, target_x_ft)
+                _ZeroCalcStatus.DONE, look_angle_rad=math.atan2(target_y_ft - start_height_ft, target_x_ft)
             )
         if abs(props.look_angle_rad - math.radians(90)) < self.APEX_IS_MAX_RANGE_RADIANS:
             # Virtually vertical shot; just check if it can reach the target
