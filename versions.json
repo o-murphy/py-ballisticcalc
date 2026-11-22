@@ -1,10 +1,15 @@
 [
   {
-    "version": "3.1.0b1",
-    "title": "3.1.0b1",
+    "version": "3.1.2.dev28+gd87f715c5",
+    "title": "3.1.2.dev28+gd87f715c5",
     "aliases": [
       "latest"
     ]
+  },
+  {
+    "version": "3.1.0b1",
+    "title": "3.1.0b1",
+    "aliases": []
   },
   {
     "version": "3.0.0",
