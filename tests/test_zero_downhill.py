@@ -152,8 +152,10 @@ class _Hang(Exception):
 
 
 def _run_with_time_bound(seconds: int, func, *args):
-    """Run func(*args); fail with _Hang if it takes longer than `seconds` (Unix only; elsewhere no bound)."""
-    if not hasattr(signal, "SIGALRM"):
+    """Run func(*args); fail with _Hang if it takes longer than `seconds` (Unix only; elsewhere no bound).
+
+    Pyodide (WebAssembly) defines signal.SIGALRM but has no signal.alarm, so both must be there."""
+    if not (hasattr(signal, "SIGALRM") and hasattr(signal, "alarm")):
         return func(*args)
 
     def _on_alarm(signum, frame):
