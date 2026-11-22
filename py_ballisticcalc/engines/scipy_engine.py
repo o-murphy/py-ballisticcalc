@@ -95,10 +95,10 @@ except ImportError:
 # Local imports
 from py_ballisticcalc.conditions import Wind
 from py_ballisticcalc.engines.base_engine import (
+    _DOWNHILL_FIRST_DROP_FT,
     BaseEngineConfig,
     BaseEngineConfigDict,
     BaseIntegrationEngine,
-    _DOWNHILL_FIRST_DROP_FT,
     _ZeroCalcStatus,
     with_no_minimum_velocity,
 )
