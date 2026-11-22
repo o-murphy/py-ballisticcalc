@@ -7,7 +7,41 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- The zero angle of a shot with a **downhill look angle** no longer raises `OutOfRangeError` ("exceeds maximum possible range"
+  of a few feet) for a target well within range. `find_zero_angle` / `find_zero_point` (the Ridder search, and the fallback of
+  `zero_angle` / `zero_point`) first call `find_max_range`, a golden-section search over the barrel elevation that measures
+  each shot by the slant distance at which it comes back down through the line of sight. A downhill line of sight lies *below*
+  the muzzle, so a shot crosses it far below the muzzle altitude, but the search ran with `cMaximumDrop = 0` ("stop at muzzle
+  level") and the caller's `cMinimumAltitude`: every shot was stopped before the crossing, no elevation but a near-vertical one
+  had a "ZERO_DOWN", and the search settled on about 90 degrees with a maximum range of 2.98 ft, 5.87 ft ... (and a warning
+  "No ZERO_DOWN found for launch angle ..."). For a downhill look angle `_find_max_range` (the base engine, therefore RK4, Euler,
+  Velocity Verlet and the native `tiny_bclibc` example engine, and the SciPy engine) now integrates a shot that found no crossing
+  again with the drop and minimum-altitude limits raised (from 1000 ft, by a factor of four, until it crosses) and restores them on
+  return; the first crossing does not depend on the limit. A level or uphill look angle is integrated once, as before, and so
+  are all results that did not depend on the defect. The Cython engines get the same fix from `bclibc` (pin below).
+  `find_max_range` of a downhill shot is now the real maximum slant range (for example 5659 m at 28.4 degrees for 800 m/s, G7,
+  look -20 degrees, with a 0.1 m sight, instead of 1.2 m at 90 degrees).
+  For a downhill look angle the max-range search ignores the caller's `cMinimumAltitude` and `cMaximumDrop`, so the reported
+  maximum range can lie below the altitude floor the caller set. A shot that cannot rise above the line of sight (launched at or
+  below the look angle, or a hair above it: its vacuum peak over the line is not above it) is not integrated at all, so a
+  wide bracket such as `(-90, 90)` is cheap, and each probe starts from the drop that served the previous one. (A wind that carries a
+  steep shot along the line of sight is not bounded on the Python engines; the C++ core and `tiny_bclibc` bound the flight to 600 s.)
+  On the C++ core and `tiny_bclibc` the flight of a single probe is bounded to 600 s (realistic flights are under about 400 s); a probe
+  that exceeds it reports "no crossing", so for extreme inputs (for example look -20 degrees at 6000 fps in 0.05 hPa) `find_max_range` can
+  return 0 ft instead of hanging, and a later zero search then reports `OutOfRangeError`. The pure-Python engines have no time cap: a steep
+  downhill shot with a tailwind of about 300 fps may take minutes there (known limitation).
+- The Newton zero search widened `cMinimumAltitude` with an inverted test (`cMinimumAltitude - alt0 > drop`, never true at the
+  default limits), and the Ridder (`find_zero_angle`) and SciPy `brentq` searches did not widen the drop and altitude limits at all,
+  so a long zero (for example 1500 m at -30 degrees: the target is 750 m below the muzzle) was cut short by the default
+  `cMinimumAltitude` of -1500 ft and `find_zero_angle` of the SciPy engine answered -23.47 degrees instead of -28.31. All three now
+  widen the limits to the required drop, as `bclibc` does (`zero_search_min_altitude`), and only when needed.
+  Tests: `tests/test_zero_downhill.py` (zero of downhill shots from -5 to -45 degrees, targets 0.5 to 300 m, hits within 2 mm;
+  the maximum range against probe shots; recorded values of unaffected results per engine).
+
 ### Changed
+- Re-pin `bclibc` to `409672c` (`main` of `ballistics-lab/bclibc` after the downhill max-range fix, on top of `557da08`) for the downhill
+  maximum-range fix above (the Cython engines run the C++ core).
 - Pin `bclibc` to [`v2.1.0`](https://github.com/ballistics-lab/bclibc/releases/tag/v2.1.0): the zero search no longer
   depends on the early-termination limits (`cMaximumDrop`, `cMinimumAltitude`), so `find_zero_angle` with either at `0`, or for a
   long zero (3500 yd and more) at the default limits, no longer raises `SolverRuntimeError` ("Trajectory too short to determine

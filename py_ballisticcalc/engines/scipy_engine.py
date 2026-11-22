@@ -98,6 +98,7 @@ from py_ballisticcalc.engines.base_engine import (
     BaseEngineConfig,
     BaseEngineConfigDict,
     BaseIntegrationEngine,
+    _DOWNHILL_FIRST_DROP_FT,
     _ZeroCalcStatus,
     with_no_minimum_velocity,
 )
@@ -698,13 +699,14 @@ class SciPyIntegrationEngine(BaseIntegrationEngine):
             return max_range, Angular.Radian(props.look_angle_rad)
         # endregion Virtually vertical shot
 
+        self._downhill_drop_ft = _DOWNHILL_FIRST_DROP_FT  # see _first_zero_down
+
         def range_for_angle(angle_rad: float) -> float:
             """Return slant-distance minus slant-error (in feet) for given launch angle in radians."""
             if abs(props.look_angle_rad - math.radians(90)) < self.APEX_IS_MAX_RANGE_RADIANS:
                 return self._find_apex(props).slant_distance >> Distance.Foot
             props.barrel_elevation_rad = angle_rad
-            hit = self._integrate(props, 9e9, 9e9, filter_flags=TrajFlag.ZERO_DOWN, stop_at_zero=True)
-            cross = hit.flag(TrajFlag.ZERO_DOWN)
+            cross = self._first_zero_down(props, stop_at_zero=True)
             if cross is None:
                 warnings.warn(f"No ZERO_DOWN found for launch angle {angle_rad} rad.")
                 return -9e9
@@ -779,7 +781,8 @@ class SciPyIntegrationEngine(BaseIntegrationEngine):
             nonlocal point, point_angle_rad
             props.barrel_elevation_rad = angle_rad
             # Integrate to find the projectile's state at the target's horizontal distance.
-            t = self._integrate(props, target_x_ft, target_x_ft, filter_flags=TrajFlag.NONE)[-1]
+            with self._zero_search_limits(props, target_x_ft, target_y_ft):
+                t = self._integrate(props, target_x_ft, target_x_ft, filter_flags=TrajFlag.NONE)[-1]
             point = t
             point_angle_rad = angle_rad
             if t.time == 0.0:

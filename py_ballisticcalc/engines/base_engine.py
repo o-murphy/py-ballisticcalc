@@ -33,14 +33,15 @@ See Also:
     py_ballisticcalc.trajectory_data: Data structures for results
 """
 
+import contextlib
 import functools
 import math
 import warnings
 from abc import ABC, abstractmethod
-from collections.abc import Callable, Sequence
+from collections.abc import Callable, Iterator, Sequence
 from dataclasses import asdict, dataclass
 from enum import Enum, auto
-from typing import Concatenate, NamedTuple, ParamSpec, TypedDict, TypeVar
+from typing import Any, Concatenate, NamedTuple, ParamSpec, TypedDict, TypeVar
 
 from py_ballisticcalc.conditions import Wind
 from py_ballisticcalc.constants import cGravityImperial
@@ -485,9 +486,17 @@ def with_max_drop_zero(
     return wrapper
 
 
+_DOWNHILL_FIRST_DROP_FT = 1e3
+_DOWNHILL_LAST_DROP_FT = 1e6
+"""Drop below the muzzle (feet) from which `_first_zero_down` follows a downhill shot, and where it gives up."""
+
+
 # pylint: disable=too-many-instance-attributes
 class BaseIntegrationEngine(ABC, EngineProtocol):
     """All calculations are done in imperial units (feet and fps)."""
+
+    _downhill_drop_ft: float = _DOWNHILL_FIRST_DROP_FT
+    """Drop (ft) from which `_first_zero_down` starts for a downhill shot; reset by each max-range search."""
 
     APEX_IS_MAX_RANGE_RADIANS: float = 0.0003  # Radians from vertical where the apex is max range
     ALLOWED_ZERO_ERROR_FEET: float = 1e-2  # Allowed range error (along sight line), in feet, for zero angle
@@ -562,6 +571,7 @@ class BaseIntegrationEngine(ABC, EngineProtocol):
         # endregion Virtually vertical shot
 
         t_calls = 0
+        self._downhill_drop_ft = _DOWNHILL_FIRST_DROP_FT  # see _first_zero_down
 
         def range_for_angle(angle_rad: float) -> float:
             """Return slant-distance minus slant-error (in feet) for given launch angle in radians."""
@@ -569,8 +579,7 @@ class BaseIntegrationEngine(ABC, EngineProtocol):
             nonlocal t_calls
             t_calls += 1
             # logger.debug(f"range_for_angle call #{t_calls} for angle {math.degrees(angle_rad)} degrees")
-            hit = self._integrate(props, 9e9, 9e9, filter_flags=TrajFlag.ZERO_DOWN)
-            cross = hit.flag(TrajFlag.ZERO_DOWN)
+            cross = self._first_zero_down(props)
             if cross is None:
                 warnings.warn(f"No ZERO_DOWN found for launch angle {angle_rad} rad.")
                 return -9e9
@@ -605,6 +614,75 @@ class BaseIntegrationEngine(ABC, EngineProtocol):
 
         logger.debug(f"._find_max_range required {t_calls} trajectory calculations")
         return Distance.Feet(max_range_ft), Angular.Radian(angle_at_max_rad)
+
+    @contextlib.contextmanager
+    def _zero_search_limits(self, props: ShotProps, target_x_ft: float, target_y_ft: float) -> Iterator[None]:
+        """Widen the drop and altitude limits, for the duration of a shot, to what is needed to follow it to the target.
+
+        A zero search fires shots that fall well below the muzzle before they reach the target (the flat edge of a bracket,
+        the first Newton guess); a tight `cMaximumDrop` or `cMinimumAltitude` ends them short.  The limits are only widened,
+        never narrowed, and restored on exit (same as `zero_search_*` in bclibc).
+        """
+        required_drop_ft = target_x_ft / 2.0 - target_y_ft
+        restore_drop, restore_altitude = self._config.cMaximumDrop, self._config.cMinimumAltitude
+        if abs(restore_drop) < required_drop_ft:
+            self._config.cMaximumDrop = required_drop_ft
+        if (props.alt0_ft - restore_altitude) < required_drop_ft:
+            self._config.cMinimumAltitude = props.alt0_ft - required_drop_ft
+        try:
+            yield
+        finally:
+            self._config.cMaximumDrop, self._config.cMinimumAltitude = restore_drop, restore_altitude
+
+    def _first_zero_down(self, props: ShotProps, **integrate_kwargs: Any) -> TrajectoryData | None:
+        """Return the point where the shot comes back down through the line of sight, or None if it never does.
+
+        Used by the maximum-range search, which runs with `cMaximumDrop` 0 ("stop at muzzle level"): a shot is stopped
+        when it falls below the muzzle, which is right for a level or uphill line of sight, as the shot crosses it above
+        the muzzle.  A downhill line of sight lies *below* the muzzle: every shot was stopped before it got there, and the
+        search found no crossing at any elevation but a near-vertical one.  For a downhill look angle the shot is
+        integrated again with a drop (and minimum altitude) limit raised by a factor of four until it crosses.  The first
+        crossing does not depend on the limit, so a level or uphill look angle is untouched (it is integrated once, as
+        before) and so are all results that did not hit the limit.
+
+        Args:
+            props: The shot, with its barrel elevation set.
+            **integrate_kwargs: Passed on to `_integrate` (the SciPy engine asks it to stop at the crossing).
+        """
+        if props.look_angle_rad < 0.0:
+            # A shot that cannot rise above the line of sight never crosses it: the highest it gets above the line, in
+            # vacuum (drag only lowers it), is its start height over the line plus (v sin(elevation - look))^2 / (2 g cos(look)).
+            # (Without this a shot launched at or below the line would be integrated until the drop limit; wind is ignored.)
+            v_perp = props.muzzle_velocity_fps * math.sin(props.barrel_elevation_rad - props.look_angle_rad)
+            height = -props.cant_cosine * props.sight_height_ft * math.cos(props.look_angle_rad)
+            g = abs(self._config.cGravityConstant)
+            if v_perp > 0.0 and g > 0.0:
+                height += v_perp * v_perp / (2.0 * g * math.cos(props.look_angle_rad))
+            if height <= 0.0:
+                return None
+        cross = self._integrate(props, 9e9, 9e9, filter_flags=TrajFlag.ZERO_DOWN, **integrate_kwargs).flag(
+            TrajFlag.ZERO_DOWN
+        )
+        if cross is not None or props.look_angle_rad >= 0.0:
+            return cross
+        restore_drop, restore_altitude = self._config.cMaximumDrop, self._config.cMinimumAltitude
+        try:
+            # Start from the drop that served the previous probe of this search (the crossings of nearby elevations lie at
+            # similar depths), not from the bottom for every elevation.
+            drop_ft = self._downhill_drop_ft
+            while cross is None and drop_ft <= _DOWNHILL_LAST_DROP_FT:
+                self._config.cMaximumDrop = drop_ft
+                self._config.cMinimumAltitude = min(restore_altitude, props.alt0_ft - drop_ft)
+                cross = self._integrate(props, 9e9, 9e9, filter_flags=TrajFlag.ZERO_DOWN, **integrate_kwargs).flag(
+                    TrajFlag.ZERO_DOWN
+                )
+                if cross is None:
+                    drop_ft *= 4.0
+            if cross is not None:
+                self._downhill_drop_ft = drop_ft
+        finally:
+            self._config.cMaximumDrop, self._config.cMinimumAltitude = restore_drop, restore_altitude
+        return cross
 
     def find_apex(self, shot_info: Shot) -> TrajectoryData:
         """Find the apex of the trajectory.
@@ -777,7 +855,8 @@ class BaseIntegrationEngine(ABC, EngineProtocol):
             """Target miss (in feet) for given launch angle."""
             nonlocal last_point
             props.barrel_elevation_rad = angle_rad
-            _res = self._integrate(props, target_x_ft, target_x_ft, filter_flags=TrajFlag.NONE)
+            with self._zero_search_limits(props, target_x_ft, target_y_ft):
+                _res = self._integrate(props, target_x_ft, target_x_ft, filter_flags=TrajFlag.NONE)
             if _res.error is not None:
                 logger.warning(f"Integrator error in error_at_distance({angle_rad}): {_res.error}")
             t = _res.records[-1]
@@ -943,7 +1022,7 @@ class BaseIntegrationEngine(ABC, EngineProtocol):
             restore_cMaximumDrop = self._config.cMaximumDrop
             self._config.cMaximumDrop = required_drop_ft
         restore_cMinimumAltitude = None
-        if (self._config.cMinimumAltitude - props.alt0_ft) > required_drop_ft:
+        if (props.alt0_ft - self._config.cMinimumAltitude) < required_drop_ft:
             restore_cMinimumAltitude = self._config.cMinimumAltitude
             self._config.cMinimumAltitude = props.alt0_ft - required_drop_ft
         # endregion

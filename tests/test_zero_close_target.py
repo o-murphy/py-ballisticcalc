@@ -114,8 +114,8 @@ def test_close_target_zero_point(loaded_engine_instance, distance, sight_height)
     assert point.slant_height >> Distance.Meter == pytest.approx(0.0, abs=HEIGHT_TOLERANCE_M)
 
 
-# -10 and not -20 degrees: a steeper downhill shot at a ~1 m target with a tiny sight raises OutOfRangeError from
-# find_max_range on the pure-Python Euler/Verlet engines (pre-existing, unrelated to the close-target shortcut).
+# -10 and not -20 degrees, to keep the pure-Python engines fast.  (A steeper downhill shot at a ~1 m target with a tiny sight
+# used to raise OutOfRangeError from find_max_range; fixed, see tests/test_zero_downhill.py.)
 @pytest.mark.parametrize("look_angle", (-10.0, 15.0, 45.0))
 @pytest.mark.parametrize("sight_height", (0.1, 0.5))
 @pytest.mark.parametrize("distance", (0.2, 0.4, 0.9))
