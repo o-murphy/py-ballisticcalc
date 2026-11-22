@@ -19,6 +19,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `CYTHON_SAFETY`, `CYTHON_FORCE_REGEN`, `DISABLE_SHARED_STRIP`) and the git commit. The root `pyproject.toml` tracks
   the git commit too, so both packages keep the same `setuptools-scm` version (the exts package refuses to import on a
   version mismatch). `--reinstall-package` is no longer needed, and was removed from the `uv-sync` pre-commit hook.
+- Re-pin `bclibc` to `7ce2bec` (the `fix/zero-close-target` branch of `ballistics-lab/bclibc`, on top of 2.2.1) for the
+  close-target zero fix above; this also takes the `bclibc` changes since 2.1.0 (2.2.0 / 2.2.1: C ABI additions and fixed-step
+  statistics in the FFI).
 
 ### CI
 - `.github/workflows/cibuildwheel-reusable.yml`: builds the exts wheels with cibuildwheel, tests each of them on its own
@@ -51,6 +54,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   and `__pycache__`) and `scripts/test-leaks.sh` (stress tests under Valgrind).
 
 ### Fixed
+- The zero angle of a very close target, closer than twice the sight height (or twice `calc_step`, whichever is larger), in
+  the Python engines and in the Cython ones. This "very close shot" shortcut of `_init_zero_calculation` returns a straight line
+  from the bore to the target without a search, and it computed `atan2(target_y + start_height, target_x)` where `start_height`
+  is the *negative* sight height (the bore is below the line of sight). For a sight above the bore the angle was therefore
+  negative: the bore pointed down, away from the line of sight, and the shot missed it by twice the sight height (0.1 m for a
+  0.05 m sight, 1 m for a 0.5 m one); `find_zero_angle(Shot(Weapon(sight_height=Distance.Meter(0.05)), ...), Distance.Meter(0.05))`
+  returned -45 deg instead of +45 deg. It is `atan2(target_y - start_height, target_x)` now. The cutoff of the Python engines
+  (`2 * max(|sight height|, calc_step)`) is unchanged. The SciPy engines share the code.
+  The `bclibc` core had the same defect and a wrong cutoff (`cStepMultiplier`, a dimensionless factor, in place of `calc_step`,
+  so it was about 0.6 m whatever the sight height); it is fixed in the new `bclibc` pin (see Changed), and the Cython engines and the
+  `tiny_bclibc` example engines (which call it) follow. **The results for close targets change on purpose**: the zero
+  angle of such a target has the other sign, and the Cython engines no longer take the shortcut for a target between
+  twice the sight height and about 0.6 m (0.1 to 0.6 m with a 0.05 or 0.1 m sight) and search for it like any other. The zero
+  of any other target is bit-for-bit what it was. `tests/test_zeros.py::test_negative_sight_height` expected +45 deg for a
+  100 mm target with a 100 mm sight *below* the bore, the old sign; it is -45 deg now (the bore must point down to
+  meet the line of sight). New tests: `tests/test_zero_close_target.py` (the zero shot of close targets, over sight heights,
+  velocities and look angles, crosses the line of sight at the target; with cant the angle follows `sight_height * cos(cant)`).
 - `py_ballisticcalc.exts/setup.py`: a Python built for Android before 3.13 reports `linux` in `sysconfig.get_platform()`, so the
   build was not recognised as Android and kept the stable ABI (abi3), which cannot be imported there; `sys.platform` and
   `sys.getandroidapilevel()` are checked as well.
