@@ -8,6 +8,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Fixed
+- A `Vacuum` atmosphere no longer makes the Python engines raise `ZeroDivisionError` (or, in the SciPy engines, a `RangeError`
+  "integration failed") once the shot is 30 ft or more from the muzzle altitude: the density ratio was scaled by `p / p0` with a
+  base pressure `p0 = 0`. A vacuum is drag-free flight: its density ratio is 0 at every altitude and the speed of sound stays
+  finite (from temperature). The cythonized engines and `tiny_bclibc` need the matching `bclibc` fix.
 - The cythonized engines' `integrate(..., time_step=...)` no longer narrows `time_step` to a 32-bit float: `0.3` was read as
   `0.30000001192...`, so the k-th time row was late by about `k * 1.2e-8` s compared with the pure-Python engines. The
   parameter is now a C `double`, and time rows sit exactly on `k * time_step`.

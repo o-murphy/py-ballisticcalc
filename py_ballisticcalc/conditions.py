@@ -279,6 +279,8 @@ class Atmo:  # pylint: disable=too-many-instance-attributes
         t_k = self.temperature_at_altitude(altitude) + cDegreesCtoK
         mach = Atmo.machK(t_k) * _MPS_TO_FPS
         p = self.pressure_at_altitude(altitude)
+        if self._p0 == 0:  # Vacuum: no air at any altitude (and no division by the base pressure)
+            return 0.0, mach
         density_delta = ((self._t0 + cDegreesCtoK) * p) / (self._p0 * t_k)
         density_ratio = self._density_ratio * density_delta
         # Alternative simplified exponential model (retained for reference):
@@ -371,6 +373,8 @@ class Atmo:  # pylint: disable=too-many-instance-attributes
             - Divide result by `cDensityImperialToMetric` to get density in lb/ft³.
             - Source: CIPM-2007 (https://www.nist.gov/system/files/documents/calibrations/CIPM-2007.pdf)
         """
+        if p_hpa <= 0:  # Vacuum: no air, and the water-vapor mole fraction below divides by pressure
+            return 0.0
         R = 8.314472  # J/(mol·K), universal gas constant
         M_a = 28.96546e-3  # kg/mol, molar mass of dry air
         M_v = 18.01528e-3  # kg/mol, molar mass of water vapor
