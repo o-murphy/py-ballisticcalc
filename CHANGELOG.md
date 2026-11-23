@@ -8,6 +8,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Fixed
+- The cythonized engines' `integrate(..., time_step=...)` no longer narrows `time_step` to a 32-bit float: `0.3` was read as
+  `0.30000001192...`, so the k-th time row was late by about `k * 1.2e-8` s compared with the pure-Python engines. The
+  parameter is now a C `double`, and time rows sit exactly on `k * time_step`.
 - The zero angle of a shot with a **downhill look angle** no longer raises `OutOfRangeError` ("exceeds maximum possible range"
   of a few feet) for a target well within range. `find_zero_angle` / `find_zero_point` (the Ridder search, and the fallback of
   `zero_angle` / `zero_point`) first call `find_max_range`, a golden-section search over the barrel elevation that measures
