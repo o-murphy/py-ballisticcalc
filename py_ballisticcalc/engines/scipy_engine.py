@@ -686,11 +686,11 @@ class SciPyIntegrationEngine(BaseIntegrationEngine):
 
         Returns:
             The maximum range and the launch angle to reach it.
+            0 ft if no launch angle of the bracket crosses the line of sight (the angle is then meaningless).
 
         Raises:
             ImportError: If SciPy is not installed.
-            ValueError: If the angle bracket excludes the look_angle.
-            OutOfRangeError: If we fail to find a max range.
+            OutOfRangeError: If the optimizer fails.
         """
 
         # region Virtually vertical shot
@@ -709,16 +709,19 @@ class SciPyIntegrationEngine(BaseIntegrationEngine):
             cross = self._first_zero_down(props, stop_at_zero=True)
             if cross is None:
                 warnings.warn(f"No ZERO_DOWN found for launch angle {angle_rad} rad.")
-                return -9e9
+                return 0.0  # No crossing counts as zero range (as in bclibc), not an internal sentinel.
             # Return value penalizes distance by slant height, which we want to be zero.
             return (cross.slant_distance >> Distance.Foot) - abs(cross.slant_height >> Distance.Foot)
 
+        lower_rad = float(max(props.look_angle_rad, math.radians(angle_bracket_deg[0])))
+        upper_rad = math.radians(angle_bracket_deg[1])
+        if lower_rad > upper_rad:
+            # The bracket lies below the look angle: no crossing (SciPy would raise ValueError for these bounds).
+            return Distance.Feet(0.0), Angular.Radian(upper_rad)
+
         res = minimize_scalar(
             lambda angle_rad: -range_for_angle(angle_rad),
-            bounds=(
-                float(max(props.look_angle_rad, math.radians(angle_bracket_deg[0]))),
-                math.radians(angle_bracket_deg[1]),
-            ),
+            bounds=(lower_rad, upper_rad),
             method="bounded",
         )  # type: ignore
 

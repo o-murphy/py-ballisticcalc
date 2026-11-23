@@ -178,7 +178,7 @@ def test_downhill_max_range_tiny_bracket_ends(loaded_engine_instance):
     start = time.monotonic()
     max_range, _ = _run_with_time_bound(60, calc.find_max_range, shot, (0.0, 0.0001))
     assert time.monotonic() - start < 30
-    assert max_range >> Distance.Foot < 1.0
+    assert max_range >> Distance.Foot == 0.0
 
 
 def test_downhill_max_range_wide_bracket_ends(loaded_engine_instance):

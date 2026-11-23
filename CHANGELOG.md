@@ -38,6 +38,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   widen the limits to the required drop, as `bclibc` does (`zero_search_min_altitude`), and only when needed.
   Tests: `tests/test_zero_downhill.py` (zero of downhill shots from -5 to -45 degrees, targets 0.5 to 300 m, hits within 2 mm;
   the maximum range against probe shots; recorded values of unaffected results per engine).
+- `find_max_range` of the pure-Python engines (RK4, Euler, Velocity Verlet, SciPy) returns 0 ft when no launch angle of the bracket
+  crosses the line of sight (a bracket below the look angle, a degenerate bracket, a shot that starts below `cMinimumAltitude`),
+  as the C++ core and the Cython engines do, instead of the internal sentinel -9e9 ft; `find_zero_angle` / `find_zero_point` then
+  raise `OutOfRangeError` with `max_range` 0 ft ("exceeds maximum possible range 0.0 feet") instead of -9000000000.0 feet.
+  Tests: `tests/test_max_range_no_crossing.py`.
 
 ### Changed
 - Re-pin `bclibc` to `409672c` (`main` of `ballistics-lab/bclibc` after the downhill max-range fix, on top of `557da08`) for the downhill

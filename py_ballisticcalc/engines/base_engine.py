@@ -535,13 +535,12 @@ class BaseIntegrationEngine(ABC, EngineProtocol):
 
         Returns:
             The maximum slant-range and the launch angle to reach it.
+            If no launch angle of the bracket crosses the line of sight (e.g., the bracket lies below the look angle,
+            it is degenerate, or the shot starts below `cMinimumAltitude`), the range is 0 ft and the angle is
+            meaningless.  `find_zero_angle` / `find_zero_point` then raise `OutOfRangeError` with a max_range of 0 ft.
 
-        Raises:
-            ValueError: If the angle bracket excludes the look_angle.
-        """
-        """
-        TODO: Make sure user hasn't restricted angle bracket to exclude the look_angle.
-            ... and check for weird situations, like backward-bending trajectories,
+        Note:
+            Does not check for weird situations, like backward-bending trajectories,
             where the max range occurs with launch angle less than the look angle.
         """
         props = self._init_trajectory(shot_info)
@@ -560,9 +559,7 @@ class BaseIntegrationEngine(ABC, EngineProtocol):
 
         Returns:
             The maximum slant range and the launch angle to reach it.
-
-        Raises:
-            ValueError: If the angle bracket excludes the look_angle.
+            0 ft if no launch angle of the bracket crosses the line of sight (the angle is then meaningless).
         """
         # region Virtually vertical shot
         if abs(props.look_angle_rad - math.radians(90)) < self.APEX_IS_MAX_RANGE_RADIANS:
@@ -582,7 +579,7 @@ class BaseIntegrationEngine(ABC, EngineProtocol):
             cross = self._first_zero_down(props)
             if cross is None:
                 warnings.warn(f"No ZERO_DOWN found for launch angle {angle_rad} rad.")
-                return -9e9
+                return 0.0  # No crossing counts as zero range (as in bclibc), not an internal sentinel.
             # Return value penalizes distance by slant height, which we want to be zero.
             return (cross.slant_distance >> Distance.Foot) - abs(cross.slant_height >> Distance.Foot)
 
