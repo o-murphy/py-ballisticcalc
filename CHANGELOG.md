@@ -17,6 +17,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   extras (`find_apex`, `find_max_range`, `integrate_raw_at`) with compatible signatures; they are not in `EngineProtocol` yet.
 
 ### Fixed
+- `cGravityConstant` (ft/s^2, negative: gravity pulls down along -y) is validated up front: zero, positive, NaN and infinite values raise
+  `ValueError("cGravityConstant must be a finite negative number ...")` when the engine config is created and whenever the field is assigned
+  later, for every engine. Before, the pure-Python engines failed deep inside with `ValueError: math domain error`, and the cythonized
+  engines never returned (infinite loop in the C++ core, which gets the same check in bclibc separately).
 - Cant is applied consistently: `Shot.barrel_elevation` is `look + cos(cant) * (zero_elevation + relative_angle)`, but its setter
   stored `relative_angle = value - look - cos(cant) * zero_elevation` and `Calculator.set_weapon_zero` stored `zero_elevation = angle - look`,
   so neither fired the requested elevation with a cant (the engines were right: they receive the final angle from `Shot`). The setter now

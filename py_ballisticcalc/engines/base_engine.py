@@ -98,7 +98,9 @@ class BaseEngineConfig:
         cMinimumVelocity: Minimum velocity in fps to continue calculation.
                          Trajectory stops when velocity falls below this threshold.
                          Defaults to 50.0 fps.
-        cGravityConstant: Gravitational acceleration in ft/s².
+        cGravityConstant: Gravitational acceleration in ft/s², along the vertical axis (y up), so it MUST be
+                         a finite NEGATIVE number (gravity pulls down). Zero, positive, NaN and infinite values
+                         raise ValueError, when the config is created and whenever the field is assigned later.
                          Standard Earth gravity for ballistic calculations.
                          Defaults to -32.17405 ft/s².
         cStepMultiplier: Multiplier for engine's default integration step size.
@@ -125,6 +127,20 @@ class BaseEngineConfig:
     cGravityConstant: float = cGravityConstant
     cStepMultiplier: float = cStepMultiplier
 
+    def __setattr__(self, name: str, value: Any) -> None:
+        # Validates on construction and on every later assignment (the engines read the config at each call).
+        if name == "cGravityConstant":
+            try:
+                valid = math.isfinite(value) and value < 0
+            except TypeError:
+                valid = False
+            if not valid:
+                raise ValueError(
+                    f"cGravityConstant must be a finite negative number (ft/s^2, gravity pulls down along -y; "
+                    f"default {cGravityConstant}), got {value!r}"
+                )
+        super().__setattr__(name, value)
+
 
 #: Default configuration instance using standard ballistic calculation parameters
 DEFAULT_BASE_ENGINE_CONFIG: BaseEngineConfig = BaseEngineConfig()
@@ -148,7 +164,7 @@ class BaseEngineConfigDict(TypedDict, total=False):
         - cMinimumAltitude: Minimum altitude in feet to continue calculation.
         - cMaximumDrop: Maximum drop in feet from muzzle to continue.
         - cMinimumVelocity: Minimum velocity in fps to continue calculation.
-        - cGravityConstant: Gravitational acceleration in ft/s².
+        - cGravityConstant: Gravitational acceleration in ft/s²; must be finite and negative (ValueError otherwise).
         - cStepMultiplier: Integration step size multiplier.
 
     Examples:
