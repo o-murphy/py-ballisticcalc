@@ -910,7 +910,7 @@ class BaseIntegrationEngine(ABC, EngineProtocol):
               elevation (in the vertical plane, from horizontal) for that shot; a shot fired at this elevation hits the
               line of sight at the target.  `Shot.weapon.zero_elevation` and `relative_angle` are applied scaled by
               `cos(cant)` (see `Shot.barrel_elevation`), so to fire a returned elevation `a` set
-              `relative_angle = (a - look_angle) / cos(cant)` with a zero `zero_elevation`.
+              `shot.barrel_elevation = a` (`relative_angle = (a - look_angle) / cos(cant) - zero_elevation`).
 
         Returns:
             Barrel elevation needed to hit the zero point.
@@ -942,7 +942,7 @@ class BaseIntegrationEngine(ABC, EngineProtocol):
               elevation (in the vertical plane, from horizontal) for that shot; a shot fired at this elevation hits the
               line of sight at the target.  `Shot.weapon.zero_elevation` and `relative_angle` are applied scaled by
               `cos(cant)` (see `Shot.barrel_elevation`), so to fire a returned elevation `a` set
-              `relative_angle = (a - look_angle) / cos(cant)` with a zero `zero_elevation`.
+              `shot.barrel_elevation = a` (`relative_angle = (a - look_angle) / cos(cant) - zero_elevation`).
 
         Returns:
             The solved barrel elevation and the terminal RANGE point from the
@@ -1121,7 +1121,7 @@ class BaseIntegrationEngine(ABC, EngineProtocol):
               elevation (in the vertical plane, from horizontal) for that shot; a shot fired at this elevation hits the
               line of sight at the target.  `Shot.weapon.zero_elevation` and `relative_angle` are applied scaled by
               `cos(cant)` (see `Shot.barrel_elevation`), so to fire a returned elevation `a` set
-              `relative_angle = (a - look_angle) / cos(cant)` with a zero `zero_elevation`.
+              `shot.barrel_elevation = a` (`relative_angle = (a - look_angle) / cos(cant) - zero_elevation`).
 
         Returns:
             Barrel elevation to hit height zero at zero distance along sight line.

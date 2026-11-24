@@ -17,6 +17,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   extras (`find_apex`, `find_max_range`, `integrate_raw_at`) with compatible signatures; they are not in `EngineProtocol` yet.
 
 ### Fixed
+- Cant is applied consistently: `Shot.barrel_elevation` is `look + cos(cant) * (zero_elevation + relative_angle)`, but its setter
+  stored `relative_angle = value - look - cos(cant) * zero_elevation` and `Calculator.set_weapon_zero` stored `zero_elevation = angle - look`,
+  so neither fired the requested elevation with a cant (the engines were right: they receive the final angle from `Shot`). The setter now
+  stores `(value - look) / cos(cant) - zero_elevation`, `set_weapon_zero` stores `(angle - look) / cos(cant)` (a shot zeroed with it fires
+  exactly `barrel_elevation_for_target`), and the hold returned by `Calculator.aim` is the `relative_angle` that fires the solved elevation
+  (`(angle - look) / cos(cant) - zero_elevation`). Results without a cant are bit-identical. A cant of +/-90 degrees (cos = 0) now raises
+  `ValueError` in the setter, `set_weapon_zero` and `aim`. The `Shot` docstrings, which put `cos(cant)` on `zero_elevation` only, match the code.
 - The cythonized engines raise the same exception text as the pure-Python engines for the errors of the C++ core that carried a kind
   prefix: `find_apex` with a barrel elevation <= 0 raises `ValueError("Barrel elevation must be greater than 0 to find apex.")`
   (was `"Value error (Barrel elevation must be greater than 0 to find apex)."`) and the missing-apex `SolverRuntimeError` reads

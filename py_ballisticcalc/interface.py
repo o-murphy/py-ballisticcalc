@@ -377,7 +377,8 @@ class Calculator:
             geometrically.  A negative distance is not supported and raises `ZeroFindingError`.
             Cant is part of the shot (the sight height is rotated by it, the barrel azimuth is kept).  The
             result is relative to `shot.look_angle`; note that `Shot` applies `weapon.zero_elevation` and
-            `relative_angle` scaled by `cos(cant)`, so with a cant the stored value is not the elevation fired.
+            `relative_angle` scaled by `cos(cant)`, so with a cant the value to store in `weapon.zero_elevation` (or
+            `relative_angle`) to fire it is the result divided by `cos(cant)` (see `set_weapon_zero`).
         """
         target_distance = PreferredUnits.distance(target_distance)
         total_elevation = self._engine_instance.zero_angle(shot, target_distance)
@@ -397,16 +398,22 @@ class Calculator:
             zero-finding iteration.  The windage angle uses the sign
             convention of :attr:`TrajectoryData.windage_angle`.
 
+            With a cant the hold is the ``relative_angle`` to set on the shot (``Shot`` scales it, with
+            ``weapon.zero_elevation``, by ``cos(cant)``).
+
         Raises:
             NotImplementedError: If the selected engine has no ``zero_point`` API.
+            ValueError: If ``cos(cant_angle)`` is zero (a cant of +/-90 degrees).
         """
         target_distance = PreferredUnits.distance(target_distance)
         total_elevation, point = self._engine_instance.zero_point(shot, target_distance)
         target_zero_elevation = Angular.Radian(
             (total_elevation >> Angular.Radian) - (shot.look_angle >> Angular.Radian)
         )
+        # Shot fires look + cos(cant) * (zero_elevation + relative_angle): the hold is that relative_angle.
         vertical_hold = Angular.Radian(
-            (target_zero_elevation >> Angular.Radian) - (shot.weapon.zero_elevation >> Angular.Radian)
+            (target_zero_elevation >> Angular.Radian) / shot._cant_cosine()
+            - (shot.weapon.zero_elevation >> Angular.Radian)
         )
         return vertical_hold, point.windage_angle, point
 
@@ -435,11 +442,16 @@ class Calculator:
                 distance raises `ZeroFindingError`.
 
         Note:
-            With a nonzero `shot.cant_angle` the stored `zero_elevation` is applied scaled by `cos(cant)`
-            (see `Shot.barrel_elevation`), so the shot then misses the zero point slightly; the solver's
-            barrel elevation hits it (see `find_zero_angle`).
+            `Shot` fires `look + cos(cant) * (zero_elevation + relative_angle)`, so with a nonzero `shot.cant_angle`
+            the stored `zero_elevation` is the solved elevation (relative to the look angle) divided by `cos(cant)`:
+            the shot then fires exactly the solver's barrel elevation (with the default `relative_angle`).
+
+        Raises:
+            ValueError: If `cos(cant_angle)` is zero (a cant of +/-90 degrees): no zero elevation can be stored.
         """
-        shot.weapon.zero_elevation = self.barrel_elevation_for_target(shot, zero_distance)
+        shot._cant_cosine()  # fail before solving
+        elevation = self.barrel_elevation_for_target(shot, zero_distance)
+        shot.weapon.zero_elevation = Angular.Radian((elevation >> Angular.Radian) / shot._cant_cosine())
         return shot.weapon.zero_elevation
 
     def fire(

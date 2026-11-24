@@ -45,12 +45,13 @@ class Shot:
         cant_angle: Tilt of gun from vertical. If `weapon.sight_height != 0` then this shifts any barrel elevation
             from the vertical plane into the horizontal plane (as `barrel_azimuth`) by `sine(cant_angle)`.
         relative_angle: Elevation adjustment (a.k.a. "hold") added to `weapon.zero_elevation`.
+            Both are scaled by `cos(cant_angle)` in `barrel_elevation`.
         azimuth: Azimuth of the shooting direction in degrees [0, 360). Optional, for Coriolis effects.
             Should be geographic bearing where 0 = North, 90 = East, 180 = South, 270 = West.
             Difference from magnetic bearing is usually negligible.
         latitude: Latitude of the shooting location in degrees [-90, 90]. Optional, for Coriolis effects.
         barrel_elevation: Total barrel elevation (in vertical plane) from horizontal.
-            `= look_angle + cos(cant_angle) * zero_elevation + relative_angle`
+            `= look_angle + cos(cant_angle) * (zero_elevation + relative_angle)`
         barrel_azimuth: Horizontal angle of barrel relative to sight line.
     """
 
@@ -178,7 +179,7 @@ class Shot:
 
         Returns:
             Angle of barrel elevation in vertical plane from horizontal
-                `= look_angle + cos(cant_angle) * zero_elevation + relative_angle`
+                `= look_angle + cos(cant_angle) * (zero_elevation + relative_angle)`
         """
         return Angular.Radian(
             (self.look_angle >> Angular.Radian)
@@ -186,20 +187,37 @@ class Shot:
             * ((self.weapon.zero_elevation >> Angular.Radian) + (self.relative_angle >> Angular.Radian))
         )
 
+    def _cant_cosine(self) -> float:
+        """`cos(cant_angle)`, for dividing a requested barrel elevation by it.
+
+        Raises:
+            ValueError: If it is zero (a cant of +/-90 degrees, tested as `|cos| < 1e-9`): the elevation in the
+                vertical plane is then the look angle whatever the zero elevation and relative angle are.
+        """
+        cos_cant = math.cos(self.cant_angle >> Angular.Radian)
+        if abs(cos_cant) < 1e-9:
+            raise ValueError("cos(cant_angle) is zero (cant of 90 degrees): the barrel elevation cannot be set")
+        return cos_cant
+
     @barrel_elevation.setter
     def barrel_elevation(self, value: Angular) -> None:
         """Setter for barrel_elevation.
 
-        Sets `.relative_angle` to achieve the desired elevation.
+        Sets `.relative_angle` to achieve the desired elevation (the inverse of the getter):
+            `relative_angle = (value - look_angle) / cos(cant_angle) - zero_elevation`.
             Note: This does not change the `.weapon.zero_elevation`.
 
         Args:
             value: Desired barrel elevation in vertical plane from horizontal
+
+        Raises:
+            ValueError: If `cos(cant_angle)` is zero (a cant of +/-90 degrees): the barrel elevation in the vertical
+                plane is then the look angle whatever the relative angle is, so no relative angle can achieve it.
         """
+        cos_cant = self._cant_cosine()
         self.relative_angle = Angular.Radian(
-            (value >> Angular.Radian)
-            - (self.look_angle >> Angular.Radian)
-            - math.cos(self.cant_angle >> Angular.Radian) * (self.weapon.zero_elevation >> Angular.Radian)
+            ((value >> Angular.Radian) - (self.look_angle >> Angular.Radian)) / cos_cant
+            - (self.weapon.zero_elevation >> Angular.Radian)
         )
 
     @property
