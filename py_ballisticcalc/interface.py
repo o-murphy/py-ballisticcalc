@@ -371,6 +371,13 @@ class Calculator:
             However, without a complete ballistic model these can only approximate the effects
             on ballistic trajectory of shooting uphill or downhill. Therefore:
             For maximum accuracy, use the raw sight distance and look_angle as inputs here.
+
+            A distance shorter than 0.01 ft returns the look angle (not aimed; the zero cannot be measured that
+            close), and a target closer than about `2 * max(|sight height * cos(cant)|, calc step)` is solved
+            geometrically.  A negative distance is not supported and raises `ZeroFindingError`.
+            Cant is part of the shot (the sight height is rotated by it, the barrel azimuth is kept).  The
+            result is relative to `shot.look_angle`; note that `Shot` applies `weapon.zero_elevation` and
+            `relative_angle` scaled by `cos(cant)`, so with a cant the stored value is not the elevation fired.
         """
         target_distance = PreferredUnits.distance(target_distance)
         total_elevation = self._engine_instance.zero_angle(shot, target_distance)
@@ -424,6 +431,13 @@ class Calculator:
         Args:
             shot: Shot instance to zero.
             zero_distance: Look-distance to "zero," which is point we want to hit.
+                A distance shorter than 0.01 ft sets the zero to 0 (the look angle is not aimed); a negative
+                distance raises `ZeroFindingError`.
+
+        Note:
+            With a nonzero `shot.cant_angle` the stored `zero_elevation` is applied scaled by `cos(cant)`
+            (see `Shot.barrel_elevation`), so the shot then misses the zero point slightly; the solver's
+            barrel elevation hits it (see `find_zero_angle`).
         """
         shot.weapon.zero_elevation = self.barrel_elevation_for_target(shot, zero_distance)
         return shot.weapon.zero_elevation

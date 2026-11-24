@@ -896,6 +896,22 @@ class BaseIntegrationEngine(ABC, EngineProtocol):
             distance: Slant distance to the target.
             lofted: If True, find the higher angle that hits the zero point.
 
+
+        Note:
+            - A zero distance shorter than 0.01 ft (`ALLOWED_ZERO_ERROR_FEET`; the threshold is in feet whatever the
+              units of `distance`) is not aimed: the look angle is returned, which misses the line of sight by the
+              sight height, because the zero cannot be measured that close.
+            - A target closer than `2 * max(|sight height * cos(cant)|, calc step)` (in feet) is solved geometrically:
+              the straight line from the bore to the target on the line of sight, ignoring gravity and drag.
+            - A negative distance is not supported (aim backwards with the look angle): it raises `ZeroFindingError`
+              (unless it is that close, see above).
+            - Cant is part of the shot: the sight height is rotated by it (the bore is `sight height * cos(cant)` below
+              the line of sight) and the solver keeps the shot's barrel azimuth.  The returned angle is the barrel
+              elevation (in the vertical plane, from horizontal) for that shot; a shot fired at this elevation hits the
+              line of sight at the target.  `Shot.weapon.zero_elevation` and `relative_angle` are applied scaled by
+              `cos(cant)` (see `Shot.barrel_elevation`), so to fire a returned elevation `a` set
+              `relative_angle = (a - look_angle) / cos(cant)` with a zero `zero_elevation`.
+
         Returns:
             Barrel elevation needed to hit the zero point.
         """
@@ -912,6 +928,22 @@ class BaseIntegrationEngine(ABC, EngineProtocol):
             distance: Slant distance to the target.
             lofted: If True, find the higher trajectory that hits the zero point.
 
+
+        Note:
+            - A zero distance shorter than 0.01 ft (`ALLOWED_ZERO_ERROR_FEET`; the threshold is in feet whatever the
+              units of `distance`) is not aimed: the look angle is returned, which misses the line of sight by the
+              sight height, because the zero cannot be measured that close.
+            - A target closer than `2 * max(|sight height * cos(cant)|, calc step)` (in feet) is solved geometrically:
+              the straight line from the bore to the target on the line of sight, ignoring gravity and drag.
+            - A negative distance is not supported (aim backwards with the look angle): it raises `ZeroFindingError`
+              (unless it is that close, see above).
+            - Cant is part of the shot: the sight height is rotated by it (the bore is `sight height * cos(cant)` below
+              the line of sight) and the solver keeps the shot's barrel azimuth.  The returned angle is the barrel
+              elevation (in the vertical plane, from horizontal) for that shot; a shot fired at this elevation hits the
+              line of sight at the target.  `Shot.weapon.zero_elevation` and `relative_angle` are applied scaled by
+              `cos(cant)` (see `Shot.barrel_elevation`), so to fire a returned elevation `a` set
+              `relative_angle = (a - look_angle) / cos(cant)` with a zero `zero_elevation`.
+
         Returns:
             The solved barrel elevation and the terminal RANGE point from the
             successful zero-finding iteration.
@@ -919,6 +951,7 @@ class BaseIntegrationEngine(ABC, EngineProtocol):
         Raises:
             SolverRuntimeError: If a zero-angle fast path did not integrate a
                 trajectory and therefore has no trajectory point to return.
+                This is the case for a distance shorter than 0.01 ft, a close target and a zero at the maximum range.
         """
         props = self._init_trajectory(shot_info)
         angle, point = self._find_zero_ridder(props, distance, lofted)
@@ -1073,6 +1106,22 @@ class BaseIntegrationEngine(ABC, EngineProtocol):
         Args:
             shot_info: The shot information.
             distance: The distance to the target.
+
+
+        Note:
+            - A zero distance shorter than 0.01 ft (`ALLOWED_ZERO_ERROR_FEET`; the threshold is in feet whatever the
+              units of `distance`) is not aimed: the look angle is returned, which misses the line of sight by the
+              sight height, because the zero cannot be measured that close.
+            - A target closer than `2 * max(|sight height * cos(cant)|, calc step)` (in feet) is solved geometrically:
+              the straight line from the bore to the target on the line of sight, ignoring gravity and drag.
+            - A negative distance is not supported (aim backwards with the look angle): it raises `ZeroFindingError`
+              (unless it is that close, see above).
+            - Cant is part of the shot: the sight height is rotated by it (the bore is `sight height * cos(cant)` below
+              the line of sight) and the solver keeps the shot's barrel azimuth.  The returned angle is the barrel
+              elevation (in the vertical plane, from horizontal) for that shot; a shot fired at this elevation hits the
+              line of sight at the target.  `Shot.weapon.zero_elevation` and `relative_angle` are applied scaled by
+              `cos(cant)` (see `Shot.barrel_elevation`), so to fire a returned elevation `a` set
+              `relative_angle = (a - look_angle) / cos(cant)` with a zero `zero_elevation`.
 
         Returns:
             Barrel elevation to hit height zero at zero distance along sight line.
