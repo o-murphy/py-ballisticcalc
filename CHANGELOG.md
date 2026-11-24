@@ -17,6 +17,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   extras (`find_apex`, `find_max_range`, `integrate_raw_at`) with compatible signatures; they are not in `EngineProtocol` yet.
 
 ### Fixed
+- SciPy engines: with a `dist_step` larger than the range and `time_step > 0` (flags `RANGE`) only the `t = 0` row was returned, and
+  `dist_step=0` with `time_step` raised `ZeroDivisionError`. The time schedule now also covers the tail after the last range row, up to
+  the range limit (or the end of the flight), and a zero `dist_step` yields no range rows, as in the other engines (C24).
 - `cGravityConstant` (ft/s^2, negative: gravity pulls down along -y) is validated up front: zero, positive, NaN and infinite values raise
   `ValueError("cGravityConstant must be a finite negative number ...")` when the engine config is created and whenever the field is assigned
   later, for every engine. Before, the pure-Python engines failed deep inside with `ValueError: math domain error`, and the cythonized

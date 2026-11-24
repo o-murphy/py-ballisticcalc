@@ -1115,7 +1115,10 @@ class SciPyIntegrationEngine(BaseIntegrationEngine):
                 ranges.append(make_row(sol.t[0], sol.y[:, 0], TrajFlag.RANGE))
             else:
                 # List of distances at which we want to record the trajectory data, based on range_step
-                desired_xs = np.arange(0, range_limit_ft + range_step_ft, range_step_ft)
+                #   (no range step: only the start row, as the other engines, which then rely on the time schedule)
+                desired_xs = (
+                    np.arange(0, range_limit_ft + range_step_ft, range_step_ft) if range_step_ft > 0 else np.zeros(1)
+                )
                 # Get x and t arrays from the solution
                 x_vals = sol.y[0]
                 t_vals = sol.t
@@ -1175,6 +1178,18 @@ class SciPyIntegrationEngine(BaseIntegrationEngine):
                             time_of_last_record += time_step
                             ranges.append(make_row(time_of_last_record, sol.sol(time_of_last_record), TrajFlag.RANGE))
                         time_of_last_record = ranges[next_record].time
+                    # The schedule also covers the tail after the last range row, up to the end of the trajectory
+                    # (the range limit, or where the flight ended first); that end is not a row itself.
+                    t_end = sol.t[-1]
+                    if len(x_vals) > 1 and x_vals[-2] <= range_limit_ft < x_vals[-1]:
+                        t_limit = _find_t_for_x(
+                            sol.sol, t_vals[-2], t_vals[-1], range_limit_ft
+                        )  # the last step crossed the range limit
+                        if t_limit is not None:
+                            t_end = min(t_end, t_limit)
+                    while t_end - time_of_last_record >= time_step:
+                        time_of_last_record += time_step
+                        ranges.append(make_row(time_of_last_record, sol.sol(time_of_last_record), TrajFlag.RANGE))
                     ranges.sort(key=lambda t: t.time)  # Sort by time
 
             # region Find TrajectoryData points requested by filter_flags
