@@ -31,7 +31,19 @@ APEX_FT = VY**2 / (2 * G)  # ~ 777 ft, far beyond the 30 ft fast path of the atm
 APEX_X_FT = VX * VY / G
 
 # Flight vs the closed-form parabola, ft: exact integrators vs the finite-step Euler/Verlet limit.
-TOL_FT = {"RK4": 1e-3, "SciPy": 1e-3, "Euler": 0.5, "Verlet": 5e-2}
+# The adaptive engines (CashKarp, DormandPrince, Tsitouras, SciPy) and the native tiny_bclibc engine are held to the
+# same 1e-3 ft as RK4 (the bclibc C++ vacuum test uses 1e-3 ft for rk4/verlet/adaptive); the pre-repin dry run passed
+# every one of these tests on all of them at that tolerance.
+TOL_FT = {
+    "RK4": 1e-3,
+    "SciPy": 1e-3,
+    "CashKarp": 1e-3,
+    "DormandPrince": 1e-3,
+    "Tsitouras": 1e-3,
+    "TinyBclibc": 1e-3,
+    "Euler": 0.5,
+    "Verlet": 5e-2,
+}
 
 
 def _skip_if_native(engine):
@@ -44,7 +56,9 @@ def _family(engine) -> str:
     for key in ("SciPy", *TOL_FT):
         if key in engine.__name__:
             return key
-    return engine.__name__
+    raise AssertionError(
+        f"no vacuum tolerance for engine class {engine.__name__!r}: add its family to TOL_FT in tests/test_vacuum.py"
+    )
 
 
 def _shot(angle_deg: float = ANGLE_DEG, v0: float = V0) -> Shot:
