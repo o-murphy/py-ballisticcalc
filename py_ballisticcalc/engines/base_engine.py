@@ -41,11 +41,11 @@ from abc import ABC, abstractmethod
 from collections.abc import Callable, Iterator, Sequence
 from dataclasses import asdict, dataclass
 from enum import Enum, auto
-from typing import Any, Concatenate, NamedTuple, ParamSpec, TypedDict, TypeVar
+from typing import Any, Concatenate, NamedTuple, NoReturn, ParamSpec, TypedDict, TypeVar
 
 from py_ballisticcalc.conditions import Wind
 from py_ballisticcalc.constants import cGravityImperial
-from py_ballisticcalc.exceptions import OutOfRangeError, SolverRuntimeError, ZeroFindingError
+from py_ballisticcalc.exceptions import InterceptionError, OutOfRangeError, SolverRuntimeError, ZeroFindingError
 from py_ballisticcalc.generics.engine import EngineProtocol
 from py_ballisticcalc.logger import logger
 from py_ballisticcalc.shot import Shot, ShotProps
@@ -55,6 +55,7 @@ from py_ballisticcalc.vector import Vector
 
 __all__ = (
     "DEFAULT_BASE_ENGINE_CONFIG",
+    "RAW_KEY_GETTERS",
     "BaseEngineConfig",
     "BaseEngineConfigDict",
     "BaseIntegrationEngine",
@@ -355,6 +356,83 @@ class TrajectoryDataFilter:
             self.record_initial(data)
         else:
             self.record_step(self.prev_data, data)
+
+
+#: Keys of `BaseIntegrationEngine.integrate_raw_at` (the spelling of the Cython engines): the raw `BaseTrajData` field they read.
+#: Raw units: seconds, feet, feet per second; `mach` is the local speed of sound (fps), as in `BaseTrajData`.
+RAW_KEY_GETTERS: dict[str, Callable[[BaseTrajData], float]] = {
+    "time": lambda d: d.time,
+    "mach": lambda d: d.mach,
+    "position.x": lambda d: d.position.x,
+    "position.y": lambda d: d.position.y,
+    "position.z": lambda d: d.position.z,
+    "velocity.x": lambda d: d.velocity.x,
+    "velocity.y": lambda d: d.velocity.y,
+    "velocity.z": lambda d: d.velocity.z,
+}
+
+
+def _with_key_value(data: BaseTrajData, key_attribute: str, value: float) -> BaseTrajData:
+    """`data` with the key field set to exactly `value` (the root solve only converges the time)."""
+    if key_attribute == "time":
+        return data._replace(time=value)
+    if key_attribute == "mach":
+        return data._replace(mach=value)
+    top, component = key_attribute.split(".")
+    return data._replace(**{top: getattr(data, top)._replace(**{component: value})})
+
+
+class _SinglePointFound(Exception):
+    """Raised by `_SinglePointFilter` from inside an integrator's step loop to end it at the requested point."""
+
+    def __init__(self, data: BaseTrajData):
+        super().__init__("target point found")
+        self.data = data
+
+
+class _SinglePointFilter(TrajectoryDataFilter):
+    """Stands in for the `TrajectoryDataFilter` of an integration to find ONE point: the first step that brackets a key value.
+
+    The integrators hand every accepted step to `record_step`; this filter ends the integration by raising
+    `_SinglePointFound` (carrying the point) as soon as a step's end values bracket the target (ends included), so the
+    integrators' loops carry no extra work.  The point is located on the cubic Hermite of that step
+    (`TrajectoryStep`, the convention of the filter rows and `HitResult.get_at`); only a step that cannot be interpolated
+    (not increasing in time) falls back to the 3-point PCHIP over the step and the one before it.
+    This mirrors bclibc's `BCLIBC_SinglePointHandler::handle_step`.  `prev_data` is the last accepted point.
+    """
+
+    def __init__(self, *args: Any, key_attribute: str, target_value: float, **kwargs: Any):
+        super().__init__(*args, **kwargs)
+        self.key_attribute = key_attribute
+        self.target_value = target_value
+        self._get = RAW_KEY_GETTERS[key_attribute]
+        self._before: BaseTrajData | None = None
+
+    def record_initial(self, data: BaseTrajData) -> None:
+        """Remember the launch state; no row is recorded."""
+        self.prev_data = data
+
+    def record_step(self, start: BaseTrajData, end: BaseTrajData) -> None:
+        get, target = self._get, self.target_value
+        k0, k1 = get(start), get(end)
+        if (k0 <= target <= k1) or (k1 <= target <= k0):
+            raise _SinglePointFound(self._locate(start, end))
+        self._before = start
+        self.prev_data = end
+
+    def _locate(self, start: BaseTrajData, end: BaseTrajData) -> BaseTrajData:
+        key, target = self.key_attribute, self.target_value
+        try:
+            step = TrajectoryStep(start, end)
+        except ValueError:  # degenerate step
+            if self._before is not None:
+                try:
+                    return BaseTrajData.interpolate(key, target, self._before, start, end)  # type: ignore[arg-type]
+                except ZeroDivisionError:
+                    pass
+            return end
+        data = step.at_time(target) if key == "time" else step.at_value(self._get, target)
+        return _with_key_value(data, key, target)
 
 
 class _WindSock:
@@ -676,6 +754,60 @@ class BaseIntegrationEngine(ABC, EngineProtocol):
             )
         finally:
             self._config.cMaximumDrop, self._config.cMinimumAltitude = restore_drop, restore_altitude
+
+    def integrate_raw_at(
+        self, shot_info: Shot, key_attribute: str, target_value: float
+    ) -> tuple[BaseTrajData, TrajectoryData]:
+        """Integrate the trajectory until a key attribute reaches a target value; return the point where it does.
+
+        Same API as `integrate_raw_at` of the cythonized engines (which wrap bclibc's `integrate_at`).  The shot is
+        integrated up to the first accepted step whose end values bracket the target (ends included), then the crossing
+        is located on the cubic Hermite interpolant of that step (end positions with the end velocities as slopes; velocity
+        is its derivative, `mach` is linear), the convention of the filter rows and `HitResult.get_at`.  A crossing inside
+        the first step is found, and a target equal to the launch value (time 0, `position.x` 0) returns the launch state.
+        The first crossing is the first step that brackets, so for a key that is not monotone (`position.y`, `velocity.y`,
+        `position.z`, ...) it is the first one in flight, e.g. the rising crossing of a height.
+
+        Args:
+            shot_info: The shot information.
+            key_attribute: The raw field to track: 'time', 'mach', 'position.x', 'position.y', 'position.z',
+                'velocity.x', 'velocity.y' or 'velocity.z'.  Raw units (seconds, feet, feet per second): `mach` is the
+                speed of sound at the point (fps), as in `BaseTrajData`, not a Mach number.
+            target_value: The value the key must reach.
+
+        Returns:
+            The interpolated raw point and the same point as `TrajectoryData`.
+
+        Raises:
+            InterceptionError: If the integration ends (range, minimum velocity, maximum drop or altitude) before the key
+                reaches the value.  `last_data` is the last integrated point as `(BaseTrajData, TrajectoryData)`.
+            AttributeError: If `key_attribute` is not one of the keys above.
+        """
+        if key_attribute not in RAW_KEY_GETTERS:
+            raise AttributeError(f"Cannot interpolate on '{key_attribute}'")
+        props = self._init_trajectory(shot_info)
+        filters: list[_SinglePointFilter] = []
+
+        def make_filter(*args: Any, **kwargs: Any) -> _SinglePointFilter:
+            filters.append(_SinglePointFilter(*args, key_attribute=key_attribute, target_value=target_value, **kwargs))
+            return filters[-1]
+
+        try:
+            self._integrate(props, 9e9, 9e9, filter_flags=TrajFlag.NONE, filter_factory=make_filter)
+        except _SinglePointFound as found:
+            return found.data, TrajectoryData.from_base_data(props, found.data)
+        if not filters:
+            raise NotImplementedError(f"{type(self).__name__}._integrate does not support the 'filter_factory' hook")
+        return self._raise_not_intercepted(props, filters[0].prev_data)
+
+    @staticmethod
+    def _raise_not_intercepted(props: ShotProps, last: BaseTrajData | None) -> NoReturn:
+        """Raise the `InterceptionError` of a target that was not reached, carrying the last integrated point."""
+        if last is None:
+            raise SolverRuntimeError("Integration produced no trajectory data")
+        raise InterceptionError(
+            "Intercept point not found for target key and value", (last, TrajectoryData.from_base_data(props, last))
+        )
 
     def find_apex(self, shot_info: Shot) -> TrajectoryData:
         """Find the apex of the trajectory.

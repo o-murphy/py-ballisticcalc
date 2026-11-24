@@ -173,7 +173,7 @@ class RK4IntegrationEngine(BaseIntegrationEngine):
         _cMaximumDrop += min(0, range_vector.y)  # Adjust max drop downward if above muzzle height
         # endregion
 
-        data_filter = TrajectoryDataFilter(
+        data_filter = kwargs.get("filter_factory", TrajectoryDataFilter)(
             props=props,
             filter_flags=filter_flags,
             range_limit=range_limit_ft,

@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- `integrate_raw_at(shot_info, key_attribute, target_value)` on the pure-Python engines (`rk4`, `euler`, `verlet`, in
+  `BaseIntegrationEngine`) and the SciPy engines, with the signature, keys (`time`, `mach`, `position.x/y/z`, `velocity.x/y/z`) and
+  errors of the cythonized engines: it integrates up to the first step whose end values bracket the key, returns the raw point and its
+  `TrajectoryData` (the crossing is located on the cubic Hermite of that step), and raises `InterceptionError` with the last
+  `(BaseTrajData, TrajectoryData)` when the flight ends first. The SciPy engines find the crossing as a terminal `solve_ivp` event on
+  the solver's dense output. `tests/test_engine_api_conformance.py` checks that every engine has the protocol methods and these
+  extras (`find_apex`, `find_max_range`, `integrate_raw_at`) with compatible signatures; they are not in `EngineProtocol` yet.
+
 ### Fixed
 - The cythonized engines raise the same exception text as the pure-Python engines for the errors of the C++ core that carried a kind
   prefix: `find_apex` with a barrel elevation <= 0 raises `ValueError("Barrel elevation must be greater than 0 to find apex.")`

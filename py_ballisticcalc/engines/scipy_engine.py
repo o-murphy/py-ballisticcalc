@@ -98,13 +98,14 @@ from py_ballisticcalc.engines.base_engine import (
     BaseEngineConfig,
     BaseEngineConfigDict,
     BaseIntegrationEngine,
+    _with_key_value,
     _ZeroCalcStatus,
     with_no_minimum_velocity,
 )
 from py_ballisticcalc.exceptions import OutOfRangeError, RangeError, SolverRuntimeError, ZeroFindingError
 from py_ballisticcalc.logger import logger
 from py_ballisticcalc.shot import Shot, ShotProps
-from py_ballisticcalc.trajectory_data import HitResult, TrajectoryData, TrajFlag
+from py_ballisticcalc.trajectory_data import BaseTrajData, HitResult, TrajectoryData, TrajFlag
 from py_ballisticcalc.unit import Angular, Distance
 from py_ballisticcalc.vector import Vector
 
@@ -862,6 +863,55 @@ class SciPyIntegrationEngine(BaseIntegrationEngine):
         return angle, point
 
     @override
+    def integrate_raw_at(
+        self, shot_info: Shot, key_attribute: str, target_value: float
+    ) -> tuple[BaseTrajData, TrajectoryData]:
+        """Integrate until a key attribute reaches a target value; return the point where it does (see the base class).
+
+        The key crossing is a terminal `solve_ivp` event, so SciPy ends the integration at the first accepted step whose end
+        values bracket the target and locates the root itself (Brent's method) on the solver's own dense output of that step.
+        That is the interpolant the SciPy engines use for every row they return, and it is more accurate than the cubic
+        Hermite of the two end states that the fixed-step Python engines use (the adaptive steps are wide), so the point
+        agrees with them to the accuracy of the solution, not to round-off.  The key of the returned point is exactly the
+        target.  Everything else (first crossing, launch value, keys, errors) is as in the base class.
+        """
+        getters = {
+            "time": lambda t, s, p: t,
+            "mach": lambda t, s, p: p.get_density_and_mach_for_altitude(s[1])[1],
+            "position.x": lambda t, s, p: s[0],
+            "position.y": lambda t, s, p: s[1],
+            "position.z": lambda t, s, p: s[2],
+            "velocity.x": lambda t, s, p: s[3],
+            "velocity.y": lambda t, s, p: s[4],
+            "velocity.z": lambda t, s, p: s[5],
+        }
+        if key_attribute not in getters:
+            raise AttributeError(f"Cannot interpolate on '{key_attribute}'")
+        get = getters[key_attribute]
+        props = self._init_trajectory(shot_info)
+
+        def key_event(t: float, s: Any) -> Any:
+            return get(t, s, props) - target_value
+
+        sink: list[Any] = []
+        self._integrate(props, 9e9, 9e9, filter_flags=TrajFlag.NONE, key_event=key_event, solution_sink=sink)
+        sol = sink[0]
+
+        def to_data(t: float, state: Any) -> BaseTrajData:
+            position = Vector(*state[0:3])
+            return BaseTrajData(
+                float(t), position, Vector(*state[3:6]), props.get_density_and_mach_for_altitude(position.y)[1]
+            )
+
+        # The key event is the last of the events (no zero-crossing events: no filter flags, no `stop_at_zero`).
+        t_hits = sol.t_events[-1]
+        if sol.status == 1 and t_hits.size > 0:
+            data = to_data(t_hits[0], sol.sol(t_hits[0]))
+            data = _with_key_value(data, key_attribute, target_value)
+            return data, TrajectoryData.from_base_data(props, data)
+        return self._raise_not_intercepted(props, to_data(sol.t[-1], sol.y[:, -1]))
+
+    @override
     def _integrate(
         self,
         props: ShotProps,
@@ -991,6 +1041,12 @@ class SciPyIntegrationEngine(BaseIntegrationEngine):
             zero_crossing_stop = scipy_event(terminal=True, direction=-1)(event_zero_crossing)
             traj_events.append(zero_crossing_stop)
 
+        # `integrate_raw_at`: one more terminal event, the crossing of the requested key (its own root find on the dense output)
+        key_event: SciPyEventFunctionT | None = kwargs.get("key_event")
+        if key_event is not None:
+            traj_events.append(scipy_event(terminal=True, direction=0)(key_event))
+        solution_sink: list[Any] | None = kwargs.get("solution_sink")
+
         sol = solve_ivp(
             diff_eq,
             (0, self._config.max_time),
@@ -1011,6 +1067,9 @@ class SciPyIntegrationEngine(BaseIntegrationEngine):
 
         self.integration_step_count = sol.nfev
         logger.debug(f"SciPy integration via {self._config.integration_method} done with {sol.nfev} function calls.")
+        if solution_sink is not None:  # `integrate_raw_at` wants the solution itself, not rows
+            solution_sink.append(sol)
+            return HitResult(props, ranges, None, False, None)
         termination_reason = None
         if sol.status == 1 and sol.t_events and len(sol.t_events) > 0:  # A termination event occurred
             if sol.t_events[0].size > 0:  # Expected termination event: we reached requested range

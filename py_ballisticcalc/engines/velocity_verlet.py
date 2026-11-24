@@ -167,7 +167,7 @@ class VelocityVerletIntegrationEngine(BaseIntegrationEngine):
         acceleration_vector = self.gravity_vector + coriolis_term - drag * relative_velocity
         # endregion
 
-        data_filter = TrajectoryDataFilter(
+        data_filter = kwargs.get("filter_factory", TrajectoryDataFilter)(
             props=props,
             filter_flags=filter_flags,
             range_limit=range_limit_ft,
