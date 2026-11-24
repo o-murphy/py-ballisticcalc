@@ -56,6 +56,7 @@ from bisect import bisect_left
 from collections.abc import Callable
 from dataclasses import dataclass, field
 from functools import cached_property
+from itertools import pairwise
 from typing import TYPE_CHECKING, Any, Final, Literal, NamedTuple, TypeAlias
 
 from deprecated import deprecated
@@ -1009,6 +1010,14 @@ class HitResult:
                 return row
         return None
 
+    def _native_points(self) -> list[BaseTrajData]:
+        """The points of a native dense sequence as BaseTrajData (built once, then cached)."""
+        cached = self.__dict__.get("_native_points_cache")
+        if cached is None:
+            cached = [BaseTrajData(p.time, p.position, p.velocity, p.mach) for p in self.base_data]
+            self.__dict__["_native_points_cache"] = cached
+        return cached
+
     def get_at(
         self,
         key_attribute: TrajectoryDataAttribute,
@@ -1066,18 +1075,37 @@ class HitResult:
             val = getattr(td, key_attribute)
             return val.raw_value if hasattr(val, "raw_value") else val
 
-        # Some extension engines expose a different sequence type (e.g. a
-        # Cython CythonizedBaseTrajSeq with its own get_at()) rather than a
-        # flat list of BaseTrajData; only the latter supports the local
-        # Hermite interpolation below, built on demand from each adjacent
+        # Extension engines keep their dense data in a native sequence (a Cython CythonizedBaseTrajSeq)
+        # instead of a flat list of BaseTrajData.  Detected by capability (``get_at``), so this module
+        # never imports the extension.  Monotone keys (time, distance) are answered by the native
+        # sequence itself, which interpolates the cubic Hermite of the bracketing step in C++.  Any other
+        # key (height, velocity, slant, ...) may cross the value more than once, so those use the same
+        # step-by-step search as the Python engines over the points of the native sequence.
+        base_points = self.base_data
+        if base_points and not isinstance(base_points, list) and hasattr(base_points, "get_at"):
+            # key_value is a raw value: seconds for time; for distance inches, the native keys are in feet.
+            native_key, scale = {"time": ("time", 1.0), "distance": ("position.x", 1.0 / 12.0)}.get(
+                key_attribute, (None, 1.0)
+            )
+            if native_key and not self.props.coriolis:  # coriolis moves distance off position.x
+                try:
+                    data = base_points.get_at(native_key, key_value * scale, start_from_time)
+                except (ValueError, IndexError, RuntimeError, ArithmeticError):
+                    # Native errors (ValueError: fewer than 3 points, IndexError: value outside the range): the
+                    # search below over the points raises the documented ArithmeticError.
+                    data = None
+                if data is not None and data.time >= start_from_time:
+                    return TrajectoryData.from_base_data(self.props, data)
+            base_points = self._native_points()
+        # Local Hermite interpolation of each accepted step, built on demand from each adjacent
         # pair via TrajectoryStep -- base_data itself stays a flat, honest
         # point sequence rather than pre-materialising overlapping pairs.
-        if self.base_data and isinstance(self.base_data[0], BaseTrajData):
+        if base_points and isinstance(base_points[0], BaseTrajData):
 
             def step_key(data: BaseTrajData) -> float:
                 return get_key_val(TrajectoryData.from_base_data(self.props, data))
 
-            for start, end in zip(self.base_data, self.base_data[1:]):
+            for start, end in pairwise(base_points):
                 if end.time < start_from_time:
                     continue
                 step = TrajectoryStep(start, end)

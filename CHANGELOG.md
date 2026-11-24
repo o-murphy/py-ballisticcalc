@@ -8,6 +8,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Fixed
+- `HitResult.get_at` on a cythonized engine's dense output (`dense_output=True`) now returns the cubic Hermite of the bracketing
+  step, like the pure-Python engines and the filter rows, instead of a 3-point PCHIP over the sparse `records`: `time` and
+  `distance` queries are answered by the native sequence's `get_at` (about 6x faster than before), other keys search the steps of the
+  native points. Before, `get_at('distance', 733 yd)` on a 500 yd record grid was about 1 ft off the filter row.
 - A plain `0` passed to `Atmo` is no longer silently replaced by the default: `Atmo(pressure=0)` is a vacuum (as is
   `Atmo(pressure=Pressure.hPa(0))` and `Vacuum()`), `Atmo(temperature=0)` / `Atmo.icao(temperature=0)` is 0 in the preferred
   temperature unit (not the standard temperature for the altitude), and `powder_t=0` / `Ammo(powder_temp=0)` is 0 (not the ambient

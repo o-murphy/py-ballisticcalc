@@ -35,6 +35,10 @@ from py_ballisticcalc.unit import Angular, Distance, Velocity, Weight
 pytestmark = pytest.mark.engine
 
 BCLIBC_REASON = "bclibc single-point queries still use 3-point PCHIP; fixed by the bclibc C8b change"
+DENSE_REASON = (
+    "needs the newer bclibc/exts (repin): the pinned build narrows time_step to float32 (time rows off by ~1e-8 s) "
+    "and its adaptive/Euler dense steps differ from the Hermite rows"
+)
 
 # Python Euler reference values (per-step Hermite, from the raw step stream) for the vertical shot below.
 EULER_VERTICAL_APEX_TIME = 23.790193  # s
@@ -202,8 +206,8 @@ def _wide_step_engine(engine):
 def test_dense_get_at_equals_hermite_row(loaded_engine_instance, request, key, target):
     """With dense output, ``HitResult.get_at`` returns the per-step Hermite row, not an interpolation of sparse rows."""
     engine = loaded_engine_instance
-    # Cython dense get_at / HitResult records fallback is 3-point PCHIP on sparse records (bclibc).
-    _xfail_cython(request, engine, {"Euler", "RK4", "Verlet", *ADAPTIVE})
+    # Cython: HitResult.get_at calls the native dense get_at (C++ Hermite of the step).
+    _xfail_cython(request, engine, {"Euler", "RK4", "Verlet", *ADAPTIVE}, DENSE_REASON)
     if _family(engine) == "SciPy":
         request.applymarker(
             pytest.mark.xfail(
@@ -235,6 +239,47 @@ def test_dense_get_at_equals_hermite_row(loaded_engine_instance, request, key, t
     assert gh == pytest.approx(rh, abs=1e-6), msg
     assert gx == pytest.approx(rx, abs=1e-6), msg
     assert got.time == pytest.approx(ref_row.time, abs=1e-9), msg
+
+
+@pytest.mark.parametrize("attr", ["height", "velocity", "mach", "slant_height", "slant_distance", "distance", "time"])
+def test_dense_get_at_every_attribute_equals_hermite_row(loaded_engine_instance, request, attr):
+    """``HitResult.get_at(attr, v)`` on dense data returns the filter's Hermite row where ``attr == v``.
+
+    The value is read off the filter's own row at t = 1.234 s (before the apex: every key is monotone there),
+    then ``get_at`` has to find that same row from the value alone.
+    """
+    engine = loaded_engine_instance
+    _xfail_cython(request, engine, {"Euler", "RK4", "Verlet", *ADAPTIVE}, DENSE_REASON)
+    if _family(engine) == "SciPy":
+        request.applymarker(
+            pytest.mark.xfail(strict=False, reason="scipy engine keeps no accepted-step list; no dense get_at")
+        )
+    if _family(engine) == "Euler" and attr in ("velocity", "mach"):
+        request.applymarker(
+            pytest.mark.xfail(
+                strict=False,
+                reason="Euler's velocity within a step is not the Hermite of its end states (also in pure Python)",
+            )
+        )
+    shot = _shot(relative_angle=Angular.Degree(5.0), look_angle=Angular.Degree(2.0))
+    calc = _wide_step_engine(engine)
+    t = 1.234
+    try:
+        dense = calc.fire(
+            shot, Distance.Yard(1000), trajectory_step=Distance.Yard(500), flags=TrajFlag.NONE, dense_output=True
+        )
+    except NotImplementedError:
+        pytest.skip("dense_output is not supported by this engine")
+    ref = calc.fire(shot, Distance.Yard(1000), trajectory_step=Distance.Yard(1000), time_step=t)
+    ref_row = next(r for r in ref.records if abs(r.time - t) < 1e-9)
+    target = getattr(ref_row, attr)
+    got = dense.get_at(attr, target)
+    msg = f"{attr}: time {got.time:.9f} vs {ref_row.time:.9f}"
+    assert got.time == pytest.approx(ref_row.time, abs=1e-6), msg
+    for name in ("height", "distance", "slant_height", "slant_distance"):
+        g, r = getattr(got, name) >> Distance.Foot, getattr(ref_row, name) >> Distance.Foot
+        assert g == pytest.approx(r, abs=1e-6), f"{msg}; {name} {g:.6f} vs {r:.6f} ({g - r:+.3e})"
+    assert got.velocity >> Velocity.FPS == pytest.approx(ref_row.velocity >> Velocity.FPS, abs=1e-6), msg
 
 
 def test_dense_get_at_matches_manual_hermite_step(loaded_engine_instance):
