@@ -8,6 +8,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Fixed
+- The cythonized engines raise the same exception text as the pure-Python engines for the errors of the C++ core that carried a kind
+  prefix: `find_apex` with a barrel elevation <= 0 raises `ValueError("Barrel elevation must be greater than 0 to find apex.")`
+  (was `"Value error (Barrel elevation must be greater than 0 to find apex)."`) and the missing-apex `SolverRuntimeError` reads
+  `"No apex flagged in trajectory data"` (was `"Runtime error (No apex flagged in trajectory data)"`). The `OutOfRangeError` text and
+  unit (the C++ core reports feet and appends ". Out of range") are intentionally unchanged.
 - The Python maximum-range search of a downhill shot (`find_max_range`, and the zero searches that start with it) no longer
   integrates every probe to the (lifted) drop limit: a probe is stopped at its first crossing of the line of sight (which does not
   depend on the limit, so the result is unchanged) and bounded to 600 s of flight (a probe that exceeds it counts as "no crossing", as
