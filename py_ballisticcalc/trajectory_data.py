@@ -1014,7 +1014,8 @@ class HitResult:
         """The points of a native dense sequence as BaseTrajData (built once, then cached)."""
         cached = self.__dict__.get("_native_points_cache")
         if cached is None:
-            cached = [BaseTrajData(p.time, p.position, p.velocity, p.mach) for p in self.base_data]
+            base = self.base_data
+            cached = [BaseTrajData(p.time, p.position, p.velocity, p.mach) for p in base] if base is not None else []
             self.__dict__["_native_points_cache"] = cached
         return cached
 
