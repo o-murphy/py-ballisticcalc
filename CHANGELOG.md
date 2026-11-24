@@ -8,6 +8,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Fixed
+- A failed Newton zero search no longer leaves the widened `cMaximumDrop` / `cMinimumAltitude` in the engine configuration: the Python
+  engines restored them only when the search ran to the end, so a search that raised (an unreachable target, no convergence, an
+  error out of an integration) made every later `integrate` on that engine ignore the caller's limits. They are now restored on
+  every exit (as the C++ core does), through the same `_zero_search_limits` guard the Ridder and Brent searches use.
 - `HitResult.get_at` on a cythonized engine's dense output (`dense_output=True`) now returns the cubic Hermite of the bracketing
   step, like the pure-Python engines and the filter rows, instead of a 3-point PCHIP over the sparse `records`: `time` and
   `distance` queries are answered by the native sequence's `get_at` (about 6x faster than before), other keys search the steps of the
