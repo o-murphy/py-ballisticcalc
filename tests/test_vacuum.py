@@ -6,14 +6,14 @@ altitude (closer than that the cached values are used).  The density ratio of a 
 of sound stays finite (it depends on temperature only).
 
 The CIPM density formula divided by the pressure too, so ``Atmo(pressure=Pressure.hPa(0))`` raised on construction; it now
-yields density 0. (A plain ``pressure=0`` is falsy and still means "standard pressure"; use `Vacuum` or a zero `Pressure`.)
+yields density 0. A plain ``pressure=0`` is a vacuum too (``None`` is what means "default"; ``0`` is a value, not a missing argument).
 """
 
 import math
 
 import pytest
 
-from py_ballisticcalc import BaseEngineConfigDict, Calculator, Vacuum
+from py_ballisticcalc import Atmo, BaseEngineConfigDict, Calculator, Vacuum
 from py_ballisticcalc.drag_model import DragModel
 from py_ballisticcalc.drag_tables import TableG7
 from py_ballisticcalc.munition import Ammo, Weapon
@@ -62,7 +62,7 @@ def _calc(engine) -> Calculator:
 
 
 def test_vacuum_construction():
-    """`Vacuum` has zero density at all altitudes and a finite speed of sound; `Atmo(pressure=0)` is standard air."""
+    """`Vacuum` has zero density at all altitudes and a finite speed of sound; so has `Atmo(pressure=0)`."""
     from py_ballisticcalc import Atmo
 
     vac = Vacuum()
@@ -74,8 +74,50 @@ def test_vacuum_construction():
     zero_p = Atmo(pressure=Pressure.hPa(0), humidity=50)
     assert zero_p.density_ratio == 0.0
     assert zero_p.get_density_and_mach_for_altitude(5000.0)[0] == 0.0
-    # ...but a plain falsy 0 still means "standard pressure" (unchanged).
-    assert Atmo(pressure=0).density_ratio > 0.9
+    # ...and so is a plain 0 (it used to be silently replaced by the standard pressure).
+    for atmo in (Atmo(pressure=0), Atmo(pressure=0.0, humidity=50), Atmo(altitude=Distance.Meter(1000), pressure=0)):
+        assert atmo.density_ratio == 0.0
+        assert atmo._p0 == 0.0
+        assert (atmo.pressure >> Pressure.hPa) == 0.0
+        for alt in (0.0, 31.0, 20000.0):
+            density, mach = atmo.get_density_and_mach_for_altitude(alt)
+            assert density == 0.0
+            assert math.isfinite(mach) and mach > 0
+    # None still means "standard pressure".
+    assert Atmo(pressure=None).density_ratio > 0.9
+
+
+def test_zero_arguments_are_values_not_defaults():
+    """A plain 0 for temperature / powder temperature is 0 in the preferred unit; only `None` selects the default."""
+    std_t = Atmo.standard_temperature(Distance.Foot(0))
+    t0 = Atmo(temperature=0)
+    assert (t0.temperature >> PreferredUnits.temperature) == 0.0
+    assert t0.temperature != std_t
+    assert t0._t0 == pytest.approx(Temperature.Fahrenheit(0) >> Temperature.Celsius)
+    assert (Atmo(altitude=Distance.Meter(2000), temperature=0).temperature >> PreferredUnits.temperature) == 0.0
+    assert (Atmo(temperature=None).temperature >> Temperature.Celsius) == pytest.approx(std_t >> Temperature.Celsius)
+    # Powder temperature: 0 is 0, None follows the ambient temperature.
+    assert (Atmo(temperature=Temperature.Celsius(20), powder_t=0).powder_temp >> PreferredUnits.temperature) == 0.0
+    warm = Atmo(temperature=Temperature.Celsius(20), powder_t=None)
+    assert warm.powder_temp == warm.temperature
+    # Ammo: a plain 0 powder temperature is 0 in the preferred unit; None is the 15 C default.
+    dm = DragModel(0.31, TableG7)
+    assert (Ammo(dm, Velocity.FPS(800), powder_temp=0).powder_temp >> PreferredUnits.temperature) == 0.0
+    assert Ammo(dm, Velocity.FPS(800)).powder_temp >> Temperature.Celsius == pytest.approx(15)
+    # Same for the ICAO factory
+    assert (Atmo.icao(temperature=0).temperature >> PreferredUnits.temperature) == 0.0
+    # Humidity 0 is 0 (that default was already explicit).
+    assert Atmo(humidity=0).humidity == 0.0
+    # altitude 0 is sea level, with or without None
+    assert Atmo(altitude=0).altitude == Atmo(altitude=None).altitude
+
+
+@pytest.mark.parametrize("make", [lambda: Atmo(pressure=0), lambda: Atmo(pressure=Pressure.hPa(0)), Vacuum])
+def test_zero_pressure_is_the_same_vacuum(make):
+    ref = Vacuum()
+    atmo = make()
+    assert atmo.density_ratio == ref.density_ratio == 0.0
+    assert atmo.mach >> Velocity.FPS == pytest.approx(ref.mach >> Velocity.FPS)
 
 
 def test_vacuum_trajectory_is_parabola(loaded_engine_instance):
@@ -138,3 +180,14 @@ def test_vacuum_zero_angle_hits_300_m(loaded_engine_instance):
     # Physical check: fire with that elevation and read the height at the target.
     hit = calc.fire(shot, target, trajectory_step=target)
     assert hit.trajectory[-1].height >> Distance.Foot == pytest.approx(0.0, abs=0.05)
+
+
+def test_atmo_zero_pressure_flies_like_vacuum(loaded_engine_instance):
+    """`Atmo(pressure=0)` (a plain number) is the same drag-free flight as `Vacuum()`."""
+    _skip_if_native(loaded_engine_instance)
+    calc = _calc(loaded_engine_instance)
+    shot = _shot()
+    shot.atmo = Atmo(pressure=0)
+    apex = calc.find_apex(shot)
+    tol = TOL_FT[_family(loaded_engine_instance)]
+    assert (apex.height >> Distance.Foot) == pytest.approx(APEX_FT, abs=tol)

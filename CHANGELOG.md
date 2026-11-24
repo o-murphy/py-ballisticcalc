@@ -8,6 +8,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Fixed
+- A plain `0` passed to `Atmo` is no longer silently replaced by the default: `Atmo(pressure=0)` is a vacuum (as is
+  `Atmo(pressure=Pressure.hPa(0))` and `Vacuum()`), `Atmo(temperature=0)` / `Atmo.icao(temperature=0)` is 0 in the preferred
+  temperature unit (not the standard temperature for the altitude), and `powder_t=0` / `Ammo(powder_temp=0)` is 0 (not the ambient
+  temperature / 15 degC). The defaults were selected with `x or default`; they now use `x is None`, so `None` still means
+  "default" and every non-zero value is unchanged.
 - A `Vacuum` atmosphere no longer makes the Python engines raise `ZeroDivisionError` (or, in the SciPy engines, a `RangeError`
   "integration failed") once the shot is 30 ft or more from the muzzle altitude: the density ratio was scaled by `p / p0` with a
   base pressure `p0 = 0`. A vacuum is drag-free flight: its density ratio is 0 at every altitude and the speed of sound stays

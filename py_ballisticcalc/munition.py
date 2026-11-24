@@ -466,7 +466,7 @@ class Ammo:
         """
         self.dm = dm
         self.mv = PreferredUnits.velocity(mv or 0)
-        self.powder_temp = PreferredUnits.temperature(powder_temp or Temperature.Celsius(15))
+        self.powder_temp = PreferredUnits.temperature(Temperature.Celsius(15) if powder_temp is None else powder_temp)
         self.temp_modifier = temp_modifier or 0
         self.use_powder_sensitivity = use_powder_sensitivity
 
