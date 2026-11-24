@@ -186,6 +186,12 @@ class RK4IntegrationEngine(BaseIntegrationEngine):
         if dense_output:
             step_data.append(data)
 
+        # Early ends without an error, set only by the max-range probe (`_first_zero_down`): at a flight time (s), and as
+        # soon as the line of sight has been crossed (the rest of the flight cannot change the first crossing).
+        max_flight_time_s: float = kwargs.get("max_flight_time_s") or math.inf
+        stop_at_zero_down: bool = bool(kwargs.get("stop_at_zero_down")) and bool(
+            data_filter.filter & TrajFlag.ZERO_DOWN
+        )
         # region Trajectory Loop
         warnings.simplefilter("once")  # used to avoid multiple warnings in a loop
         termination_reason = None
@@ -265,6 +271,8 @@ class RK4IntegrationEngine(BaseIntegrationEngine):
                     termination_reason = RangeError.MaximumDropReached
                 else:
                     termination_reason = RangeError.MinimumAltitudeReached
+                break
+            if time > max_flight_time_s or (stop_at_zero_down and not data_filter.filter & TrajFlag.ZERO_DOWN):
                 break
         # endregion Trajectory Loop
         # Ensure that we have at least two data points in trajectory,

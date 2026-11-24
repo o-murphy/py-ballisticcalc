@@ -486,17 +486,17 @@ def with_max_drop_zero(
     return wrapper
 
 
-_DOWNHILL_FIRST_DROP_FT = 1e3
 _DOWNHILL_LAST_DROP_FT = 1e6
-"""Drop below the muzzle (feet) from which `_first_zero_down` follows a downhill shot, and where it gives up."""
+"""Drop below the muzzle (feet) down to which `_first_zero_down` follows a downhill shot."""
+_DOWNHILL_MAX_FLIGHT_TIME_S = 600.0
+"""Longest flight (s) `_first_zero_down` follows a downhill shot in search of its crossing of the line of sight (as in
+bclibc).  Realistic flights are under ~400 s; a probe that exceeds it reports "no crossing" instead of being integrated
+until the (lifted) drop limit, which for a steep line of sight takes minutes."""
 
 
 # pylint: disable=too-many-instance-attributes
 class BaseIntegrationEngine(ABC, EngineProtocol):
     """All calculations are done in imperial units (feet and fps)."""
-
-    _downhill_drop_ft: float = _DOWNHILL_FIRST_DROP_FT
-    """Drop (ft) from which `_first_zero_down` starts for a downhill shot; reset by each max-range search."""
 
     APEX_IS_MAX_RANGE_RADIANS: float = 0.0003  # Radians from vertical where the apex is max range
     ALLOWED_ZERO_ERROR_FEET: float = 1e-2  # Allowed range error (along sight line), in feet, for zero angle
@@ -568,7 +568,6 @@ class BaseIntegrationEngine(ABC, EngineProtocol):
         # endregion Virtually vertical shot
 
         t_calls = 0
-        self._downhill_drop_ft = _DOWNHILL_FIRST_DROP_FT  # see _first_zero_down
 
         def range_for_angle(angle_rad: float) -> float:
             """Return slant-distance minus slant-error (in feet) for given launch angle in radians."""
@@ -638,15 +637,20 @@ class BaseIntegrationEngine(ABC, EngineProtocol):
         when it falls below the muzzle, which is right for a level or uphill line of sight, as the shot crosses it above
         the muzzle.  A downhill line of sight lies *below* the muzzle: every shot was stopped before it got there, and the
         search found no crossing at any elevation but a near-vertical one.  For a downhill look angle the shot is
-        integrated again with a drop (and minimum altitude) limit raised by a factor of four until it crosses.  The first
-        crossing does not depend on the limit, so a level or uphill look angle is untouched (it is integrated once, as
-        before) and so are all results that did not hit the limit.
+        integrated with the drop (and minimum altitude) limit lifted to `_DOWNHILL_LAST_DROP_FT`, bounded to
+        `_DOWNHILL_MAX_FLIGHT_TIME_S` of flight, and stopped at the crossing.  The first crossing does not depend on the
+        limit, so a level or uphill look angle is untouched and so are all results that did not hit the limit.
 
         Args:
             props: The shot, with its barrel elevation set.
             **integrate_kwargs: Passed on to `_integrate` (the SciPy engine asks it to stop at the crossing).
         """
+        # The flight after the first crossing cannot change it: the integrators stop there (the SciPy engine is asked by its caller).
+        integrate_kwargs.setdefault("stop_at_zero_down", True)
         if props.look_angle_rad < 0.0:
+            # The limits are lifted below, so a flight time bound ends a shot that never crosses (the integrators stop at
+            # `max_flight_time_s` without an error; the SciPy engine has its own, shorter, `max_time`).
+            integrate_kwargs.setdefault("max_flight_time_s", _DOWNHILL_MAX_FLIGHT_TIME_S)
             # A shot that cannot rise above the line of sight never crosses it: the highest it gets above the line, in
             # vacuum (drag only lowers it), is its start height over the line plus (v sin(elevation - look))^2 / (2 g cos(look)).
             # (Without this a shot launched at or below the line would be integrated until the drop limit; wind is ignored.)
@@ -657,29 +661,21 @@ class BaseIntegrationEngine(ABC, EngineProtocol):
                 height += v_perp * v_perp / (2.0 * g * math.cos(props.look_angle_rad))
             if height <= 0.0:
                 return None
-        cross = self._integrate(props, 9e9, 9e9, filter_flags=TrajFlag.ZERO_DOWN, **integrate_kwargs).flag(
-            TrajFlag.ZERO_DOWN
-        )
-        if cross is not None or props.look_angle_rad >= 0.0:
-            return cross
+        if props.look_angle_rad >= 0.0:
+            return self._integrate(props, 9e9, 9e9, filter_flags=TrajFlag.ZERO_DOWN, **integrate_kwargs).flag(
+                TrajFlag.ZERO_DOWN
+            )
+        # Downhill: integrate once with the drop and minimum-altitude limits lifted.  The flight stops at the crossing, so
+        # a shot that crosses costs no more than it needs, and the flight time bound ends one that never does.
         restore_drop, restore_altitude = self._config.cMaximumDrop, self._config.cMinimumAltitude
         try:
-            # Start from the drop that served the previous probe of this search (the crossings of nearby elevations lie at
-            # similar depths), not from the bottom for every elevation.
-            drop_ft = self._downhill_drop_ft
-            while cross is None and drop_ft <= _DOWNHILL_LAST_DROP_FT:
-                self._config.cMaximumDrop = drop_ft
-                self._config.cMinimumAltitude = min(restore_altitude, props.alt0_ft - drop_ft)
-                cross = self._integrate(props, 9e9, 9e9, filter_flags=TrajFlag.ZERO_DOWN, **integrate_kwargs).flag(
-                    TrajFlag.ZERO_DOWN
-                )
-                if cross is None:
-                    drop_ft *= 4.0
-            if cross is not None:
-                self._downhill_drop_ft = drop_ft
+            self._config.cMaximumDrop = _DOWNHILL_LAST_DROP_FT
+            self._config.cMinimumAltitude = min(restore_altitude, props.alt0_ft - _DOWNHILL_LAST_DROP_FT)
+            return self._integrate(props, 9e9, 9e9, filter_flags=TrajFlag.ZERO_DOWN, **integrate_kwargs).flag(
+                TrajFlag.ZERO_DOWN
+            )
         finally:
             self._config.cMaximumDrop, self._config.cMinimumAltitude = restore_drop, restore_altitude
-        return cross
 
     def find_apex(self, shot_info: Shot) -> TrajectoryData:
         """Find the apex of the trajectory.

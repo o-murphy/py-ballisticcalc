@@ -8,6 +8,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Fixed
+- The Python maximum-range search of a downhill shot (`find_max_range`, and the zero searches that start with it) no longer
+  integrates every probe to the (lifted) drop limit: a probe is stopped at its first crossing of the line of sight (which does not
+  depend on the limit, so the result is unchanged) and bounded to 600 s of flight (a probe that exceeds it counts as "no crossing", as
+  in the C++ core), and the limit is lifted once instead of by factors of four. Look -45 deg: 70-110 s before, about 20 s now on the
+  pure-Python engines; look -89.9 deg: more than 300 s before, about 200 s now (the C++ core takes 2.3 s). The public API is unchanged.
 - The Python integrators (`rk4`, `euler`, `verlet`) and the SciPy engine decide the range limit before the minimum-altitude, drop and
   minimum-velocity limits, as the C++ core does: a step that crosses the range limit and one of these limits in the same step ends the
   shot at its range, with no `RangeError` and no extra row after the row at the range limit. Before, such a shot (a target on a nearly

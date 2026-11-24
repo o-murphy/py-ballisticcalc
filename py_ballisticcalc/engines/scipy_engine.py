@@ -95,7 +95,6 @@ except ImportError:
 # Local imports
 from py_ballisticcalc.conditions import Wind
 from py_ballisticcalc.engines.base_engine import (
-    _DOWNHILL_FIRST_DROP_FT,
     BaseEngineConfig,
     BaseEngineConfigDict,
     BaseIntegrationEngine,
@@ -698,8 +697,6 @@ class SciPyIntegrationEngine(BaseIntegrationEngine):
             max_range = self._find_apex(props).slant_distance
             return max_range, Angular.Radian(props.look_angle_rad)
         # endregion Virtually vertical shot
-
-        self._downhill_drop_ft = _DOWNHILL_FIRST_DROP_FT  # see _first_zero_down
 
         def range_for_angle(angle_rad: float) -> float:
             """Return slant-distance minus slant-error (in feet) for given launch angle in radians."""
