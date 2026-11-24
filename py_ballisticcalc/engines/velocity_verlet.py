@@ -226,6 +226,10 @@ class VelocityVerletIntegrationEngine(BaseIntegrationEngine):
                 or (velocity_vector.y <= 0 and range_vector.y < _cMaximumDrop)
                 or (velocity_vector.y <= 0 and props.alt0_ft + range_vector.y < _cMinimumAltitude)
             ):
+                if range_vector.x > range_limit_ft and integration_step_count >= 3:
+                    # The step reached the range limit: that is decided before the limits below (as in the C++ core),
+                    # so the shot ends at its target, with no RangeError and no extra row after the range row.
+                    break
                 if velocity < _cMinimumVelocity:
                     termination_reason = RangeError.MinimumVelocityReached
                 elif range_vector.y < _cMaximumDrop:

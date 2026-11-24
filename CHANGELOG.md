@@ -8,6 +8,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Fixed
+- The Python integrators (`rk4`, `euler`, `verlet`) and the SciPy engine decide the range limit before the minimum-altitude, drop and
+  minimum-velocity limits, as the C++ core does: a step that crosses the range limit and one of these limits in the same step ends the
+  shot at its range, with no `RangeError` and no extra row after the row at the range limit. Before, such a shot (a target on a nearly
+  vertical line of sight, e.g. look angle -89.9 deg, 500 m) raised `RangeError` and kept a point past the target as its last row, so the
+  Newton zero search failed with "Distance non-convergent" and fell back to a Ridder search that did not return in minutes. A shot
+  that ends by altitude, drop or velocity before the range limit is unchanged.
 - A failed Newton zero search no longer leaves the widened `cMaximumDrop` / `cMinimumAltitude` in the engine configuration: the Python
   engines restored them only when the search ran to the end, so a search that raised (an unreachable target, no convergence, an
   error out of an integration) made every later `integrate` on that engine ignore the caller's limits. They are now restored on

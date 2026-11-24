@@ -1035,6 +1035,15 @@ class SciPyIntegrationEngine(BaseIntegrationEngine):
             ):
                 termination_reason = self.HitZero
 
+        # The range limit is decided before the drop, altitude and velocity limits (as in the C++ core): a step that crossed
+        # the range limit and one of them has reached its target, so it is not reported as terminated by that limit.
+        if (
+            termination_reason
+            in (RangeError.MaximumDropReached, RangeError.MinimumAltitudeReached, RangeError.MinimumVelocityReached)
+            and sol.y[0, -1] > range_limit_ft
+        ):
+            termination_reason = None
+
         # region Find requested TrajectoryData points
         if sol.sol is not None and sol.status != -1:
 
