@@ -258,4 +258,9 @@ def test_unchanged_results(loaded_engine_instance):
             got = max_ranges[look_angle][0] >> Distance.Meter if kind == "max_range_m" else max_ranges[look_angle][1] >> Angular.Degree
         else:
             got = _guard_value(calc, kind, look_angle, distance)
-        assert got == pytest.approx(value, rel=1e-9, abs=1e-9), (kind, look_angle, distance)
+        # SciPy's bounded Brent search minimises a noisy objective (about 1e-3 ft near the optimum): the last-bit differences of
+        # another CPU or libm move its maximum-range result by ~1e-8 relative (observed 4e-8 in CI), so those entries are
+        # compared to 1e-6; everything else stays at 1e-9.
+        scipy_search = kind in ("max_range_m", "max_angle_deg") and "scipy" in loaded_engine_instance.__module__
+        rel = 1e-6 if scipy_search else 1e-9
+        assert got == pytest.approx(value, rel=rel, abs=1e-9), (kind, look_angle, distance)
