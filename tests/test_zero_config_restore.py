@@ -58,9 +58,10 @@ def test_unreachable_target_restores_config(loaded_engine_instance):
 
 def test_newton_failure_restores_config(loaded_engine_instance):
     """Newton gives up on an unreachable target (raises ZeroFindingError inside its loop), config unchanged."""
-    if not issubclass(loaded_engine_instance, BaseIntegrationEngine):
-        pytest.skip("cythonized engines handle the zero-search limits natively (C++)")
     engine = loaded_engine_instance(LIMITS)
+    # An engine fixture may be a class or a factory (scipy+<method> ids): test the instance, not the fixture.
+    if not isinstance(engine, BaseIntegrationEngine):
+        pytest.skip("cythonized engines handle the zero-search limits natively (C++)")
     before = _snapshot(engine)
     props = engine._init_trajectory(_make_shot())
     with pytest.raises(ZeroFindingError):
@@ -71,9 +72,10 @@ def test_newton_failure_restores_config(loaded_engine_instance):
 
 def test_error_from_integration_restores_config(loaded_engine_instance, monkeypatch):
     """An exception out of the integrations inside the widened section does not leave the limits widened."""
-    if not issubclass(loaded_engine_instance, BaseIntegrationEngine):
-        pytest.skip("cythonized engines handle the zero-search limits natively (C++)")
     engine = loaded_engine_instance(LIMITS)
+    # An engine fixture may be a class or a factory (scipy+<method> ids): test the instance, not the fixture.
+    if not isinstance(engine, BaseIntegrationEngine):
+        pytest.skip("cythonized engines handle the zero-search limits natively (C++)")
     before = _snapshot(engine)
     seen = {}
 
