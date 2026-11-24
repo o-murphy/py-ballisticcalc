@@ -40,7 +40,8 @@ def _skip_if_native(engine):
 
 
 def _family(engine) -> str:
-    for key in TOL_FT:
+    # SciPy first: "SciPyRK45IntegrationEngine" also contains "RK4".
+    for key in ("SciPy", *TOL_FT):
         if key in engine.__name__:
             return key
     return engine.__name__

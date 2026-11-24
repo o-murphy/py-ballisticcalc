@@ -62,7 +62,8 @@ def _is_tiny(engine) -> bool:
 
 def _family(engine) -> str:
     name = engine.__name__
-    for key in ("Euler", "RK4", "Verlet", "CashKarp", "DormandPrince", "Tsitouras", "SciPy"):
+    # SciPy first: the class names SciPyRK45/RK23/DOP853/... embed other family names (RK4 in "SciPyRK45").
+    for key in ("SciPy", "Euler", "RK4", "Verlet", "CashKarp", "DormandPrince", "Tsitouras"):
         if key in name:
             return key
     return name
