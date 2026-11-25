@@ -59,7 +59,8 @@ cdef inline void raise_engine_error(const BCLIBC_Error &err):
     """Raises the py_ballisticcalc exception matching a failed BCLIBC_BaseEngine call.
 
     BCLIBC_Solver{OutOfRange,ZeroFinding,Interception,Runtime}Error -> OutOfRangeError,
-    ZeroFindingError, InterceptionError, SolverRuntimeError; the std kinds -> ValueError/IndexError/RuntimeError as raise_std_error() maps them.
+    ZeroFindingError, InterceptionError, SolverRuntimeError; the std kinds ->
+    ValueError/IndexError/RuntimeError as raise_std_error() maps them.
     Every message goes through strip_core_decoration().
     """
     from py_ballisticcalc.exceptions import (
