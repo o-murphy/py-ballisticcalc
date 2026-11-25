@@ -21,3 +21,21 @@ def xfail_until_repin(request, engine, reason: str = REPIN_REASON) -> None:
     """Non-strict xfail (XPASS is fine for new-bclibc builds) for the engines that need the repin only."""
     if needs_repin(engine):
         request.applymarker(pytest.mark.xfail(strict=False, reason=reason))
+
+
+C18_REASON = "needs bclibc C18 check (repin)"
+
+
+def is_cythonized(engine) -> bool:
+    """Every engine that embeds bclibc (the cythonized ones and tiny_bclibc)."""
+    module = getattr(engine, "__module__", "") or ""
+    return module.startswith(("py_ballisticcalc_exts", "tiny_bclibc"))
+
+
+def xfail_until_c18_repin(request, engine, reason: str = C18_REASON) -> None:
+    """Non-strict xfail (XPASS is fine for new-bclibc builds) for the engines that lack the C18 check of a discontinuous root.
+
+    The C26 helper above is left alone: it matches only the engines that lack the time-rows fix.
+    """
+    if is_cythonized(engine):
+        request.applymarker(pytest.mark.xfail(strict=False, reason=reason))

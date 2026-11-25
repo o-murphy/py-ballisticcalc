@@ -932,6 +932,11 @@ class BaseIntegrationEngine(ABC, EngineProtocol):
               the straight line from the bore to the target on the line of sight, ignoring gravity and drag.
             - A negative distance is not supported (aim backwards with the look angle): it raises `ZeroFindingError`
               (unless it is that close, see above).
+            - The miss at the target is not continuous for a lofted shot near the vertical (a shot that falls short and one that
+              carries past the target differ by thousands of feet).  If the only sign change the search finds is such a
+              jump, not a zero, it raises `ZeroFindingError` ("No continuous ... zero") instead of returning an angle that
+              misses: the error at the returned angle is more than 45% (`CONTINUOUS_ROOT_RATIO`) of the smaller of the
+              errors at the ends of the search bracket.
             - Cant is part of the shot: the sight height is rotated by it (the bore is `sight height * cos(cant)` below
               the line of sight) and the solver keeps the shot's barrel azimuth.  The returned angle is the barrel
               elevation (in the vertical plane, from horizontal) for that shot; a shot fired at this elevation hits the
@@ -964,6 +969,11 @@ class BaseIntegrationEngine(ABC, EngineProtocol):
               the straight line from the bore to the target on the line of sight, ignoring gravity and drag.
             - A negative distance is not supported (aim backwards with the look angle): it raises `ZeroFindingError`
               (unless it is that close, see above).
+            - The miss at the target is not continuous for a lofted shot near the vertical (a shot that falls short and one that
+              carries past the target differ by thousands of feet).  If the only sign change the search finds is such a
+              jump, not a zero, it raises `ZeroFindingError` ("No continuous ... zero") instead of returning an angle that
+              misses: the error at the returned angle is more than 45% (`CONTINUOUS_ROOT_RATIO`) of the smaller of the
+              errors at the ends of the search bracket.
             - Cant is part of the shot: the sight height is rotated by it (the bore is `sight height * cos(cant)` below
               the line of sight) and the solver keeps the shot's barrel azimuth.  The returned angle is the barrel
               elevation (in the vertical plane, from horizontal) for that shot; a shot fired at this elevation hits the
@@ -985,6 +995,50 @@ class BaseIntegrationEngine(ABC, EngineProtocol):
         if point is None:
             raise SolverRuntimeError("Zero-angle fast path did not evaluate a trajectory point")
         return angle, point
+
+    # A bracketed root that ends on the angle tolerance must leave a miss of at most this fraction of the smaller bracket-end
+    # error; a larger miss is a discontinuity of the error function, not a zero (see `_require_continuous_root`).
+    # Measured on the zero grid (all pure-Python engines and SciPy): real roots leave at most 0.1 (7e-6 for the Python solvers;
+    # SciPy's adaptive integrator makes its error noisy at the 0.1 ft level), jumps at least 2.0; this is their log-midpoint.
+    CONTINUOUS_ROOT_RATIO = 0.45
+
+    def _require_continuous_root(
+        self,
+        root_error_ft: float,
+        bracket_errors_ft: tuple[float, float],
+        angle_rad: float,
+        iterations_count: int,
+        lofted: bool,
+    ) -> None:
+        """Raise `ZeroFindingError` if a bracketed root that did not meet the accuracy is a discontinuity.
+
+        The zero error function is not continuous: a lofted shot near the vertical can fall back short of the target or
+        carry past it, and the error jumps (by thousands of feet) between those.  A sign change at such a jump is not a
+        zero, but a bisection converges on it all the same.  A real root leaves an error that the angle tolerance makes
+        tiny against the errors at the ends of the search bracket (<= 7e-6 of the smaller one on the measured grid for the
+        Python solvers, <= 0.1 for the noisier SciPy engine); at a jump it stays of their order (>= 2).  The test is scale free:
+        `|f(root)| > CONTINUOUS_ROOT_RATIO * min(|f(low)|, |f(high)|)`.
+
+        Args:
+            root_error_ft: The error at the angle the search ended on (feet).
+            bracket_errors_ft: The errors at the two ends of the initial search bracket (opposite signs).
+            angle_rad: The angle the search ended on.
+            iterations_count: Number of iterations done.
+            lofted: Whether a lofted zero was searched.
+
+        Raises:
+            ZeroFindingError: If the error at the angle is comparable to the bracket-end errors.
+        """
+        if abs(root_error_ft) <= self.CONTINUOUS_ROOT_RATIO * min(abs(bracket_errors_ft[0]), abs(bracket_errors_ft[1])):
+            return
+        raise ZeroFindingError(
+            abs(root_error_ft),
+            iterations_count,
+            Angular.Radian(angle_rad),
+            reason=f"No continuous {'lofted' if lofted else 'low'} zero: the error at the returned angle "
+            f"({math.degrees(angle_rad):.4f} deg), {root_error_ft:.2f} ft, is comparable to the bracket-end errors "
+            f"f(low)={bracket_errors_ft[0]:.2f}, f(high)={bracket_errors_ft[1]:.2f} (a discontinuity, not a root)",
+        )
 
     @with_no_minimum_velocity
     def _find_zero_ridder(
@@ -1062,6 +1116,7 @@ class BaseIntegrationEngine(ABC, EngineProtocol):
 
         f_low = error_at_distance(low_angle)
         f_high = error_at_distance(high_angle)
+        bracket_errors = (f_low, f_high)  # scale of the error function, for the discontinuity check
 
         if f_low * f_high >= 0:
             reason = f"No {'lofted' if lofted else 'low'} zero trajectory in elevation range "
@@ -1076,7 +1131,7 @@ class BaseIntegrationEngine(ABC, EngineProtocol):
         # (Passing e.g. cZeroFindingAccuracy=0.1 ft would otherwise mean a
         # 0.1 rad = 5.7° angle bracket tolerance and a completely wrong answer.)
         angle_tol = 1e-7  # rad — ~0.000006°, independent of height accuracy
-        for _ in range(self._config.cMaxIterations):
+        for iteration in range(self._config.cMaxIterations):
             mid_angle = (low_angle + high_angle) / 2.0
             f_mid = error_at_distance(mid_angle)
             if abs(f_mid) < self._config.cZeroFindingAccuracy:
@@ -1097,6 +1152,7 @@ class BaseIntegrationEngine(ABC, EngineProtocol):
 
             if abs(next_angle - mid_angle) < angle_tol:
                 assert last_point is not None
+                self._require_continuous_root(f_next, bracket_errors, next_angle, iteration + 1, lofted)
                 return Angular.Radian(next_angle), last_point
 
             # Update the bracket
@@ -1115,6 +1171,7 @@ class BaseIntegrationEngine(ABC, EngineProtocol):
                 # candidate.  It avoids a final, redundant shot while keeping
                 # the angle and point from the same trajectory evaluation.
                 assert last_point is not None
+                self._require_continuous_root(f_next, bracket_errors, next_angle, iteration + 1, lofted)
                 return Angular.Radian(next_angle), last_point
 
         raise ZeroFindingError(
@@ -1143,6 +1200,11 @@ class BaseIntegrationEngine(ABC, EngineProtocol):
               the straight line from the bore to the target on the line of sight, ignoring gravity and drag.
             - A negative distance is not supported (aim backwards with the look angle): it raises `ZeroFindingError`
               (unless it is that close, see above).
+            - The miss at the target is not continuous for a lofted shot near the vertical (a shot that falls short and one that
+              carries past the target differ by thousands of feet).  If the only sign change the search finds is such a
+              jump, not a zero, it raises `ZeroFindingError` ("No continuous ... zero") instead of returning an angle that
+              misses: the error at the returned angle is more than 45% (`CONTINUOUS_ROOT_RATIO`) of the smaller of the
+              errors at the ends of the search bracket.
             - Cant is part of the shot: the sight height is rotated by it (the bore is `sight height * cos(cant)` below
               the line of sight) and the solver keeps the shot's barrel azimuth.  The returned angle is the barrel
               elevation (in the vertical plane, from horizontal) for that shot; a shot fired at this elevation hits the

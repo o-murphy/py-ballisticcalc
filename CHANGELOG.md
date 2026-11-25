@@ -17,6 +17,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   extras (`find_apex`, `find_max_range`, `integrate_raw_at`) with compatible signatures; they are not in `EngineProtocol` yet.
 
 ### Fixed
+- **A lofted zero search no longer returns a discontinuity as a root (C18).** The miss at the target is not continuous for a lofted
+  shot near the vertical (a shot that falls short and one that carries past the target differ by thousands of feet), and Ridder's
+  method (and `brentq` in the SciPy engines) converged on such a jump: `find_zero_angle(..., lofted=True)` returned an elevation "within the
+  angle tolerance" that misses the target by hundreds of feet or never reaches it (e.g. 175 gr G7 .308, 800 m/s, a 5 m/s tail wind, 100 m
+  zero: 88.4362 deg, 1300 ft short). When the search ends on the angle tolerance (or the bracket collapses) and the error at that angle is
+  more than `CONTINUOUS_ROOT_RATIO` (45%) of the smaller of the errors at the ends of the search bracket, `find_zero_angle`,
+  `find_zero_point` (and the Ridder fallback of `zero_angle` / `zero_point`) raise `ZeroFindingError` ("No continuous lofted zero ...").
+  The test is scale free; on the measured grid real roots leave at most 7e-6 of that error (0.1 for SciPy's noisier integrator) and jumps at least 2. Zeros that are real
+  roots are unchanged. The cythonized engines get the check with the bclibc repin. New tests `tests/test_false_root.py`.
 - **`TrajectoryDataFilter.record_step` keeps the time rows due before a RANGE row** (matches the bclibc fix). A RANGE row restarts the
   time schedule from its own time and the range rows of a step were emitted before its time rows, so a wide step holding both a time
   row and a later range row (e.g. the last time row t = 3.3 s of a `time_step` 0.3 and the row at the range limit) lost the time row.

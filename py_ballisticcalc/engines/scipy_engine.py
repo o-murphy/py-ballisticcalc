@@ -748,7 +748,8 @@ class SciPyIntegrationEngine(BaseIntegrationEngine):
         Raises:
             ImportError: If SciPy is not installed.
             OutOfRangeError: If distance exceeds max range at Shot.look_angle.
-            ZeroFindingError: If no solution is found within the angle bracket.
+            ZeroFindingError: If no solution is found within the angle bracket, or the only sign change in it is a
+                discontinuity of the miss (a lofted shot near the vertical), not a zero.
         """
 
         status, look_angle_rad, slant_range_ft, target_x_ft, target_y_ft, start_height_ft = self._init_zero_calculation(
@@ -776,10 +777,12 @@ class SciPyIntegrationEngine(BaseIntegrationEngine):
 
         point: TrajectoryData | None = None
         point_angle_rad: float | None = None
+        point_error_ft = 0.0
+        errors_ft: dict[float, float] = {}  # every angle evaluated -> its error, for the discontinuity check
 
         def error_at_distance(angle_rad: float) -> float:
             """Target miss (in feet) for given launch angle."""
-            nonlocal point, point_angle_rad
+            nonlocal point, point_angle_rad, point_error_ft
             props.barrel_elevation_rad = angle_rad
             # Integrate to find the projectile's state at the target's horizontal distance.
             with self._zero_search_limits(props, target_x_ft, target_y_ft):
@@ -788,9 +791,12 @@ class SciPyIntegrationEngine(BaseIntegrationEngine):
             point_angle_rad = angle_rad
             if t.time == 0.0:
                 logger.warning("Integrator returned initial point. Consider removing constraints.")
-                return -1e6  # Large negative error to discourage this angle.
-            # return -abs(t.slant_height >> Distance.Foot) - abs((t.slant_distance >> Distance.Foot) - slant_range_ft)
-            return (t.height >> Distance.Foot) - target_y_ft - abs((t.distance >> Distance.Foot) - target_x_ft)
+                error_ft = -1e6  # Large negative error to discourage this angle.
+            else:
+                # return -abs(t.slant_height >> Distance.Foot) - abs((t.slant_distance >> Distance.Foot) - slant_range_ft)
+                error_ft = (t.height >> Distance.Foot) - target_y_ft - abs((t.distance >> Distance.Foot) - target_x_ft)
+            point_error_ft = errors_ft[angle_rad] = error_ft
+            return error_ft
 
         # 3. Establish search bracket for the zero angle.
         if lofted:
@@ -820,11 +826,24 @@ class SciPyIntegrationEngine(BaseIntegrationEngine):
                 reason=f"Root-finder failed to converge: {sol.flag} with {sol}",
             )
         assert point_angle_rad is not None
+        # `brentq` converges on a jump of the error function as readily as on a zero (a lofted shot near the vertical);
+        # the errors at the ends of the bracket are the first two it evaluated.
+        self._require_continuous_root(
+            point_error_ft,
+            (errors_ft[angle_bracket[0]], errors_ft[angle_bracket[1]]),
+            point_angle_rad,
+            sol.iterations,
+            lofted,
+        )
         return Angular.Radian(point_angle_rad), point
 
     @override
     def find_zero_angle(self, shot_info: Shot, distance: Distance, lofted: bool = False) -> Angular:
-        """Find a zero angle with SciPy's ``brentq`` root solver."""
+        """Find a zero angle with SciPy's ``brentq`` root solver.
+
+        Raises `ZeroFindingError` when the only sign change found is a discontinuity of the miss, not a zero
+        (see `BaseIntegrationEngine.find_zero_angle`).
+        """
         props = self._init_trajectory(shot_info)
         return self._find_zero_brentq(props, distance, lofted)[0]
 

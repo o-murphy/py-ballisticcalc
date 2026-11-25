@@ -257,7 +257,8 @@ class EngineProtocol(Protocol):
             gravity or drag); a negative distance is not supported (aim backwards with the look angle) and raises
             `ZeroFindingError`.  Cant is part of the shot: the sight height is rotated by it, the solver keeps
             the shot's barrel azimuth, and the returned angle is the barrel elevation for that shot, which hits
-            the line of sight at the target.
+            the line of sight at the target.  A lofted search whose only sign change is a jump of the miss (a shot
+            near the vertical that falls short or carries past the target), not a zero, raises `ZeroFindingError`.
 
         Returns:
             Barrel elevation needed to hit the zero point.
