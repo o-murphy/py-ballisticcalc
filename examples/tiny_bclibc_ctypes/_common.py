@@ -48,6 +48,8 @@ from py_ballisticcalc.vector import Vector
 
 __all__ = ("TinyBclibcIntegrationEngineBase",)
 
+_NO_LOFTED = "tiny_bclibc does not support lofted zero search (low zero only)"
+
 # tiny_bclibc/include/tiny_bclibc/base_types.h: TINY_BCLIBC_TerminationReason
 _TERM_NO_TERMINATE = 0
 _TERM_TARGET_RANGE_REACHED = 1
@@ -590,15 +592,21 @@ class TinyBclibcIntegrationEngineBase(BaseIntegrationEngine):
     def find_zero_angle(self, shot_info: Shot, distance: Distance, lofted: bool = False) -> Angular:
         """Native zero-angle: use the same C solver as zero_point/find_zero_point.
 
-        This engine's native solver is the same regardless of the lofted flag or which
-        entry point is called; the distinction between zero_angle (Newton primary) and
+        tiny_bclibc has no lofted search (low zero only, by design): `lofted=True` raises NotImplementedError
+        instead of silently returning the low angle.  The native solver is the same whichever entry point is
+        called; the distinction between zero_angle (Newton primary) and
         find_zero_angle (Ridder's guaranteed) in the C++ original is not exposed here
         because both paths in this binding route through the same native entry point.
         Overriding here is required so that find_zero_angle and find_zero_point agree
         (test_find_zero_point_matches_find_zero_angle), instead of find_zero_angle
         falling back to BaseIntegrationEngine's Python golden-section + Ridder's
         implementation, which would compute a measurably different angle.
+
+        Raises:
+            NotImplementedError: If `lofted` is True.
         """
+        if lofted:
+            raise NotImplementedError(_NO_LOFTED)
         props = self._init_trajectory(shot_info)
         if (edge := self._zero_edge(props, distance)) is not None:
             return edge
@@ -609,9 +617,12 @@ class TinyBclibcIntegrationEngineBase(BaseIntegrationEngine):
         """Native zero-point: same as zero_point, exposes the terminal point.
 
         Raises:
+            NotImplementedError: If `lofted` is True (tiny_bclibc has no lofted search).
             SolverRuntimeError: For a distance shorter than `ALLOWED_ZERO_ERROR_FEET` (no trajectory point, as in the
                 base engine).
         """
+        if lofted:
+            raise NotImplementedError(_NO_LOFTED)
         props = self._init_trajectory(shot_info)
         if self._zero_edge(props, distance) is not None:
             raise SolverRuntimeError("Zero-angle fast path did not evaluate a trajectory point")
