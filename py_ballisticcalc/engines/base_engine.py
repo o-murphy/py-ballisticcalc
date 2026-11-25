@@ -324,6 +324,18 @@ class TrajectoryDataFilter:
         def add(data: BaseTrajData, flag: TrajFlag | int) -> None:
             rows.append((data, flag))
 
+        def emit_time_rows(until: float, exclusive: bool) -> None:
+            """Emit the time rows due up to *until* (strictly before it when *exclusive*) on the current clock."""
+            if self.time_step <= 0:
+                return
+            while self.time_of_last_record + self.time_step <= until:
+                record_time = self.time_of_last_record + self.time_step
+                if exclusive and not record_time < until:
+                    break
+                self.time_of_last_record = record_time
+                if record_time >= start.time:
+                    add(step.at_time(record_time), TrajFlag.RANGE)
+
         if self.range_step > 0:
             while self.next_record_distance + self.range_step <= end.position.x:
                 distance = self.next_record_distance + self.range_step
@@ -332,6 +344,9 @@ class TrajectoryDataFilter:
                     break
                 if distance >= start.position.x - self.EPSILON:
                     sample = step.at_x(distance)
+                    # RANGE restarts the time schedule from its own time, so the time rows due strictly before
+                    # it are emitted first (a wide step may hold both); same order as bclibc's emit_time_rows.
+                    emit_time_rows(sample.time, True)
                     add(sample, TrajFlag.RANGE)
                     # RANGE and TIME samples share one "last record" clock:
                     # a time schedule starts from the most recently emitted
@@ -339,11 +354,7 @@ class TrajectoryDataFilter:
                     self.time_of_last_record = sample.time
                 self.next_record_distance = distance
 
-        if self.time_step > 0:
-            while self.time_of_last_record + self.time_step <= end.time:
-                self.time_of_last_record += self.time_step
-                if self.time_of_last_record >= start.time:
-                    add(step.at_time(self.time_of_last_record), TrajFlag.RANGE)
+        emit_time_rows(end.time, False)
 
         if self.filter & TrajFlag.APEX and start.velocity.y > 0.0 >= end.velocity.y:
             add(step.at_value(lambda data: data.velocity.y, 0.0), TrajFlag.APEX)

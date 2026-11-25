@@ -17,6 +17,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   extras (`find_apex`, `find_max_range`, `integrate_raw_at`) with compatible signatures; they are not in `EngineProtocol` yet.
 
 ### Fixed
+- **`TrajectoryDataFilter.record_step` keeps the time rows due before a RANGE row** (matches the bclibc fix). A RANGE row restarts the
+  time schedule from its own time and the range rows of a step were emitted before its time rows, so a wide step holding both a time
+  row and a later range row (e.g. the last time row t = 3.3 s of a `time_step` 0.3 and the row at the range limit) lost the time row.
+  The time rows strictly earlier than a range row are now emitted first, then the range row resets the clock (as bclibc's
+  `emit_time_rows`). Rows that were present are unchanged; with small steps a time row is added in the rare case it shares a step with
+  a later range row (seen with Euler). The SciPy engines already ordered their rows this way. New tests
+  `tests/test_time_rows_before_range_end.py`.
 - SciPy engines: with a `dist_step` larger than the range and `time_step > 0` (flags `RANGE`) only the `t = 0` row was returned, and
   `dist_step=0` with `time_step` raised `ZeroDivisionError`. The time schedule now also covers the tail after the last range row, up to
   the range limit (or the end of the flight), and a zero `dist_step` yields no range rows, as in the other engines (C24).
