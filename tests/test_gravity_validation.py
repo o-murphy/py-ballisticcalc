@@ -28,7 +28,14 @@ MATCH = r"cGravityConstant must be a finite negative number"
 ENGINES = ["rk4_engine", "euler_engine", "scipy_engine", "cythonized_rk4_engine", "cythonized_euler_engine"]
 
 
+# No subprocesses: Pyodide and iOS have none, and on Android sys.executable is "" (see .github/scripts/cibw_run_engines.py)
+NO_SUBPROCESS = sys.platform in ("emscripten", "ios", "android")
+
+
 def _load(name):
+    if name == "scipy_engine":  # the engine loads without SciPy/NumPy and fails on construction ("Numpy is required")
+        pytest.importorskip("numpy", exc_type=ImportError)
+        pytest.importorskip("scipy", exc_type=ImportError)
     try:
         return _EngineLoader.load(name)
     except Exception as e:  # noqa: BLE001 - engine not installed
@@ -88,6 +95,7 @@ def test_default_and_moon_gravity_work(engine_name):
     assert (moon[-1].height >> Distance.Inch) > (earth[-1].height >> Distance.Inch)
 
 
+@pytest.mark.skipif(NO_SUBPROCESS, reason="no subprocesses on this platform (Pyodide, iOS, Android)")
 @pytest.mark.parametrize("engine_name", ["cythonized_rk4_engine", "cythonized_euler_engine"])
 def test_cythonized_does_not_hang(engine_name):
     """A subprocess with a timeout, so a regression (infinite loop in C++) fails instead of blocking the suite."""
