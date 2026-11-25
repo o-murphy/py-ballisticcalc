@@ -39,7 +39,7 @@ from py_ballisticcalc.engines.base_engine import (
     BaseEngineConfigDict,
     BaseIntegrationEngine,
 )
-from py_ballisticcalc.exceptions import RangeError, SolverRuntimeError
+from py_ballisticcalc.exceptions import RangeError, SolverRuntimeError, ZeroFindingError
 from py_ballisticcalc.logger import logger
 from py_ballisticcalc.shot import Shot, ShotProps
 from py_ballisticcalc.trajectory_data import HitResult, TrajectoryData, TrajFlag
@@ -524,6 +524,21 @@ class TinyBclibcIntegrationEngineBase(BaseIntegrationEngine):
         # Keep the backing arrays alive alongside the struct that points into them.
         return shot, (mach_arr, cd_arr, wind_arr)
 
+    def _zero_edge(self, props: ShotProps, distance: Distance) -> Angular | None:
+        """The documented edge cases of the zero search that the compact native solver does not have.
+
+        A zero distance shorter than `ALLOWED_ZERO_ERROR_FEET` is not aimed: the look angle is returned (there is no
+        trajectory point for it).  A negative distance is not supported: `ZeroFindingError`.  Otherwise None.
+        """
+        slant_range_ft = distance >> Distance.Foot
+        if abs(slant_range_ft) < self.ALLOWED_ZERO_ERROR_FEET:
+            return Angular.Radian(props.look_angle_rad)
+        if slant_range_ft < 0.0:
+            raise ZeroFindingError(
+                slant_range_ft, 0, Angular.Radian(props.barrel_elevation_rad), reason="negative zero distance"
+            )
+        return None
+
     def _native_zero_point(self, props: ShotProps, distance: Distance) -> tuple[Angular, TrajectoryData]:
         """Run tiny_bclibc's native zero solver for initialized shot properties."""
         b = self._b
@@ -558,15 +573,18 @@ class TinyBclibcIntegrationEngineBase(BaseIntegrationEngine):
         shot or a zero at/near the muzzle. Preserve BaseIntegrationEngine's established
         behaviour for those inputs.
         """
+        props = self._init_trajectory(shot_info)
+        if (edge := self._zero_edge(props, distance)) is not None:
+            return edge
         try:
-            return self._native_zero_point(self._init_trajectory(shot_info), distance)[0]
+            return self._native_zero_point(props, distance)[0]
         except SolverRuntimeError:
             return super().zero_angle(shot_info, distance)
 
     @override
     def zero_point(self, shot_info: Shot, distance: Distance) -> tuple[Angular, TrajectoryData]:
         """Use tiny_bclibc's native zero solver and retain its terminal trajectory point."""
-        return self._native_zero_point(self._init_trajectory(shot_info), distance)
+        return self.find_zero_point(shot_info, distance)
 
     @override
     def find_zero_angle(self, shot_info: Shot, distance: Distance, lofted: bool = False) -> Angular:
@@ -581,12 +599,23 @@ class TinyBclibcIntegrationEngineBase(BaseIntegrationEngine):
         falling back to BaseIntegrationEngine's Python golden-section + Ridder's
         implementation, which would compute a measurably different angle.
         """
-        return self._native_zero_point(self._init_trajectory(shot_info), distance)[0]
+        props = self._init_trajectory(shot_info)
+        if (edge := self._zero_edge(props, distance)) is not None:
+            return edge
+        return self._native_zero_point(props, distance)[0]
 
     @override
     def find_zero_point(self, shot_info: Shot, distance: Distance, lofted: bool = False) -> tuple[Angular, TrajectoryData]:
-        """Native zero-point: same as zero_point, exposes the terminal point."""
-        return self._native_zero_point(self._init_trajectory(shot_info), distance)
+        """Native zero-point: same as zero_point, exposes the terminal point.
+
+        Raises:
+            SolverRuntimeError: For a distance shorter than `ALLOWED_ZERO_ERROR_FEET` (no trajectory point, as in the
+                base engine).
+        """
+        props = self._init_trajectory(shot_info)
+        if self._zero_edge(props, distance) is not None:
+            raise SolverRuntimeError("Zero-angle fast path did not evaluate a trajectory point")
+        return self._native_zero_point(props, distance)
 
     @override
     def _integrate(
