@@ -52,6 +52,16 @@ def _is_cython(engine) -> bool:
     return engine.__module__.startswith("py_ballisticcalc_exts")
 
 
+def _is_tiny(engine) -> bool:
+    return engine.__module__.startswith("tiny_bclibc")
+
+
+def _skip_if_tiny(engine) -> None:
+    """The tiny_bclibc driver streams rows only: no dense output and no filter hook, which integrate_raw_at needs."""
+    if _is_tiny(engine):
+        pytest.skip("tiny_bclibc does not support dense_output / the filter_factory hook (by design: integrate_raw_at)")
+
+
 def _family(engine) -> str:
     name = engine.__name__
     for key in ("SciPy", "Euler", "RK4", "Verlet", "CashKarp", "DormandPrince", "Tsitouras"):
@@ -145,6 +155,7 @@ def _targets(points: list[BaseTrajData]) -> dict[str, float]:
 @pytest.mark.parametrize("key", KEYS)
 def test_point_equals_hermite_crossing(loaded_engine_instance, request, key):
     engine = loaded_engine_instance
+    _skip_if_tiny(engine)
     if _is_cython(engine) and key in PCHIP_KEYS:
         request.applymarker(pytest.mark.xfail(strict=False, reason=BCLIBC_REASON))
     shot = _shot()
@@ -171,6 +182,7 @@ def test_point_equals_hermite_crossing(loaded_engine_instance, request, key):
 def test_apex_is_the_first_crossing_of_vertical_velocity(loaded_engine_instance, request):
     """`velocity.y = 0` is the apex row of the filter (same step, same Hermite root)."""
     engine = loaded_engine_instance
+    _skip_if_tiny(engine)
     if _is_cython(engine):
         request.applymarker(pytest.mark.xfail(strict=False, reason=BCLIBC_REASON))
     shot = _shot()
@@ -186,6 +198,7 @@ def test_apex_is_the_first_crossing_of_vertical_velocity(loaded_engine_instance,
 def test_first_crossing_of_a_non_monotone_key(loaded_engine_instance, request):
     """`position.y` crosses a height twice (up, then down): the first crossing, on the way up, is returned."""
     engine = loaded_engine_instance
+    _skip_if_tiny(engine)
     if _is_cython(engine):
         request.applymarker(pytest.mark.xfail(strict=False, reason=BCLIBC_REASON))
     inst = engine({})
@@ -259,6 +272,7 @@ UNREACHABLE = {
 @pytest.mark.parametrize("key", KEYS)
 def test_unreached_target_raises_interception_error(loaded_engine_instance, key):
     engine = loaded_engine_instance
+    _skip_if_tiny(engine)
     with pytest.raises(InterceptionError) as info:
         engine({}).integrate_raw_at(_shot(), key, UNREACHABLE[key])
     error = info.value
@@ -287,6 +301,7 @@ def test_unknown_key_is_an_attribute_error(loaded_engine_instance):
 def test_crossing_inside_the_first_step(loaded_engine_instance, request):
     """With a tiny elevation the apex is inside the first step (bclibc C8a): it must be found, not skipped."""
     engine = loaded_engine_instance
+    _skip_if_tiny(engine)
     if _is_cython(engine):
         request.applymarker(
             pytest.mark.xfail(strict=False, reason="pinned bclibc may miss a crossing in the first step")
@@ -304,6 +319,7 @@ def test_crossing_inside_the_first_step(loaded_engine_instance, request):
 @pytest.mark.parametrize("key,value_of", [("time", lambda p: p.time), ("position.x", lambda p: p.position.x)])
 def test_target_equal_to_the_launch_value_returns_the_launch_state(loaded_engine_instance, request, key, value_of):
     """The first step brackets a target equal to its start value, so the launch state is returned (as in bclibc)."""
+    _skip_if_tiny(loaded_engine_instance)
     if _is_cython(loaded_engine_instance) and key == "time":
         request.applymarker(
             pytest.mark.xfail(
