@@ -43,6 +43,7 @@ def test_max_range_no_crossing_is_zero(loaded_engine_instance, bracket):
     assert _max_range_ft(calc, _make_shot(30.0), bracket) == 0.0
 
 
+@pytest.mark.slow
 def test_max_range_start_below_minimum_altitude(loaded_engine_instance):
     """A shot that starts below cMinimumAltitude is cut at once: max range 0 ft; a zero search reports it as 0 ft."""
     calc = Calculator(config=BaseEngineConfigDict(cMinimumAltitude=100.0), engine=loaded_engine_instance)
@@ -90,7 +91,10 @@ def _outcome(engine_name, shot, config, bracket):
 
 
 @pytest.mark.parametrize("python_name,cython_name", _PARITY_ENGINES)
-@pytest.mark.parametrize("case", ["F_mr_br(0, 10)_look30.0", "F_start_below_minalt"])
+@pytest.mark.parametrize(
+    "case",
+    ["F_mr_br(0, 10)_look30.0", pytest.param("F_start_below_minalt", marks=pytest.mark.slow)],
+)
 def test_python_and_cython_agree_on_no_crossing(python_name, cython_name, case):
     """The differential-run cases: the Python engine reports the same max range and zero-search error as Cython."""
     if case == "F_mr_br(0, 10)_look30.0":

@@ -218,6 +218,7 @@ def _guard_value(calc: Calculator, kind: str, look_angle: float, distance: float
     return calc.zero_angle(shot, Distance.Meter(distance)) >> Angular.Degree
 
 
+@pytest.mark.slow
 def test_unchanged_results(loaded_engine_instance):
     """Maximum range of level and uphill shots, their Ridder zeros, and the Newton zeros of downhill shots are what
     they were before the fix."""

@@ -174,6 +174,7 @@ def test_vacuum_find_apex(loaded_engine_instance):
     assert apex.time == pytest.approx(VY / G, abs=1e-2)
 
 
+@pytest.mark.slow
 def test_vacuum_find_max_range(loaded_engine_instance):
     _skip_if_native(loaded_engine_instance)
     calc = _calc(loaded_engine_instance)
