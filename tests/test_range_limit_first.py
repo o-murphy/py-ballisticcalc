@@ -9,7 +9,6 @@ not return in minutes.
 """
 
 import math
-import signal
 
 import pytest
 
@@ -20,6 +19,7 @@ from py_ballisticcalc.munition import Ammo, Weapon
 from py_ballisticcalc.shot import Shot
 from py_ballisticcalc.trajectory_data import TrajFlag
 from py_ballisticcalc.unit import *
+from tests.time_bound import run_with_time_bound
 
 pytestmark = pytest.mark.engine
 
@@ -30,29 +30,6 @@ BARREL_RAD = -1.569042498149
 # Minimum altitudes (ft) for which the step that crosses the range limit also crosses the altitude limit:
 # the step end of each integrator lies at a different depth, so each integrator is hit by one of them.
 MIN_ALTITUDES_FT = (-1641.0, -1640.5, -1640.44)
-
-
-class _Hang(Exception):
-    pass
-
-
-def _run_with_time_bound(seconds: int, func, *args):
-    """Run func(*args); fail with _Hang if it takes longer than `seconds` (Unix only; elsewhere no bound).
-
-    Pyodide (WebAssembly) defines signal.SIGALRM but has no signal.alarm, so both must be there."""
-    if not (hasattr(signal, "SIGALRM") and hasattr(signal, "alarm")):
-        return func(*args)
-
-    def _on_alarm(signum, frame):
-        raise _Hang(f"did not finish in {seconds} s")
-
-    previous = signal.signal(signal.SIGALRM, _on_alarm)
-    signal.alarm(seconds)
-    try:
-        return func(*args)
-    finally:
-        signal.alarm(0)
-        signal.signal(signal.SIGALRM, previous)
 
 
 def _make_shot() -> Shot:
@@ -96,7 +73,7 @@ def test_near_vertical_downhill_zero_returns_and_hits(loaded_engine_instance):
     """zero_angle of the look -89.9 degree, 500 m shot returns at once (it did not in 600 s) and the shot hits."""
     calc = Calculator(engine=loaded_engine_instance)
     shot = _make_shot()
-    angle = _run_with_time_bound(30, calc.zero_angle, shot, Distance.Meter(TARGET_M))
+    angle = run_with_time_bound(30, calc.zero_angle, shot, Distance.Meter(TARGET_M))
     shot.relative_angle = angle - shot.look_angle
     horizontal_m = TARGET_M * math.cos(math.radians(LOOK_DEG))
     # (fired with the limits lifted: at the default altitude limit of -1500 ft the shot itself stops short of 500 m below)

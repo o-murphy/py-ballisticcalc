@@ -7,7 +7,6 @@ core).  A probe that exceeds the flight time bound reports "no crossing", exactl
 """
 
 import math
-import signal
 import warnings
 
 import pytest
@@ -18,8 +17,11 @@ from py_ballisticcalc.drag_tables import TableG7
 from py_ballisticcalc.munition import Ammo, Weapon
 from py_ballisticcalc.shot import Shot
 from py_ballisticcalc.unit import *
+from tests.time_bound import run_with_time_bound
 
-pytestmark = pytest.mark.engine
+# slow: 20-100 s per case on the pure-Python engines (more under coverage on a CI runner); CI leaves them out for those
+# engines (-m "not slow"), they run by default elsewhere and for the fast engines.  Run them with: pytest -m slow
+pytestmark = [pytest.mark.engine, pytest.mark.slow]
 
 # Maximum range (m) of the 0.1 m sight, 800 m/s, G7 BC 0.243 shot, recorded BEFORE the flight time bound (engine class ->
 # look angle (deg) -> metres).  The bound must not move a result that was found without it.
@@ -51,29 +53,6 @@ RECORDED_M = {
 }
 
 
-class _Hang(Exception):
-    pass
-
-
-def _run_with_time_bound(seconds: int, func, *args):
-    """Run func(*args); fail with _Hang if it takes longer than `seconds` (Unix only; elsewhere no bound).
-
-    Pyodide (WebAssembly) defines signal.SIGALRM but has no signal.alarm, so both must be there."""
-    if not (hasattr(signal, "SIGALRM") and hasattr(signal, "alarm")):
-        return func(*args)
-
-    def _on_alarm(signum, frame):
-        raise _Hang(f"did not finish in {seconds} s")
-
-    previous = signal.signal(signal.SIGALRM, _on_alarm)
-    signal.alarm(seconds)
-    try:
-        return func(*args)
-    finally:
-        signal.alarm(0)
-        signal.signal(signal.SIGALRM, previous)
-
-
 def _make_shot(look_angle_deg: float) -> Shot:
     return Shot(
         weapon=Weapon(sight_height=Distance.Meter(0.1), twist=Distance.Inch(11)),
@@ -101,7 +80,7 @@ def test_steep_downhill_max_range_is_bounded_in_time(loaded_engine_instance, loo
     if look_angle < -60.0 and _is_pure_python(loaded_engine_instance):
         pytest.skip("~200 s on the pure-Python engines (30 probes of 600 s of flight); covered by the fast engines")
     calc = Calculator(engine=loaded_engine_instance)
-    max_range, _ = _run_with_time_bound(45, _max_range, calc, look_angle)
+    max_range, _ = run_with_time_bound(45, _max_range, calc, look_angle)
     assert math.isfinite(max_range >> Distance.Meter)
     assert max_range >> Distance.Meter >= 0.0
     recorded = RECORDED_M.get(f"{loaded_engine_instance.__module__}.{loaded_engine_instance.__name__}")
@@ -118,7 +97,7 @@ def test_downhill_max_range_unchanged(loaded_engine_instance, look_angle):
     if recorded is None:
         pytest.skip(f"no values recorded for {key}")
     calc = Calculator(engine=loaded_engine_instance)
-    max_range, _ = _run_with_time_bound(60, _max_range, calc, look_angle)
+    max_range, _ = run_with_time_bound(60, _max_range, calc, look_angle)
     # (SciPy's bounded Brent search minimises a noisy objective: its results are compared to 1e-6, as in test_zero_downhill)
     rel = 1e-6 if "scipy" in loaded_engine_instance.__module__ else 1e-9
     assert max_range >> Distance.Meter == pytest.approx(recorded[look_angle], rel=rel)

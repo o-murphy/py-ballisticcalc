@@ -92,8 +92,10 @@ jobs:
         # Cython extension internals (.pyx) aren't line-traced here (uv builds
         # them in an isolated dir with no persistent C sources to map back to);
         # this still measures how much of the pure-Python package each engine exercises.
+        # `slow` tests take minutes on the pure-Python engines, more still under coverage: left out for python+* only
         run: >
           uv run pytest
+          -m "${{ startsWith(matrix.engine, 'python') && 'not slow' || '' }}"
           --cov=py_ballisticcalc
           --cov-report=
           --engine=${{ matrix.engine }}

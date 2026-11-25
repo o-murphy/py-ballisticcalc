@@ -98,7 +98,9 @@ def can_fork_workers() -> bool:
 
 
 def run_engine(engine: str, tests: Path, parallel: bool) -> int:
-    args = [str(tests), "-q", "-p", "no:cacheprovider", "-m", "not stress", f"--engine={engine}"]
+    # `slow` tests take minutes on the pure-Python engines (the CI runners are slower still): left out for those only
+    marker = "not stress and not slow" if engine.startswith("python+") else "not stress"
+    args = [str(tests), "-q", "-p", "no:cacheprovider", "-m", marker, f"--engine={engine}"]
     if parallel:
         args += ["-n", "auto"]
     if sys.platform in NO_SUBPROCESS:  # run the session in this process

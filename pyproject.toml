@@ -92,7 +92,8 @@ testpaths = ["tests"]
 markers = [
     "extended: rarely-modified logic",
     "engine: functionality that varies with engine",
-    "stress: long-running or resource-intensive tests, opt-in only"
+    "stress: long-running or resource-intensive tests, opt-in only",
+    "slow: tens of seconds per case on the pure-Python engines; CI runs the python+* engines with -m 'not slow'"
 ]
 
 [tool.pyright]
