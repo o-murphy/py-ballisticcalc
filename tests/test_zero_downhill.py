@@ -238,6 +238,12 @@ def test_unchanged_results(loaded_engine_instance):
         # SciPy's bounded Brent search minimises a noisy objective (about 1e-3 ft near the optimum): the last-bit differences of
         # another CPU or libm move its maximum-range result by ~1e-8 relative (observed 4e-8 in CI), so those entries are
         # compared to 1e-6; everything else stays at 1e-9.
+        # The optimum is flat: the range still agrees to 1e-6 while the angle that gives it moves with the CPU (CI saw 36.3534
+        # and 36.3612 deg for the level shot, 7.8e-3 deg apart; two stable values per runner CPU type, class C36). So the
+        # max-range angle of a SciPy engine is compared with an absolute 0.05 deg instead of a relative tolerance.
         scipy_search = kind in ("max_range_m", "max_angle_deg") and "scipy" in loaded_engine_instance.__module__
+        if scipy_search and kind == "max_angle_deg":
+            assert got == pytest.approx(value, abs=0.05), (kind, look_angle, distance)
+            continue
         rel = 1e-6 if scipy_search else 1e-9
         assert got == pytest.approx(value, rel=rel, abs=1e-9), (kind, look_angle, distance)

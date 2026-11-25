@@ -28,6 +28,9 @@ from tests.repin_xfail import is_cythonized, xfail_until_c18_repin
 pytestmark = pytest.mark.engine
 
 ANGLE_TOLERANCE_RAD = 1e-9
+# SciPy's adaptive solve_ivp + brentq zero differs by 1e-9..4e-8 rad between CPUs/libm (observed in CI against the values
+# recorded locally), so its recorded elevations are compared to 1e-6 rad; the pure-Python engines are deterministic floats.
+SCIPY_ANGLE_TOLERANCE_RAD = 1e-6
 # Height above the line of sight at the target (m) for a zero that is a real root (as in the other zero tests).
 HEIGHT_TOLERANCE_M = 2e-3
 
@@ -163,14 +166,15 @@ def _height_miss_m(calc: Calculator, shot: Shot, angle: Angular, distance_m: flo
 @pytest.mark.slow
 @pytest.mark.parametrize(("kind", "name"), _legit_params())
 def test_real_lofted_zeros_are_unchanged(loaded_engine_instance, kind, name):
-    """Lofted zeros that are real roots still return their recorded elevation (1e-9 rad) and still hit."""
+    """Lofted zeros that are real roots still return their recorded elevation (1e-9 rad; 1e-6 for SciPy) and still hit."""
     if _kind(loaded_engine_instance) != kind:
         pytest.skip("recorded for another engine")
     distance_m, winds, cant_deg = LEGIT_CASES[name]
     shot = _make_shot(winds, cant_deg)
     calc = Calculator(engine=loaded_engine_instance)
     angle = calc.find_zero_angle(shot, Distance.Meter(distance_m), lofted=True)
-    assert angle >> Angular.Radian == pytest.approx(LEGIT_ANGLES[kind][name], abs=ANGLE_TOLERANCE_RAD)
+    angle_tolerance = SCIPY_ANGLE_TOLERANCE_RAD if kind == "scipy" else ANGLE_TOLERANCE_RAD
+    assert angle >> Angular.Radian == pytest.approx(LEGIT_ANGLES[kind][name], abs=angle_tolerance)
     # A lofted flight of a minute: lift the limits that end a shot short (as the zero search does).
     fire_calc = Calculator(
         config=BaseEngineConfigDict(cMinimumVelocity=0.0, cMaximumDrop=-60000.0, cMinimumAltitude=-60000.0),
