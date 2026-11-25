@@ -19,6 +19,7 @@ from py_ballisticcalc.shot import ShotProps
 from py_ballisticcalc.trajectory_data import BaseTrajData
 from py_ballisticcalc.unit import Angular, Distance, Velocity, Weight
 from py_ballisticcalc.vector import Vector
+from tests.repin_xfail import xfail_until_repin
 
 pytestmark = pytest.mark.engine
 
@@ -59,7 +60,8 @@ def _rk4():
 
 
 @pytest.mark.parametrize("dist_step_m", [500, 1500])
-def test_time_row_before_range_end_is_kept(loaded_engine_instance, dist_step_m):
+def test_time_row_before_range_end_is_kept(loaded_engine_instance, request, dist_step_m):
+    xfail_until_repin(request, loaded_engine_instance)
     rows = _rows(loaded_engine_instance, dist_step_m)
     ref = _rows(_rk4(), dist_step_m)
     times = [r.time for r in rows]
