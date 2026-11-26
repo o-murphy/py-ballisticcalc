@@ -23,7 +23,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `barrel_elevation = atan2(y, hypot(x, z))` and `barrel_azimuth = atan2(z, x)` with `x = cos L cos r - sin L sin r cos(cant)`,
   `y = sin L cos r + cos L sin r cos(cant)`, `z = sin r sin(cant)`. This replaces `look + cos(cant) * r` and `sin(cant) * r`, which are
   its small-angle limit; with no cant the result is exactly `look + r` and 0 (bit-identical). For an ordinary shot (a pitch of a
-  fraction of a degree) the elevation changes by less than 1e-5 deg at a cant of 10 deg and about 1e-4 deg at 45 deg. For a lofted
+  fraction of a degree) the elevation changes by less than 1e-4 deg at a cant of 10 deg and 45 deg (up to about 3e-4 deg at 45 deg with a 5 deg look angle). For a lofted
   shot the old formula was wrong by degrees: the barrel azimuth `sin(cant) * r` of a barrel pitched at 88 deg is far from the real
   one, and a lofted zero fired through `fire` missed the line of sight by about 1100 m (C37); it now hits in height.
 - The solvers (`find_zero_angle`, `find_zero_point`, `zero_angle`, `find_max_range`, the pure-Python and SciPy engines) take the total
