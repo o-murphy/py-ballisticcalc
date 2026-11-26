@@ -39,3 +39,17 @@ def xfail_until_c18_repin(request, engine, reason: str = C18_REASON) -> None:
     """
     if is_cythonized(engine):
         request.applymarker(pytest.mark.xfail(strict=False, reason=reason))
+
+
+CANT_REASON = "needs bclibc exact-cant solver frame (C37) ; remove at repin"
+
+
+def xfail_until_cant_repin(request, engine, reason: str = CANT_REASON) -> None:
+    """Non-strict xfail (XPASS is fine for new-bclibc builds) for the engines whose solver still uses the old cant frame.
+
+    The Python solvers (and SciPy) search in the exact canted frame of `Shot` (C37); a bclibc built before that change
+    solves with the elevation scaled by `cos(cant)` and so misses with a cant.  Only the cant tests that need the solver
+    use this; the others (`Shot` getters and setter) are pure Python.
+    """
+    if is_cythonized(engine):
+        request.applymarker(pytest.mark.xfail(strict=False, reason=reason))

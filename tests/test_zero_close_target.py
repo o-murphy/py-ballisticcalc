@@ -17,6 +17,7 @@ from py_ballisticcalc.munition import Ammo, Weapon
 from py_ballisticcalc.shot import Shot
 from py_ballisticcalc.trajectory_data import TrajFlag
 from py_ballisticcalc.unit import *
+from tests.repin_xfail import xfail_until_cant_repin
 
 pytestmark = pytest.mark.engine
 
@@ -122,8 +123,11 @@ def test_close_target_zero_point(loaded_engine_instance, distance, sight_height)
 def test_close_target_zero_with_look_angle(loaded_engine_instance, distance, sight_height, look_angle):
     """With a look angle the zero shot reaches the (slant) line of sight at the target."""
     _skip_slow_unless_shortcut(loaded_engine_instance, distance, sight_height)
-    if look_angle != 15.0 and "py_ballisticcalc.engines." in (getattr(loaded_engine_instance, "__module__", "") or "") \
-            and "scipy" not in loaded_engine_instance.__module__:
+    if (
+        look_angle != 15.0
+        and "py_ballisticcalc.engines." in (getattr(loaded_engine_instance, "__module__", "") or "")
+        and "scipy" not in loaded_engine_instance.__module__
+    ):
         pytest.skip("one look angle is enough on pure-Python engines")
     shot = _make_shot(sight_height, 800.0, TableG1)
     shot.look_angle = Angular.Degree(look_angle)
@@ -137,13 +141,22 @@ def test_close_target_zero_with_look_angle(loaded_engine_instance, distance, sig
 
 
 @pytest.mark.parametrize("distance", (0.2, 0.4, 0.9))
-def test_close_target_zero_with_cant(loaded_engine_instance, distance):
-    """A canted rifle has an effective sight height of sight_height*cos(cant); the zero follows it."""
+def test_close_target_zero_with_cant(request, loaded_engine_instance, distance):
+    """A canted rifle has an effective sight height of sight_height*cos(cant); the zero follows it.
+
+    The bore is also offset sideways by `h sin(cant)`: in the exact canted model the elevation of the straight line to
+    the target is `atan2(h cos(cant), hypot(D, h sin(cant)))` at a horizontal look angle (`test_cant_exact.py` checks it
+    to 1e-12 and by firing).
+    """
+    xfail_until_cant_repin(request, loaded_engine_instance)
     sight_height = 0.1
     _skip_slow_unless_shortcut(loaded_engine_instance, distance, sight_height * math.cos(math.radians(30)))
     shot = _make_shot(sight_height, 800.0)
     shot.cant_angle = Angular.Degree(30)
     calc = Calculator(engine=loaded_engine_instance)
     angle = calc.find_zero_angle(shot, Distance.Meter(distance))
-    expected = math.degrees(math.atan2(sight_height * math.cos(math.radians(30)), distance))
+    cant = math.radians(30)
+    expected = math.degrees(
+        math.atan2(sight_height * math.cos(cant), math.hypot(distance, sight_height * math.sin(cant)))
+    )
     assert angle >> Angular.Degree == pytest.approx(expected, abs=0.05)

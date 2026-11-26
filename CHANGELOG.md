@@ -16,6 +16,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   the solver's dense output. `tests/test_engine_api_conformance.py` checks that every engine has the protocol methods and these
   extras (`find_apex`, `find_max_range`, `integrate_raw_at`) with compatible signatures; they are not in `EngineProtocol` yet.
 
+### Changed
+- **Cant is the exact model (C37): lofted zeros with a cant now hit.** `Shot` pitches the barrel by `r = zero_elevation +
+  relative_angle` in the sight plane, which is rotated about the line of sight by the cant. In the frame of the line of sight
+  (x forward, y up, z right) the barrel points along `(cos r, sin r cos(cant), sin r sin(cant))`; composed with the look angle `L`,
+  `barrel_elevation = atan2(y, hypot(x, z))` and `barrel_azimuth = atan2(z, x)` with `x = cos L cos r - sin L sin r cos(cant)`,
+  `y = sin L cos r + cos L sin r cos(cant)`, `z = sin r sin(cant)`. This replaces `look + cos(cant) * r` and `sin(cant) * r`, which are
+  its small-angle limit; with no cant the result is exactly `look + r` and 0 (bit-identical). For an ordinary shot (a pitch of a
+  fraction of a degree) the elevation changes by less than 1e-5 deg at a cant of 10 deg and about 1e-4 deg at 45 deg. For a lofted
+  shot the old formula was wrong by degrees: the barrel azimuth `sin(cant) * r` of a barrel pitched at 88 deg is far from the real
+  one, and a lofted zero fired through `fire` missed the line of sight by about 1100 m (C37); it now hits in height.
+- The solvers (`find_zero_angle`, `find_zero_point`, `zero_angle`, `find_max_range`, the pure-Python and SciPy engines) take the total
+  elevation `E` in the vertical plane as their unknown and derive the barrel azimuth from it with the exact model, so the shot they
+  solve is the shot that is fired. The windage at the target is a result, never a condition: a lofted zero with a cant hits in height
+  and drifts sideways. Not every elevation is reachable with a cant: `|E| <= asin(R)`, `R = hypot(sin L, cos L cos(cant))`
+  (`90 deg - cant` at a horizontal look angle); the `barrel_elevation` setter raises `ValueError` beyond it (the solvers clamp their
+  trial angles), and `set_weapon_zero` / `aim` raise it for a zero that cannot be aimed. `set_weapon_zero` stores, and `aim` returns, the
+  pitch (not the elevation divided by `cos(cant)`) that fires the solved elevation. The very close shot shortcut of the zero search
+  (target closer than twice the sight height) follows the model too: the bore is offset sideways by `h sin(cant)`.
+  The cythonized engines get the solver part with the bclibc repin.
+
 ### Fixed
 - **A lofted zero search no longer returns a discontinuity as a root (C18).** The miss at the target is not continuous for a lofted
   shot near the vertical (a shot that falls short and one that carries past the target differ by thousands of feet), and Ridder's
@@ -40,7 +60,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `ValueError("cGravityConstant must be a finite negative number ...")` when the engine config is created and whenever the field is assigned
   later, for every engine. Before, the pure-Python engines failed deep inside with `ValueError: math domain error`, and the cythonized
   engines never returned (infinite loop in the C++ core, which gets the same check in bclibc separately).
-- Cant is applied consistently: `Shot.barrel_elevation` is `look + cos(cant) * (zero_elevation + relative_angle)`, but its setter
+- Cant is applied consistently (the `cos(cant)` scaling described here is superseded by the exact model under Changed): `Shot.barrel_elevation` is `look + cos(cant) * (zero_elevation + relative_angle)`, but its setter
   stored `relative_angle = value - look - cos(cant) * zero_elevation` and `Calculator.set_weapon_zero` stored `zero_elevation = angle - look`,
   so neither fired the requested elevation with a cant (the engines were right: they receive the final angle from `Shot`). The setter now
   stores `(value - look) / cos(cant) - zero_elevation`, `set_weapon_zero` stores `(angle - look) / cos(cant)` (a shot zeroed with it fires

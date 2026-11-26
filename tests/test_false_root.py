@@ -126,7 +126,8 @@ LEGIT_CASES = {  # name: (distance m, winds, cant degrees)
     "cant300": (300.0, (), 10.0),
     "tail500": (500.0, TAIL_WIND, 0.0),
 }
-# Elevations (radians) recorded before the discontinuity check, per engine.
+# Elevations (radians) recorded before the discontinuity check, per engine.  `cant300` is the elevation in the exact canted
+# model (C37; it was 1.5431 rad = 88.4 deg with the old scaling): it hits the line of sight in height like the others.
 LEGIT_ANGLES = {
     "rk4": {
         "d50": 1.5661788498467573,
@@ -134,7 +135,7 @@ LEGIT_ANGLES = {
         "d300": 1.5430550710767825,
         "d1000": 1.4773083610653304,
         "cross300": 1.543053139488336,
-        "cant300": 1.5430550734300148,
+        "cant300": 1.3939553458072833,
         "tail500": 1.5044424365315816,
     },
     "scipy": {
@@ -143,11 +144,11 @@ LEGIT_ANGLES = {
         "d300": 1.5430572062553463,
         "d1000": 1.4773156165940016,
         "cross300": 1.5430552473775156,
-        "cant300": 1.5430572073147495,
+        "cant300": 1.3939556864233822,
         "tail500": 1.504446842777301,
     },
-    "euler": {"d100": 1.561559495804815, "d300": 1.5430532364867933},
-    "velocity_verlet": {"d100": 1.5615606919146785, "d300": 1.543056615865713},
+    "euler": {"d100": 1.561559495804815, "d300": 1.5430532364867933, "cant300": 1.3939551100166225},
+    "velocity_verlet": {"d100": 1.5615606919146785, "d300": 1.543056615865713, "cant300": 1.3939555943949697},
 }
 
 
@@ -180,10 +181,6 @@ def test_real_lofted_zeros_are_unchanged(loaded_engine_instance, kind, name):
         config=BaseEngineConfigDict(cMinimumVelocity=0.0, cMaximumDrop=-60000.0, cMinimumAltitude=-60000.0),
         engine=loaded_engine_instance,
     )
-    if cant_deg:
-        # A canted lofted shot fired through `fire` is 1100 m off the line of sight at the target (RK4 and SciPy); that is
-        # independent of the root check, so only the elevation is pinned.
-        return
     if kind == "scipy" and name == "tail500":
         # This zero sits next to a jump of the error function: SciPy's adaptive trajectory there differs by metres between
         # two integrations of the same shot, so a fired shot is no check of the elevation.
