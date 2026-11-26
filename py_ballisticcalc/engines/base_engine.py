@@ -48,7 +48,7 @@ from py_ballisticcalc.constants import cGravityImperial
 from py_ballisticcalc.exceptions import InterceptionError, OutOfRangeError, SolverRuntimeError, ZeroFindingError
 from py_ballisticcalc.generics.engine import EngineProtocol
 from py_ballisticcalc.logger import logger
-from py_ballisticcalc.shot import Shot, ShotProps
+from py_ballisticcalc.shot import Shot, ShotProps, _exact_direction
 from py_ballisticcalc.trajectory_data import BaseTrajData, HitResult, TrajectoryData, TrajectoryStep, TrajFlag
 from py_ballisticcalc.unit import Angular, Distance
 from py_ballisticcalc.vector import Vector
@@ -676,7 +676,7 @@ class BaseIntegrationEngine(ABC, EngineProtocol):
 
         def range_for_angle(angle_rad: float) -> float:
             """Return slant-distance minus slant-error (in feet) for given launch angle in radians."""
-            props.barrel_elevation_rad = angle_rad
+            props.set_aim(angle_rad)
             nonlocal t_calls
             t_calls += 1
             # logger.debug(f"range_for_angle call #{t_calls} for angle {math.degrees(angle_rad)} degrees")
@@ -900,6 +900,21 @@ class BaseIntegrationEngine(ABC, EngineProtocol):
             # line from the bore to the target on the line of sight rises by `target_y_ft - start_height_ft`.
             # (Adding it, as this once did, points the bore away from the line of sight for a sight above the bore
             # and misses the line of sight by twice the sight height.)
+            if props.cant_sine != 0.0:
+                # With a cant the bore is also offset sideways by `sight height * sin(cant)`, so the straight line to
+                # the target is not in the vertical plane.  The shot of the exact canted frame (see `Shot`) that
+                # crosses the line of sight at the target is pitched in its sight plane by
+                # `r = atan2(h cos L, D + h cos(cant) sin L)` (h the sight height, D the slant distance, L the look
+                # angle); the angle returned is the elevation of that barrel.  (Without a cant this is the
+                # `atan2` below.)  A very high sight on a steep cant can need a pitch whose elevation cannot be aimed back
+                # (`Shot.barrel_elevation` setter): the call still answers with that elevation.
+                h_ft = props.sight_height_ft
+                pitch = math.atan2(
+                    h_ft * math.cos(props.look_angle_rad),
+                    slant_range_ft + h_ft * props.cant_cosine * math.sin(props.look_angle_rad),
+                )
+                elevation, _ = _exact_direction(props.look_angle_rad, props.cant_cosine, props.cant_sine, pitch)
+                return ZeroFindingProps(_ZeroCalcStatus.DONE, look_angle_rad=elevation)
             return ZeroFindingProps(
                 _ZeroCalcStatus.DONE, look_angle_rad=math.atan2(target_y_ft - start_height_ft, target_x_ft)
             )
@@ -938,11 +953,13 @@ class BaseIntegrationEngine(ABC, EngineProtocol):
               misses: the error at the returned angle is more than 45% (`CONTINUOUS_ROOT_RATIO`) of the smaller of the
               errors at the ends of the search bracket.
             - Cant is part of the shot: the sight height is rotated by it (the bore is `sight height * cos(cant)` below
-              the line of sight) and the solver keeps the shot's barrel azimuth.  The returned angle is the barrel
-              elevation (in the vertical plane, from horizontal) for that shot; a shot fired at this elevation hits the
-              line of sight at the target.  `Shot.weapon.zero_elevation` and `relative_angle` are applied scaled by
-              `cos(cant)` (see `Shot.barrel_elevation`), so to fire a returned elevation `a` set
-              `shot.barrel_elevation = a` (`relative_angle = (a - look_angle) / cos(cant) - zero_elevation`).
+              the line of sight and `sight height * sin(cant)` beside it).  The unknown of the search is the total
+              barrel elevation `E` in the vertical plane; the barrel azimuth follows from it in the exact canted model
+              (see `Shot.barrel_elevation`), so the shot fired at the returned elevation hits the line of sight at the
+              target in height, for a low and for a lofted zero alike.  The windage at the target is a result (a
+              canted barrel points sideways and the shot drifts), never a condition.  To fire a returned elevation `a`
+              set `shot.barrel_elevation = a`.  An elevation the canted sight plane cannot reach (`|E| > asin(R)`,
+              see `Shot`) cannot be set that way and raises `ValueError`.
 
         Returns:
             Barrel elevation needed to hit the zero point.
@@ -975,11 +992,13 @@ class BaseIntegrationEngine(ABC, EngineProtocol):
               misses: the error at the returned angle is more than 45% (`CONTINUOUS_ROOT_RATIO`) of the smaller of the
               errors at the ends of the search bracket.
             - Cant is part of the shot: the sight height is rotated by it (the bore is `sight height * cos(cant)` below
-              the line of sight) and the solver keeps the shot's barrel azimuth.  The returned angle is the barrel
-              elevation (in the vertical plane, from horizontal) for that shot; a shot fired at this elevation hits the
-              line of sight at the target.  `Shot.weapon.zero_elevation` and `relative_angle` are applied scaled by
-              `cos(cant)` (see `Shot.barrel_elevation`), so to fire a returned elevation `a` set
-              `shot.barrel_elevation = a` (`relative_angle = (a - look_angle) / cos(cant) - zero_elevation`).
+              the line of sight and `sight height * sin(cant)` beside it).  The unknown of the search is the total
+              barrel elevation `E` in the vertical plane; the barrel azimuth follows from it in the exact canted model
+              (see `Shot.barrel_elevation`), so the shot fired at the returned elevation hits the line of sight at the
+              target in height, for a low and for a lofted zero alike.  The windage at the target is a result (a
+              canted barrel points sideways and the shot drifts), never a condition.  To fire a returned elevation `a`
+              set `shot.barrel_elevation = a`.  An elevation the canted sight plane cannot reach (`|E| > asin(R)`,
+              see `Shot`) cannot be set that way and raises `ValueError`.
 
         Returns:
             The solved barrel elevation and the terminal RANGE point from the
@@ -1093,7 +1112,7 @@ class BaseIntegrationEngine(ABC, EngineProtocol):
         def error_at_distance(angle_rad: float) -> float:
             """Target miss (in feet) for given launch angle."""
             nonlocal last_point
-            props.barrel_elevation_rad = angle_rad
+            props.set_aim(angle_rad)
             with self._zero_search_limits(props, target_x_ft, target_y_ft):
                 _res = self._integrate(props, target_x_ft, target_x_ft, filter_flags=TrajFlag.NONE)
             if _res.error is not None:
@@ -1123,7 +1142,7 @@ class BaseIntegrationEngine(ABC, EngineProtocol):
             reason += f"({Angular.Radian(low_angle) >> Angular.Degree:.2f}, "
             reason += f"{Angular.Radian(high_angle) >> Angular.Degree:.2f} deg). "
             reason += f"Errors at bracket: f(low)={f_low:.2f}, f(high)={f_high:.2f}"
-            raise ZeroFindingError(target_y_ft, 0, Angular.Radian(props.barrel_elevation_rad), reason=reason)
+            raise ZeroFindingError(target_y_ft, 0, Angular.Radian(props.aim_elevation_rad), reason=reason)
 
         # 4. Ridder's method implementation.
         # cZeroFindingAccuracy is a height tolerance in feet; use a separate
@@ -1206,11 +1225,13 @@ class BaseIntegrationEngine(ABC, EngineProtocol):
               misses: the error at the returned angle is more than 45% (`CONTINUOUS_ROOT_RATIO`) of the smaller of the
               errors at the ends of the search bracket.
             - Cant is part of the shot: the sight height is rotated by it (the bore is `sight height * cos(cant)` below
-              the line of sight) and the solver keeps the shot's barrel azimuth.  The returned angle is the barrel
-              elevation (in the vertical plane, from horizontal) for that shot; a shot fired at this elevation hits the
-              line of sight at the target.  `Shot.weapon.zero_elevation` and `relative_angle` are applied scaled by
-              `cos(cant)` (see `Shot.barrel_elevation`), so to fire a returned elevation `a` set
-              `shot.barrel_elevation = a` (`relative_angle = (a - look_angle) / cos(cant) - zero_elevation`).
+              the line of sight and `sight height * sin(cant)` beside it).  The unknown of the search is the total
+              barrel elevation `E` in the vertical plane; the barrel azimuth follows from it in the exact canted model
+              (see `Shot.barrel_elevation`), so the shot fired at the returned elevation hits the line of sight at the
+              target in height, for a low and for a lofted zero alike.  The windage at the target is a result (a
+              canted barrel points sideways and the shot drifts), never a condition.  To fire a returned elevation `a`
+              set `shot.barrel_elevation = a`.  An elevation the canted sight plane cannot reach (`|E| > asin(R)`,
+              see `Shot`) cannot be set that way and raises `ValueError`.
 
         Returns:
             Barrel elevation to hit height zero at zero distance along sight line.
@@ -1300,9 +1321,9 @@ class BaseIntegrationEngine(ABC, EngineProtocol):
                     break
 
                 current_distance = t.distance >> Distance.Foot  # Horizontal distance
-                if 2 * current_distance < target_x_ft and props.barrel_elevation_rad == 0.0 and look_angle_rad < 1.5:
+                if 2 * current_distance < target_x_ft and props.aim_elevation_rad == 0.0 and look_angle_rad < 1.5:
                     # Degenerate case: little distance and zero elevation; try with some elevation
-                    props.barrel_elevation_rad = 0.01
+                    props.set_aim(0.01)
                     continue
 
                 height_diff_ft = t.slant_height >> Distance.Foot
@@ -1311,7 +1332,7 @@ class BaseIntegrationEngine(ABC, EngineProtocol):
                 range_error_ft = math.fabs(range_diff_ft)
                 height_error_ft = math.fabs(height_diff_ft)
                 trajectory_angle = t.angle >> Angular.Radian  # Flight angle at current distance
-                sensitivity = math.tan(props.barrel_elevation_rad - look_angle_rad) * math.tan(
+                sensitivity = math.tan(props.aim_elevation_rad - look_angle_rad) * math.tan(
                     trajectory_angle - look_angle_rad
                 )
                 if sensitivity < -0.5:
@@ -1324,7 +1345,7 @@ class BaseIntegrationEngine(ABC, EngineProtocol):
                     raise ZeroFindingError(
                         height_error_ft,
                         iterations_count,
-                        Angular.Radian(props.barrel_elevation_rad),
+                        Angular.Radian(props.aim_elevation_rad),
                         "Correction denominator is zero",
                     )
 
@@ -1334,7 +1355,7 @@ class BaseIntegrationEngine(ABC, EngineProtocol):
                         raise ZeroFindingError(
                             range_error_ft,
                             iterations_count,
-                            Angular.Radian(props.barrel_elevation_rad),
+                            Angular.Radian(props.aim_elevation_rad),
                             "Distance non-convergent",
                         )
                 elif height_error_ft > math.fabs(prev_height_error_ft):  # Error is increasing, we are diverging
@@ -1343,11 +1364,11 @@ class BaseIntegrationEngine(ABC, EngineProtocol):
                         raise ZeroFindingError(
                             height_error_ft,
                             iterations_count,
-                            Angular.Radian(props.barrel_elevation_rad),
+                            Angular.Radian(props.aim_elevation_rad),
                             "Error non-convergent",
                         )
                     logger.debug(f"Tightened damping to {damping_factor:.2f} after {iterations_count} iterations")
-                    props.barrel_elevation_rad -= last_correction  # Revert previous adjustment
+                    props.set_aim(props.aim_elevation_rad - last_correction)  # Revert previous adjustment
                     correction = last_correction
                 elif damping_factor < 1.0:
                     logger.debug("Resetting damping factor to 1.0")
@@ -1359,13 +1380,13 @@ class BaseIntegrationEngine(ABC, EngineProtocol):
                 if height_error_ft > _cZeroFindingAccuracy or range_error_ft > self.ALLOWED_ZERO_ERROR_FEET:
                     # Adjust barrel elevation to close height at zero distance
                     applied_correction = correction * damping_factor
-                    props.barrel_elevation_rad += applied_correction
+                    props.set_aim(props.aim_elevation_rad + applied_correction)
                     last_correction = applied_correction
                 else:  # Current barrel_elevation hit zero: success!
                     break
                 iterations_count += 1
 
-        result: Angular = Angular.Radian(props.barrel_elevation_rad)
+        result: Angular = Angular.Radian(props.aim_elevation_rad)
         if height_error_ft > _cZeroFindingAccuracy or range_error_ft > self.ALLOWED_ZERO_ERROR_FEET:
             # ZeroFindingError contains an instance of last barrel elevation; so caller can check how close zero is
             raise ZeroFindingError(height_error_ft, iterations_count, result)

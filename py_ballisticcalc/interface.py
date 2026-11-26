@@ -375,10 +375,10 @@ class Calculator:
             A distance shorter than 0.01 ft returns the look angle (not aimed; the zero cannot be measured that
             close), and a target closer than about `2 * max(|sight height * cos(cant)|, calc step)` is solved
             geometrically.  A negative distance is not supported and raises `ZeroFindingError`.
-            Cant is part of the shot (the sight height is rotated by it, the barrel azimuth is kept).  The
-            result is relative to `shot.look_angle`; note that `Shot` applies `weapon.zero_elevation` and
-            `relative_angle` scaled by `cos(cant)`, so with a cant the value to store in `weapon.zero_elevation` (or
-            `relative_angle`) to fire it is the result divided by `cos(cant)` (see `set_weapon_zero`).
+            Cant is part of the shot (the sight height is rotated by it).  The result is the elevation of the vertical
+            plane relative to `shot.look_angle`; with a cant the barrel is pitched in the canted sight plane and its
+            azimuth follows (see `Shot.barrel_elevation`), so the shot fires exactly this elevation (and drifts
+            sideways, which is a result, not a condition).  `set_weapon_zero` stores the matching pitch.
         """
         target_distance = PreferredUnits.distance(target_distance)
         total_elevation = self._engine_instance.zero_angle(shot, target_distance)
@@ -398,23 +398,26 @@ class Calculator:
             zero-finding iteration.  The windage angle uses the sign
             convention of :attr:`TrajectoryData.windage_angle`.
 
-            With a cant the hold is the ``relative_angle`` to set on the shot (``Shot`` scales it, with
-            ``weapon.zero_elevation``, by ``cos(cant)``).
+            With a cant the hold is the ``relative_angle`` to set on the shot: the pitch in the canted sight plane
+            that fires the solved elevation (see ``Shot.barrel_elevation``).
 
         Raises:
             NotImplementedError: If the selected engine has no ``zero_point`` API.
-            ValueError: If ``cos(cant_angle)`` is zero (a cant of +/-90 degrees).
+            ValueError: If ``cos(cant_angle)`` is zero (a cant of +/-90 degrees), or if the solved elevation is not
+                reachable with the shot's cant and look angle.
         """
+        shot._check_cant()  # fail before solving
         target_distance = PreferredUnits.distance(target_distance)
         total_elevation, point = self._engine_instance.zero_point(shot, target_distance)
         target_zero_elevation = Angular.Radian(
             (total_elevation >> Angular.Radian) - (shot.look_angle >> Angular.Radian)
         )
-        # Shot fires look + cos(cant) * (zero_elevation + relative_angle): the hold is that relative_angle.
-        vertical_hold = Angular.Radian(
-            (target_zero_elevation >> Angular.Radian) / shot._cant_cosine()
-            - (shot.weapon.zero_elevation >> Angular.Radian)
+        # The shot fires the pitch `zero_elevation + relative_angle` in the canted sight plane: the hold is the
+        # `relative_angle` whose pitch has the solved elevation.
+        pitch = shot._pitch_for_elevation(
+            Angular.Radian((target_zero_elevation >> Angular.Radian) + (shot.look_angle >> Angular.Radian))
         )
+        vertical_hold = Angular.Radian((pitch >> Angular.Radian) - (shot.weapon.zero_elevation >> Angular.Radian))
         return vertical_hold, point.windage_angle, point
 
     def aiming_solution_for_target(
@@ -442,16 +445,19 @@ class Calculator:
                 distance raises `ZeroFindingError`.
 
         Note:
-            `Shot` fires `look + cos(cant) * (zero_elevation + relative_angle)`, so with a nonzero `shot.cant_angle`
-            the stored `zero_elevation` is the solved elevation (relative to the look angle) divided by `cos(cant)`:
-            the shot then fires exactly the solver's barrel elevation (with the default `relative_angle`).
+            `Shot` fires the pitch `zero_elevation + relative_angle` in the sight plane canted by `shot.cant_angle`
+            (see `Shot.barrel_elevation`), so with a cant the stored `zero_elevation` is the pitch whose elevation is
+            the solver's: the shot then fires exactly the solver's barrel elevation (with the default
+            `relative_angle`).
 
         Raises:
             ValueError: If `cos(cant_angle)` is zero (a cant of +/-90 degrees): no zero elevation can be stored.
+                Also if the solved elevation is not reachable with the shot's cant and look angle.
         """
-        shot._cant_cosine()  # fail before solving
+        shot._check_cant()  # fail before solving
         elevation = self.barrel_elevation_for_target(shot, zero_distance)
-        shot.weapon.zero_elevation = Angular.Radian((elevation >> Angular.Radian) / shot._cant_cosine())
+        total = Angular.Radian((elevation >> Angular.Radian) + (shot.look_angle >> Angular.Radian))
+        shot.weapon.zero_elevation = shot._pitch_for_elevation(total)
         return shot.weapon.zero_elevation
 
     def fire(

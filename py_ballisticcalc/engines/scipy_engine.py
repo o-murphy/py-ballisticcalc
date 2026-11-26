@@ -703,7 +703,7 @@ class SciPyIntegrationEngine(BaseIntegrationEngine):
             """Return slant-distance minus slant-error (in feet) for given launch angle in radians."""
             if abs(props.look_angle_rad - math.radians(90)) < self.APEX_IS_MAX_RANGE_RADIANS:
                 return self._find_apex(props).slant_distance >> Distance.Foot
-            props.barrel_elevation_rad = angle_rad
+            props.set_aim(angle_rad)
             cross = self._first_zero_down(props, stop_at_zero=True)
             if cross is None:
                 warnings.warn(f"No ZERO_DOWN found for launch angle {angle_rad} rad.")
@@ -783,7 +783,7 @@ class SciPyIntegrationEngine(BaseIntegrationEngine):
         def error_at_distance(angle_rad: float) -> float:
             """Target miss (in feet) for given launch angle."""
             nonlocal point, point_angle_rad, point_error_ft
-            props.barrel_elevation_rad = angle_rad
+            props.set_aim(angle_rad)
             # Integrate to find the projectile's state at the target's horizontal distance.
             with self._zero_search_limits(props, target_x_ft, target_y_ft):
                 t = self._integrate(props, target_x_ft, target_x_ft, filter_flags=TrajFlag.NONE)[-1]
@@ -813,7 +813,7 @@ class SciPyIntegrationEngine(BaseIntegrationEngine):
             raise ZeroFindingError(
                 target_y_ft,
                 0,
-                Angular.Radian(props.barrel_elevation_rad),
+                Angular.Radian(props.aim_elevation_rad),
                 reason=f"No {'lofted' if lofted else 'low'} zero trajectory in elevation range "
                 + f"({Angular.Radian(angle_bracket[0]) >> Angular.Degree},"
                 + f" {Angular.Radian(angle_bracket[1]) >> Angular.Degree} degrees. {e}",
@@ -822,7 +822,7 @@ class SciPyIntegrationEngine(BaseIntegrationEngine):
             raise ZeroFindingError(
                 target_y_ft,
                 0,
-                Angular.Radian(props.barrel_elevation_rad),
+                Angular.Radian(props.aim_elevation_rad),
                 reason=f"Root-finder failed to converge: {sol.flag} with {sol}",
             )
         assert point_angle_rad is not None

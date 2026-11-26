@@ -28,6 +28,51 @@ from py_ballisticcalc.vector import ZERO_VECTOR, Vector
 __all__ = ("Shot", "ShotProps")
 
 
+def _exact_direction(look: float, cant_cos: float, cant_sin: float, pitch: float) -> tuple[float, float]:
+    """Elevation and azimuth (radians) of a barrel pitched by `pitch` in a canted sight plane.
+
+    In the frame of the line of sight (x forward, y up, z right) the sight plane is rotated about x by the cant, so the
+    barrel direction is `(cos r, sin r cos c, sin r sin c)` for the pitch `r`.  Composed with the look angle `L` this is
+    `x = cos L cos r - sin L sin r cos c`, `y = sin L cos r + cos L sin r cos c`, `z = sin r sin c`, and the elevation
+    from horizontal is `atan2(y, hypot(x, z))`, the azimuth (from the vertical plane through the line of sight)
+    `atan2(z, x)`.  Without a cant these are exactly `L + r` and `0`.
+    """
+    if cant_sin == 0.0:
+        return look + pitch, 0.0
+    cos_r, sin_r = math.cos(pitch), math.sin(pitch)
+    x = math.cos(look) * cos_r - math.sin(look) * sin_r * cant_cos
+    y = math.sin(look) * cos_r + math.cos(look) * sin_r * cant_cos
+    z = sin_r * cant_sin
+    return math.atan2(y, math.hypot(x, z)), math.atan2(z, x)
+
+
+def _pitch_from_elevation(
+    look: float, cant_cos: float, cant_sin: float, elevation: float, clamp: bool = False
+) -> float:
+    """Pitch `r` in the canted sight plane whose barrel elevation is `elevation` (inverse of `_exact_direction`).
+
+    The elevation is `sin E = sin L cos r + cos L cos c sin r = R sin(r + phi)` with `R = hypot(sin L, cos L cos c)` and
+    `phi = atan2(sin L, cos L cos c)`, so `r = asin(sin E / R) - phi`.  Only `|E| <= asin(R)` is reachable.
+
+    Raises:
+        ValueError: If `elevation` is not reachable and `clamp` is False.  With `clamp` the nearest reachable pitch is
+            returned instead.
+    """
+    if cant_sin == 0.0:
+        return elevation - look
+    a, b = math.sin(look), math.cos(look) * cant_cos
+    big_r = math.hypot(a, b)
+    ratio = math.sin(elevation) / big_r if big_r > 1e-12 else 2.0
+    if abs(ratio) > 1.0 + 1e-12:
+        if not clamp:
+            raise ValueError(
+                f"barrel elevation {math.degrees(elevation):.4f} deg is not reachable with this cant and look angle "
+                f"(|elevation| <= {math.degrees(math.asin(min(1.0, big_r))):.4f} deg)"
+            )
+        ratio = math.copysign(1.0, ratio)
+    return math.asin(max(-1.0, min(1.0, ratio))) - math.atan2(a, b)
+
+
 @dataclass
 class Shot:
     """All information needed to compute a ballistic trajectory.
@@ -42,17 +87,25 @@ class Shot:
                 With target_distance = sight distance to a target (i.e., as through a rangefinder):
                     * Horizontal distance X to target = cos(look_angle) * target_distance
                     * Vertical distance Y to target = sin(look_angle) * target_distance
-        cant_angle: Tilt of gun from vertical. If `weapon.sight_height != 0` then this shifts any barrel elevation
-            from the vertical plane into the horizontal plane (as `barrel_azimuth`) by `sine(cant_angle)`.
-        relative_angle: Elevation adjustment (a.k.a. "hold") added to `weapon.zero_elevation`.
-            Both are scaled by `cos(cant_angle)` in `barrel_elevation`.
+        cant_angle: Tilt of gun from vertical.  The sight plane (the plane of the line of sight and the bore) is rotated
+            about the line of sight by the cant, so the barrel, pitched in that plane, points out of the vertical plane
+            (`barrel_azimuth`) and its elevation is lower than its pitch (`barrel_elevation`).
+        relative_angle: Elevation adjustment (a.k.a. "hold") added to `weapon.zero_elevation`.  The sum
+            `r = zero_elevation + relative_angle` is the pitch of the barrel above the line of sight, measured in the
+            canted sight plane.
         azimuth: Azimuth of the shooting direction in degrees [0, 360). Optional, for Coriolis effects.
             Should be geographic bearing where 0 = North, 90 = East, 180 = South, 270 = West.
             Difference from magnetic bearing is usually negligible.
         latitude: Latitude of the shooting location in degrees [-90, 90]. Optional, for Coriolis effects.
-        barrel_elevation: Total barrel elevation (in vertical plane) from horizontal.
-            `= look_angle + cos(cant_angle) * (zero_elevation + relative_angle)`
-        barrel_azimuth: Horizontal angle of barrel relative to sight line.
+        barrel_elevation: Total barrel elevation (in vertical plane) from horizontal: the exact composition of the look
+            angle, the cant and the pitch `r`.  In the frame of the line of sight (x forward, y up, z right) the barrel
+            points along `(cos r, sin r cos(cant), sin r sin(cant))`; with the look angle `L` the elevation is
+            `atan2(y, hypot(x, z))` with `x = cos L cos r - sin L sin r cos(cant)`, `y = sin L cos r + cos L sin r
+            cos(cant)` and `z = sin r sin(cant)`.  Without a cant this is exactly `look_angle + r`.
+            With a cant not every elevation is reachable: `|elevation| <= asin(R)`, `R = hypot(sin L, cos L cos(cant))`
+            (`90 deg - cant` for a horizontal look angle).
+        barrel_azimuth: Horizontal angle of the barrel from the vertical plane of the line of sight, `atan2(z, x)`
+            (0 without a cant).
     """
 
     ammo: Ammo
@@ -165,59 +218,68 @@ class Shot:
         """
         self._winds = sorted(winds or [Wind()], key=lambda wind: wind.until_distance.raw_value)
 
+    def _barrel_direction(self) -> tuple[float, float]:
+        """Exact (elevation, azimuth) of the barrel in radians; see the class docstring."""
+        return _exact_direction(
+            self.look_angle >> Angular.Radian,
+            math.cos(self.cant_angle >> Angular.Radian),
+            math.sin(self.cant_angle >> Angular.Radian),
+            (self.weapon.zero_elevation >> Angular.Radian) + (self.relative_angle >> Angular.Radian),
+        )
+
+    def _pitch_for_elevation(self, elevation: Angular) -> Angular:
+        """Pitch `r` (`zero_elevation + relative_angle`) at which the barrel has total elevation `elevation`.
+
+        Raises:
+            ValueError: If no pitch in the canted sight plane reaches that elevation.
+        """
+        return Angular.Radian(
+            _pitch_from_elevation(
+                self.look_angle >> Angular.Radian,
+                math.cos(self.cant_angle >> Angular.Radian),
+                math.sin(self.cant_angle >> Angular.Radian),
+                elevation >> Angular.Radian,
+            )
+        )
+
+    def _check_cant(self) -> None:
+        """Raise `ValueError` for a cant of +/-90 degrees (tested as `|cos| < 1e-9`), which no zero can be stored for."""
+        if abs(math.cos(self.cant_angle >> Angular.Radian)) < 1e-9:
+            raise ValueError(
+                "cos(cant_angle) is zero (cant of 90 degrees): the sight plane is horizontal, no zero can be set"
+            )
+
     @property
     def barrel_azimuth(self) -> Angular:
-        """Horizontal angle of barrel relative to sight line."""
-        return Angular.Radian(
-            math.sin(self.cant_angle >> Angular.Radian)
-            * ((self.weapon.zero_elevation >> Angular.Radian) + (self.relative_angle >> Angular.Radian))
-        )
+        """Horizontal angle of the barrel from the vertical plane of the line of sight (0 without a cant)."""
+        return Angular.Radian(self._barrel_direction()[1])
 
     @property
     def barrel_elevation(self) -> Angular:
         """Total barrel elevation (in vertical plane) from horizontal.
 
         Returns:
-            Angle of barrel elevation in vertical plane from horizontal
-                `= look_angle + cos(cant_angle) * (zero_elevation + relative_angle)`
+            The exact elevation of the barrel pitched by `zero_elevation + relative_angle` in the sight plane canted
+            by `cant_angle` (`= look_angle + zero_elevation + relative_angle` without a cant).
         """
-        return Angular.Radian(
-            (self.look_angle >> Angular.Radian)
-            + math.cos(self.cant_angle >> Angular.Radian)
-            * ((self.weapon.zero_elevation >> Angular.Radian) + (self.relative_angle >> Angular.Radian))
-        )
-
-    def _cant_cosine(self) -> float:
-        """`cos(cant_angle)`, for dividing a requested barrel elevation by it.
-
-        Raises:
-            ValueError: If it is zero (a cant of +/-90 degrees, tested as `|cos| < 1e-9`): the elevation in the
-                vertical plane is then the look angle whatever the zero elevation and relative angle are.
-        """
-        cos_cant = math.cos(self.cant_angle >> Angular.Radian)
-        if abs(cos_cant) < 1e-9:
-            raise ValueError("cos(cant_angle) is zero (cant of 90 degrees): the barrel elevation cannot be set")
-        return cos_cant
+        return Angular.Radian(self._barrel_direction()[0])
 
     @barrel_elevation.setter
     def barrel_elevation(self, value: Angular) -> None:
         """Setter for barrel_elevation.
 
-        Sets `.relative_angle` to achieve the desired elevation (the inverse of the getter):
-            `relative_angle = (value - look_angle) / cos(cant_angle) - zero_elevation`.
+        Sets `.relative_angle` to achieve the desired elevation (the inverse of the getter).
             Note: This does not change the `.weapon.zero_elevation`.
 
         Args:
             value: Desired barrel elevation in vertical plane from horizontal
 
         Raises:
-            ValueError: If `cos(cant_angle)` is zero (a cant of +/-90 degrees): the barrel elevation in the vertical
-                plane is then the look angle whatever the relative angle is, so no relative angle can achieve it.
+            ValueError: If the elevation is not reachable with this cant and look angle (`|value| > asin(R)`, see the
+                class docstring; for a cant of +/-90 degrees and a horizontal look angle no elevation is).
         """
-        cos_cant = self._cant_cosine()
         self.relative_angle = Angular.Radian(
-            ((value >> Angular.Radian) - (self.look_angle >> Angular.Radian)) / cos_cant
-            - (self.weapon.zero_elevation >> Angular.Radian)
+            (self._pitch_for_elevation(value) >> Angular.Radian) - (self.weapon.zero_elevation >> Angular.Radian)
         )
 
     @property
@@ -304,9 +366,27 @@ class ShotProps:
     stability_coefficient: float = field(init=False)  # Miller stability coefficient
     calc_step: float = field(init=False)  # Calculation step size
     filter_flags: TrajFlag | int = field(init=False)  # Flags for special ballistic trajectory points
+    aim_elevation_rad: float = field(init=False)  # Unknown of the solvers: total barrel elevation (vertical plane)
 
     def __post_init__(self):
         self.stability_coefficient = self._calc_stability_coefficient()
+        self.aim_elevation_rad = self.barrel_elevation_rad
+
+    def set_aim(self, elevation_rad: float) -> None:
+        """Aim the barrel at total elevation `elevation_rad` (the solvers' unknown), keeping the cant.
+
+        Without a cant this sets `barrel_elevation_rad` only (the azimuth is the caller's).  With a cant the barrel is
+        pitched in the canted sight plane to that elevation and the azimuth follows (see `Shot.barrel_elevation`); an
+        elevation beyond the reachable limit is clamped to it, as a solver may probe it.
+        """
+        self.aim_elevation_rad = elevation_rad
+        if self.cant_sine == 0.0:
+            self.barrel_elevation_rad = elevation_rad
+            return
+        pitch = _pitch_from_elevation(self.look_angle_rad, self.cant_cosine, self.cant_sine, elevation_rad, clamp=True)
+        self.barrel_elevation_rad, self.barrel_azimuth_rad = _exact_direction(
+            self.look_angle_rad, self.cant_cosine, self.cant_sine, pitch
+        )
 
     @property
     def azimuth(self) -> float | None:
