@@ -52,6 +52,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   The cythonized engines get the solver part with the bclibc repin.
 
 ### Fixed
+- **The max-range and zero search with a cant bracket only the reachable elevations (C38).** `set_aim` clamps an elevation beyond
+  `asin(R)`, `R = hypot(sin L, cos L cos(cant))`, so the first golden-section probes of the (0, 90 deg) bracket of `find_max_range` (34.4 and
+  55.6 deg, both above the 30 deg limit of a 60 deg cant at a horizontal look angle) fell on one clamped shot, tied, and the search walked
+  away from the real maximum (~13 deg): it returned a range of ~0 and the zero search raised `OutOfRangeError` for a target it could hit
+  (0.1 m and 0.2 m at a 0.05 m sight height and a 60 deg cant on RK4/Verlet). With a cant the upper bound of the bracket is now clipped to
+  `asin(R)` (and the lower to `-asin(R)`), also the upper bound of a lofted zero bracket (pure-Python and SciPy engines); without a cant the
+  bounds, hence every result, are unchanged. The cythonized engines get the fix with the bclibc repin.
 - **A lofted zero search no longer returns a discontinuity as a root (C18).** The miss at the target is not continuous for a lofted
   shot near the vertical (a shot that falls short and one that carries past the target differ by thousands of feet), and Ridder's
   method (and `brentq` in the SciPy engines) converged on such a jump: `find_zero_angle(..., lofted=True)` returned an elevation "within the

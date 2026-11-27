@@ -170,16 +170,17 @@ def test_close_target_zero_with_cant(request, loaded_engine_instance, cant_deg, 
     """The very close shot shortcut follows the exact model: the bore is offset sideways by `h sin(cant)`."""
     h, d, look, cant = sight_m, distance_m, math.radians(look_deg), math.radians(cant_deg)
     shortcut = d < 2.0 * h * math.cos(cant)  # the calc step (cStepMultiplier, 0.0025 ft) is smaller
+    steep_cant_case = (sight_m, look_deg, cant_deg, distance_m) in ((0.05, 0.0, 60.0, 0.1), (0.05, 0.0, 60.0, 0.2))
     if (
-        loaded_engine_instance.__module__.startswith("py_ballisticcalc_exts")
+        steep_cant_case
+        and loaded_engine_instance.__module__.startswith("py_ballisticcalc_exts")
         and "Euler" not in loaded_engine_instance.__name__
-        and (sight_m, look_deg, cant_deg, distance_m) in ((0.05, 0.0, 60.0, 0.1), (0.05, 0.0, 60.0, 0.2))
     ):
-        # Cythonized RK4/Verlet/adaptive: max range of this shot is ~1e-12 ft, so OutOfRangeError.  The pure-Python RK4
-        # (checked by hand, same shot) raises the same error; cythonized Euler and pure-Python Euler return an elevation.
-        request.applymarker(pytest.mark.xfail(strict=False, reason="searched zero of a 60 deg cant at 0.05 m sight: no flight reaches 0.1/0.2 m (RK4-type engines)"))
-    if not shortcut and _kind(loaded_engine_instance) in ("rk4", "euler", "velocity_verlet"):
-        pytest.skip("searched zero is too slow on pure-Python engines; the shortcut cases cover the change")
+        # C38: the reachable elevation of a 60 deg cant at look 0 is 30 deg; the max-range search of the cythonized RK4/Verlet/
+        # adaptive engines still brackets (0, 90) deg and probes two clamped, equal elevations, so it finds range 0.
+        request.applymarker(pytest.mark.xfail(strict=False, reason="needs bclibc C38 bracket fix; remove at repin"))
+    if not shortcut and not steep_cant_case and _kind(loaded_engine_instance) in ("rk4", "euler", "velocity_verlet"):
+        pytest.skip("searched zero is too slow on pure-Python engines; the shortcut and C38 cases cover the change")
     shot = _make_shot(cant_deg, look_deg, Distance.Meter(sight_m))
     calc = Calculator(engine=loaded_engine_instance)
     elevation = calc._engine_instance.find_zero_angle(shot, Distance.Meter(distance_m))
@@ -194,9 +195,70 @@ def test_close_target_zero_with_cant(request, loaded_engine_instance, cant_deg, 
         return
     shot.barrel_elevation = elevation
     miss_ft, _ = _fire_miss_ft(calc, shot, Distance.Meter(distance_m))
-    assert miss_ft * 0.3048 == pytest.approx(
-        0.0, abs=SCIPY_HEIGHT_TOLERANCE_M if _kind(loaded_engine_instance) == "scipy" else 2e-3
+    kind = _kind(loaded_engine_instance)
+    if steep_cant_case and kind != "euler":
+        # C38: the zero is searched in the reachable elevations only (<= 30 deg), 12.92 deg at 0.1 m and 6.97 deg at 0.2 m
+        # (Euler is first order: its own flight, 1e-6 m high at the target, is within the 2e-3 m below as before).
+        assert elevation >> Angular.Degree == pytest.approx(12.921 if distance_m == 0.1 else 6.9654, abs=2e-3)
+    tolerance_m = SCIPY_HEIGHT_TOLERANCE_M if kind == "scipy" else (1e-3 if steep_cant_case else 2e-3)
+    assert miss_ft * 0.3048 == pytest.approx(0.0, abs=tolerance_m)
+
+
+def _brute_force_max_range_ft(engine, shot, limit_deg: float) -> tuple[float, float]:
+    """Largest range over a grid of reachable elevations (each evaluated on its own, as a one-point bracket), refined once."""
+
+    def range_at(deg: float) -> float:
+        return engine.find_max_range(shot, (deg, deg + 1e-9))[0] >> Distance.Foot
+
+    lo = 0.0
+    step = limit_deg / 12
+    best = max((range_at(lo + k * step), lo + k * step) for k in range(13))
+    fine_lo, fine_hi = max(0.0, best[1] - step), min(limit_deg, best[1] + step)
+    return max(max(range_at(fine_lo + k * (fine_hi - fine_lo) / 16) for k in range(17)), best[0]), best[1]
+
+
+_PURE_PYTHON_KINDS = ("rk4", "euler", "velocity_verlet")
+
+
+def _check_max_range_search(engine_class, cant_deg: float, look_deg: float) -> None:
+    """C38: with a cant, `find_max_range` searches elevations up to asin(R) only and finds the true maximum."""
+    look, cant = math.radians(look_deg), math.radians(cant_deg)
+    limit_deg = (
+        math.degrees(math.asin(math.hypot(math.sin(look), math.cos(look) * math.cos(cant)))) if cant_deg else 90.0
     )
+    shot = _make_shot(cant_deg, look_deg, mv_mps=300.0)
+    engine = Calculator(engine=engine_class)._engine_instance
+    found_range, found_angle = engine.find_max_range(shot)
+    found_ft = found_range >> Distance.Foot
+    assert found_ft > 100.0
+    assert found_angle >> Angular.Degree <= limit_deg + 1e-9
+    brute_ft, _ = _brute_force_max_range_ft(engine, shot, limit_deg)
+    # The search stops at 1e-6 rad; the grid is refined to limit/192 deg, so it may be a hair below the maximum.
+    assert found_ft >= brute_ft * (1.0 - 1e-6)
+    assert found_ft == pytest.approx(brute_ft, rel=5e-3)
+
+
+@pytest.mark.engine
+@pytest.mark.filterwarnings("ignore:No ZERO_DOWN found")
+@pytest.mark.parametrize("cant_deg", (0.0, 45.0, 60.0, 75.0, 80.0))
+@pytest.mark.parametrize("look_deg", (0.0, 8.0))
+def test_max_range_search_brackets_the_reachable_elevations(request, loaded_engine_instance, cant_deg, look_deg):
+    if _kind(loaded_engine_instance) in _PURE_PYTHON_KINDS:
+        pytest.skip("brute force scan is slow on pure-Python engines; see the slow test")
+    if loaded_engine_instance.__module__.startswith("py_ballisticcalc_exts") and cant_deg >= 60.0:
+        # The limit asin(R) is below the first golden-section probes (34.4 deg and 55.6 deg) of the (0, 90) deg bracket.
+        request.applymarker(pytest.mark.xfail(strict=False, reason="needs bclibc C38 bracket fix; remove at repin"))
+    _check_max_range_search(loaded_engine_instance, cant_deg, look_deg)
+
+
+@pytest.mark.slow
+@pytest.mark.engine
+@pytest.mark.filterwarnings("ignore:No ZERO_DOWN found")
+@pytest.mark.parametrize(("cant_deg", "look_deg"), ((60.0, 0.0), (80.0, 8.0)))
+def test_max_range_search_brackets_the_reachable_elevations_pure_python(loaded_engine_instance, cant_deg, look_deg):
+    if _kind(loaded_engine_instance) not in _PURE_PYTHON_KINDS:
+        pytest.skip("the other engines run test_max_range_search_brackets_the_reachable_elevations")
+    _check_max_range_search(loaded_engine_instance, cant_deg, look_deg)
 
 
 # endregion

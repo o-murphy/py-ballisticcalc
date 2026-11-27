@@ -100,6 +100,7 @@ from py_ballisticcalc.engines.base_engine import (
     BaseIntegrationEngine,
     _with_key_value,
     _ZeroCalcStatus,
+    reachable_elevation_limit_rad,
     with_no_minimum_velocity,
 )
 from py_ballisticcalc.exceptions import OutOfRangeError, RangeError, SolverRuntimeError, ZeroFindingError
@@ -713,6 +714,9 @@ class SciPyIntegrationEngine(BaseIntegrationEngine):
 
         lower_rad = float(max(props.look_angle_rad, math.radians(angle_bracket_deg[0])))
         upper_rad = math.radians(angle_bracket_deg[1])
+        if props.cant_sine != 0.0:
+            # Bracket the reachable elevations only (`set_aim` clamps the rest to one state; see the base engine).
+            upper_rad = min(upper_rad, reachable_elevation_limit_rad(props))
         if lower_rad > upper_rad:
             # The bracket lies below the look angle: no crossing (SciPy would raise ValueError for these bounds).
             return Distance.Feet(0.0), Angular.Radian(upper_rad)
@@ -801,6 +805,8 @@ class SciPyIntegrationEngine(BaseIntegrationEngine):
         # 3. Establish search bracket for the zero angle.
         if lofted:
             angle_bracket = (angle_at_max >> Angular.Radian, math.radians(90.0))
+            if props.cant_sine != 0.0:
+                angle_bracket = (angle_bracket[0], min(angle_bracket[1], reachable_elevation_limit_rad(props)))
         else:
             sight_height_adjust = 0.0
             if start_height_ft > 0:  # Lower bound can be less than look angle

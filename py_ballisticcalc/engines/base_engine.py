@@ -599,6 +599,20 @@ bclibc).  Realistic flights are under ~400 s; a probe that exceeds it reports "n
 until the (lifted) drop limit, which for a steep line of sight takes minutes."""
 
 
+def reachable_elevation_limit_rad(props: ShotProps) -> float:
+    """Largest total barrel elevation (radians, in the vertical plane) the canted sight plane of `props` can reach.
+
+    With a cant the elevation is `sin E = R sin(r + phi)` (see `shot._pitch_from_elevation`), so only
+    `|E| <= asin(R)`, `R = hypot(sin L, cos L cos(cant))` (L the look angle), can be aimed; `ShotProps.set_aim` clamps the
+    rest to it.  Without a cant every elevation is reachable and `pi / 2` is returned.
+    """
+    if props.cant_sine == 0.0:
+        return math.pi / 2
+    return math.asin(
+        min(1.0, math.hypot(math.sin(props.look_angle_rad), math.cos(props.look_angle_rad) * props.cant_cosine))
+    )
+
+
 # pylint: disable=too-many-instance-attributes
 class BaseIntegrationEngine(ABC, EngineProtocol):
     """All calculations are done in imperial units (feet and fps)."""
@@ -691,6 +705,11 @@ class BaseIntegrationEngine(ABC, EngineProtocol):
         inv_phi = (math.sqrt(5) - 1) / 2  # 0.618...
         inv_phi_sq = inv_phi**2
         a, b = (math.radians(deg) for deg in angle_bracket_deg)
+        if props.cant_sine != 0.0:
+            # Elevations beyond the reachable limit are clamped by `set_aim` to the same state: probes there would tie
+            # (range equal), and the search would walk away from the true maximum.  Bracket the reachable ones only.
+            limit = reachable_elevation_limit_rad(props)
+            a, b = max(a, -limit), min(b, limit)
         h = b - a
         c = a + inv_phi_sq * h
         d = a + inv_phi * h
@@ -1127,6 +1146,8 @@ class BaseIntegrationEngine(ABC, EngineProtocol):
         # 3. Establish search bracket for the zero angle.
         if lofted:
             low_angle, high_angle = angle_at_max_rad, math.radians(89.9)
+            if props.cant_sine != 0.0:
+                high_angle = min(high_angle, reachable_elevation_limit_rad(props))  # as in `_find_max_range`
         else:
             sight_height_adjust = 0.0
             if start_height_ft > 0:
