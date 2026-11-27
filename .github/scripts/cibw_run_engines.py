@@ -98,9 +98,12 @@ def can_fork_workers() -> bool:
 
 
 def run_engine(engine: str, tests: Path, parallel: bool) -> int:
-    # `slow` tests take minutes on the pure-Python engines (the CI runners are slower still): left out for those only
-    marker = "not stress and not slow" if engine.startswith("python+") else "not stress"
-    args = [str(tests), "-q", "-p", "no:cacheprovider", "-m", marker, f"--engine={engine}"]
+    # `slow` tests are left out for every engine: a wheel job repeats the same abi3 wheel in one session per engine and
+    # per interpreter (28 times per job), and the slow tests run once, in the regular per-engine jobs (pytest-reusable,
+    # coverage). CIBW_RUN_SLOW=1 puts them back.
+    marker = "not stress" if os.environ.get("CIBW_RUN_SLOW") == "1" else "not stress and not slow"
+    # --durations names the slowest tests in the log, so a test that gets slow shows up
+    args = [str(tests), "-q", "-p", "no:cacheprovider", "-m", marker, "--durations=15", f"--engine={engine}"]
     if parallel:
         args += ["-n", "auto"]
     if sys.platform in NO_SUBPROCESS:  # run the session in this process
