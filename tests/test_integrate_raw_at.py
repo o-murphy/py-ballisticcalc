@@ -36,17 +36,9 @@ from py_ballisticcalc.unit import Angular, Distance, Velocity, Weight
 pytestmark = pytest.mark.engine
 
 KEYS = tuple(RAW_KEY_GETTERS)
-BCLIBC_REASON = "pinned bclibc: the single-point handler uses a 3-point PCHIP for this key; fixed by the repin (C8b)"
-PCHIP_KEYS = (
-    "time",
-    "mach",
-    "position.y",
-    "position.z",
-    "velocity.x",
-    "velocity.y",
-    "velocity.z",
-)  # position.x was Hermite
-
+# Still differs on the repinned core (8c0b16b): cython Euler/RK4/Verlet cross `mach` ~2e-6 s / 1.2e-3 ft away from the Python
+# crossing (tolerance 1e-7 relative); the adaptive engines agree.  Cause not analysed.
+MACH_REASON = "repinned bclibc: the 'mach' single-point crossing differs from Python by ~1e-3 ft (cause not analysed)"
 
 def _is_cython(engine) -> bool:
     return engine.__module__.startswith("py_ballisticcalc_exts")
@@ -156,8 +148,6 @@ def _targets(points: list[BaseTrajData]) -> dict[str, float]:
 def test_point_equals_hermite_crossing(loaded_engine_instance, request, key):
     engine = loaded_engine_instance
     _skip_if_tiny(engine)
-    if _is_cython(engine) and key in PCHIP_KEYS:
-        request.applymarker(pytest.mark.xfail(strict=False, reason=BCLIBC_REASON))
     shot = _shot()
     points = _dense_points(engine, shot)
     if points is None:
@@ -183,8 +173,6 @@ def test_apex_is_the_first_crossing_of_vertical_velocity(loaded_engine_instance,
     """`velocity.y = 0` is the apex row of the filter (same step, same Hermite root)."""
     engine = loaded_engine_instance
     _skip_if_tiny(engine)
-    if _is_cython(engine):
-        request.applymarker(pytest.mark.xfail(strict=False, reason=BCLIBC_REASON))
     shot = _shot()
     inst = engine({})
     raw, _ = inst.integrate_raw_at(shot, "velocity.y", 0.0)
@@ -199,8 +187,6 @@ def test_first_crossing_of_a_non_monotone_key(loaded_engine_instance, request):
     """`position.y` crosses a height twice (up, then down): the first crossing, on the way up, is returned."""
     engine = loaded_engine_instance
     _skip_if_tiny(engine)
-    if _is_cython(engine):
-        request.applymarker(pytest.mark.xfail(strict=False, reason=BCLIBC_REASON))
     inst = engine({})
     shot = _shot()
     apex = inst.find_apex(shot)
@@ -302,10 +288,6 @@ def test_crossing_inside_the_first_step(loaded_engine_instance, request):
     """With a tiny elevation the apex is inside the first step (bclibc C8a): it must be found, not skipped."""
     engine = loaded_engine_instance
     _skip_if_tiny(engine)
-    if _is_cython(engine):
-        request.applymarker(
-            pytest.mark.xfail(strict=False, reason="pinned bclibc may miss a crossing in the first step")
-        )
     shot = _shot(angle_deg=0.001)
     inst = engine({})
     raw, _ = inst.integrate_raw_at(shot, "velocity.y", 0.0)
@@ -320,12 +302,6 @@ def test_crossing_inside_the_first_step(loaded_engine_instance, request):
 def test_target_equal_to_the_launch_value_returns_the_launch_state(loaded_engine_instance, request, key, value_of):
     """The first step brackets a target equal to its start value, so the launch state is returned (as in bclibc)."""
     _skip_if_tiny(loaded_engine_instance)
-    if _is_cython(loaded_engine_instance) and key == "time":
-        request.applymarker(
-            pytest.mark.xfail(
-                strict=False, reason="pinned bclibc: time 0 is not found (3-point window); fixed by the repin (C8b)"
-            )
-        )
     raw, _ = loaded_engine_instance({}).integrate_raw_at(_shot(), key, 0.0)
     assert value_of(raw) == 0.0
     assert raw.time == pytest.approx(0.0, abs=1e-12)
@@ -351,8 +327,8 @@ def test_cython_matches_python_engine(loaded_engine_instance, request, key):
     counterpart = PYTHON_COUNTERPART.get(_family(engine))
     if not _is_cython(engine) or counterpart is None:
         pytest.skip("parity of a cythonized engine with its pure-Python counterpart")
-    if key in PCHIP_KEYS:
-        request.applymarker(pytest.mark.xfail(strict=False, reason=BCLIBC_REASON))
+    if key == "mach" and _family(engine) in ("Euler", "RK4", "Verlet"):
+        request.applymarker(pytest.mark.xfail(strict=False, reason=MACH_REASON))
     shot = _shot()
     target = _targets(_dense_points(counterpart, shot))[key]
     got = _raw(engine({}).integrate_raw_at(shot, key, target)[0])

@@ -19,7 +19,6 @@ from py_ballisticcalc.munition import Ammo, Weapon
 from py_ballisticcalc.shot import Shot
 from py_ballisticcalc.trajectory_data import TrajFlag
 from py_ballisticcalc.unit import *
-from tests.repin_xfail import xfail_until_cant_repin
 
 pytestmark = pytest.mark.engine
 
@@ -109,7 +108,6 @@ def test_negative_zero_distance_raises(loaded_engine_instance, function):
 @pytest.mark.parametrize("function", ("zero_angle", "find_zero_angle"))
 def test_zero_with_cant_hits_target(request, loaded_engine_instance, function, cant_deg):
     """The zero of a canted shot, fired with the same shot, crosses the line of sight at the target."""
-    xfail_until_cant_repin(request, loaded_engine_instance)
     shot = _make_shot(cant_deg)
     calc = Calculator(engine=loaded_engine_instance)
     distance = Distance.Yard(100)

@@ -7,8 +7,7 @@ PCHIP of trajectory data is only a fallback when no step with derivatives bracke
 not special-cased: its known inaccuracy at an apex step is documented, not worked around.
 
 The pure-Python engines are the reference.  The native (cythonized) engines are expected to follow it; the
-cases where bclibc single-point queries still use a 3-point PCHIP are marked ``xfail(strict=False)`` for
-the cythonized engines only, until the bclibc change lands.
+only remaining deviation (cythonized Euler vertical apex time) is marked ``xfail(strict=False)``.
 
 Run per engine, e.g. ``pytest tests/test_interpolation_spec.py --engine=euler_engine``.
 """
@@ -34,10 +33,9 @@ from py_ballisticcalc.unit import Angular, Distance, Velocity, Weight
 
 pytestmark = pytest.mark.engine
 
-BCLIBC_REASON = "bclibc single-point queries still use 3-point PCHIP; fixed by the bclibc C8b change"
-DENSE_REASON = (
-    "needs the newer bclibc/exts (repin): the pinned build narrows time_step to float32 (time rows off by ~1e-8 s) "
-    "and its adaptive/Euler dense steps differ from the Hermite rows"
+EULER_APEX_REASON = (
+    "repinned bclibc: cythonized Euler vertical apex time is 1.2e-6 s off the Python Euler value (TIME_TOL 1e-6); "
+    "cause not analysed"
 )
 
 # Python Euler reference values (per-step Hermite, from the raw step stream) for the vertical shot below.
@@ -81,7 +79,7 @@ def _python_counterpart(engine):
     }.get(_family(engine))
 
 
-def _xfail_cython(request, engine, families, reason=BCLIBC_REASON):
+def _xfail_cython(request, engine, families, reason):
     """Mark the running test as an expected failure for cythonized engines of the given families only."""
     if _is_cython(engine) and _family(engine) in families:
         request.applymarker(pytest.mark.xfail(strict=False, reason=reason))
@@ -116,13 +114,32 @@ def _xy(row):
 # --------------------------------------------------------------------------------------------------------
 
 
+def test_find_apex_first_step_apex_equals_python(loaded_engine_instance):
+    """C25: a shot whose apex lies inside the first step (0.5 m/s, 1 deg) still gets its apex, equal to Python's."""
+    engine = loaded_engine_instance
+    if _is_tiny(engine):
+        pytest.skip("tiny_bclibc: not part of this check")
+    dm = DragModel(0.31, TableG7, weight=Weight.Grain(175), diameter=Distance.Inch(0.308), length=Distance.Inch(1.24))
+    shot = Shot(
+        weapon=Weapon(sight_height=Distance.Meter(0.05)),
+        ammo=Ammo(dm, Velocity.MPS(0.5)),
+        relative_angle=Angular.Degree(1.0),
+    )
+    apex = _calc(engine).find_apex(shot)
+    t, h = _xy(apex)
+    assert t > 0.0
+    reference = _python_counterpart(engine)
+    if not _is_cython(engine) or reference is None:
+        return
+    t_p, h_p = _xy(_calc(reference).find_apex(shot))
+    assert t == pytest.approx(t_p, abs=1e-9), f"apex time {t:.12f} vs Python {t_p:.12f}"
+    assert h == pytest.approx(h_p, abs=1e-9), f"apex height {h:.12e} vs Python {h_p:.12e}"
+
+
 @pytest.mark.parametrize("angle", [5.0, 45.0, 89.99])
-def test_find_apex_equals_filter_apex_row(loaded_engine_instance, request, angle):
+def test_find_apex_equals_filter_apex_row(loaded_engine_instance, angle):
     """``find_apex`` and the APEX row of the filter are the same Hermite event: same time, height, distance."""
     engine = loaded_engine_instance
-    # Observed: cythonized rk4/verlet agree; euler (apex step inconsistent with a Hermite) and the adaptive
-    # engines (wide steps) differ, because find_apex is a 3-point PCHIP there.
-    _xfail_cython(request, engine, {"Euler", "CashKarp", "DormandPrince", "Tsitouras"})
     shot = _shot(relative_angle=Angular.Degree(angle))
     calc = _calc(engine)
     apex = calc.find_apex(shot)
@@ -174,7 +191,7 @@ def test_vertical_apex_and_max_range_match_python_family(loaded_engine_instance,
         pytest.skip(
             "cross-engine comparison needs a cythonized engine with a pure-Python counterpart (euler/rk4/verlet)"
         )
-    _xfail_cython(request, engine, {"Euler"})
+    _xfail_cython(request, engine, {"Euler"}, EULER_APEX_REASON)
     shot = _shot(relative_angle=Angular.Degree(89.99))
     t_c, h_c = _xy(_calc(engine).find_apex(shot))
     t_p, h_p = _xy(_calc(ref_cls).find_apex(shot))
@@ -206,8 +223,6 @@ def _wide_step_engine(engine):
 def test_dense_get_at_equals_hermite_row(loaded_engine_instance, request, key, target):
     """With dense output, ``HitResult.get_at`` returns the per-step Hermite row, not an interpolation of sparse rows."""
     engine = loaded_engine_instance
-    # Cython: HitResult.get_at calls the native dense get_at (C++ Hermite of the step).
-    _xfail_cython(request, engine, {"Euler", "RK4", "Verlet", *ADAPTIVE}, DENSE_REASON)
     if _family(engine) == "SciPy":
         request.applymarker(
             pytest.mark.xfail(
@@ -249,7 +264,6 @@ def test_dense_get_at_every_attribute_equals_hermite_row(loaded_engine_instance,
     then ``get_at`` has to find that same row from the value alone.
     """
     engine = loaded_engine_instance
-    _xfail_cython(request, engine, {"Euler", "RK4", "Verlet", *ADAPTIVE}, DENSE_REASON)
     if _family(engine) == "SciPy":
         request.applymarker(
             pytest.mark.xfail(strict=False, reason="scipy engine keeps no accepted-step list; no dense get_at")
@@ -309,7 +323,7 @@ def test_dense_get_at_matches_manual_hermite_step(loaded_engine_instance):
 # --------------------------------------------------------------------------------------------------------
 
 
-def test_euler_vertical_apex_is_the_hermite_value(loaded_engine_instance, request):
+def test_euler_vertical_apex_is_the_hermite_value(loaded_engine_instance):
     """Euler's apex on the vertical shot is the per-step Hermite value (23.790193 s, 12861.556 ft).
 
     Euler's own step (p1 = p0 + v1*dt) is inconsistent with a (position, velocity) Hermite, so the apex
@@ -318,7 +332,6 @@ def test_euler_vertical_apex_is_the_hermite_value(loaded_engine_instance, reques
     engine = loaded_engine_instance
     if _family(engine) != "Euler":
         pytest.skip("Euler-specific")
-    _xfail_cython(request, engine, {"Euler"})
     apex = _calc(engine).find_apex(_shot(relative_angle=Angular.Degree(89.99)))
     t, h = _xy(apex)
     msg = f"apex t={t:.6f} h={h:.5f} (Hermite {EULER_VERTICAL_APEX_TIME}, {EULER_VERTICAL_APEX_HEIGHT})"

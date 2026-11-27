@@ -13,7 +13,9 @@ def test_base_traj_interpolate_time_linear_position():
     assert res.time == pytest.approx(1.5)
     assert res.position.x == pytest.approx(15.0)
     assert res.position.y == 0.0 and res.position.z == 0.0
-    assert res.velocity.x == 0.0 and res.velocity.y == 0.0 and res.velocity.z == 0.0
+    # bclibc 58c3172 (C8b): the point is on the cubic Hermite of the step (p1, p2) and its velocity is the derivative of the
+    # position polynomial (here zero end slopes: 1.5 * 10 / 1 = 15), not an interpolation of the given velocities.
+    assert res.velocity.x == pytest.approx(15.0) and res.velocity.y == 0.0 and res.velocity.z == 0.0
     assert res.mach > 0.60 and res.mach < 0.70
 
 

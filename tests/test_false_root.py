@@ -23,7 +23,6 @@ from py_ballisticcalc.munition import Ammo, Weapon
 from py_ballisticcalc.shot import Shot
 from py_ballisticcalc.trajectory_data import TrajFlag
 from py_ballisticcalc.unit import *
-from tests.repin_xfail import is_cythonized, xfail_until_c18_repin
 
 pytestmark = pytest.mark.engine
 
@@ -70,11 +69,10 @@ CROSS_WIND = ((5.0, 90.0, 3000.0),)
 @pytest.mark.parametrize("method", ("find_zero_angle", "find_zero_point"))
 def test_lofted_zero_at_a_discontinuity_raises(request, loaded_engine_instance, method):
     """The only sign change of the lofted bracket is the jump: ZeroFindingError, not an angle that misses by 1300 ft."""
-    if _kind(loaded_engine_instance) == "other" and not is_cythonized(loaded_engine_instance):
+    if _kind(loaded_engine_instance) == "other" and not (getattr(loaded_engine_instance, "__module__", "") or "").startswith(("py_ballisticcalc_exts", "tiny_bclibc")):
         pytest.skip("unknown engine")
     if getattr(loaded_engine_instance, "__module__", "").startswith("tiny_bclibc"):
         pytest.skip("tiny_bclibc has no lofted search")
-    xfail_until_c18_repin(request, loaded_engine_instance)
     engine = loaded_engine_instance({})
     with pytest.raises(ZeroFindingError, match="No continuous lofted zero") as excinfo:
         getattr(engine, method)(_make_shot(TAIL_WIND), Distance.Meter(100), lofted=True)

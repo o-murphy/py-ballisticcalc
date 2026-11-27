@@ -17,7 +17,6 @@ from py_ballisticcalc.munition import Ammo, Weapon
 from py_ballisticcalc.shot import Shot
 from py_ballisticcalc.trajectory_data import TrajFlag
 from py_ballisticcalc.unit import *
-from tests.repin_xfail import xfail_until_cant_repin
 
 pytestmark = pytest.mark.engine
 
@@ -148,7 +147,6 @@ def test_close_target_zero_with_cant(request, loaded_engine_instance, distance):
     the target is `atan2(h cos(cant), hypot(D, h sin(cant)))` at a horizontal look angle (`test_cant_exact.py` checks it
     to 1e-12 and by firing).
     """
-    xfail_until_cant_repin(request, loaded_engine_instance)
     sight_height = 0.1
     _skip_slow_unless_shortcut(loaded_engine_instance, distance, sight_height * math.cos(math.radians(30)))
     shot = _make_shot(sight_height, 800.0)

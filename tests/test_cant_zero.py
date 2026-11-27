@@ -16,7 +16,6 @@ from py_ballisticcalc.munition import Ammo, Weapon
 from py_ballisticcalc.shot import Shot
 from py_ballisticcalc.trajectory_data import TrajFlag
 from py_ballisticcalc.unit import *
-from tests.repin_xfail import xfail_until_cant_repin
 
 pytestmark = pytest.mark.engine
 
@@ -53,8 +52,6 @@ def test_barrel_elevation_setter_rejects_cant_of_90_degrees():
 @pytest.mark.parametrize("cant_deg", CANTS)
 @pytest.mark.parametrize("look_deg", LOOKS)
 def test_set_weapon_zero_fires_the_solved_elevation(request, loaded_engine_instance, cant_deg, look_deg):
-    if cant_deg:
-        xfail_until_cant_repin(request, loaded_engine_instance)
     calc = Calculator(engine=loaded_engine_instance)
     shot = _make_shot(cant_deg, look_deg)
     distance = Distance.Yard(100)
@@ -74,7 +71,6 @@ def test_set_weapon_zero_fires_the_solved_elevation(request, loaded_engine_insta
 @pytest.mark.parametrize("cant_deg", (10.0, 45.0))
 def test_aim_hold_hits_target(request, loaded_engine_instance, cant_deg):
     """The hold of `aim` is the `relative_angle` that fires the solved elevation."""
-    xfail_until_cant_repin(request, loaded_engine_instance)
     calc = Calculator(engine=loaded_engine_instance)
     shot = _make_shot(cant_deg, 5.0)
     calc.set_weapon_zero(shot, Distance.Yard(100))

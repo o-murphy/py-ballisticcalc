@@ -32,7 +32,7 @@ APEX_X_FT = VX * VY / G
 
 # Flight vs the closed-form parabola, ft: exact integrators vs the finite-step Euler/Verlet limit.
 # The adaptive engines (CashKarp, DormandPrince, Tsitouras, SciPy) and the native tiny_bclibc engine are held to the
-# same 1e-3 ft as RK4 (the bclibc C++ vacuum test uses 1e-3 ft for rk4/verlet/adaptive); the pre-repin dry run passed
+# same 1e-3 ft as RK4 (the bclibc C++ vacuum test uses 1e-3 ft for rk4/verlet/adaptive); the dry run passed
 # every one of these tests on all of them at that tolerance.
 TOL_FT = {
     "RK4": 1e-3,
@@ -47,8 +47,8 @@ TOL_FT = {
 
 
 def _skip_if_native(engine):
-    if engine.__module__.startswith(("py_ballisticcalc_exts", "tiny_bclibc")):
-        pytest.skip("bclibc vacuum fix pending repin (the native core hangs on a vacuum)")
+    if engine.__module__.startswith("tiny_bclibc"):
+        pytest.skip("tiny_bclibc vacuum is not covered here (revisit separately)")
 
 
 def _family(engine) -> str:

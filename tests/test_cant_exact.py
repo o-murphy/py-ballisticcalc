@@ -17,7 +17,6 @@ from py_ballisticcalc.munition import Ammo, Weapon
 from py_ballisticcalc.shot import Shot, ShotProps
 from py_ballisticcalc.trajectory_data import TrajFlag
 from py_ballisticcalc.unit import *
-from tests.repin_xfail import xfail_until_cant_repin
 
 # SciPy's adaptive integrator is CPU/platform dependent: its height bound follows test_false_root.py (5e-2 m; the lofted
 # cant zero misses by 2.5-5.9 mm on Linux/Windows and about 15 mm with dop853 on macOS).
@@ -151,7 +150,6 @@ def test_lofted_zero_with_cant_hits_in_height(request, loaded_engine_instance, l
     kind = _kind(loaded_engine_instance)
     if kind not in ("rk4", "scipy"):
         pytest.skip("lofted zero is slow; checked on RK4 and SciPy")
-    xfail_until_cant_repin(request, loaded_engine_instance)
     shot = _make_shot(10.0, look_deg, Distance.Meter(0.05))
     config = BaseEngineConfigDict(cMinimumVelocity=0.0, cMaximumDrop=-60000.0, cMinimumAltitude=-60000.0)
     calc = Calculator(config=config, engine=loaded_engine_instance)
@@ -170,9 +168,16 @@ def test_lofted_zero_with_cant_hits_in_height(request, loaded_engine_instance, l
 @pytest.mark.parametrize("distance_m", (0.05, 0.1, 0.2))
 def test_close_target_zero_with_cant(request, loaded_engine_instance, cant_deg, sight_m, look_deg, distance_m):
     """The very close shot shortcut follows the exact model: the bore is offset sideways by `h sin(cant)`."""
-    xfail_until_cant_repin(request, loaded_engine_instance)
     h, d, look, cant = sight_m, distance_m, math.radians(look_deg), math.radians(cant_deg)
     shortcut = d < 2.0 * h * math.cos(cant)  # the calc step (cStepMultiplier, 0.0025 ft) is smaller
+    if (
+        loaded_engine_instance.__module__.startswith("py_ballisticcalc_exts")
+        and "Euler" not in loaded_engine_instance.__name__
+        and (sight_m, look_deg, cant_deg, distance_m) in ((0.05, 0.0, 60.0, 0.1), (0.05, 0.0, 60.0, 0.2))
+    ):
+        # Cythonized RK4/Verlet/adaptive: max range of this shot is ~1e-12 ft, so OutOfRangeError.  The pure-Python RK4
+        # (checked by hand, same shot) raises the same error; cythonized Euler and pure-Python Euler return an elevation.
+        request.applymarker(pytest.mark.xfail(strict=False, reason="searched zero of a 60 deg cant at 0.05 m sight: no flight reaches 0.1/0.2 m (RK4-type engines)"))
     if not shortcut and _kind(loaded_engine_instance) in ("rk4", "euler", "velocity_verlet"):
         pytest.skip("searched zero is too slow on pure-Python engines; the shortcut cases cover the change")
     shot = _make_shot(cant_deg, look_deg, Distance.Meter(sight_m))
