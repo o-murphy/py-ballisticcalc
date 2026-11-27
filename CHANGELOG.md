@@ -17,6 +17,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   extras (`find_apex`, `find_max_range`, `integrate_raw_at`) with compatible signatures; they are not in `EngineProtocol` yet.
 
 ### Changed
+- **`BaseTrajData.interpolate` uses the Hermite step convention of the engines (and now matches the cythonized core).** It interpolated every
+  field from the three points (3-point PCHIP, or linear). The three points are consecutive states of an integration, so `(p0, p1)` and
+  `(p1, p2)` are integration steps: the point is now located on the cubic Hermite interpolant of the step that brackets the key value
+  (`(p0, p1)` first; positions from the end positions with the end velocities as slopes, velocity = the derivative of the position polynomial,
+  Mach linear, the key field set to the query), as in the rows of the trajectory filter, `find_apex` and `integrate_at`, and as bclibc's
+  `BaseTrajData.interpolate` since its commit 58c3172. The 3-point interpolation is only the fallback when no step brackets the value (or the
+  step does not run forward in time); `method='pchip'|'linear'` selects that fallback only and has no effect on a bracketed value. User-visible:
+  the interpolated velocity is no longer an interpolation of the given velocities, e.g. for `(t, x, v) = (0, 0, 0), (1, 10, 0), (2, 20, 0)` the
+  point at `time=1.5` has velocity 15 (the derivative of the position polynomial) instead of 0. `CythonizedBaseTrajData.interpolate` and the
+  Python method agree to 1e-12 relative (`tests/test_interpolation_spec.py`).
 - **The m/s to ft/s conversion is exact (1/0.3048).** `Velocity.FPS` used the rounded factor 3.2808399 (`Velocity.MPS(1) >> Velocity.FPS`,
   the speed of sound `Atmo.machK(t) * _MPS_TO_FPS`, `TrajectoryData` velocities); it is now derived from the exact foot, 0.3048 m, so
   `1 m/s = 3.280839895013123 ft/s`, as `Distance.Foot` already was. The values change by up to 1.5e-9 relative (speed of sound,

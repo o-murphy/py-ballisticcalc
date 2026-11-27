@@ -333,3 +333,91 @@ def test_euler_vertical_apex_inaccuracy_is_bounded(loaded_engine_instance):
         pytest.skip("Euler-specific")
     apex = _calc(engine).find_apex(_shot(relative_angle=Angular.Degree(89.99)))
     assert abs(apex.time - EULER_FINE_STEP_LIMIT_TIME) < 0.07
+
+
+# --------------------------------------------------------------------------------------------------------
+# (5) BaseTrajData.interpolate: the cythonized core and the pure-Python static method are the same function
+# --------------------------------------------------------------------------------------------------------
+
+_INTERP_KEYS = ("time", "position.x", "position.y", "position.z", "velocity.x", "velocity.y", "velocity.z", "mach")
+# (t, px, py, pz, vx, vy, vz, mach) triples: zero and non-zero given velocities, a ballistic arc, an apex inside the
+# triple, decreasing key steps, a non-monotone key, and a time-reversed triple (no forward step: PCHIP fallback).
+_INTERP_TRIPLES = {
+    "zero_v": [(0, 0, 0, 0, 0, 0, 0, 0.5), (1, 10, 0, 0, 0, 0, 0, 0.6), (2, 20, 0, 0, 0, 0, 0, 0.7)],
+    "v567": [(0, 0, 0, 0, 5, 0, 0, 0.5), (1, 10, 0, 0, 6, 0, 0, 0.6), (2, 20, 0, 0, 7, 0, 0, 0.7)],
+    "arc": [
+        (0.0, 0, -0.1, 0, 2600, 300, 1, 2.4),
+        (0.05, 128, 14.5, 0.05, 2570, 285, 1.1, 2.39),
+        (0.1, 255, 28, 0.11, 2541, 270, 1.2, 2.37),
+    ],
+    "apex": [
+        (0.0, 0, 0, 0, 2600, 200, 0, 2.4),
+        (0.1, 255, 18, 0.1, 2570, -5, 0.5, 2.39),
+        (0.2, 510, 10, 0.4, 2540, -210, 1, 2.37),
+    ],
+    "decel": [
+        (0.0, 0, 0, 0, 3000, 0, 0, 2.7),
+        (0.5, 1400, -3, 0, 2700, -60, 0, 2.5),
+        (1.0, 2650, -14, 0, 2450, -130, 0, 2.3),
+    ],
+    "neg_x": [(0, 100, 0, 0, -50, 0, 0, 0.5), (1, 50, 1, 0, -45, 2, 0, 0.6), (2, 10, 3, 0, -30, 4, 0, 0.7)],
+    "nonmono": [(0, 0, 0, 0, 100, 50, 0, 0.5), (1, 100, 30, 0, 100, -5, 0, 0.6), (2, 200, 10, 0, 100, -60, 0, 0.7)],
+    "reversed_t": [(2, 20, 0, 0, 7, 0, 0, 0.7), (1, 10, 0, 0, 6, 0, 0, 0.6), (0, 0, 0, 0, 5, 0, 0, 0.5)],
+}
+_INTERP_FIELDS = lambda d: (
+    d.time,
+    d.position.x,
+    d.position.y,
+    d.position.z,
+    d.velocity.x,
+    d.velocity.y,
+    d.velocity.z,
+    d.mach,
+)
+_INTERP_ATTR = {
+    "time": 0,
+    "position.x": 1,
+    "position.y": 2,
+    "position.z": 3,
+    "velocity.x": 4,
+    "velocity.y": 5,
+    "velocity.z": 6,
+    "mach": 7,
+}
+
+
+def _interp_queries(triple, key):
+    a, b, c = (p[_INTERP_ATTR[key]] for p in triple)
+    lo, hi = min(a, b, c), max(a, b, c)
+    pad = 0.3 * (hi - lo) + 0.1
+    # inside the first step, inside the second, on the three points, outside on both sides (fallback)
+    return [a + 0.37 * (b - a), b + 0.61 * (c - b), a, b, c, lo - pad, hi + pad]
+
+
+@pytest.mark.parametrize("key", _INTERP_KEYS)
+@pytest.mark.parametrize("name", list(_INTERP_TRIPLES))
+def test_base_traj_interpolate_matches_cythonized_core(loaded_engine_instance, name, key):
+    """``BaseTrajData.interpolate`` (Python) == ``CythonizedBaseTrajData.interpolate`` (bclibc) on every field.
+
+    Same convention (Hermite of the bracketing step, PCHIP fallback), so the two agree to rounding (1e-12 relative)."""
+    if not _is_cython(loaded_engine_instance):
+        pytest.skip("compares the pure-Python static method with the cythonized core: needs a cythonized engine")
+    pytest.importorskip("py_ballisticcalc_exts._test_helpers")
+    from py_ballisticcalc_exts._test_helpers import make_base_traj_data
+    from py_ballisticcalc_exts.traj_data import CythonizedBaseTrajData
+
+    from py_ballisticcalc.vector import Vector
+
+    triple = _INTERP_TRIPLES[name]
+    py_pts = [BaseTrajData(p[0], Vector(*p[1:4]), Vector(*p[4:7]), p[7]) for p in triple]
+    cy_pts = [make_base_traj_data(*p) for p in triple]
+    for q in _interp_queries(triple, key):
+        try:
+            cy = _INTERP_FIELDS(CythonizedBaseTrajData.interpolate(key, q, *cy_pts))
+        except ZeroDivisionError:
+            with pytest.raises(ZeroDivisionError):
+                BaseTrajData.interpolate(key, q, *py_pts)  # type: ignore[arg-type]
+            continue
+        py = _INTERP_FIELDS(BaseTrajData.interpolate(key, q, *py_pts))  # type: ignore[arg-type]
+        for field, (c, p) in zip(("time", "px", "py", "pz", "vx", "vy", "vz", "mach"), zip(cy, py)):
+            assert p == pytest.approx(c, rel=1e-12, abs=1e-12), f"{name} {key}={q}: {field} cython {c!r} python {p!r}"
