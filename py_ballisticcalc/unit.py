@@ -1390,7 +1390,7 @@ class Velocity(GenericDimension):
     _conversion_factors: ClassVar[Mapping[Unit, float]] = {
         Unit.MPS: 1.0,
         Unit.KMH: 1.0 / 3.6,
-        Unit.FPS: 1.0 / 3.2808399,
+        Unit.FPS: 0.3048,  # exact: 1 ft = 0.3048 m (as Distance.Foot)
         Unit.MPH: 1.0 / 2.23693629,
         Unit.KT: 1.0 / 1.94384449,
     }
@@ -1398,7 +1398,7 @@ class Velocity(GenericDimension):
     @property
     def _fps(self) -> Number:
         """Shortcut for `>> Velocity.FPS`."""
-        return self._value * 3.2808399
+        return self._value / 0.3048
 
     # Velocity.* unit aliases
     MPS: Final[Unit] = Unit.MPS

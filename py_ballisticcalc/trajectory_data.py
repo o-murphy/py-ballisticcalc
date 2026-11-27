@@ -626,7 +626,7 @@ class TrajectoryData(NamedTuple):
     @staticmethod
     def _new_fps(v: float):
         d = object.__new__(Velocity)
-        d._value = v / 3.2808399
+        d._value = v * 0.3048  # ft/s to m/s, exact foot
         d._defined_units = Unit.FPS
         return d
 

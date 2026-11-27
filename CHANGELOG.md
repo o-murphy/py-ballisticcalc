@@ -17,6 +17,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   extras (`find_apex`, `find_max_range`, `integrate_raw_at`) with compatible signatures; they are not in `EngineProtocol` yet.
 
 ### Changed
+- **The m/s to ft/s conversion is exact (1/0.3048).** `Velocity.FPS` used the rounded factor 3.2808399 (`Velocity.MPS(1) >> Velocity.FPS`,
+  the speed of sound `Atmo.machK(t) * _MPS_TO_FPS`, `TrajectoryData` velocities); it is now derived from the exact foot, 0.3048 m, so
+  `1 m/s = 3.280839895013123 ft/s`, as `Distance.Foot` already was. The values change by up to 1.5e-9 relative (speed of sound,
+  velocities, hence mach numbers). This aligns the pure-Python engines with bclibc (3.280839895, within 4e-12 of the exact value); the
+  cythonized and pure-Python engines now agree on the speed of sound to rounding.
 - **Cant is the exact model (C37): lofted zeros with a cant now hit.** `Shot` pitches the barrel by `r = zero_elevation +
   relative_angle` in the sight plane, which is rotated about the line of sight by the cant. In the frame of the line of sight
   (x forward, y up, z right) the barrel points along `(cos r, sin r cos(cant), sin r sin(cant))`; composed with the look angle `L`,
