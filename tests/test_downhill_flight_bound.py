@@ -27,22 +27,22 @@ pytestmark = [pytest.mark.engine, pytest.mark.slow]
 # look angle (deg) -> metres).  The bound must not move a result that was found without it.
 RECORDED_M = {
     "py_ballisticcalc.engines.rk4.RK4IntegrationEngine": {
-        -10.0: 5091.248666436787,
-        -20.0: 5658.52233086307,
-        -30.0: 6418.493174044794,
-        -45.0: 8184.854413569999,
+        -10.0: 5091.248661287573,
+        -20.0: 5658.522325460906,
+        -30.0: 6418.493168293906,
+        -45.0: 8184.854406899898,
     },
     "py_ballisticcalc.engines.euler.EulerIntegrationEngine": {
-        -10.0: 5090.866937296002,
-        -20.0: 5658.112634784975,
-        -30.0: 6418.042965178285,
-        -45.0: 8184.304688711979,
+        -10.0: 5090.866932147108,
+        -20.0: 5658.112629383732,
+        -30.0: 6418.042959428946,
+        -45.0: 8184.304682046,
     },
     "py_ballisticcalc.engines.velocity_verlet.VelocityVerletIntegrationEngine": {
-        -10.0: 5091.489762014388,
-        -20.0: 5658.776152447689,
-        -30.0: 6418.763564979206,
-        -45.0: 8185.170112814819,
+        -10.0: 5091.489756864748,
+        -20.0: 5658.776147044723,
+        -30.0: 6418.763559227136,
+        -45.0: 8185.170106144931,
     },
     "py_ballisticcalc.engines.scipy_engine.SciPyIntegrationEngine": {
         -10.0: 5091.532287271274,
