@@ -36,9 +36,7 @@ from py_ballisticcalc.unit import Angular, Distance, Velocity, Weight
 pytestmark = pytest.mark.engine
 
 KEYS = tuple(RAW_KEY_GETTERS)
-# Still differs on the repinned core (8c0b16b): cython Euler/RK4/Verlet cross `mach` ~2e-6 s / 1.2e-3 ft away from the Python
-# crossing (tolerance 1e-7 relative); the adaptive engines agree.  Cause not analysed.
-MACH_REASON = "repinned bclibc: the 'mach' single-point crossing differs from Python by ~1e-3 ft (cause not analysed)"
+
 
 def _is_cython(engine) -> bool:
     return engine.__module__.startswith("py_ballisticcalc_exts")
@@ -322,13 +320,11 @@ PYTHON_COUNTERPART = {
 
 
 @pytest.mark.parametrize("key", KEYS)
-def test_cython_matches_python_engine(loaded_engine_instance, request, key):
+def test_cython_matches_python_engine(loaded_engine_instance, key):
     engine = loaded_engine_instance
     counterpart = PYTHON_COUNTERPART.get(_family(engine))
     if not _is_cython(engine) or counterpart is None:
         pytest.skip("parity of a cythonized engine with its pure-Python counterpart")
-    if key == "mach" and _family(engine) in ("Euler", "RK4", "Verlet"):
-        request.applymarker(pytest.mark.xfail(strict=False, reason=MACH_REASON))
     shot = _shot()
     target = _targets(_dense_points(counterpart, shot))[key]
     got = _raw(engine({}).integrate_raw_at(shot, key, target)[0])

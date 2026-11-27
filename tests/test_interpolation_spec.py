@@ -6,8 +6,7 @@ per-step cubic Hermite built from the two end states (positions with velocity-de
 PCHIP of trajectory data is only a fallback when no step with derivatives brackets the query.  Euler is
 not special-cased: its known inaccuracy at an apex step is documented, not worked around.
 
-The pure-Python engines are the reference.  The native (cythonized) engines are expected to follow it; the
-only remaining deviation (cythonized Euler vertical apex time) is marked ``xfail(strict=False)``.
+The pure-Python engines are the reference.  The native (cythonized) engines follow it.
 
 Run per engine, e.g. ``pytest tests/test_interpolation_spec.py --engine=euler_engine``.
 """
@@ -33,14 +32,9 @@ from py_ballisticcalc.unit import Angular, Distance, Velocity, Weight
 
 pytestmark = pytest.mark.engine
 
-EULER_APEX_REASON = (
-    "repinned bclibc: cythonized Euler vertical apex time is 1.2e-6 s off the Python Euler value (TIME_TOL 1e-6); "
-    "cause not analysed"
-)
-
 # Python Euler reference values (per-step Hermite, from the raw step stream) for the vertical shot below.
-EULER_VERTICAL_APEX_TIME = 23.790193  # s
-EULER_VERTICAL_APEX_HEIGHT = 12861.55643  # ft
+EULER_VERTICAL_APEX_TIME = 23.790195  # s
+EULER_VERTICAL_APEX_HEIGHT = 12861.55642  # ft
 EULER_FINE_STEP_LIMIT_TIME = 23.848012  # s, Euler with calc_step/64: the documented Euler inaccuracy is below 0.07 s
 
 # Tolerances (stated, not tuned): an event row from the same Hermite step must agree to float noise.
@@ -77,12 +71,6 @@ def _python_counterpart(engine):
         "RK4": RK4IntegrationEngine,
         "Verlet": VelocityVerletIntegrationEngine,
     }.get(_family(engine))
-
-
-def _xfail_cython(request, engine, families, reason):
-    """Mark the running test as an expected failure for cythonized engines of the given families only."""
-    if _is_cython(engine) and _family(engine) in families:
-        request.applymarker(pytest.mark.xfail(strict=False, reason=reason))
 
 
 def _shot(**kwargs) -> Shot:
@@ -183,7 +171,7 @@ def test_vertical_max_range_matches_own_apex_height(loaded_engine_instance):
     assert max_range == pytest.approx(apex_h, abs=tol), f"max_range {max_range:.6f} vs apex {apex_h:.6f}"
 
 
-def test_vertical_apex_and_max_range_match_python_family(loaded_engine_instance, request):
+def test_vertical_apex_and_max_range_match_python_family(loaded_engine_instance):
     """A cythonized engine agrees with the pure-Python engine of the same method on the vertical shot."""
     engine = loaded_engine_instance
     ref_cls = _python_counterpart(engine)
@@ -191,7 +179,6 @@ def test_vertical_apex_and_max_range_match_python_family(loaded_engine_instance,
         pytest.skip(
             "cross-engine comparison needs a cythonized engine with a pure-Python counterpart (euler/rk4/verlet)"
         )
-    _xfail_cython(request, engine, {"Euler"}, EULER_APEX_REASON)
     shot = _shot(relative_angle=Angular.Degree(89.99))
     t_c, h_c = _xy(_calc(engine).find_apex(shot))
     t_p, h_p = _xy(_calc(ref_cls).find_apex(shot))
@@ -324,7 +311,7 @@ def test_dense_get_at_matches_manual_hermite_step(loaded_engine_instance):
 
 
 def test_euler_vertical_apex_is_the_hermite_value(loaded_engine_instance):
-    """Euler's apex on the vertical shot is the per-step Hermite value (23.790193 s, 12861.556 ft).
+    """Euler's apex on the vertical shot is the per-step Hermite value (23.790195 s, 12861.556 ft).
 
     Euler's own step (p1 = p0 + v1*dt) is inconsistent with a (position, velocity) Hermite, so the apex
     time is early by up to ~0.06 s against the fine-step limit (23.848 s).  That is the documented
