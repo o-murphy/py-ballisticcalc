@@ -41,20 +41,21 @@ from abc import ABC, abstractmethod
 from collections.abc import Callable, Iterator, Sequence
 from dataclasses import asdict, dataclass
 from enum import Enum, auto
-from typing import Any, Concatenate, NamedTuple, ParamSpec, TypedDict, TypeVar
+from typing import Any, Concatenate, NamedTuple, NoReturn, ParamSpec, TypedDict, TypeVar
 
 from py_ballisticcalc.conditions import Wind
 from py_ballisticcalc.constants import cGravityImperial
-from py_ballisticcalc.exceptions import OutOfRangeError, SolverRuntimeError, ZeroFindingError
+from py_ballisticcalc.exceptions import InterceptionError, OutOfRangeError, SolverRuntimeError, ZeroFindingError
 from py_ballisticcalc.generics.engine import EngineProtocol
 from py_ballisticcalc.logger import logger
-from py_ballisticcalc.shot import Shot, ShotProps
+from py_ballisticcalc.shot import Shot, ShotProps, _exact_direction
 from py_ballisticcalc.trajectory_data import BaseTrajData, HitResult, TrajectoryData, TrajectoryStep, TrajFlag
 from py_ballisticcalc.unit import Angular, Distance
 from py_ballisticcalc.vector import Vector
 
 __all__ = (
     "DEFAULT_BASE_ENGINE_CONFIG",
+    "RAW_KEY_GETTERS",
     "BaseEngineConfig",
     "BaseEngineConfigDict",
     "BaseIntegrationEngine",
@@ -97,7 +98,9 @@ class BaseEngineConfig:
         cMinimumVelocity: Minimum velocity in fps to continue calculation.
                          Trajectory stops when velocity falls below this threshold.
                          Defaults to 50.0 fps.
-        cGravityConstant: Gravitational acceleration in ft/s².
+        cGravityConstant: Gravitational acceleration in ft/s², along the vertical axis (y up), so it MUST be
+                         a finite NEGATIVE number (gravity pulls down). Zero, positive, NaN and infinite values
+                         raise ValueError, when the config is created and whenever the field is assigned later.
                          Standard Earth gravity for ballistic calculations.
                          Defaults to -32.17405 ft/s².
         cStepMultiplier: Multiplier for engine's default integration step size.
@@ -124,6 +127,20 @@ class BaseEngineConfig:
     cGravityConstant: float = cGravityConstant
     cStepMultiplier: float = cStepMultiplier
 
+    def __setattr__(self, name: str, value: Any) -> None:
+        # Validates on construction and on every later assignment (the engines read the config at each call).
+        if name == "cGravityConstant":
+            try:
+                valid = math.isfinite(value) and value < 0
+            except TypeError:
+                valid = False
+            if not valid:
+                raise ValueError(
+                    f"cGravityConstant must be a finite negative number (ft/s^2, gravity pulls down along -y; "
+                    f"default {cGravityConstant}), got {value!r}"
+                )
+        super().__setattr__(name, value)
+
 
 #: Default configuration instance using standard ballistic calculation parameters
 DEFAULT_BASE_ENGINE_CONFIG: BaseEngineConfig = BaseEngineConfig()
@@ -147,7 +164,7 @@ class BaseEngineConfigDict(TypedDict, total=False):
         - cMinimumAltitude: Minimum altitude in feet to continue calculation.
         - cMaximumDrop: Maximum drop in feet from muzzle to continue.
         - cMinimumVelocity: Minimum velocity in fps to continue calculation.
-        - cGravityConstant: Gravitational acceleration in ft/s².
+        - cGravityConstant: Gravitational acceleration in ft/s²; must be finite and negative (ValueError otherwise).
         - cStepMultiplier: Integration step size multiplier.
 
     Examples:
@@ -307,6 +324,18 @@ class TrajectoryDataFilter:
         def add(data: BaseTrajData, flag: TrajFlag | int) -> None:
             rows.append((data, flag))
 
+        def emit_time_rows(until: float, exclusive: bool) -> None:
+            """Emit the time rows due up to *until* (strictly before it when *exclusive*) on the current clock."""
+            if self.time_step <= 0:
+                return
+            while self.time_of_last_record + self.time_step <= until:
+                record_time = self.time_of_last_record + self.time_step
+                if exclusive and not record_time < until:
+                    break
+                self.time_of_last_record = record_time
+                if record_time >= start.time:
+                    add(step.at_time(record_time), TrajFlag.RANGE)
+
         if self.range_step > 0:
             while self.next_record_distance + self.range_step <= end.position.x:
                 distance = self.next_record_distance + self.range_step
@@ -315,6 +344,9 @@ class TrajectoryDataFilter:
                     break
                 if distance >= start.position.x - self.EPSILON:
                     sample = step.at_x(distance)
+                    # RANGE restarts the time schedule from its own time, so the time rows due strictly before
+                    # it are emitted first (a wide step may hold both); same order as bclibc's emit_time_rows.
+                    emit_time_rows(sample.time, True)
                     add(sample, TrajFlag.RANGE)
                     # RANGE and TIME samples share one "last record" clock:
                     # a time schedule starts from the most recently emitted
@@ -322,11 +354,7 @@ class TrajectoryDataFilter:
                     self.time_of_last_record = sample.time
                 self.next_record_distance = distance
 
-        if self.time_step > 0:
-            while self.time_of_last_record + self.time_step <= end.time:
-                self.time_of_last_record += self.time_step
-                if self.time_of_last_record >= start.time:
-                    add(step.at_time(self.time_of_last_record), TrajFlag.RANGE)
+        emit_time_rows(end.time, False)
 
         if self.filter & TrajFlag.APEX and start.velocity.y > 0.0 >= end.velocity.y:
             add(step.at_value(lambda data: data.velocity.y, 0.0), TrajFlag.APEX)
@@ -355,6 +383,83 @@ class TrajectoryDataFilter:
             self.record_initial(data)
         else:
             self.record_step(self.prev_data, data)
+
+
+#: Keys of `BaseIntegrationEngine.integrate_raw_at` (the spelling of the Cython engines): the raw `BaseTrajData` field they read.
+#: Raw units: seconds, feet, feet per second; `mach` is the local speed of sound (fps), as in `BaseTrajData`.
+RAW_KEY_GETTERS: dict[str, Callable[[BaseTrajData], float]] = {
+    "time": lambda d: d.time,
+    "mach": lambda d: d.mach,
+    "position.x": lambda d: d.position.x,
+    "position.y": lambda d: d.position.y,
+    "position.z": lambda d: d.position.z,
+    "velocity.x": lambda d: d.velocity.x,
+    "velocity.y": lambda d: d.velocity.y,
+    "velocity.z": lambda d: d.velocity.z,
+}
+
+
+def _with_key_value(data: BaseTrajData, key_attribute: str, value: float) -> BaseTrajData:
+    """`data` with the key field set to exactly `value` (the root solve only converges the time)."""
+    if key_attribute == "time":
+        return data._replace(time=value)
+    if key_attribute == "mach":
+        return data._replace(mach=value)
+    top, component = key_attribute.split(".")
+    return data._replace(**{top: getattr(data, top)._replace(**{component: value})})
+
+
+class _SinglePointFound(Exception):
+    """Raised by `_SinglePointFilter` from inside an integrator's step loop to end it at the requested point."""
+
+    def __init__(self, data: BaseTrajData):
+        super().__init__("target point found")
+        self.data = data
+
+
+class _SinglePointFilter(TrajectoryDataFilter):
+    """Stands in for the `TrajectoryDataFilter` of an integration to find ONE point: the first step that brackets a key value.
+
+    The integrators hand every accepted step to `record_step`; this filter ends the integration by raising
+    `_SinglePointFound` (carrying the point) as soon as a step's end values bracket the target (ends included), so the
+    integrators' loops carry no extra work.  The point is located on the cubic Hermite of that step
+    (`TrajectoryStep`, the convention of the filter rows and `HitResult.get_at`); only a step that cannot be interpolated
+    (not increasing in time) falls back to the 3-point PCHIP over the step and the one before it.
+    This mirrors bclibc's `BCLIBC_SinglePointHandler::handle_step`.  `prev_data` is the last accepted point.
+    """
+
+    def __init__(self, *args: Any, key_attribute: str, target_value: float, **kwargs: Any):
+        super().__init__(*args, **kwargs)
+        self.key_attribute = key_attribute
+        self.target_value = target_value
+        self._get = RAW_KEY_GETTERS[key_attribute]
+        self._before: BaseTrajData | None = None
+
+    def record_initial(self, data: BaseTrajData) -> None:
+        """Remember the launch state; no row is recorded."""
+        self.prev_data = data
+
+    def record_step(self, start: BaseTrajData, end: BaseTrajData) -> None:
+        get, target = self._get, self.target_value
+        k0, k1 = get(start), get(end)
+        if (k0 <= target <= k1) or (k1 <= target <= k0):
+            raise _SinglePointFound(self._locate(start, end))
+        self._before = start
+        self.prev_data = end
+
+    def _locate(self, start: BaseTrajData, end: BaseTrajData) -> BaseTrajData:
+        key, target = self.key_attribute, self.target_value
+        try:
+            step = TrajectoryStep(start, end)
+        except ValueError:  # degenerate step
+            if self._before is not None:
+                try:
+                    return BaseTrajData.interpolate(key, target, self._before, start, end)  # type: ignore[arg-type]
+                except ZeroDivisionError:
+                    pass
+            return end
+        data = step.at_time(target) if key == "time" else step.at_value(self._get, target)
+        return _with_key_value(data, key, target)
 
 
 class _WindSock:
@@ -486,17 +591,31 @@ def with_max_drop_zero(
     return wrapper
 
 
-_DOWNHILL_FIRST_DROP_FT = 1e3
 _DOWNHILL_LAST_DROP_FT = 1e6
-"""Drop below the muzzle (feet) from which `_first_zero_down` follows a downhill shot, and where it gives up."""
+"""Drop below the muzzle (feet) down to which `_first_zero_down` follows a downhill shot."""
+_DOWNHILL_MAX_FLIGHT_TIME_S = 600.0
+"""Longest flight (s) `_first_zero_down` follows a downhill shot in search of its crossing of the line of sight (as in
+bclibc).  Realistic flights are under ~400 s; a probe that exceeds it reports "no crossing" instead of being integrated
+until the (lifted) drop limit, which for a steep line of sight takes minutes."""
+
+
+def reachable_elevation_limit_rad(props: ShotProps) -> float:
+    """Largest total barrel elevation (radians, in the vertical plane) the canted sight plane of `props` can reach.
+
+    With a cant the elevation is `sin E = R sin(r + phi)` (see `shot._pitch_from_elevation`), so only
+    `|E| <= asin(R)`, `R = hypot(sin L, cos L cos(cant))` (L the look angle), can be aimed; `ShotProps.set_aim` clamps the
+    rest to it.  Without a cant every elevation is reachable and `pi / 2` is returned.
+    """
+    if props.cant_sine == 0.0:
+        return math.pi / 2
+    return math.asin(
+        min(1.0, math.hypot(math.sin(props.look_angle_rad), math.cos(props.look_angle_rad) * props.cant_cosine))
+    )
 
 
 # pylint: disable=too-many-instance-attributes
 class BaseIntegrationEngine(ABC, EngineProtocol):
     """All calculations are done in imperial units (feet and fps)."""
-
-    _downhill_drop_ft: float = _DOWNHILL_FIRST_DROP_FT
-    """Drop (ft) from which `_first_zero_down` starts for a downhill shot; reset by each max-range search."""
 
     APEX_IS_MAX_RANGE_RADIANS: float = 0.0003  # Radians from vertical where the apex is max range
     ALLOWED_ZERO_ERROR_FEET: float = 1e-2  # Allowed range error (along sight line), in feet, for zero angle
@@ -535,13 +654,12 @@ class BaseIntegrationEngine(ABC, EngineProtocol):
 
         Returns:
             The maximum slant-range and the launch angle to reach it.
+            If no launch angle of the bracket crosses the line of sight (e.g., the bracket lies below the look angle,
+            it is degenerate, or the shot starts below `cMinimumAltitude`), the range is 0 ft and the angle is
+            meaningless.  `find_zero_angle` / `find_zero_point` then raise `OutOfRangeError` with a max_range of 0 ft.
 
-        Raises:
-            ValueError: If the angle bracket excludes the look_angle.
-        """
-        """
-        TODO: Make sure user hasn't restricted angle bracket to exclude the look_angle.
-            ... and check for weird situations, like backward-bending trajectories,
+        Note:
+            Does not check for weird situations, like backward-bending trajectories,
             where the max range occurs with launch angle less than the look angle.
         """
         props = self._init_trajectory(shot_info)
@@ -560,9 +678,7 @@ class BaseIntegrationEngine(ABC, EngineProtocol):
 
         Returns:
             The maximum slant range and the launch angle to reach it.
-
-        Raises:
-            ValueError: If the angle bracket excludes the look_angle.
+            0 ft if no launch angle of the bracket crosses the line of sight (the angle is then meaningless).
         """
         # region Virtually vertical shot
         if abs(props.look_angle_rad - math.radians(90)) < self.APEX_IS_MAX_RANGE_RADIANS:
@@ -571,18 +687,17 @@ class BaseIntegrationEngine(ABC, EngineProtocol):
         # endregion Virtually vertical shot
 
         t_calls = 0
-        self._downhill_drop_ft = _DOWNHILL_FIRST_DROP_FT  # see _first_zero_down
 
         def range_for_angle(angle_rad: float) -> float:
             """Return slant-distance minus slant-error (in feet) for given launch angle in radians."""
-            props.barrel_elevation_rad = angle_rad
+            props.set_aim(angle_rad)
             nonlocal t_calls
             t_calls += 1
             # logger.debug(f"range_for_angle call #{t_calls} for angle {math.degrees(angle_rad)} degrees")
             cross = self._first_zero_down(props)
             if cross is None:
                 warnings.warn(f"No ZERO_DOWN found for launch angle {angle_rad} rad.")
-                return -9e9
+                return 0.0  # No crossing counts as zero range (as in bclibc), not an internal sentinel.
             # Return value penalizes distance by slant height, which we want to be zero.
             return (cross.slant_distance >> Distance.Foot) - abs(cross.slant_height >> Distance.Foot)
 
@@ -590,6 +705,11 @@ class BaseIntegrationEngine(ABC, EngineProtocol):
         inv_phi = (math.sqrt(5) - 1) / 2  # 0.618...
         inv_phi_sq = inv_phi**2
         a, b = (math.radians(deg) for deg in angle_bracket_deg)
+        if props.cant_sine != 0.0:
+            # Elevations beyond the reachable limit are clamped by `set_aim` to the same state: probes there would tie
+            # (range equal), and the search would walk away from the true maximum.  Bracket the reachable ones only.
+            limit = reachable_elevation_limit_rad(props)
+            a, b = max(a, -limit), min(b, limit)
         h = b - a
         c = a + inv_phi_sq * h
         d = a + inv_phi * h
@@ -641,15 +761,20 @@ class BaseIntegrationEngine(ABC, EngineProtocol):
         when it falls below the muzzle, which is right for a level or uphill line of sight, as the shot crosses it above
         the muzzle.  A downhill line of sight lies *below* the muzzle: every shot was stopped before it got there, and the
         search found no crossing at any elevation but a near-vertical one.  For a downhill look angle the shot is
-        integrated again with a drop (and minimum altitude) limit raised by a factor of four until it crosses.  The first
-        crossing does not depend on the limit, so a level or uphill look angle is untouched (it is integrated once, as
-        before) and so are all results that did not hit the limit.
+        integrated with the drop (and minimum altitude) limit lifted to `_DOWNHILL_LAST_DROP_FT`, bounded to
+        `_DOWNHILL_MAX_FLIGHT_TIME_S` of flight, and stopped at the crossing.  The first crossing does not depend on the
+        limit, so a level or uphill look angle is untouched and so are all results that did not hit the limit.
 
         Args:
             props: The shot, with its barrel elevation set.
             **integrate_kwargs: Passed on to `_integrate` (the SciPy engine asks it to stop at the crossing).
         """
+        # The flight after the first crossing cannot change it: the integrators stop there (the SciPy engine is asked by its caller).
+        integrate_kwargs.setdefault("stop_at_zero_down", True)
         if props.look_angle_rad < 0.0:
+            # The limits are lifted below, so a flight time bound ends a shot that never crosses (the integrators stop at
+            # `max_flight_time_s` without an error; the SciPy engine has its own, shorter, `max_time`).
+            integrate_kwargs.setdefault("max_flight_time_s", _DOWNHILL_MAX_FLIGHT_TIME_S)
             # A shot that cannot rise above the line of sight never crosses it: the highest it gets above the line, in
             # vacuum (drag only lowers it), is its start height over the line plus (v sin(elevation - look))^2 / (2 g cos(look)).
             # (Without this a shot launched at or below the line would be integrated until the drop limit; wind is ignored.)
@@ -660,29 +785,75 @@ class BaseIntegrationEngine(ABC, EngineProtocol):
                 height += v_perp * v_perp / (2.0 * g * math.cos(props.look_angle_rad))
             if height <= 0.0:
                 return None
-        cross = self._integrate(props, 9e9, 9e9, filter_flags=TrajFlag.ZERO_DOWN, **integrate_kwargs).flag(
-            TrajFlag.ZERO_DOWN
-        )
-        if cross is not None or props.look_angle_rad >= 0.0:
-            return cross
+        if props.look_angle_rad >= 0.0:
+            return self._integrate(props, 9e9, 9e9, filter_flags=TrajFlag.ZERO_DOWN, **integrate_kwargs).flag(
+                TrajFlag.ZERO_DOWN
+            )
+        # Downhill: integrate once with the drop and minimum-altitude limits lifted.  The flight stops at the crossing, so
+        # a shot that crosses costs no more than it needs, and the flight time bound ends one that never does.
         restore_drop, restore_altitude = self._config.cMaximumDrop, self._config.cMinimumAltitude
         try:
-            # Start from the drop that served the previous probe of this search (the crossings of nearby elevations lie at
-            # similar depths), not from the bottom for every elevation.
-            drop_ft = self._downhill_drop_ft
-            while cross is None and drop_ft <= _DOWNHILL_LAST_DROP_FT:
-                self._config.cMaximumDrop = drop_ft
-                self._config.cMinimumAltitude = min(restore_altitude, props.alt0_ft - drop_ft)
-                cross = self._integrate(props, 9e9, 9e9, filter_flags=TrajFlag.ZERO_DOWN, **integrate_kwargs).flag(
-                    TrajFlag.ZERO_DOWN
-                )
-                if cross is None:
-                    drop_ft *= 4.0
-            if cross is not None:
-                self._downhill_drop_ft = drop_ft
+            self._config.cMaximumDrop = _DOWNHILL_LAST_DROP_FT
+            self._config.cMinimumAltitude = min(restore_altitude, props.alt0_ft - _DOWNHILL_LAST_DROP_FT)
+            return self._integrate(props, 9e9, 9e9, filter_flags=TrajFlag.ZERO_DOWN, **integrate_kwargs).flag(
+                TrajFlag.ZERO_DOWN
+            )
         finally:
             self._config.cMaximumDrop, self._config.cMinimumAltitude = restore_drop, restore_altitude
-        return cross
+
+    def integrate_raw_at(
+        self, shot_info: Shot, key_attribute: str, target_value: float
+    ) -> tuple[BaseTrajData, TrajectoryData]:
+        """Integrate the trajectory until a key attribute reaches a target value; return the point where it does.
+
+        Same API as `integrate_raw_at` of the cythonized engines (which wrap bclibc's `integrate_at`).  The shot is
+        integrated up to the first accepted step whose end values bracket the target (ends included), then the crossing
+        is located on the cubic Hermite interpolant of that step (end positions with the end velocities as slopes; velocity
+        is its derivative, `mach` is linear), the convention of the filter rows and `HitResult.get_at`.  A crossing inside
+        the first step is found, and a target equal to the launch value (time 0, `position.x` 0) returns the launch state.
+        The first crossing is the first step that brackets, so for a key that is not monotone (`position.y`, `velocity.y`,
+        `position.z`, ...) it is the first one in flight, e.g. the rising crossing of a height.
+
+        Args:
+            shot_info: The shot information.
+            key_attribute: The raw field to track: 'time', 'mach', 'position.x', 'position.y', 'position.z',
+                'velocity.x', 'velocity.y' or 'velocity.z'.  Raw units (seconds, feet, feet per second): `mach` is the
+                speed of sound at the point (fps), as in `BaseTrajData`, not a Mach number.
+            target_value: The value the key must reach.
+
+        Returns:
+            The interpolated raw point and the same point as `TrajectoryData`.
+
+        Raises:
+            InterceptionError: If the integration ends (range, minimum velocity, maximum drop or altitude) before the key
+                reaches the value.  `last_data` is the last integrated point as `(BaseTrajData, TrajectoryData)`.
+            AttributeError: If `key_attribute` is not one of the keys above.
+        """
+        if key_attribute not in RAW_KEY_GETTERS:
+            raise AttributeError(f"Cannot interpolate on '{key_attribute}'")
+        props = self._init_trajectory(shot_info)
+        filters: list[_SinglePointFilter] = []
+
+        def make_filter(*args: Any, **kwargs: Any) -> _SinglePointFilter:
+            filters.append(_SinglePointFilter(*args, key_attribute=key_attribute, target_value=target_value, **kwargs))
+            return filters[-1]
+
+        try:
+            self._integrate(props, 9e9, 9e9, filter_flags=TrajFlag.NONE, filter_factory=make_filter)
+        except _SinglePointFound as found:
+            return found.data, TrajectoryData.from_base_data(props, found.data)
+        if not filters:
+            raise NotImplementedError(f"{type(self).__name__}._integrate does not support the 'filter_factory' hook")
+        return self._raise_not_intercepted(props, filters[0].prev_data)
+
+    @staticmethod
+    def _raise_not_intercepted(props: ShotProps, last: BaseTrajData | None) -> NoReturn:
+        """Raise the `InterceptionError` of a target that was not reached, carrying the last integrated point."""
+        if last is None:
+            raise SolverRuntimeError("Integration produced no trajectory data")
+        raise InterceptionError(
+            "Intercept point not found for target key and value", (last, TrajectoryData.from_base_data(props, last))
+        )
 
     def find_apex(self, shot_info: Shot) -> TrajectoryData:
         """Find the apex of the trajectory.
@@ -748,6 +919,21 @@ class BaseIntegrationEngine(ABC, EngineProtocol):
             # line from the bore to the target on the line of sight rises by `target_y_ft - start_height_ft`.
             # (Adding it, as this once did, points the bore away from the line of sight for a sight above the bore
             # and misses the line of sight by twice the sight height.)
+            if props.cant_sine != 0.0:
+                # With a cant the bore is also offset sideways by `sight height * sin(cant)`, so the straight line to
+                # the target is not in the vertical plane.  The shot of the exact canted frame (see `Shot`) that
+                # crosses the line of sight at the target is pitched in its sight plane by
+                # `r = atan2(h cos L, D + h cos(cant) sin L)` (h the sight height, D the slant distance, L the look
+                # angle); the angle returned is the elevation of that barrel.  (Without a cant this is the
+                # `atan2` below.)  A very high sight on a steep cant can need a pitch whose elevation cannot be aimed back
+                # (`Shot.barrel_elevation` setter): the call still answers with that elevation.
+                h_ft = props.sight_height_ft
+                pitch = math.atan2(
+                    h_ft * math.cos(props.look_angle_rad),
+                    slant_range_ft + h_ft * props.cant_cosine * math.sin(props.look_angle_rad),
+                )
+                elevation, _ = _exact_direction(props.look_angle_rad, props.cant_cosine, props.cant_sine, pitch)
+                return ZeroFindingProps(_ZeroCalcStatus.DONE, look_angle_rad=elevation)
             return ZeroFindingProps(
                 _ZeroCalcStatus.DONE, look_angle_rad=math.atan2(target_y_ft - start_height_ft, target_x_ft)
             )
@@ -771,6 +957,29 @@ class BaseIntegrationEngine(ABC, EngineProtocol):
             distance: Slant distance to the target.
             lofted: If True, find the higher angle that hits the zero point.
 
+
+        Note:
+            - A zero distance shorter than 0.01 ft (`ALLOWED_ZERO_ERROR_FEET`; the threshold is in feet whatever the
+              units of `distance`) is not aimed: the look angle is returned, which misses the line of sight by the
+              sight height, because the zero cannot be measured that close.
+            - A target closer than `2 * max(|sight height * cos(cant)|, calc step)` (in feet) is solved geometrically:
+              the straight line from the bore to the target on the line of sight, ignoring gravity and drag.
+            - A negative distance is not supported (aim backwards with the look angle): it raises `ZeroFindingError`
+              (unless it is that close, see above).
+            - The miss at the target is not continuous for a lofted shot near the vertical (a shot that falls short and one that
+              carries past the target differ by thousands of feet).  If the only sign change the search finds is such a
+              jump, not a zero, it raises `ZeroFindingError` ("No continuous ... zero") instead of returning an angle that
+              misses: the error at the returned angle is more than 45% (`CONTINUOUS_ROOT_RATIO`) of the smaller of the
+              errors at the ends of the search bracket.
+            - Cant is part of the shot: the sight height is rotated by it (the bore is `sight height * cos(cant)` below
+              the line of sight and `sight height * sin(cant)` beside it).  The unknown of the search is the total
+              barrel elevation `E` in the vertical plane; the barrel azimuth follows from it in the exact canted model
+              (see `Shot.barrel_elevation`), so the shot fired at the returned elevation hits the line of sight at the
+              target in height, for a low and for a lofted zero alike.  The windage at the target is a result (a
+              canted barrel points sideways and the shot drifts), never a condition.  To fire a returned elevation `a`
+              set `shot.barrel_elevation = a`.  An elevation the canted sight plane cannot reach (`|E| > asin(R)`,
+              see `Shot`) cannot be set that way and raises `ValueError`.
+
         Returns:
             Barrel elevation needed to hit the zero point.
         """
@@ -787,6 +996,29 @@ class BaseIntegrationEngine(ABC, EngineProtocol):
             distance: Slant distance to the target.
             lofted: If True, find the higher trajectory that hits the zero point.
 
+
+        Note:
+            - A zero distance shorter than 0.01 ft (`ALLOWED_ZERO_ERROR_FEET`; the threshold is in feet whatever the
+              units of `distance`) is not aimed: the look angle is returned, which misses the line of sight by the
+              sight height, because the zero cannot be measured that close.
+            - A target closer than `2 * max(|sight height * cos(cant)|, calc step)` (in feet) is solved geometrically:
+              the straight line from the bore to the target on the line of sight, ignoring gravity and drag.
+            - A negative distance is not supported (aim backwards with the look angle): it raises `ZeroFindingError`
+              (unless it is that close, see above).
+            - The miss at the target is not continuous for a lofted shot near the vertical (a shot that falls short and one that
+              carries past the target differ by thousands of feet).  If the only sign change the search finds is such a
+              jump, not a zero, it raises `ZeroFindingError` ("No continuous ... zero") instead of returning an angle that
+              misses: the error at the returned angle is more than 45% (`CONTINUOUS_ROOT_RATIO`) of the smaller of the
+              errors at the ends of the search bracket.
+            - Cant is part of the shot: the sight height is rotated by it (the bore is `sight height * cos(cant)` below
+              the line of sight and `sight height * sin(cant)` beside it).  The unknown of the search is the total
+              barrel elevation `E` in the vertical plane; the barrel azimuth follows from it in the exact canted model
+              (see `Shot.barrel_elevation`), so the shot fired at the returned elevation hits the line of sight at the
+              target in height, for a low and for a lofted zero alike.  The windage at the target is a result (a
+              canted barrel points sideways and the shot drifts), never a condition.  To fire a returned elevation `a`
+              set `shot.barrel_elevation = a`.  An elevation the canted sight plane cannot reach (`|E| > asin(R)`,
+              see `Shot`) cannot be set that way and raises `ValueError`.
+
         Returns:
             The solved barrel elevation and the terminal RANGE point from the
             successful zero-finding iteration.
@@ -794,12 +1026,57 @@ class BaseIntegrationEngine(ABC, EngineProtocol):
         Raises:
             SolverRuntimeError: If a zero-angle fast path did not integrate a
                 trajectory and therefore has no trajectory point to return.
+                This is the case for a distance shorter than 0.01 ft, a close target and a zero at the maximum range.
         """
         props = self._init_trajectory(shot_info)
         angle, point = self._find_zero_ridder(props, distance, lofted)
         if point is None:
             raise SolverRuntimeError("Zero-angle fast path did not evaluate a trajectory point")
         return angle, point
+
+    # A bracketed root that ends on the angle tolerance must leave a miss of at most this fraction of the smaller bracket-end
+    # error; a larger miss is a discontinuity of the error function, not a zero (see `_require_continuous_root`).
+    # Measured on the zero grid (all pure-Python engines and SciPy): real roots leave at most 0.1 (7e-6 for the Python solvers;
+    # SciPy's adaptive integrator makes its error noisy at the 0.1 ft level), jumps at least 2.0; this is their log-midpoint.
+    CONTINUOUS_ROOT_RATIO = 0.45
+
+    def _require_continuous_root(
+        self,
+        root_error_ft: float,
+        bracket_errors_ft: tuple[float, float],
+        angle_rad: float,
+        iterations_count: int,
+        lofted: bool,
+    ) -> None:
+        """Raise `ZeroFindingError` if a bracketed root that did not meet the accuracy is a discontinuity.
+
+        The zero error function is not continuous: a lofted shot near the vertical can fall back short of the target or
+        carry past it, and the error jumps (by thousands of feet) between those.  A sign change at such a jump is not a
+        zero, but a bisection converges on it all the same.  A real root leaves an error that the angle tolerance makes
+        tiny against the errors at the ends of the search bracket (<= 7e-6 of the smaller one on the measured grid for the
+        Python solvers, <= 0.1 for the noisier SciPy engine); at a jump it stays of their order (>= 2).  The test is scale free:
+        `|f(root)| > CONTINUOUS_ROOT_RATIO * min(|f(low)|, |f(high)|)`.
+
+        Args:
+            root_error_ft: The error at the angle the search ended on (feet).
+            bracket_errors_ft: The errors at the two ends of the initial search bracket (opposite signs).
+            angle_rad: The angle the search ended on.
+            iterations_count: Number of iterations done.
+            lofted: Whether a lofted zero was searched.
+
+        Raises:
+            ZeroFindingError: If the error at the angle is comparable to the bracket-end errors.
+        """
+        if abs(root_error_ft) <= self.CONTINUOUS_ROOT_RATIO * min(abs(bracket_errors_ft[0]), abs(bracket_errors_ft[1])):
+            return
+        raise ZeroFindingError(
+            abs(root_error_ft),
+            iterations_count,
+            Angular.Radian(angle_rad),
+            reason=f"No continuous {'lofted' if lofted else 'low'} zero: the error at the returned angle "
+            f"({math.degrees(angle_rad):.4f} deg), {root_error_ft:.2f} ft, is comparable to the bracket-end errors "
+            f"f(low)={bracket_errors_ft[0]:.2f}, f(high)={bracket_errors_ft[1]:.2f} (a discontinuity, not a root)",
+        )
 
     @with_no_minimum_velocity
     def _find_zero_ridder(
@@ -854,7 +1131,7 @@ class BaseIntegrationEngine(ABC, EngineProtocol):
         def error_at_distance(angle_rad: float) -> float:
             """Target miss (in feet) for given launch angle."""
             nonlocal last_point
-            props.barrel_elevation_rad = angle_rad
+            props.set_aim(angle_rad)
             with self._zero_search_limits(props, target_x_ft, target_y_ft):
                 _res = self._integrate(props, target_x_ft, target_x_ft, filter_flags=TrajFlag.NONE)
             if _res.error is not None:
@@ -869,6 +1146,8 @@ class BaseIntegrationEngine(ABC, EngineProtocol):
         # 3. Establish search bracket for the zero angle.
         if lofted:
             low_angle, high_angle = angle_at_max_rad, math.radians(89.9)
+            if props.cant_sine != 0.0:
+                high_angle = min(high_angle, reachable_elevation_limit_rad(props))  # as in `_find_max_range`
         else:
             sight_height_adjust = 0.0
             if start_height_ft > 0:
@@ -877,13 +1156,14 @@ class BaseIntegrationEngine(ABC, EngineProtocol):
 
         f_low = error_at_distance(low_angle)
         f_high = error_at_distance(high_angle)
+        bracket_errors = (f_low, f_high)  # scale of the error function, for the discontinuity check
 
         if f_low * f_high >= 0:
             reason = f"No {'lofted' if lofted else 'low'} zero trajectory in elevation range "
             reason += f"({Angular.Radian(low_angle) >> Angular.Degree:.2f}, "
             reason += f"{Angular.Radian(high_angle) >> Angular.Degree:.2f} deg). "
             reason += f"Errors at bracket: f(low)={f_low:.2f}, f(high)={f_high:.2f}"
-            raise ZeroFindingError(target_y_ft, 0, Angular.Radian(props.barrel_elevation_rad), reason=reason)
+            raise ZeroFindingError(target_y_ft, 0, Angular.Radian(props.aim_elevation_rad), reason=reason)
 
         # 4. Ridder's method implementation.
         # cZeroFindingAccuracy is a height tolerance in feet; use a separate
@@ -891,7 +1171,7 @@ class BaseIntegrationEngine(ABC, EngineProtocol):
         # (Passing e.g. cZeroFindingAccuracy=0.1 ft would otherwise mean a
         # 0.1 rad = 5.7° angle bracket tolerance and a completely wrong answer.)
         angle_tol = 1e-7  # rad — ~0.000006°, independent of height accuracy
-        for _ in range(self._config.cMaxIterations):
+        for iteration in range(self._config.cMaxIterations):
             mid_angle = (low_angle + high_angle) / 2.0
             f_mid = error_at_distance(mid_angle)
             if abs(f_mid) < self._config.cZeroFindingAccuracy:
@@ -912,6 +1192,7 @@ class BaseIntegrationEngine(ABC, EngineProtocol):
 
             if abs(next_angle - mid_angle) < angle_tol:
                 assert last_point is not None
+                self._require_continuous_root(f_next, bracket_errors, next_angle, iteration + 1, lofted)
                 return Angular.Radian(next_angle), last_point
 
             # Update the bracket
@@ -930,6 +1211,7 @@ class BaseIntegrationEngine(ABC, EngineProtocol):
                 # candidate.  It avoids a final, redundant shot while keeping
                 # the angle and point from the same trajectory evaluation.
                 assert last_point is not None
+                self._require_continuous_root(f_next, bracket_errors, next_angle, iteration + 1, lofted)
                 return Angular.Radian(next_angle), last_point
 
         raise ZeroFindingError(
@@ -948,6 +1230,29 @@ class BaseIntegrationEngine(ABC, EngineProtocol):
         Args:
             shot_info: The shot information.
             distance: The distance to the target.
+
+
+        Note:
+            - A zero distance shorter than 0.01 ft (`ALLOWED_ZERO_ERROR_FEET`; the threshold is in feet whatever the
+              units of `distance`) is not aimed: the look angle is returned, which misses the line of sight by the
+              sight height, because the zero cannot be measured that close.
+            - A target closer than `2 * max(|sight height * cos(cant)|, calc step)` (in feet) is solved geometrically:
+              the straight line from the bore to the target on the line of sight, ignoring gravity and drag.
+            - A negative distance is not supported (aim backwards with the look angle): it raises `ZeroFindingError`
+              (unless it is that close, see above).
+            - The miss at the target is not continuous for a lofted shot near the vertical (a shot that falls short and one that
+              carries past the target differ by thousands of feet).  If the only sign change the search finds is such a
+              jump, not a zero, it raises `ZeroFindingError` ("No continuous ... zero") instead of returning an angle that
+              misses: the error at the returned angle is more than 45% (`CONTINUOUS_ROOT_RATIO`) of the smaller of the
+              errors at the ends of the search bracket.
+            - Cant is part of the shot: the sight height is rotated by it (the bore is `sight height * cos(cant)` below
+              the line of sight and `sight height * sin(cant)` beside it).  The unknown of the search is the total
+              barrel elevation `E` in the vertical plane; the barrel azimuth follows from it in the exact canted model
+              (see `Shot.barrel_elevation`), so the shot fired at the returned elevation hits the line of sight at the
+              target in height, for a low and for a lofted zero alike.  The windage at the target is a result (a
+              canted barrel points sideways and the shot drifts), never a condition.  To fire a returned elevation `a`
+              set `shot.barrel_elevation = a`.  An elevation the canted sight plane cannot reach (`|E| > asin(R)`,
+              see `Shot`) cannot be set that way and raises `ValueError`.
 
         Returns:
             Barrel elevation to hit height zero at zero distance along sight line.
@@ -1015,18 +1320,6 @@ class BaseIntegrationEngine(ABC, EngineProtocol):
         _cZeroFindingAccuracy = self._config.cZeroFindingAccuracy
         _cMaxIterations = self._config.cMaxIterations
 
-        # region Ensure we can see drop at the target distance when launching along slant angle.
-        required_drop_ft = target_x_ft / 2.0 - target_y_ft
-        restore_cMaximumDrop = None
-        if abs(self._config.cMaximumDrop) < required_drop_ft:
-            restore_cMaximumDrop = self._config.cMaximumDrop
-            self._config.cMaximumDrop = required_drop_ft
-        restore_cMinimumAltitude = None
-        if (props.alt0_ft - self._config.cMinimumAltitude) < required_drop_ft:
-            restore_cMinimumAltitude = self._config.cMinimumAltitude
-            self._config.cMinimumAltitude = props.alt0_ft - required_drop_ft
-        # endregion
-
         iterations_count = 0
         range_error_ft = 9e9  # Absolute value of error from target distance along sight line
         prev_range_error_ft = 9e9
@@ -1037,86 +1330,84 @@ class BaseIntegrationEngine(ABC, EngineProtocol):
         height_error_ft = _cZeroFindingAccuracy * 2  # Absolute value of error from sight line in feet at zero distance
         point: TrajectoryData | None = None
 
-        while iterations_count < _cMaxIterations:
-            # Check height of trajectory at the zero distance (using current props.barrel_elevation)
-            t = self._integrate(props, target_x_ft, target_x_ft, filter_flags=TrajFlag.NONE)[-1]
-            point = t
-            if t.time == 0.0:
-                logger.warning("Integrator returned initial point. Consider removing constraints.")
-                break
+        # Ensure we can see drop at the target distance when launching along slant angle.  The limits are restored on every
+        # exit of the loop: the raises, and any exception out of an integration, included.
+        with self._zero_search_limits(props, target_x_ft, target_y_ft):
+            while iterations_count < _cMaxIterations:
+                # Check height of trajectory at the zero distance (using current props.barrel_elevation)
+                t = self._integrate(props, target_x_ft, target_x_ft, filter_flags=TrajFlag.NONE)[-1]
+                point = t
+                if t.time == 0.0:
+                    logger.warning("Integrator returned initial point. Consider removing constraints.")
+                    break
 
-            current_distance = t.distance >> Distance.Foot  # Horizontal distance
-            if 2 * current_distance < target_x_ft and props.barrel_elevation_rad == 0.0 and look_angle_rad < 1.5:
-                # Degenerate case: little distance and zero elevation; try with some elevation
-                props.barrel_elevation_rad = 0.01
-                continue
+                current_distance = t.distance >> Distance.Foot  # Horizontal distance
+                if 2 * current_distance < target_x_ft and props.aim_elevation_rad == 0.0 and look_angle_rad < 1.5:
+                    # Degenerate case: little distance and zero elevation; try with some elevation
+                    props.set_aim(0.01)
+                    continue
 
-            height_diff_ft = t.slant_height >> Distance.Foot
-            look_dist_ft = t.slant_distance >> Distance.Foot
-            range_diff_ft = look_dist_ft - slant_range_ft
-            range_error_ft = math.fabs(range_diff_ft)
-            height_error_ft = math.fabs(height_diff_ft)
-            trajectory_angle = t.angle >> Angular.Radian  # Flight angle at current distance
-            sensitivity = math.tan(props.barrel_elevation_rad - look_angle_rad) * math.tan(
-                trajectory_angle - look_angle_rad
-            )
-            if sensitivity < -0.5:
-                denominator = look_dist_ft
-            else:
-                denominator = look_dist_ft * (1 + sensitivity)
-            if abs(denominator) > 1e-9:
-                correction = -height_diff_ft / denominator
-            else:
-                raise ZeroFindingError(
-                    height_error_ft,
-                    iterations_count,
-                    Angular.Radian(props.barrel_elevation_rad),
-                    "Correction denominator is zero",
+                height_diff_ft = t.slant_height >> Distance.Foot
+                look_dist_ft = t.slant_distance >> Distance.Foot
+                range_diff_ft = look_dist_ft - slant_range_ft
+                range_error_ft = math.fabs(range_diff_ft)
+                height_error_ft = math.fabs(height_diff_ft)
+                trajectory_angle = t.angle >> Angular.Radian  # Flight angle at current distance
+                sensitivity = math.tan(props.aim_elevation_rad - look_angle_rad) * math.tan(
+                    trajectory_angle - look_angle_rad
                 )
-
-            if range_error_ft > self.ALLOWED_ZERO_ERROR_FEET:
-                # We're still trying to reach zero_distance
-                if range_error_ft > prev_range_error_ft - 1e-6:  # We're not getting closer to zero_distance
-                    raise ZeroFindingError(
-                        range_error_ft,
-                        iterations_count,
-                        Angular.Radian(props.barrel_elevation_rad),
-                        "Distance non-convergent",
-                    )
-            elif height_error_ft > math.fabs(prev_height_error_ft):  # Error is increasing, we are diverging
-                damping_factor *= damping_rate  # Apply damping to prevent overcorrection
-                if damping_factor < 0.3:
+                if sensitivity < -0.5:
+                    denominator = look_dist_ft
+                else:
+                    denominator = look_dist_ft * (1 + sensitivity)
+                if abs(denominator) > 1e-9:
+                    correction = -height_diff_ft / denominator
+                else:
                     raise ZeroFindingError(
                         height_error_ft,
                         iterations_count,
-                        Angular.Radian(props.barrel_elevation_rad),
-                        "Error non-convergent",
+                        Angular.Radian(props.aim_elevation_rad),
+                        "Correction denominator is zero",
                     )
-                logger.debug(f"Tightened damping to {damping_factor:.2f} after {iterations_count} iterations")
-                props.barrel_elevation_rad -= last_correction  # Revert previous adjustment
-                correction = last_correction
-            elif damping_factor < 1.0:
-                logger.debug("Resetting damping factor to 1.0")
-                damping_factor = 1.0
 
-            prev_range_error_ft = range_error_ft
-            prev_height_error_ft = height_error_ft
+                if range_error_ft > self.ALLOWED_ZERO_ERROR_FEET:
+                    # We're still trying to reach zero_distance
+                    if range_error_ft > prev_range_error_ft - 1e-6:  # We're not getting closer to zero_distance
+                        raise ZeroFindingError(
+                            range_error_ft,
+                            iterations_count,
+                            Angular.Radian(props.aim_elevation_rad),
+                            "Distance non-convergent",
+                        )
+                elif height_error_ft > math.fabs(prev_height_error_ft):  # Error is increasing, we are diverging
+                    damping_factor *= damping_rate  # Apply damping to prevent overcorrection
+                    if damping_factor < 0.3:
+                        raise ZeroFindingError(
+                            height_error_ft,
+                            iterations_count,
+                            Angular.Radian(props.aim_elevation_rad),
+                            "Error non-convergent",
+                        )
+                    logger.debug(f"Tightened damping to {damping_factor:.2f} after {iterations_count} iterations")
+                    props.set_aim(props.aim_elevation_rad - last_correction)  # Revert previous adjustment
+                    correction = last_correction
+                elif damping_factor < 1.0:
+                    logger.debug("Resetting damping factor to 1.0")
+                    damping_factor = 1.0
 
-            if height_error_ft > _cZeroFindingAccuracy or range_error_ft > self.ALLOWED_ZERO_ERROR_FEET:
-                # Adjust barrel elevation to close height at zero distance
-                applied_correction = correction * damping_factor
-                props.barrel_elevation_rad += applied_correction
-                last_correction = applied_correction
-            else:  # Current barrel_elevation hit zero: success!
-                break
-            iterations_count += 1
+                prev_range_error_ft = range_error_ft
+                prev_height_error_ft = height_error_ft
 
-        if restore_cMaximumDrop is not None:
-            self._config.cMaximumDrop = restore_cMaximumDrop
-        if restore_cMinimumAltitude is not None:
-            self._config.cMinimumAltitude = restore_cMinimumAltitude
+                if height_error_ft > _cZeroFindingAccuracy or range_error_ft > self.ALLOWED_ZERO_ERROR_FEET:
+                    # Adjust barrel elevation to close height at zero distance
+                    applied_correction = correction * damping_factor
+                    props.set_aim(props.aim_elevation_rad + applied_correction)
+                    last_correction = applied_correction
+                else:  # Current barrel_elevation hit zero: success!
+                    break
+                iterations_count += 1
 
-        result: Angular = Angular.Radian(props.barrel_elevation_rad)
+        result: Angular = Angular.Radian(props.aim_elevation_rad)
         if height_error_ft > _cZeroFindingAccuracy or range_error_ft > self.ALLOWED_ZERO_ERROR_FEET:
             # ZeroFindingError contains an instance of last barrel elevation; so caller can check how close zero is
             raise ZeroFindingError(height_error_ft, iterations_count, result)

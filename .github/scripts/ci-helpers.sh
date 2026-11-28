@@ -90,14 +90,20 @@ run_tests() {
     local exit_code=0
 
     log_info "Running tests from ${test_path} with engine ${engine_name}..."
-    
+
+    # `slow` tests take minutes on the pure-Python engines: left out for those only
+    local marker_args=()
+    case "$engine_name" in
+        python+*|python.*) marker_args=(-m "not slow") ;;
+    esac
+
     # First attempt with parallel execution
-    pytest "$test_path" --no-header -v -n auto --engine="$engine_name" || exit_code=$?
+    pytest "$test_path" --no-header -v -n auto "${marker_args[@]}" --engine="$engine_name" || exit_code=$?
 
     if [ $exit_code -ne 0 ]; then
         log_warn "Pytest failed on the first attempt (Code: ${exit_code})"
         log_warn "Running again without parallel execution for detailed output..."
-        pytest "$test_path" -v -s -q --engine="$engine_name"
+        pytest "$test_path" -v -s -q "${marker_args[@]}" --engine="$engine_name"
     else
         log_info "Pytest succeeded on the first attempt"
     fi

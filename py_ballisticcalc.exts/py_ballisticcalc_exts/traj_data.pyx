@@ -198,8 +198,11 @@ cdef class CythonizedBaseTrajData:
     def interpolate(str key_attribute, double key_value,
                     CythonizedBaseTrajData p0, CythonizedBaseTrajData p1, CythonizedBaseTrajData p2):
         """
-        Piecewise Cubic Hermite Interpolating Polynomial (PCHIP) interpolation
-        of a BaseTrajData point.
+        Locate the BaseTrajData point where a key reaches a value between three consecutive points.
+
+        The point is on the cubic Hermite interpolant of the integration step (p0, p1) or (p1, p2) that
+        brackets the value (velocity = derivative of the position polynomial, Mach linear); the 3-point
+        PCHIP of the raw points is only the fallback when neither step brackets it.
 
         Args:
             key_attribute (str): Can be 'time', 'mach',

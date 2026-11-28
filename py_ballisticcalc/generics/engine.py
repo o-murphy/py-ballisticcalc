@@ -180,10 +180,18 @@ class EngineProtocol(Protocol):
             Angular: Launch angle required to hit the target.
 
         Raises:
-            ValueError: If shot_info contains invalid parameters or distance
-                       is negative or unreasonably large.
+            ValueError: If shot_info contains invalid parameters.
             ZeroFindingError: If the iterative algorithm fails to converge.
             OutOfRangeError: If the target distance exceeds maximum effective range.
+
+        Note:
+            Edge cases (the Python and the native engines agree): a distance shorter than 0.01 ft returns the
+            look angle (the shot is not aimed: the zero cannot be measured that close); a target closer than
+            about `2 * max(|sight height * cos(cant)|, calc step)` is solved geometrically (straight line, no
+            gravity or drag); a negative distance is not supported (aim backwards with the look angle) and raises
+            `ZeroFindingError`.  Cant is part of the shot: the sight height is rotated by it, the solver keeps
+            the shot's barrel azimuth, and the returned angle is the barrel elevation for that shot, which hits
+            the line of sight at the target.
 
         Note:
             This method returns the lower of the two ballistic solutions hit a target point.
@@ -242,6 +250,16 @@ class EngineProtocol(Protocol):
             lofted: If True, select the higher trajectory that reaches the
                 zero point; otherwise select the lower trajectory.
 
+        Note:
+            Edge cases (the Python and the native engines agree): a distance shorter than 0.01 ft returns the
+            look angle (the shot is not aimed: the zero cannot be measured that close); a target closer than
+            about `2 * max(|sight height * cos(cant)|, calc step)` is solved geometrically (straight line, no
+            gravity or drag); a negative distance is not supported (aim backwards with the look angle) and raises
+            `ZeroFindingError`.  Cant is part of the shot: the sight height is rotated by it, the solver keeps
+            the shot's barrel azimuth, and the returned angle is the barrel elevation for that shot, which hits
+            the line of sight at the target.  A lofted search whose only sign change is a jump of the miss (a shot
+            near the vertical that falls short or carries past the target), not a zero, raises `ZeroFindingError`.
+
         Returns:
             Barrel elevation needed to hit the zero point.
         """
@@ -261,6 +279,10 @@ class EngineProtocol(Protocol):
             distance: Slant distance from the sight to the requested zero point.
             lofted: If True, select the higher trajectory that reaches the
                 zero point; otherwise select the lower trajectory.
+
+        Note:
+            For a distance shorter than 0.01 ft and for a close target (see `find_zero_angle`) no trajectory is
+            evaluated, so `SolverRuntimeError` is raised instead of returning a point.
 
         Returns:
             A pair of the selected barrel elevation and the corresponding

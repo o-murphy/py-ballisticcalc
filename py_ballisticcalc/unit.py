@@ -1140,7 +1140,8 @@ class Energy(GenericDimension):
 
     _conversion_factors: ClassVar[Mapping[Unit, float]] = {
         Unit.FootPound: 1.0,
-        Unit.Joule: 1 / 1.3558179483314,
+        # 1 ft·lbf = 0.3048 m * (0.45359237 kg * 9.80665 m/s2) = 1.3558179483314004 J (exact: ft, lb, g0 are defined)
+        Unit.Joule: 1.0 / (0.3048 * 0.45359237 * 9.80665),
     }
 
     # Energy.* unit aliases
@@ -1156,7 +1157,7 @@ class Distance(GenericDimension):
         Unit.Foot: 12.0,
         Unit.Yard: 36.0,
         Unit.Mile: 63_360.0,
-        Unit.NauticalMile: 72_913.3858,
+        Unit.NauticalMile: 1852.0 / 0.0254,  # exact: 1 nmi = 1852 m; 1 in = 0.0254 m
         Unit.Line: 0.1,
         Unit.Millimeter: 1.0 / 25.4,
         Unit.Centimeter: 10.0 / 25.4,
@@ -1188,15 +1189,21 @@ class Distance(GenericDimension):
     Line: Final[Unit] = Unit.Line
 
 
+_PA_PER_MMHG: Final[float] = 101_325.0 / 760.0  # Pa per mmHg (torr), 133.32236842105263
+
+
 class Pressure(GenericDimension):
     """Pressure unit.  Raw value is mmHg."""
 
     _conversion_factors: ClassVar[Mapping[Unit, float]] = {
         Unit.MmHg: 1.0,
         Unit.InHg: 25.4,
-        Unit.Bar: 750.061683,
-        Unit.hPa: 750.061683 / 1_000,
-        Unit.PSI: 51.714924102396,
+        # Exact definitions in Pa.  The raw mmHg is the torr: 1 mmHg = 101325 / 760 Pa (so that 1 atm = 760 mmHg
+        # = 1013.25 hPa exactly, and as the bclibc hPa-to-inHg constant); inHg stays 25.4 mmHg.
+        Unit.Bar: 100_000.0 / _PA_PER_MMHG,  # 1 bar = 100000 Pa
+        Unit.hPa: 100.0 / _PA_PER_MMHG,  # 1 hPa = 100 Pa
+        # 1 psi = 1 lbf/in2 = 0.45359237 kg * 9.80665 m/s2 / 0.0254 m^2 = 6894.757293168... Pa
+        Unit.PSI: (0.45359237 * 9.80665 / (0.0254 * 0.0254)) / _PA_PER_MMHG,
     }
 
     # Pressure.* unit aliases
@@ -1390,15 +1397,15 @@ class Velocity(GenericDimension):
     _conversion_factors: ClassVar[Mapping[Unit, float]] = {
         Unit.MPS: 1.0,
         Unit.KMH: 1.0 / 3.6,
-        Unit.FPS: 1.0 / 3.2808399,
-        Unit.MPH: 1.0 / 2.23693629,
-        Unit.KT: 1.0 / 1.94384449,
+        Unit.FPS: 0.3048,  # exact: 1 ft = 0.3048 m (as Distance.Foot)
+        Unit.MPH: 1609.344 / 3600.0,  # exact: international mile 1609.344 m per hour
+        Unit.KT: 1852.0 / 3600.0,  # exact: nautical mile 1852 m per hour
     }
 
     @property
     def _fps(self) -> Number:
         """Shortcut for `>> Velocity.FPS`."""
-        return self._value * 3.2808399
+        return self._value / 0.3048
 
     # Velocity.* unit aliases
     MPS: Final[Unit] = Unit.MPS
@@ -1414,10 +1421,13 @@ class Weight(GenericDimension):
     _conversion_factors: ClassVar[Mapping[Unit, float]] = {
         Unit.Grain: 1.0,
         Unit.Ounce: 437.5,
-        Unit.Gram: 15.4323584,
+        # exact: 1 lb = 0.45359237 kg = 7000 gr, so 1 gr = 0.06479891 g exactly
+        Unit.Gram: 7_000.0 / 453.59237,  # grains per gram = 15.432358352941431
         Unit.Pound: 7_000.0,
-        Unit.Kilogram: 15_432.3584,
-        Unit.Newton: 1_573.662597,
+        Unit.Kilogram: 7_000.0 / 0.45359237,  # grains per kg = 15432.35835294143
+        # Newton as the weight (force) of a mass under standard gravity g0 = 9.80665 m/s2 (exact):
+        # 1 N = (1 / 9.80665) kg = 1573.6626016979733 gr
+        Unit.Newton: 7_000.0 / (0.45359237 * 9.80665),
     }
 
     @property

@@ -296,3 +296,14 @@ def test_negative_sight_height(loaded_engine_instance):
     # The sight is 100 mm below the bore, so the bore must point down 45 degrees to meet the line of sight at 100 mm.
     # (This once expected +45, the wrong-sign close-target shortcut; see tests/test_zero_close_target.py.)
     assert (zero_angle >> Angular.Degree) == pytest.approx(-45.0, abs=1e-4)
+
+
+def test_tiny_rejects_lofted_zero_search(loaded_engine_instance):
+    """tiny_bclibc has no lofted search: lofted=True raises instead of silently returning the low zero."""
+    if not loaded_engine_instance.__module__.startswith("tiny_bclibc"):
+        pytest.skip("only tiny_bclibc has no lofted search")
+    engine = Calculator(engine=loaded_engine_instance)._engine_instance
+    shot = create_5_56_mm_shot()
+    for method in (engine.find_zero_angle, engine.find_zero_point):
+        with pytest.raises(NotImplementedError, match="lofted"):
+            method(shot, Distance.Yard(200), lofted=True)

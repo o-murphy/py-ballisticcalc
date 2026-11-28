@@ -56,6 +56,7 @@ from bisect import bisect_left
 from collections.abc import Callable
 from dataclasses import dataclass, field
 from functools import cached_property
+from itertools import pairwise
 from typing import TYPE_CHECKING, Any, Final, Literal, NamedTuple, TypeAlias
 
 from deprecated import deprecated
@@ -244,7 +245,21 @@ class BaseTrajData(NamedTuple):
         method: InterpolationMethod = "pchip",
     ) -> BaseTrajData:
         """
-        Interpolate a BaseTrajData point using monotone PCHIP (default) or linear.
+        Locate the point where `key_attribute` equals `key_value` between three consecutive trajectory points.
+
+        The points are consecutive states of an integration, so `(p0, p1)` and `(p1, p2)` are integration steps.
+        The point is located on the cubic Hermite interpolant of the step that brackets the value (first `(p0, p1)`,
+        then `(p1, p2)`; ends included): positions are the cubic Hermite of the end positions with the end velocities as
+        slopes, the velocity of the result is the derivative of that position polynomial (so it is *not* an
+        interpolation of the given velocities), Mach is linear in time, and the key field of the result is set to
+        `key_value`. This is the one convention of every step-based query of the library (rows of the trajectory
+        filter, `find_apex`, `integrate_at`, dense output) and exactly what the cythonized core does.
+        Only when neither step brackets the value (or the step does not run forward in time) is the 3-point
+        interpolation of the three raw points used, as a fallback.
+
+        Behavior change: this used to be a 3-point interpolation of every field. For example for the points
+        `(t, x, v) = (0, 0, 0), (1, 10, 0), (2, 20, 0)`, the point at `time=1.5` has velocity `15.0` (the derivative
+        of the position polynomial), where the old 3-point result was `0.0`.
 
         Args:
             key_attribute: Can be 'time', 'mach', or a vector component like 'position.x' or 'velocity.z'.
@@ -252,7 +267,9 @@ class BaseTrajData(NamedTuple):
             p0: First bracketing point.
             p1: Second (middle) bracketing point.
             p2: Third bracketing point.
-            method: 'pchip' (default, monotone cubic Hermite) or 'linear'.
+            method: 'pchip' (default, monotone cubic Hermite) or 'linear'. It only selects the 3-point fallback used
+                when no step brackets the value (the cythonized core always uses PCHIP there); it has no effect
+                on a value that a step brackets.
 
         Returns:
             The interpolated data point.
@@ -260,7 +277,7 @@ class BaseTrajData(NamedTuple):
         Raises:
             AttributeError: If the key_attribute is not a member of BaseTrajData.
             ZeroDivisionError: If the interpolation fails due to zero division.
-                               (This will result if two of the points are identical).
+                               (This will result if two of the points have the same key value).
             ValueError: If method is not one of 'pchip' or 'linear'.
         """
 
@@ -272,23 +289,31 @@ class BaseTrajData(NamedTuple):
                 return getattr(obj, component)
             return getattr(td, path)
 
+        if method not in ("pchip", "linear"):
+            raise ValueError("method must be 'pchip' or 'linear'")
+
         # independent variable values
         x0 = get_key_val(p0, key_attribute)
         x1 = get_key_val(p1, key_attribute)
         x2 = get_key_val(p2, key_attribute)
+        if x0 == x1 or x0 == x2 or x1 == x2:
+            raise ZeroDivisionError("Degenerate interpolation segment: duplicate key values")
 
+        # The segment that holds the value is an integration step: its cubic Hermite (first step first).
+        for start, end in ((p0, p1), (p1, p2)):
+            found = _hermite_step_at_key(start, end, key_attribute, key_value)
+            if found is not None:
+                return found
+
+        # Fallback: no step brackets the value; interpolate the three raw points.
         def _interp_scalar(y0, y1, y2):
             if method == "pchip":
                 return interpolate_3_pt(key_value, x0, y0, x1, y1, x2, y2)
-            elif method == "linear":
-                pts = sorted(((x0, y0), (x1, y1), (x2, y2)), key=lambda p: p[0])
-                (sx0, sy0), (sx1, sy1), (sx2, sy2) = pts
-                if key_value <= sx1:
-                    return interpolate_2_pt(key_value, sx0, sy0, sx1, sy1)
-                else:
-                    return interpolate_2_pt(key_value, sx1, sy1, sx2, sy2)
-            else:
-                raise ValueError("method must be 'pchip' or 'linear'")
+            pts = sorted(((x0, y0), (x1, y1), (x2, y2)), key=lambda p: p[0])
+            (sx0, sy0), (sx1, sy1), (sx2, sy2) = pts
+            if key_value <= sx1:
+                return interpolate_2_pt(key_value, sx0, sy0, sx1, sy1)
+            return interpolate_2_pt(key_value, sx1, sy1, sx2, sy2)
 
         vp0 = p0.position
         vp1 = p1.position
@@ -311,6 +336,97 @@ class BaseTrajData(NamedTuple):
         mach = _interp_scalar(p0.mach, p1.mach, p2.mach) if key_attribute != "mach" else key_value
 
         return BaseTrajData(time=time, position=position, velocity=velocity, mach=mach)
+
+
+def _hermite_cubic(y0: float, y1: float, m0: float, m1: float, dt: float) -> tuple[float, float, float, float]:
+    """Coefficients (a, b, c, d) of a u^3 + b u^2 + c u + d, u in [0, 1], for end values y0, y1 and end slopes m0, m1 (per unit of time)."""
+    c = dt * m0
+    return (2.0 * y0 - 2.0 * y1 + c + dt * m1, -3.0 * y0 + 3.0 * y1 - 2.0 * c - dt * m1, c, y0)
+
+
+def _hermite_key_cubic(
+    start: BaseTrajData, end: BaseTrajData, key: str, dt: float
+) -> tuple[float, float, float, float]:
+    """The polynomial of u of a key over the step (position: cubic, velocity: its derivative, quadratic; Mach: linear)."""
+    if key == "mach":
+        return (0.0, 0.0, end.mach - start.mach, start.mach)
+    top, axis = key.split(".")
+    s_pos, e_pos = getattr(start.position, axis), getattr(end.position, axis)
+    s_vel, e_vel = getattr(start.velocity, axis), getattr(end.velocity, axis)
+    a, b, c, d = _hermite_cubic(s_pos, e_pos, s_vel, e_vel, dt)
+    if top == "position":
+        return (a, b, c, d)
+    return (0.0, 3.0 * a / dt, 2.0 * b / dt, c / dt)
+
+
+def _solve_unit_root(cubic: tuple[float, float, float, float], f0: float, f1: float, target: float) -> float | None:
+    """Root u in [0, 1] of cubic(u) = target, given f0, f1 = (start value - target), (end value - target).
+
+    A bracketed Newton iteration (the bracket is kept and narrowed on every evaluation; a Newton step that leaves it is
+    replaced by a bisection), the same as bclibc's `hermite_step::solve`. None when f0, f1 do not bracket the target.
+    """
+    if f0 == 0.0:
+        return 0.0
+    if f1 == 0.0:
+        return 1.0
+    if (f0 < 0.0) == (f1 < 0.0):
+        return None
+    a, b, c, d = cubic
+    lo, hi, flo = 0.0, 1.0, f0
+    u = f0 / (f0 - f1)  # the secant of the two ends: exact for a linear key
+    for i in range(64):
+        f = ((a * u + b) * u + c) * u + d - target
+        if f == 0.0:
+            break
+        if (f < 0.0) == (flo < 0.0):
+            lo, flo = u, f
+        else:
+            hi = u
+        df = (3.0 * a * u + 2.0 * b) * u + c
+        nxt = u - f / df if (i < 40 and df != 0.0) else 0.5 * (lo + hi)
+        if not (lo < nxt < hi):
+            nxt = 0.5 * (lo + hi)
+        step = abs(nxt - u)
+        u = nxt
+        if step <= 1e-15 or hi - lo <= 1e-15:
+            break
+    return u
+
+
+def _hermite_step_at_key(start: BaseTrajData, end: BaseTrajData, key: str, target: float) -> BaseTrajData | None:
+    """The state on the cubic Hermite of the step (start, end) where `key` equals `target`; None if the step does not bracket it.
+
+    The step brackets the target when the key at its two ends does (ends included) and the step runs forward in time.
+    The key of the result is set to the exact target (as `TrajectoryStep.at_x` does for `position.x`).
+    """
+
+    def value(p: BaseTrajData) -> float:
+        if "." in key:
+            top, axis = key.split(".")
+            return getattr(getattr(p, top), axis)
+        return getattr(p, key)
+
+    k0, k1 = value(start), value(end)
+    if not ((k0 <= target <= k1) or (k1 <= target <= k0)):
+        return None
+    dt = end.time - start.time
+    if not dt > 0.0:
+        return None
+    if key == "time":
+        u = (target - k0) / dt
+    else:
+        root = _solve_unit_root(_hermite_key_cubic(start, end, key, dt), k0 - target, k1 - target, target)
+        if root is None:
+            return None
+        u = root
+    data = TrajectoryStep(start, end).at_time(start.time + u * dt)
+    if key == "time":
+        return data._replace(time=target)
+    if key == "mach":
+        return data._replace(mach=target)
+    top, axis = key.split(".")
+    vec = getattr(data, top)._replace(**{axis: target})
+    return data._replace(**{top: vec})
 
 
 @dataclass(frozen=True, slots=True)
@@ -625,7 +741,7 @@ class TrajectoryData(NamedTuple):
     @staticmethod
     def _new_fps(v: float):
         d = object.__new__(Velocity)
-        d._value = v / 3.2808399
+        d._value = v * 0.3048  # ft/s to m/s, exact foot
         d._defined_units = Unit.FPS
         return d
 
@@ -1009,6 +1125,15 @@ class HitResult:
                 return row
         return None
 
+    def _native_points(self) -> list[BaseTrajData]:
+        """The points of a native dense sequence as BaseTrajData (built once, then cached)."""
+        cached = self.__dict__.get("_native_points_cache")
+        if cached is None:
+            base = self.base_data
+            cached = [BaseTrajData(p.time, p.position, p.velocity, p.mach) for p in base] if base is not None else []
+            self.__dict__["_native_points_cache"] = cached
+        return cached
+
     def get_at(
         self,
         key_attribute: TrajectoryDataAttribute,
@@ -1066,18 +1191,37 @@ class HitResult:
             val = getattr(td, key_attribute)
             return val.raw_value if hasattr(val, "raw_value") else val
 
-        # Some extension engines expose a different sequence type (e.g. a
-        # Cython CythonizedBaseTrajSeq with its own get_at()) rather than a
-        # flat list of BaseTrajData; only the latter supports the local
-        # Hermite interpolation below, built on demand from each adjacent
+        # Extension engines keep their dense data in a native sequence (a Cython CythonizedBaseTrajSeq)
+        # instead of a flat list of BaseTrajData.  Detected by capability (``get_at``), so this module
+        # never imports the extension.  Monotone keys (time, distance) are answered by the native
+        # sequence itself, which interpolates the cubic Hermite of the bracketing step in C++.  Any other
+        # key (height, velocity, slant, ...) may cross the value more than once, so those use the same
+        # step-by-step search as the Python engines over the points of the native sequence.
+        base_points = self.base_data
+        if base_points and not isinstance(base_points, list) and hasattr(base_points, "get_at"):
+            # key_value is a raw value: seconds for time; for distance inches, the native keys are in feet.
+            native_key, scale = {"time": ("time", 1.0), "distance": ("position.x", 1.0 / 12.0)}.get(
+                key_attribute, (None, 1.0)
+            )
+            if native_key and not self.props.coriolis:  # coriolis moves distance off position.x
+                try:
+                    data = base_points.get_at(native_key, key_value * scale, start_from_time)
+                except (ValueError, IndexError, RuntimeError, ArithmeticError):
+                    # Native errors (ValueError: fewer than 3 points, IndexError: value outside the range): the
+                    # search below over the points raises the documented ArithmeticError.
+                    data = None
+                if data is not None and data.time >= start_from_time:
+                    return TrajectoryData.from_base_data(self.props, data)
+            base_points = self._native_points()
+        # Local Hermite interpolation of each accepted step, built on demand from each adjacent
         # pair via TrajectoryStep -- base_data itself stays a flat, honest
         # point sequence rather than pre-materialising overlapping pairs.
-        if self.base_data and isinstance(self.base_data[0], BaseTrajData):
+        if base_points and isinstance(base_points[0], BaseTrajData):
 
             def step_key(data: BaseTrajData) -> float:
                 return get_key_val(TrajectoryData.from_base_data(self.props, data))
 
-            for start, end in zip(self.base_data, self.base_data[1:]):
+            for start, end in pairwise(base_points):
                 if end.time < start_from_time:
                     continue
                 step = TrajectoryStep(start, end)

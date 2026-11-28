@@ -268,7 +268,7 @@ cdef class CythonizedBaseIntegrationEngine:
         object shot_info,
         object max_range,
         object dist_step = None,
-        float time_step = 0.0,
+        double time_step = 0.0,
         int filter_flags = 0,
         bint dense_output = False,
         **kwargs

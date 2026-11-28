@@ -3,9 +3,9 @@ import math
 
 import pytest
 
+from py_ballisticcalc.interpolation import interpolate_2_pt, interpolate_3_pt
 from py_ballisticcalc.trajectory_data import BaseTrajData, TrajectoryData
-from py_ballisticcalc.interpolation import interpolate_3_pt, interpolate_2_pt
-from py_ballisticcalc.unit import Distance, Velocity, Angular, Energy, Weight
+from py_ballisticcalc.unit import Angular, Distance, Energy, Velocity, Weight
 from py_ballisticcalc.vector import Vector
 
 
@@ -34,14 +34,17 @@ class TestInterpolationBasic:
             assert math.isclose(y, y0 + (y1 - y0) * (x - x0) / (x1 - x0), rel_tol=0, abs_tol=1e-12)
 
     def test_basetrajdata_interpolate_method_switch(self):
+        # Consistent steps (position change = mean velocity * dt), query inside the first step.
         p0 = self.make_base(0.0, 0.0, 3000.0, 2.5)
-        p1 = self.make_base(1.0, 1.0, 2800.0, 2.3)
-        p2 = self.make_base(2.0, 1.5, 2600.0, 2.1)
-        # mid-point in first interval
+        p1 = self.make_base(1.0, 2900.0, 2800.0, 2.3)
+        p2 = self.make_base(2.0, 5700.0, 2600.0, 2.1)
         res_pchip = BaseTrajData.interpolate('time', 0.5, p0, p1, p2, method='pchip')
         res_linear = BaseTrajData.interpolate('time', 0.5, p0, p1, p2, method='linear')
-        assert res_linear.position.x <= res_pchip.position.x + 1e-9 or res_pchip.position.x <= res_linear.position.x + 1e-9
-        # ensure no exceptions and values are between neighbors for monotone series
+        # A step brackets the query, so it is answered on the cubic Hermite of the step: `method` only selects the
+        # 3-point fallback and has no effect here (the old 3-point result differed between the methods).
+        assert res_pchip == res_linear
+        # closed-form Hermite at u = 0.5: x = (y0 + y1) / 2 + dt * (m0 - m1) / 8
+        assert res_pchip.position.x == pytest.approx((0.0 + 2900.0) / 2 + (3000.0 - 2800.0) / 8, abs=1e-9)
         assert p0.position.x <= res_pchip.position.x <= p1.position.x
 
     def test_basetrajdata_interpolate_dimension_switch_on_position(self):
@@ -55,16 +58,108 @@ class TestInterpolationBasic:
         assert p0.time <= res_lin.time <= p1.time
         assert p0.time <= res_pc.time <= p1.time
 
-    def test_basetraj_linear_chooses_correct_segment(self):
-        # Create non-uniform key spacing and values; request linear at key in right segment
+    def test_basetraj_linear_fallback_chooses_correct_segment(self):
+        # Non-uniform key spacing. No step brackets a query outside [0, 2], so the 3-point fallback is used, and
+        # method='linear' extrapolates the nearest segment of the sorted points.
         p0 = self.make_base(0.0, 0.0, 0.0, 0.2)
         p1 = self.make_base(0.1, 1.0, 0.0, 0.3)
         p2 = self.make_base(2.0, 2.0, 0.0, 0.4)
-        # Interpolate position.x keyed by time=1.0 (right segment)
-        r = BaseTrajData.interpolate('time', 1.0, p0, p1, p2, method="linear")
-        # Expect linear between p1 and p2 positions.x
-        expected = interpolate_2_pt(1.0, 0.1, p1.position.x, 2.0, p2.position.x)
-        assert abs(r.position.x - expected) < 1e-12
+        right = BaseTrajData.interpolate('time', 2.5, p0, p1, p2, method="linear")
+        assert abs(right.position.x - interpolate_2_pt(2.5, 0.1, p1.position.x, 2.0, p2.position.x)) < 1e-12
+        left = BaseTrajData.interpolate('time', -0.5, p0, p1, p2, method="linear")
+        assert abs(left.position.x - interpolate_2_pt(-0.5, 0.0, p0.position.x, 0.1, p1.position.x)) < 1e-12
+        assert right.time == 2.5 and left.time == -0.5  # the key field is the query
+
+    def test_basetraj_pchip_fallback_when_no_step_brackets(self):
+        p0 = self.make_base(0.0, 0.0, 3000.0, 2.5)
+        p1 = self.make_base(1.0, 2900.0, 2800.0, 2.3)
+        p2 = self.make_base(2.0, 5700.0, 2600.0, 2.1)
+        r = BaseTrajData.interpolate('time', 2.5, p0, p1, p2)
+        assert r.time == 2.5
+        assert r.position.x == interpolate_3_pt(2.5, 0.0, 0.0, 1.0, 2900.0, 2.0, 5700.0)
+        assert r.velocity.x == interpolate_3_pt(2.5, 0.0, 3000.0, 1.0, 2800.0, 2.0, 2600.0)
+        assert r.mach == interpolate_3_pt(2.5, 0.0, 2.5, 1.0, 2.3, 2.0, 2.1)
+
+    def test_basetraj_backward_step_falls_back_to_pchip(self):
+        # Time decreasing: no step runs forward, so there is no Hermite step; the 3-point PCHIP answers.
+        p0 = self.make_base(2.0, 20.0, 7.0, 0.7)
+        p1 = self.make_base(1.0, 10.0, 6.0, 0.6)
+        p2 = self.make_base(0.0, 0.0, 5.0, 0.5)
+        r = BaseTrajData.interpolate('time', 1.5, p0, p1, p2)
+        assert r.position.x == interpolate_3_pt(1.5, 2.0, 20.0, 1.0, 10.0, 0.0, 0.0)
+        assert r.velocity.x == interpolate_3_pt(1.5, 2.0, 7.0, 1.0, 6.0, 0.0, 5.0)
+
+    def test_basetraj_invalid_method_and_duplicate_keys(self):
+        p0 = self.make_base(0.0, 0.0, 0.0, 0.5)
+        p1 = self.make_base(1.0, 10.0, 0.0, 0.6)
+        p2 = self.make_base(2.0, 20.0, 0.0, 0.7)
+        with pytest.raises(ValueError):
+            BaseTrajData.interpolate('time', 0.5, p0, p1, p2, method="spline")  # type: ignore[arg-type]
+        with pytest.raises(ZeroDivisionError):
+            BaseTrajData.interpolate('time', 0.5, p0, p1, self.make_base(1.0, 20.0, 0.0, 0.7))
+
+
+def _hermite(t0, t1, y0, y1, m0, m1, t):
+    """Independent closed form of the cubic Hermite of a step: (value, derivative) at time t."""
+    h = t1 - t0
+    u = (t - t0) / h
+    value = (
+        y0 * (1 + 2 * u) * (1 - u) ** 2 + h * m0 * u * (1 - u) ** 2 + y1 * u * u * (3 - 2 * u) - h * m1 * u * u * (1 - u)
+    )
+    # d/dt of the above, written from the derivative basis (6u(u-1), 1-4u+3u^2, 6u(1-u), 3u^2-2u) / h and h
+    deriv = (y0 * 6 * u * (u - 1) + y1 * 6 * u * (1 - u)) / h + m0 * (1 - 4 * u + 3 * u * u) + m1 * (3 * u * u - 2 * u)
+    return value, deriv
+
+
+class TestBaseTrajDataHermiteConvention:
+    """BaseTrajData.interpolate locates the point on the cubic Hermite of the integration step (the convention of
+    the engines and of the cythonized core): velocity = derivative of the position polynomial, Mach linear."""
+
+    @staticmethod
+    def pt(t, x, vx, mach, y=0.0, vy=0.0):
+        return BaseTrajData(time=t, position=Vector(x, y, 0.0), velocity=Vector(vx, vy, 0.0), mach=mach)
+
+    def test_zero_given_velocities_velocity_is_derivative_of_position(self):
+        p0, p1, p2 = self.pt(0.0, 0.0, 0.0, 0.50), self.pt(1.0, 10.0, 0.0, 0.60), self.pt(2.0, 20.0, 0.0, 0.70)
+        r = BaseTrajData.interpolate('time', 1.5, p0, p1, p2)
+        assert r.time == 1.5
+        assert r.position.x == pytest.approx(15.0, abs=1e-12)  # smoothstep at u = 0.5
+        assert r.velocity.x == pytest.approx(15.0, abs=1e-12)  # 10 * 6 u (1 - u); the old 3-point result was 0.0
+        assert r.mach == pytest.approx(0.65, abs=1e-15)
+
+    @pytest.mark.parametrize("t, step", [(0.25, 0), (0.37, 0), (1.5, 1), (1.61, 1), (1.0, 0)])
+    def test_time_key_equals_closed_form_hermite(self, t, step):
+        p0, p1, p2 = self.pt(0.0, 0.0, 5.0, 0.50), self.pt(1.0, 10.0, 6.0, 0.60), self.pt(2.0, 20.0, 7.0, 0.70)
+        a, b = ((p0, p1), (p1, p2))[step]
+        r = BaseTrajData.interpolate('time', t, p0, p1, p2)
+        x, vx = _hermite(a.time, b.time, a.position.x, b.position.x, a.velocity.x, b.velocity.x, t)
+        assert r.time == t
+        assert r.position.x == pytest.approx(x, abs=1e-12)
+        assert r.velocity.x == pytest.approx(vx, abs=1e-12)
+        assert r.mach == pytest.approx(a.mach + (t - a.time) / (b.time - a.time) * (b.mach - a.mach), abs=1e-15)
+
+    @pytest.mark.parametrize("key, target, step", [("position.x", 7.3, 0), ("position.x", 16.1, 1), ("velocity.x", 5.37, 0), ("velocity.x", 6.5, 1)])
+    def test_other_keys_are_located_on_the_step_polynomial(self, key, target, step):
+        p0, p1, p2 = self.pt(0.0, 0.0, 5.0, 0.50), self.pt(1.0, 10.0, 6.0, 0.60), self.pt(2.0, 20.0, 7.0, 0.70)
+        a, b = ((p0, p1), (p1, p2))[step]
+        r = BaseTrajData.interpolate(key, target, p0, p1, p2)
+        assert a.time <= r.time <= b.time
+        x, vx = _hermite(a.time, b.time, a.position.x, b.position.x, a.velocity.x, b.velocity.x, r.time)
+        assert r.position.x == pytest.approx(x, abs=1e-12)
+        assert r.velocity.x == pytest.approx(vx, abs=1e-12)
+        assert (r.position.x if key == "position.x" else r.velocity.x) == target
+        # and the point is really where the polynomial crosses the target
+        assert (x if key == "position.x" else vx) == pytest.approx(target, abs=1e-9)
+
+    def test_mach_key(self):
+        p0, p1, p2 = self.pt(0.0, 0.0, 5.0, 0.50), self.pt(1.0, 10.0, 6.0, 0.60), self.pt(2.0, 20.0, 7.0, 0.70)
+        r = BaseTrajData.interpolate('mach', 0.65, p0, p1, p2)
+        assert r.mach == 0.65 and r.time == pytest.approx(1.5, abs=1e-12)
+
+    def test_value_on_the_shared_point_is_that_point(self):
+        p0, p1, p2 = self.pt(0.0, 0.0, 5.0, 0.50), self.pt(1.0, 10.0, 6.0, 0.60), self.pt(2.0, 20.0, 7.0, 0.70)
+        r = BaseTrajData.interpolate('time', 1.0, p0, p1, p2)
+        assert r.position.x == pytest.approx(10.0, abs=1e-12) and r.velocity.x == pytest.approx(6.0, abs=1e-12)
 
 
 class TestInterpolationEdge:

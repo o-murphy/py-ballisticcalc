@@ -13,7 +13,6 @@ the defect are unchanged (values recorded before the fix, per engine).
 """
 
 import math
-import signal
 import time
 
 import pytest
@@ -25,6 +24,7 @@ from py_ballisticcalc.munition import Ammo, Weapon
 from py_ballisticcalc.shot import Shot
 from py_ballisticcalc.trajectory_data import TrajFlag
 from py_ballisticcalc.unit import *
+from tests.time_bound import run_with_time_bound
 
 pytestmark = pytest.mark.engine
 
@@ -146,39 +146,15 @@ def test_downhill_out_of_range_is_still_reported(loaded_engine_instance):
         assert "out of range" in str(info.value)
 
 
-
-class _Hang(Exception):
-    pass
-
-
-def _run_with_time_bound(seconds: int, func, *args):
-    """Run func(*args); fail with _Hang if it takes longer than `seconds` (Unix only; elsewhere no bound).
-
-    Pyodide (WebAssembly) defines signal.SIGALRM but has no signal.alarm, so both must be there."""
-    if not (hasattr(signal, "SIGALRM") and hasattr(signal, "alarm")):
-        return func(*args)
-
-    def _on_alarm(signum, frame):
-        raise _Hang(f"did not finish in {seconds} s")
-
-    previous = signal.signal(signal.SIGALRM, _on_alarm)
-    signal.alarm(seconds)
-    try:
-        return func(*args)
-    finally:
-        signal.alarm(0)
-        signal.signal(signal.SIGALRM, previous)
-
-
 def test_downhill_max_range_tiny_bracket_ends(loaded_engine_instance):
     """A shot launched a hair above a slightly downhill line of sight cannot rise by its sight height: no crossing, so
     nothing to integrate for ever with the limits lifted (it used to run until the range limit)."""
     shot = _make_shot(0.1, 800.0, -0.001)
     calc = Calculator(engine=loaded_engine_instance)
     start = time.monotonic()
-    max_range, _ = _run_with_time_bound(60, calc.find_max_range, shot, (0.0, 0.0001))
+    max_range, _ = run_with_time_bound(60, calc.find_max_range, shot, (0.0, 0.0001))
     assert time.monotonic() - start < 30
-    assert max_range >> Distance.Foot < 1.0
+    assert max_range >> Distance.Foot == 0.0
 
 
 def test_downhill_max_range_wide_bracket_ends(loaded_engine_instance):
@@ -188,7 +164,7 @@ def test_downhill_max_range_wide_bracket_ends(loaded_engine_instance):
         pytest.skip("slow on pure-Python engines (the search alone takes minutes); covered by the fast engines")
     shot = _make_shot(0.1, 800.0, -20.0)
     calc = Calculator(engine=loaded_engine_instance)
-    wide, _ = _run_with_time_bound(60, calc.find_max_range, shot, (-90.0, 90.0))
+    wide, _ = run_with_time_bound(60, calc.find_max_range, shot, (-90.0, 90.0))
     narrow, _ = calc.find_max_range(shot, (0.0, 90.0))
     assert wide >> Distance.Foot == pytest.approx(narrow >> Distance.Foot, rel=1e-3)
 
@@ -242,6 +218,7 @@ def _guard_value(calc: Calculator, kind: str, look_angle: float, distance: float
     return calc.zero_angle(shot, Distance.Meter(distance)) >> Angular.Degree
 
 
+@pytest.mark.slow
 def test_unchanged_results(loaded_engine_instance):
     """Maximum range of level and uphill shots, their Ridder zeros, and the Newton zeros of downhill shots are what
     they were before the fix."""
@@ -258,4 +235,15 @@ def test_unchanged_results(loaded_engine_instance):
             got = max_ranges[look_angle][0] >> Distance.Meter if kind == "max_range_m" else max_ranges[look_angle][1] >> Angular.Degree
         else:
             got = _guard_value(calc, kind, look_angle, distance)
-        assert got == pytest.approx(value, rel=1e-9, abs=1e-9), (kind, look_angle, distance)
+        # SciPy's bounded Brent search minimises a noisy objective (about 1e-3 ft near the optimum): the last-bit differences of
+        # another CPU or libm move its maximum-range result by ~1e-8 relative (observed 4e-8 in CI), so those entries are
+        # compared to 1e-6; everything else stays at 1e-9.
+        # The optimum is flat: the range still agrees to 1e-6 while the angle that gives it moves with the CPU (CI saw 36.3534
+        # and 36.3612 deg for the level shot, 7.8e-3 deg apart; two stable values per runner CPU type, class C36). So the
+        # max-range angle of a SciPy engine is compared with an absolute 0.05 deg instead of a relative tolerance.
+        scipy_search = kind in ("max_range_m", "max_angle_deg") and "scipy" in loaded_engine_instance.__module__
+        if scipy_search and kind == "max_angle_deg":
+            assert got == pytest.approx(value, abs=0.05), (kind, look_angle, distance)
+            continue
+        rel = 1e-6 if scipy_search else 1e-9
+        assert got == pytest.approx(value, rel=rel, abs=1e-9), (kind, look_angle, distance)

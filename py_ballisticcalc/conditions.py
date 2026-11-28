@@ -132,11 +132,16 @@ class Atmo:  # pylint: disable=too-many-instance-attributes
             `_mach` and `_density_ratio`. Subsequent changes to humidity trigger an automatic density recomputation.
         """
         self._initializing = True
-        self._altitude = PreferredUnits.distance(altitude or 0)
-        self._pressure = PreferredUnits.pressure(pressure or Atmo.standard_pressure(self._altitude))
-        self._temperature = PreferredUnits.temperature(temperature or Atmo.standard_temperature(self._altitude))
+        # `None` means "default"; a plain 0 is a value (0 pressure is a vacuum, 0 is a temperature).
+        self._altitude = PreferredUnits.distance(0 if altitude is None else altitude)
+        self._pressure = PreferredUnits.pressure(
+            Atmo.standard_pressure(self._altitude) if pressure is None else pressure
+        )
+        self._temperature = PreferredUnits.temperature(
+            Atmo.standard_temperature(self._altitude) if temperature is None else temperature
+        )
         # If powder_temperature not provided we use atmospheric temperature:
-        self._powder_temp = PreferredUnits.temperature(powder_t or self._temperature)
+        self._powder_temp = PreferredUnits.temperature(self._temperature if powder_t is None else powder_t)
         self._t0 = self._temperature >> Temperature.Celsius
         self._p0 = self._pressure >> Pressure.hPa
         self._a0 = self._altitude >> Distance.Foot
@@ -279,6 +284,8 @@ class Atmo:  # pylint: disable=too-many-instance-attributes
         t_k = self.temperature_at_altitude(altitude) + cDegreesCtoK
         mach = Atmo.machK(t_k) * _MPS_TO_FPS
         p = self.pressure_at_altitude(altitude)
+        if self._p0 == 0:  # Vacuum: no air at any altitude (and no division by the base pressure)
+            return 0.0, mach
         density_delta = ((self._t0 + cDegreesCtoK) * p) / (self._p0 * t_k)
         density_ratio = self._density_ratio * density_delta
         # Alternative simplified exponential model (retained for reference):
@@ -321,7 +328,8 @@ class Atmo:  # pylint: disable=too-many-instance-attributes
             Atmo instance representing standard atmosphere at altitude.
         """
         altitude = PreferredUnits.distance(altitude)
-        temperature = temperature or Atmo.standard_temperature(altitude)
+        if temperature is None:
+            temperature = Atmo.standard_temperature(altitude)
         pressure = Atmo.standard_pressure(altitude)
         return Atmo(altitude, pressure, temperature, humidity)
 
@@ -371,6 +379,8 @@ class Atmo:  # pylint: disable=too-many-instance-attributes
             - Divide result by `cDensityImperialToMetric` to get density in lb/ft³.
             - Source: CIPM-2007 (https://www.nist.gov/system/files/documents/calibrations/CIPM-2007.pdf)
         """
+        if p_hpa <= 0:  # Vacuum: no air, and the water-vapor mole fraction below divides by pressure
+            return 0.0
         R = 8.314472  # J/(mol·K), universal gas constant
         M_a = 28.96546e-3  # kg/mol, molar mass of dry air
         M_v = 18.01528e-3  # kg/mol, molar mass of water vapor
@@ -431,9 +441,7 @@ class Vacuum(Atmo):
     def __init__(self, altitude: float | Distance | None = None, temperature: float | Temperature | None = None):
         super().__init__(altitude, 0, temperature, 0)
         self._pressure = PreferredUnits.pressure(0)
-        # Atmo.__init__ uses `pressure or standard_pressure(...)`, so passing 0 stores
-        # standard pressure in _p0 (since 0 is falsy).  Fix it explicitly so any code
-        # that reads _p0 directly (e.g. C++ wrappers) sees the correct vacuum value.
+        # Explicit zeros so any code that reads _p0 directly (e.g. C++ wrappers) sees the vacuum.
         self._p0 = 0.0
         self._density_ratio = 0
 

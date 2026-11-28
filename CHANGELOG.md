@@ -7,7 +7,132 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- `integrate_raw_at(shot_info, key_attribute, target_value)` on the pure-Python engines (`rk4`, `euler`, `verlet`, in
+  `BaseIntegrationEngine`) and the SciPy engines, with the signature, keys (`time`, `mach`, `position.x/y/z`, `velocity.x/y/z`) and
+  errors of the cythonized engines: it integrates up to the first step whose end values bracket the key, returns the raw point and its
+  `TrajectoryData` (the crossing is located on the cubic Hermite of that step), and raises `InterceptionError` with the last
+  `(BaseTrajData, TrajectoryData)` when the flight ends first. The SciPy engines find the crossing as a terminal `solve_ivp` event on
+  the solver's dense output. `tests/test_engine_api_conformance.py` checks that every engine has the protocol methods and these
+  extras (`find_apex`, `find_max_range`, `integrate_raw_at`) with compatible signatures; they are not in `EngineProtocol` yet.
+
+### Changed
+- **`BaseTrajData.interpolate` uses the Hermite step convention of the engines (and now matches the cythonized core).** It interpolated every
+  field from the three points (3-point PCHIP, or linear). The three points are consecutive states of an integration, so `(p0, p1)` and
+  `(p1, p2)` are integration steps: the point is now located on the cubic Hermite interpolant of the step that brackets the key value
+  (`(p0, p1)` first; positions from the end positions with the end velocities as slopes, velocity = the derivative of the position polynomial,
+  Mach linear, the key field set to the query), as in the rows of the trajectory filter, `find_apex` and `integrate_at`, and as bclibc's
+  `BaseTrajData.interpolate` since its commit 58c3172. The 3-point interpolation is only the fallback when no step brackets the value (or the
+  step does not run forward in time); `method='pchip'|'linear'` selects that fallback only and has no effect on a bracketed value. User-visible:
+  the interpolated velocity is no longer an interpolation of the given velocities, e.g. for `(t, x, v) = (0, 0, 0), (1, 10, 0), (2, 20, 0)` the
+  point at `time=1.5` has velocity 15 (the derivative of the position polynomial) instead of 0. `CythonizedBaseTrajData.interpolate` and the
+  Python method agree to 1e-12 relative (`tests/test_interpolation_spec.py`).
+- **The m/s to ft/s conversion is exact (1/0.3048).** `Velocity.FPS` used the rounded factor 3.2808399 (`Velocity.MPS(1) >> Velocity.FPS`,
+  the speed of sound `Atmo.machK(t) * _MPS_TO_FPS`, `TrajectoryData` velocities); it is now derived from the exact foot, 0.3048 m, so
+  `1 m/s = 3.280839895013123 ft/s`, as `Distance.Foot` already was. The values change by up to 1.5e-9 relative (speed of sound,
+  velocities, hence mach numbers). This aligns the pure-Python engines with bclibc (3.280839895, within 4e-12 of the exact value); the
+  cythonized and pure-Python engines now agree on the speed of sound to rounding.
+- **The remaining rounded unit factors are exact.** `Velocity.MPH` (1609.344/3600 m/s), `Velocity.KT` (1852/3600 m/s), `Weight.Gram` and
+  `Weight.Kilogram` (1 lb = 0.45359237 kg = 7000 gr), `Weight.Newton` (the weight of a mass under standard gravity 9.80665 m/s2),
+  `Distance.NauticalMile` (1852 m), `Pressure.Bar`, `Pressure.hPa` and `Pressure.PSI` (with the raw mmHg being the torr, 101325/760 Pa, so
+  1 atm = 760 mmHg = 1013.25 hPa exactly, `Pressure.InHg` stays 25.4 mmHg; bar = 100000 Pa, psi = 0.45359237 * 9.80665 / 0.0254^2 Pa) and
+  `Energy.Joule` (0.3048 * 0.45359237 * 9.80665 J per ft·lbf) were rounded constants (the old PSI was derived from a different mmHg
+  than the old bar); they are now computed from their definitions, each with its derivation in `unit.py`. Relative change of each factor:
+  MPH 9.2e-10, KT 1.3e-9, Gram and Kilogram 3.0e-9, Newton 3.0e-9, NauticalMile 3.7e-10, Bar and hPa 3.9e-10, PSI 1.6e-7, Joule 5e-16.
+  Results with inputs in these units (wind in mph/kt, weights in g/kg/N, pressure in hPa/bar/psi) change at that relative level.
+- **Cant is the exact model (C37): lofted zeros with a cant now hit.** `Shot` pitches the barrel by `r = zero_elevation +
+  relative_angle` in the sight plane, which is rotated about the line of sight by the cant. In the frame of the line of sight
+  (x forward, y up, z right) the barrel points along `(cos r, sin r cos(cant), sin r sin(cant))`; composed with the look angle `L`,
+  `barrel_elevation = atan2(y, hypot(x, z))` and `barrel_azimuth = atan2(z, x)` with `x = cos L cos r - sin L sin r cos(cant)`,
+  `y = sin L cos r + cos L sin r cos(cant)`, `z = sin r sin(cant)`. This replaces `look + cos(cant) * r` and `sin(cant) * r`, which are
+  its small-angle limit; with no cant the result is exactly `look + r` and 0 (bit-identical). For an ordinary shot (a pitch of a
+  fraction of a degree) the elevation changes by less than 1e-4 deg at a cant of 10 deg and 45 deg (up to about 3e-4 deg at 45 deg with a 5 deg look angle). For a lofted
+  shot the old formula was wrong by degrees: the barrel azimuth `sin(cant) * r` of a barrel pitched at 88 deg is far from the real
+  one, and a lofted zero fired through `fire` missed the line of sight by about 1100 m (C37); it now hits in height.
+- The solvers (`find_zero_angle`, `find_zero_point`, `zero_angle`, `find_max_range`, the pure-Python and SciPy engines) take the total
+  elevation `E` in the vertical plane as their unknown and derive the barrel azimuth from it with the exact model, so the shot they
+  solve is the shot that is fired. The windage at the target is a result, never a condition: a lofted zero with a cant hits in height
+  and drifts sideways. Not every elevation is reachable with a cant: `|E| <= asin(R)`, `R = hypot(sin L, cos L cos(cant))`
+  (`90 deg - cant` at a horizontal look angle); the `barrel_elevation` setter raises `ValueError` beyond it (the solvers clamp their
+  trial angles), and `set_weapon_zero` / `aim` raise it for a zero that cannot be aimed. `set_weapon_zero` stores, and `aim` returns, the
+  pitch (not the elevation divided by `cos(cant)`) that fires the solved elevation. The very close shot shortcut of the zero search
+  (target closer than twice the sight height) follows the model too: the bore is offset sideways by `h sin(cant)`.
+  The cythonized engines get the solver part with the bclibc repin.
+
 ### Fixed
+- **The max-range and zero search with a cant bracket only the reachable elevations (C38).** `set_aim` clamps an elevation beyond
+  `asin(R)`, `R = hypot(sin L, cos L cos(cant))`, so the first golden-section probes of the (0, 90 deg) bracket of `find_max_range` (34.4 and
+  55.6 deg, both above the 30 deg limit of a 60 deg cant at a horizontal look angle) fell on one clamped shot, tied, and the search walked
+  away from the real maximum (~13 deg): it returned a range of ~0 and the zero search raised `OutOfRangeError` for a target it could hit
+  (0.1 m and 0.2 m at a 0.05 m sight height and a 60 deg cant on RK4/Verlet). With a cant the upper bound of the bracket is now clipped to
+  `asin(R)` (and the lower to `-asin(R)`), also the upper bound of a lofted zero bracket (pure-Python and SciPy engines); without a cant the
+  bounds, hence every result, are unchanged. The cythonized engines get the fix with the bclibc repin.
+- **A lofted zero search no longer returns a discontinuity as a root (C18).** The miss at the target is not continuous for a lofted
+  shot near the vertical (a shot that falls short and one that carries past the target differ by thousands of feet), and Ridder's
+  method (and `brentq` in the SciPy engines) converged on such a jump: `find_zero_angle(..., lofted=True)` returned an elevation "within the
+  angle tolerance" that misses the target by hundreds of feet or never reaches it (e.g. 175 gr G7 .308, 800 m/s, a 5 m/s tail wind, 100 m
+  zero: 88.4362 deg, 1300 ft short). When the search ends on the angle tolerance (or the bracket collapses) and the error at that angle is
+  more than `CONTINUOUS_ROOT_RATIO` (45%) of the smaller of the errors at the ends of the search bracket, `find_zero_angle`,
+  `find_zero_point` (and the Ridder fallback of `zero_angle` / `zero_point`) raise `ZeroFindingError` ("No continuous lofted zero ...").
+  The test is scale free; on the measured grid real roots leave at most 7e-6 of that error (0.1 for SciPy's noisier integrator) and jumps at least 2. Zeros that are real
+  roots are unchanged. The cythonized engines get the check with the bclibc repin. New tests `tests/test_false_root.py`.
+- **`TrajectoryDataFilter.record_step` keeps the time rows due before a RANGE row** (matches the bclibc fix). A RANGE row restarts the
+  time schedule from its own time and the range rows of a step were emitted before its time rows, so a wide step holding both a time
+  row and a later range row (e.g. the last time row t = 3.3 s of a `time_step` 0.3 and the row at the range limit) lost the time row.
+  The time rows strictly earlier than a range row are now emitted first, then the range row resets the clock (as bclibc's
+  `emit_time_rows`). Rows that were present are unchanged; with small steps a time row is added in the rare case it shares a step with
+  a later range row (seen with Euler). The SciPy engines already ordered their rows this way. New tests
+  `tests/test_time_rows_before_range_end.py`.
+- SciPy engines: with a `dist_step` larger than the range and `time_step > 0` (flags `RANGE`) only the `t = 0` row was returned, and
+  `dist_step=0` with `time_step` raised `ZeroDivisionError`. The time schedule now also covers the tail after the last range row, up to
+  the range limit (or the end of the flight), and a zero `dist_step` yields no range rows, as in the other engines (C24).
+- `cGravityConstant` (ft/s^2, negative: gravity pulls down along -y) is validated up front: zero, positive, NaN and infinite values raise
+  `ValueError("cGravityConstant must be a finite negative number ...")` when the engine config is created and whenever the field is assigned
+  later, for every engine. Before, the pure-Python engines failed deep inside with `ValueError: math domain error`, and the cythonized
+  engines never returned (infinite loop in the C++ core, which gets the same check in bclibc separately).
+- Cant is applied consistently (the `cos(cant)` scaling described here is superseded by the exact model under Changed): `Shot.barrel_elevation` is `look + cos(cant) * (zero_elevation + relative_angle)`, but its setter
+  stored `relative_angle = value - look - cos(cant) * zero_elevation` and `Calculator.set_weapon_zero` stored `zero_elevation = angle - look`,
+  so neither fired the requested elevation with a cant (the engines were right: they receive the final angle from `Shot`). The setter now
+  stores `(value - look) / cos(cant) - zero_elevation`, `set_weapon_zero` stores `(angle - look) / cos(cant)` (a shot zeroed with it fires
+  exactly `barrel_elevation_for_target`), and the hold returned by `Calculator.aim` is the `relative_angle` that fires the solved elevation
+  (`(angle - look) / cos(cant) - zero_elevation`). Results without a cant are bit-identical. A cant of +/-90 degrees (cos = 0) now raises
+  `ValueError` in the setter, `set_weapon_zero` and `aim`. The `Shot` docstrings, which put `cos(cant)` on `zero_elevation` only, match the code.
+- The cythonized engines raise the same exception text as the pure-Python engines for the errors of the C++ core that carried a kind
+  prefix: `find_apex` with a barrel elevation <= 0 raises `ValueError("Barrel elevation must be greater than 0 to find apex.")`
+  (was `"Value error (Barrel elevation must be greater than 0 to find apex)."`) and the missing-apex `SolverRuntimeError` reads
+  `"No apex flagged in trajectory data"` (was `"Runtime error (No apex flagged in trajectory data)"`). The `OutOfRangeError` text and
+  unit (the C++ core reports feet and appends ". Out of range") are intentionally unchanged.
+- The Python maximum-range search of a downhill shot (`find_max_range`, and the zero searches that start with it) no longer
+  integrates every probe to the (lifted) drop limit: a probe is stopped at its first crossing of the line of sight (which does not
+  depend on the limit, so the result is unchanged) and bounded to 600 s of flight (a probe that exceeds it counts as "no crossing", as
+  in the C++ core), and the limit is lifted once instead of by factors of four. Look -45 deg: 70-110 s before, about 20 s now on the
+  pure-Python engines; look -89.9 deg: more than 300 s before, about 200 s now (the C++ core takes 2.3 s). The public API is unchanged.
+- The Python integrators (`rk4`, `euler`, `verlet`) and the SciPy engine decide the range limit before the minimum-altitude, drop and
+  minimum-velocity limits, as the C++ core does: a step that crosses the range limit and one of these limits in the same step ends the
+  shot at its range, with no `RangeError` and no extra row after the row at the range limit. Before, such a shot (a target on a nearly
+  vertical line of sight, e.g. look angle -89.9 deg, 500 m) raised `RangeError` and kept a point past the target as its last row, so the
+  Newton zero search failed with "Distance non-convergent" and fell back to a Ridder search that did not return in minutes. A shot
+  that ends by altitude, drop or velocity before the range limit is unchanged.
+- A failed Newton zero search no longer leaves the widened `cMaximumDrop` / `cMinimumAltitude` in the engine configuration: the Python
+  engines restored them only when the search ran to the end, so a search that raised (an unreachable target, no convergence, an
+  error out of an integration) made every later `integrate` on that engine ignore the caller's limits. They are now restored on
+  every exit (as the C++ core does), through the same `_zero_search_limits` guard the Ridder and Brent searches use.
+- `HitResult.get_at` on a cythonized engine's dense output (`dense_output=True`) now returns the cubic Hermite of the bracketing
+  step, like the pure-Python engines and the filter rows, instead of a 3-point PCHIP over the sparse `records`: `time` and
+  `distance` queries are answered by the native sequence's `get_at` (about 6x faster than before), other keys search the steps of the
+  native points. Before, `get_at('distance', 733 yd)` on a 500 yd record grid was about 1 ft off the filter row.
+- A plain `0` passed to `Atmo` is no longer silently replaced by the default: `Atmo(pressure=0)` is a vacuum (as is
+  `Atmo(pressure=Pressure.hPa(0))` and `Vacuum()`), `Atmo(temperature=0)` / `Atmo.icao(temperature=0)` is 0 in the preferred
+  temperature unit (not the standard temperature for the altitude), and `powder_t=0` / `Ammo(powder_temp=0)` is 0 (not the ambient
+  temperature / 15 degC). The defaults were selected with `x or default`; they now use `x is None`, so `None` still means
+  "default" and every non-zero value is unchanged.
+- A `Vacuum` atmosphere no longer makes the Python engines raise `ZeroDivisionError` (or, in the SciPy engines, a `RangeError`
+  "integration failed") once the shot is 30 ft or more from the muzzle altitude: the density ratio was scaled by `p / p0` with a
+  base pressure `p0 = 0`. A vacuum is drag-free flight: its density ratio is 0 at every altitude and the speed of sound stays
+  finite (from temperature). The cythonized engines and `tiny_bclibc` need the matching `bclibc` fix.
+- The cythonized engines' `integrate(..., time_step=...)` no longer narrows `time_step` to a 32-bit float: `0.3` was read as
+  `0.30000001192...`, so the k-th time row was late by about `k * 1.2e-8` s compared with the pure-Python engines. The
+  parameter is now a C `double`, and time rows sit exactly on `k * time_step`.
 - The zero angle of a shot with a **downhill look angle** no longer raises `OutOfRangeError` ("exceeds maximum possible range"
   of a few feet) for a target well within range. `find_zero_angle` / `find_zero_point` (the Ridder search, and the fallback of
   `zero_angle` / `zero_point`) first call `find_max_range`, a golden-section search over the barrel elevation that measures
@@ -38,6 +163,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   widen the limits to the required drop, as `bclibc` does (`zero_search_min_altitude`), and only when needed.
   Tests: `tests/test_zero_downhill.py` (zero of downhill shots from -5 to -45 degrees, targets 0.5 to 300 m, hits within 2 mm;
   the maximum range against probe shots; recorded values of unaffected results per engine).
+- `find_max_range` of the pure-Python engines (RK4, Euler, Velocity Verlet, SciPy) returns 0 ft when no launch angle of the bracket
+  crosses the line of sight (a bracket below the look angle, a degenerate bracket, a shot that starts below `cMinimumAltitude`),
+  as the C++ core and the Cython engines do, instead of the internal sentinel -9e9 ft; `find_zero_angle` / `find_zero_point` then
+  raise `OutOfRangeError` with `max_range` 0 ft ("exceeds maximum possible range 0.0 feet") instead of -9000000000.0 feet.
+  Tests: `tests/test_max_range_no_crossing.py`.
 
 ### Changed
 - Re-pin `bclibc` to `409672c` (`main` of `ballistics-lab/bclibc` after the downhill max-range fix, on top of `557da08`) for the downhill

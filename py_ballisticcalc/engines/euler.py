@@ -184,7 +184,7 @@ class EulerIntegrationEngine(BaseIntegrationEngine):
         _cMaximumDrop += min(0, range_vector.y)  # Adjust max drop downward if above muzzle height
         # endregion
 
-        data_filter = TrajectoryDataFilter(
+        data_filter = kwargs.get("filter_factory", TrajectoryDataFilter)(
             props=props,
             filter_flags=filter_flags,
             range_limit=range_limit_ft,
@@ -197,6 +197,12 @@ class EulerIntegrationEngine(BaseIntegrationEngine):
         if dense_output:
             step_data.append(data)
 
+        # Early ends without an error, set only by the max-range probe (`_first_zero_down`): at a flight time (s), and as
+        # soon as the line of sight has been crossed (the rest of the flight cannot change the first crossing).
+        max_flight_time_s: float = kwargs.get("max_flight_time_s") or math.inf
+        stop_at_zero_down: bool = bool(kwargs.get("stop_at_zero_down")) and bool(
+            data_filter.filter & TrajFlag.ZERO_DOWN
+        )
         # region Trajectory Loop
         warnings.simplefilter("once")  # used to avoid multiple warnings in a loop
         termination_reason = None
@@ -243,12 +249,18 @@ class EulerIntegrationEngine(BaseIntegrationEngine):
                 or (velocity_vector.y <= 0 and range_vector.y < _cMaximumDrop)
                 or (velocity_vector.y <= 0 and props.alt0_ft + range_vector.y < _cMinimumAltitude)
             ):
+                if range_vector.x > range_limit_ft and integration_step_count >= 3:
+                    # The step reached the range limit: that is decided before the limits below (as in the C++ core),
+                    # so the shot ends at its target, with no RangeError and no extra row after the range row.
+                    break
                 if velocity < _cMinimumVelocity:
                     termination_reason = RangeError.MinimumVelocityReached
                 elif range_vector.y < _cMaximumDrop:
                     termination_reason = RangeError.MaximumDropReached
                 else:
                     termination_reason = RangeError.MinimumAltitudeReached
+                break
+            if time > max_flight_time_s or (stop_at_zero_down and not data_filter.filter & TrajFlag.ZERO_DOWN):
                 break
         # endregion Trajectory Loop
         # Ensure that we have at least two data points in trajectory,
