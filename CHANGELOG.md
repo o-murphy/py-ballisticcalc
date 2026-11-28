@@ -32,6 +32,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `1 m/s = 3.280839895013123 ft/s`, as `Distance.Foot` already was. The values change by up to 1.5e-9 relative (speed of sound,
   velocities, hence mach numbers). This aligns the pure-Python engines with bclibc (3.280839895, within 4e-12 of the exact value); the
   cythonized and pure-Python engines now agree on the speed of sound to rounding.
+- **The remaining rounded unit factors are exact.** `Velocity.MPH` (1609.344/3600 m/s), `Velocity.KT` (1852/3600 m/s), `Weight.Gram` and
+  `Weight.Kilogram` (1 lb = 0.45359237 kg = 7000 gr), `Weight.Newton` (the weight of a mass under standard gravity 9.80665 m/s2),
+  `Distance.NauticalMile` (1852 m), `Pressure.Bar`, `Pressure.hPa` and `Pressure.PSI` (with the raw mmHg being the torr, 101325/760 Pa, so
+  1 atm = 760 mmHg = 1013.25 hPa exactly, `Pressure.InHg` stays 25.4 mmHg; bar = 100000 Pa, psi = 0.45359237 * 9.80665 / 0.0254^2 Pa) and
+  `Energy.Joule` (0.3048 * 0.45359237 * 9.80665 J per ft·lbf) were rounded constants (the old PSI was derived from a different mmHg
+  than the old bar); they are now computed from their definitions, each with its derivation in `unit.py`. Relative change of each factor:
+  MPH 9.2e-10, KT 1.3e-9, Gram and Kilogram 3.0e-9, Newton 3.0e-9, NauticalMile 3.7e-10, Bar and hPa 3.9e-10, PSI 1.6e-7, Joule 5e-16.
+  Results with inputs in these units (wind in mph/kt, weights in g/kg/N, pressure in hPa/bar/psi) change at that relative level.
 - **Cant is the exact model (C37): lofted zeros with a cant now hit.** `Shot` pitches the barrel by `r = zero_elevation +
   relative_angle` in the sight plane, which is rotated about the line of sight by the cant. In the frame of the line of sight
   (x forward, y up, z right) the barrel points along `(cos r, sin r cos(cant), sin r sin(cant))`; composed with the look angle `L`,

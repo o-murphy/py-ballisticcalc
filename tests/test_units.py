@@ -1,3 +1,5 @@
+from fractions import Fraction
+
 import pytest
 
 from py_ballisticcalc import loadImperialUnits, loadMixedUnits, loadMetricUnits
@@ -464,3 +466,37 @@ class TestIterator:
     def test_iterator_non_numeric_input(self):
         with pytest.raises(TypeError): # Or ValueError
             list(Unit.Meter.iterator([1, "b", 3]))  # type: ignore
+
+
+class TestExactConversionFactors:
+    """The unit factors equal the SI/legal definitions (Fractions of exact definitions), to 1e-15 relative."""
+
+    LB_KG = Fraction(45359237, 10**8)  # 1 lb = 0.45359237 kg
+    G0 = Fraction(980665, 10**5)  # standard gravity, m/s2
+    INCH = Fraction(254, 10**4)  # m
+    MMHG_PA = Fraction(101325, 760)  # mmHg as the torr: 1 atm = 101325 Pa = 760 mmHg
+
+    @pytest.mark.parametrize(
+        "dimension, unit, expected",
+        [
+            # velocity, raw m/s
+            (Velocity, Velocity.MPH, Fraction(1609344, 1000) / 3600),
+            (Velocity, Velocity.KT, Fraction(1852, 3600)),
+            (Velocity, Velocity.FPS, Fraction(3048, 10000)),
+            # weight, raw grains (1 gr = 1/7000 lb)
+            (Weight, Weight.Gram, 7000 / (LB_KG * 1000)),
+            (Weight, Weight.Kilogram, 7000 / LB_KG),
+            (Weight, Weight.Newton, 7000 / (LB_KG * G0)),
+            # distance, raw inches
+            (Distance, Distance.NauticalMile, Fraction(1852) / INCH),
+            # pressure, raw mmHg
+            (Pressure, Pressure.Bar, Fraction(100000) / MMHG_PA),
+            (Pressure, Pressure.hPa, Fraction(100) / MMHG_PA),
+            (Pressure, Pressure.PSI, LB_KG * G0 / INCH**2 / MMHG_PA),
+            (Pressure, Pressure.InHg, Fraction(254, 10)),
+            # energy, raw foot-pounds
+            (Energy, Energy.Joule, 1 / (Fraction(3048, 10000) * LB_KG * G0)),
+        ],
+    )
+    def test_factor_is_exact(self, dimension, unit, expected):
+        assert dimension(1, unit).raw_value == pytest.approx(float(expected), rel=1e-15, abs=0)
