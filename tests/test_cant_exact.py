@@ -166,19 +166,11 @@ def test_lofted_zero_with_cant_hits_in_height(request, loaded_engine_instance, l
 @pytest.mark.parametrize("cant_deg", (10.0, 60.0))
 @pytest.mark.parametrize(("sight_m", "look_deg"), ((0.05, 0.0), (0.5, 0.0), (0.5, 10.0)))
 @pytest.mark.parametrize("distance_m", (0.05, 0.1, 0.2))
-def test_close_target_zero_with_cant(request, loaded_engine_instance, cant_deg, sight_m, look_deg, distance_m):
+def test_close_target_zero_with_cant(loaded_engine_instance, cant_deg, sight_m, look_deg, distance_m):
     """The very close shot shortcut follows the exact model: the bore is offset sideways by `h sin(cant)`."""
     h, d, look, cant = sight_m, distance_m, math.radians(look_deg), math.radians(cant_deg)
     shortcut = d < 2.0 * h * math.cos(cant)  # the calc step (cStepMultiplier, 0.0025 ft) is smaller
     steep_cant_case = (sight_m, look_deg, cant_deg, distance_m) in ((0.05, 0.0, 60.0, 0.1), (0.05, 0.0, 60.0, 0.2))
-    if (
-        steep_cant_case
-        and loaded_engine_instance.__module__.startswith("py_ballisticcalc_exts")
-        and "Euler" not in loaded_engine_instance.__name__
-    ):
-        # C38: the reachable elevation of a 60 deg cant at look 0 is 30 deg; the max-range search of the cythonized RK4/Verlet/
-        # adaptive engines still brackets (0, 90) deg and probes two clamped, equal elevations, so it finds range 0.
-        request.applymarker(pytest.mark.xfail(strict=False, reason="needs bclibc C38 bracket fix; remove at repin"))
     if not shortcut and not steep_cant_case and _kind(loaded_engine_instance) in ("rk4", "euler", "velocity_verlet"):
         pytest.skip("searched zero is too slow on pure-Python engines; the shortcut and C38 cases cover the change")
     shot = _make_shot(cant_deg, look_deg, Distance.Meter(sight_m))
@@ -242,12 +234,9 @@ def _check_max_range_search(engine_class, cant_deg: float, look_deg: float) -> N
 @pytest.mark.filterwarnings("ignore:No ZERO_DOWN found")
 @pytest.mark.parametrize("cant_deg", (0.0, 45.0, 60.0, 75.0, 80.0))
 @pytest.mark.parametrize("look_deg", (0.0, 8.0))
-def test_max_range_search_brackets_the_reachable_elevations(request, loaded_engine_instance, cant_deg, look_deg):
+def test_max_range_search_brackets_the_reachable_elevations(loaded_engine_instance, cant_deg, look_deg):
     if _kind(loaded_engine_instance) in _PURE_PYTHON_KINDS:
         pytest.skip("brute force scan is slow on pure-Python engines; see the slow test")
-    if loaded_engine_instance.__module__.startswith("py_ballisticcalc_exts") and cant_deg >= 60.0:
-        # The limit asin(R) is below the first golden-section probes (34.4 deg and 55.6 deg) of the (0, 90) deg bracket.
-        request.applymarker(pytest.mark.xfail(strict=False, reason="needs bclibc C38 bracket fix; remove at repin"))
     _check_max_range_search(loaded_engine_instance, cant_deg, look_deg)
 
 
